@@ -290,7 +290,7 @@ describe('note entry tools', () => {
 
   it('a split keeps the inherited provenance on both halves (K2)', () => {
     const inherited = [
-      { sourceModuleInstance: 'm1', sourceItemIds: ['x'], transformation: 'melodicize' },
+      { sourceNodeInstance: 'm1', sourceItemIds: ['x'], transformation: 'melodicize' },
     ];
     const source = { ...item('a', 0, 2, [6000]), provenance: inherited };
     const after = splitNote(dataBlock([source]), 'a', 1, 'right');

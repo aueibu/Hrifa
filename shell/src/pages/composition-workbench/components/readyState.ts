@@ -1,5 +1,5 @@
 /**
- * The ready line's value (workbench "Ready line" rules, READY-LINE.md): what a panel or module with a main action
+ * The ready line's value (workbench "Ready line" rules, READY-LINE.md): what a panel or node with a main action
  * reports about whether that action can happen now. Each user writes ONE pure function returning this; the line
  * (`ReadyLine.tsx`) and the blocked action's tooltip read the same value.
  */

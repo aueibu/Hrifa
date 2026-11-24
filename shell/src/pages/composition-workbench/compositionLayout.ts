@@ -1,8 +1,8 @@
-import type { CompositionModuleInstance } from './compositionWorkspace';
+import type { CompositionNodeInstance } from './compositionWorkspace';
 
 /** Canvas geometry shared by the canvas, Tidy and free-spot placement. */
 export const NODE_WIDTH = 148;
-/** Every module is the same size: the card plus a fixed top and bottom port rail. */
+/** Every node is the same size: the card plus a fixed top and bottom port rail. */
 export const NODE_HEIGHT = 112;
 const GAP_X = 52;
 const GAP_Y = 76;
@@ -18,7 +18,7 @@ export interface Position {
 }
 
 /**
- * Longest-path layering over the connection graph. A module sits one layer below the deepest module
+ * Longest-path layering over the connection graph. A node sits one layer below the deepest node
  * feeding it, so signal always reads top-to-bottom. A back edge (a cycle) is ignored for layering
  * rather than looping forever.
  */
@@ -54,12 +54,12 @@ function assignLayers(ids: string[], edges: LayoutEdge[]) {
 }
 
 /**
- * Arranges modules in layers by dependency depth, top to bottom, ordering each layer by the average
+ * Arranges nodes in layers by dependency depth, top to bottom, ordering each layer by the average
  * horizontal position of its sources to keep cables from crossing, and centring every layer on the
  * same axis. Pure: returns new positions without touching the connections themselves.
  */
 export function tidyLayout(
-  instances: CompositionModuleInstance[],
+  instances: CompositionNodeInstance[],
   edges: LayoutEdge[]
 ): Record<string, Position> {
   const ids = instances.map((instance) => instance.id);
@@ -68,8 +68,8 @@ export function tidyLayout(
   const rows: string[][] = Array.from({ length: layerCount }, () => []);
   ids.forEach((id) => rows[layers.get(id)!].push(id));
 
-  // Barycentre sweep: place each module under the average column of what feeds it. Two passes
-  // settle small patches; ties keep the authored order so the result is stable.
+  // Barycentre sweep: place each node under the average column of what feeds it. Two passes
+  // settle small node trees; ties keep the authored order so the result is stable.
   const column = new Map<string, number>();
   rows.forEach((row) => row.forEach((id, index) => column.set(id, index)));
   for (let pass = 0; pass < 2; pass += 1) {
@@ -109,9 +109,9 @@ function overlaps(a: Position, b: Position) {
 
 /**
  * The first open slot on a loose grid, scanning left to right then downward, so a newly added
- * module never lands on top of an existing one.
+ * node never lands on top of an existing one.
  */
-export function nextFreePosition(instances: CompositionModuleInstance[], columns = 4): Position {
+export function nextFreePosition(instances: CompositionNodeInstance[], columns = 4): Position {
   for (let row = 0; ; row += 1) {
     for (let column = 0; column < columns; column += 1) {
       const candidate = { x: column * (NODE_WIDTH + GAP_X), y: row * (NODE_HEIGHT + GAP_Y) };

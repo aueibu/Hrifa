@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { PublishedCompositionOutput } from '../../compositionRouting';
-import { createDefaultModuleRouteState } from '../../compositionWorkspace';
+import { createDefaultNodeRouteState } from '../../compositionWorkspace';
 import { captureDataBlock, type DataBlock } from '../../dataBlock';
 import { melodicize } from '../../melodicization';
 import { packet } from '../../model';
 import { signalTypeRegistry } from '../../signalTypes';
 import { transportPulse } from '../../transport';
 import { createMemo } from '../memo';
-import { moduleEvaluators } from '../moduleEvaluators';
-import { modulePorts } from '../modulePorts';
+import { nodeEvaluators } from '../nodeEvaluators';
+import { nodePorts } from '../nodePorts';
 import {
   computeDataBlockSource,
   evaluateDataBlockSource,
@@ -45,14 +45,14 @@ const unrelatedOutput: PublishedCompositionOutput = {
 };
 
 function bound(rhythm: { instanceId: string; port: string }, pitches: typeof rhythm) {
-  const routeState = createDefaultModuleRouteState(modulePorts.melodicization ?? []);
+  const routeState = createDefaultNodeRouteState(nodePorts.melodicization ?? []);
   routeState.rhythm = { ...routeState.rhythm, source: rhythm };
   routeState.pitches = { ...routeState.pitches, source: pitches };
   return routeState;
 }
 
 const routeState = bound(rhythmOutputs[0].ref, pitchOutputs[0].ref);
-const unbound = createDefaultModuleRouteState(modulePorts.melodicization ?? []);
+const unbound = createDefaultNodeRouteState(nodePorts.melodicization ?? []);
 const pulseUnit = transportPulse({ pulse: '1/2' }).duration;
 
 describe('evaluateMelodicization', () => {
@@ -167,7 +167,7 @@ describe('evaluateMelodicization', () => {
   });
 
   // Not reachable from the UI: `compositionOutputOptions` (compositionRouting.ts) leaves out the
-  // module's own outputs, and no publishing module accepts `notes`. Only a hand-edited or old
+  // node's own outputs, and no publishing node accepts `notes`. Only a hand-edited or old
   // project file could hold this route; this pins today's reading of it.
   it('keeps today self-binding behavior: no rule, the bound output is read as it is', () => {
     const own: PublishedCompositionOutput[] = [
@@ -195,7 +195,7 @@ describe('evaluateDataBlockSource', () => {
     createdAt: '2026-11-18T00:00:00.000Z',
     name: 'Data-block 1',
     packet: notes,
-    moduleInstance: 'm',
+    nodeInstance: 'm',
     portId: 'notes',
     itemIds: notes.items.slice(0, 2).map((item) => item.id),
   });
@@ -234,7 +234,7 @@ describe('evaluateDataBlockSource', () => {
   });
 
   it('is registered under the data-block-source id', () => {
-    expect(moduleEvaluators['data-block-source'].evaluate).toBe(evaluateDataBlockSource);
-    expect(moduleEvaluators.melodicization.evaluate).toBe(evaluateMelodicization);
+    expect(nodeEvaluators['data-block-source'].evaluate).toBe(evaluateDataBlockSource);
+    expect(nodeEvaluators.melodicization.evaluate).toBe(evaluateMelodicization);
   });
 });

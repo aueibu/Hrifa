@@ -46,7 +46,7 @@ function noteDataBlock(id = 'data-block-1', name = 'Gesture'): DataBlock {
     id,
     createdAt: '2026-11-11T00:00:00Z',
     name,
-    moduleInstance: 'mel-1',
+    nodeInstance: 'mel-1',
     packet: result.packet,
   });
   if (!captured.ok) {

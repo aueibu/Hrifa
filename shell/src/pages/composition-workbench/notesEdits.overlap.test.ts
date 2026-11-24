@@ -538,7 +538,7 @@ describe('resolveSamePitchOverlaps', () => {
 });
 
 function step(transformation: string) {
-  return { sourceModuleInstance: 'm', sourceItemIds: [], transformation };
+  return { sourceNodeInstance: 'm', sourceItemIds: [], transformation };
 }
 
 describe('resolveSamePitchOverlaps: nested notes, any packet order', () => {

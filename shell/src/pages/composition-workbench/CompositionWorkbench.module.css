@@ -60,7 +60,7 @@
 }
 
 /*
- * A workbench panel's body inside its docker (workbenchPanels.tsx): fills the docker. The canvas and desk clip; the module
+ * A workbench panel's body inside its docker (workbenchPanels.tsx): fills the docker. The canvas and desk clip; the node
  * and Notes editor panels scroll on their own, as the old bottom pane did. `relative` is the canvas takeover slot's frame.
  */
 .dockPanel,
@@ -81,30 +81,30 @@
   overflow: auto;
 }
 
-/* The module panel meets the stage's edges, as the canvas above it does, and ends against the status bar. */
+/* The node panel meets the stage's edges, as the canvas above it does, and ends against the status bar. */
 .detailBody {
   height: 100%;
 }
 
-/* Fills the detail panel so a device-style module can scroll its own regions. */
-.moduleHost {
+/* Fills the detail panel so a device-style node can scroll its own regions. */
+.nodeHost {
   height: 100%;
   min-height: 0;
 }
 
-.moduleHost[hidden] {
+.nodeHost[hidden] {
   display: none;
 }
 
-.moduleRailHeading {
+.nodeRailHeading {
   flex-wrap: nowrap;
 }
 
-.moduleLink {
+.nodeLink {
   border-radius: var(--radius-control);
 }
 
-.moduleRailDescription {
+.nodeRailDescription {
   margin-top: auto;
 }
 
@@ -183,7 +183,7 @@
   overflow-y: auto;
 }
 
-.moduleParameterRow {
+.nodeParameterRow {
   align-items: center;
   display: grid;
   gap: var(--mantine-spacing-xs);
@@ -197,7 +197,7 @@
   width: 100%;
 }
 
-.moduleHint {
+.nodeHint {
   line-height: 1.25;
   min-height: 2rem;
 }
@@ -630,7 +630,7 @@
     height: auto;
   }
 
-  .moduleRailDescription {
+  .nodeRailDescription {
     margin-top: 0;
   }
 

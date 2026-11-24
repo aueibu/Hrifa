@@ -2,7 +2,7 @@ import { render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CompositionWorkbenchPage } from '../CompositionWorkbench.page';
 import { captureDataBlock } from './dataBlock';
-import * as dataBlockModule from './dataBlock';
+import * as dataBlockNode from './dataBlock';
 import { DATA_BLOCK_DEFAULTS_KEY } from './dataBlockPreferences';
 import { seedDesk } from './deskTestUtils';
 import { canUndo, resetHistory } from './history';
@@ -20,7 +20,7 @@ function dataBlock(id: string, name: string) {
     id,
     createdAt: '2026-11-11T00:00:00Z',
     name,
-    moduleInstance: 'pitch-list',
+    nodeInstance: 'pitch-list',
     packet: packet('list', 'pitch', [{ id: `${id}:0`, value: 60, provenance: [] }]),
   });
   if (!result.ok) {
@@ -46,14 +46,14 @@ async function card(name: string) {
   return input.closest('div[class*="card"]') as HTMLElement;
 }
 
-describe('the bottom panel targets a module or a data-block', () => {
+describe('the bottom panel targets a node or a data-block', () => {
   beforeEach(() => {
     localStorage.clear();
     resetHistory();
-    vi.mocked(dataBlockModule.endEditSession).mockClear();
+    vi.mocked(dataBlockNode.endEditSession).mockClear();
   });
 
-  it('still shows a selected module editor, and the data-block slot stays empty', async () => {
+  it('still shows a selected node editor, and the data-block slot stays empty', async () => {
     const user = userEvent.setup();
     await seed({ view: 'canvas' });
     render(<CompositionWorkbenchPage />);
@@ -79,8 +79,8 @@ describe('the bottom panel targets a module or a data-block', () => {
     expect(status).toBeVisible();
     expect(status).toHaveTextContent('No editor for this data-block yet.');
     expect(status).toHaveTextContent('Alpha');
-    // The module editors stay mounted, only hidden.
-    // Looked up by label, not by role and name: the module panel is parked (visibility hidden) while a data-block is open,
+    // The node editors stay mounted, only hidden.
+    // Looked up by label, not by role and name: the node panel is parked (visibility hidden) while a data-block is open,
     // and a hidden element has an empty accessible name.
     const pattern = document.querySelector<HTMLElement>('input[aria-label="Generator 1 pattern"]')!;
     expect(pattern).not.toBeNull();
@@ -111,7 +111,7 @@ describe('the bottom panel targets a module or a data-block', () => {
 
     await user.click(footerTab('Canvas'));
     expect(dataBlockStatus()).toBeVisible();
-    // Selecting a module from the canvas returns the panel to its editor.
+    // Selecting a node from the canvas returns the panel to its editor.
     await user.click(
       within(screen.getByLabelText('Composition canvas')).getByRole('button', {
         name: /^Pitch List/,
@@ -126,10 +126,10 @@ describe('the bottom panel targets a module or a data-block', () => {
     await seed();
     render(<CompositionWorkbenchPage />);
     await user.dblClick(within(await card('Alpha')).getByText(/^list \| pitch/));
-    expect(dataBlockModule.endEditSession).not.toHaveBeenCalled();
+    expect(dataBlockNode.endEditSession).not.toHaveBeenCalled();
 
     await user.dblClick(within(await card('Beta')).getByText(/^list \| pitch/));
-    expect(dataBlockModule.endEditSession).toHaveBeenCalledWith('block-a');
+    expect(dataBlockNode.endEditSession).toHaveBeenCalledWith('block-a');
     expect(dataBlockStatus()).toHaveTextContent('Beta');
   });
 
@@ -145,7 +145,7 @@ describe('the bottom panel targets a module or a data-block', () => {
     expect(screen.queryAllByRole('textbox', { name: /Pitch values|pattern/ })).toHaveLength(0);
   }
 
-  it('shows a blank panel when the targeted data-block is deleted, and promotes no module', async () => {
+  it('shows a blank panel when the targeted data-block is deleted, and promotes no node', async () => {
     const user = userEvent.setup();
     await seed();
     render(<CompositionWorkbenchPage />);
@@ -156,35 +156,35 @@ describe('the bottom panel targets a module or a data-block', () => {
     await waitFor(() =>
       expect(screen.queryByText('No editor for this data-block yet.')).not.toBeInTheDocument()
     );
-    expect(dataBlockModule.endEditSession).toHaveBeenCalledWith('block-a');
+    expect(dataBlockNode.endEditSession).toHaveBeenCalledWith('block-a');
     nothingOpen();
     expect(localStorage.getItem(compositionStateKeys.editorTarget)).toBe('null');
-    expect(localStorage.getItem(compositionStateKeys.activeCompositionModule)).toBe('null');
+    expect(localStorage.getItem(compositionStateKeys.activeCompositionNode)).toBe('null');
   });
 
-  it('counts no module as active while a data-block is open', async () => {
+  it('counts no node as active while a data-block is open', async () => {
     const user = userEvent.setup();
     await seed({ view: 'canvas' });
     render(<CompositionWorkbenchPage />);
     const grid = screen.getByLabelText('Composition canvas');
     await user.click(within(grid).getByRole('button', { name: /^Pitch List/ }));
     expect(screen.getByRole('button', { name: 'Remove Pitch List' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Play selected module' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Play selected node' })).toBeEnabled();
 
     await user.click(footerTab('Desk'));
     await openAlpha(user);
-    expect(screen.getByRole('button', { name: 'Play selected module' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Play selected node' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Remove Pitch List' })).not.toBeInTheDocument();
-    // The inspector shows the data-block, not a module.
+    // The inspector shows the data-block, not a node.
     expect(screen.getByRole('heading', { name: 'Alpha' })).toBeInTheDocument();
     expect(screen.getByText('list | pitch', { selector: 'p' })).toBeInTheDocument();
   });
 
-  it('keeps the data-block open when an earlier module add is undone', async () => {
+  it('keeps the data-block open when an earlier node add is undone', async () => {
     const user = userEvent.setup();
     await seed({ view: 'canvas' });
     render(<CompositionWorkbenchPage />);
-    await user.click(screen.getByRole('button', { name: 'Add module' }));
+    await user.click(screen.getByRole('button', { name: 'Add node' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Pitch List' }));
     await user.click(footerTab('Desk'));
     await openAlpha(user);
@@ -194,7 +194,7 @@ describe('the bottom panel targets a module or a data-block', () => {
     expect(screen.getByRole('heading', { name: 'Alpha' })).toBeInTheDocument();
   }, 15_000);
 
-  it('shows a blank panel when the open module is removed, and promotes no other', async () => {
+  it('shows a blank panel when the open node is removed, and promotes no other', async () => {
     const user = userEvent.setup();
     await seed({ view: 'canvas' });
     render(<CompositionWorkbenchPage />);
@@ -207,12 +207,12 @@ describe('the bottom panel targets a module or a data-block', () => {
     expect(within(grid).queryByRole('button', { name: /^Pitch List/ })).not.toBeInTheDocument();
   }, 15_000);
 
-  it('shows a blank panel, without errors, when undo removes the open module', async () => {
+  it('shows a blank panel, without errors, when undo removes the open node', async () => {
     const user = userEvent.setup();
     await seed({ view: 'canvas' });
     render(<CompositionWorkbenchPage />);
     const grid = screen.getByLabelText('Composition canvas');
-    await user.click(screen.getByRole('button', { name: 'Add module' }));
+    await user.click(screen.getByRole('button', { name: 'Add node' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Pitch List' }));
     expect(within(grid).queryAllByRole('button', { name: /^Pitch List/ })).toHaveLength(2);
     expect(screen.getAllByRole('textbox', { name: 'Pitch values' })).toHaveLength(1);
@@ -220,7 +220,7 @@ describe('the bottom panel targets a module or a data-block', () => {
     await user.click(screen.getByRole('button', { name: 'Undo' }));
     expect(within(grid).queryAllByRole('button', { name: /^Pitch List/ })).toHaveLength(1);
     nothingOpen();
-    // Redo brings the module back without opening anything on its own.
+    // Redo brings the node back without opening anything on its own.
     await user.click(screen.getByRole('button', { name: 'Redo' }));
     expect(within(grid).queryAllByRole('button', { name: /^Pitch List/ })).toHaveLength(2);
     nothingOpen();
@@ -271,7 +271,7 @@ describe('New data-block', () => {
     expect(within(scope).getByRole('button', { name: 'Make source' })).toBeDisabled();
   }, 15_000);
 
-  it('undoing New data-block while it is open leaves a blank panel and promotes no module', async () => {
+  it('undoing New data-block while it is open leaves a blank panel and promotes no node', async () => {
     const user = userEvent.setup();
     await user.click(await renderEmptyDesk());
     await screen.findByDisplayValue('New data-block');
@@ -281,7 +281,7 @@ describe('New data-block', () => {
     );
     expect(screen.queryByText('No editor for this data-block yet.')).not.toBeInTheDocument();
     expect(screen.queryAllByRole('textbox', { name: /Pitch values|pattern/ })).toHaveLength(0);
-    expect(localStorage.getItem(compositionStateKeys.activeCompositionModule)).toBe('null');
+    expect(localStorage.getItem(compositionStateKeys.activeCompositionNode)).toBe('null');
   }, 15_000);
 
   it('uses the stored defaults for the one click', async () => {

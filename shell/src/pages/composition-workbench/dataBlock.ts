@@ -15,7 +15,7 @@ import {
  *
  * Only *capture* knows about specific kinds. `captureHandlers` maps a packet kind to the function
  * that selects part of it and makes the part self-contained; supporting a new kind (a drawn curve, a
- * painted gesture) means adding one handler there, and the desk, persistence and source-module code
+ * painted gesture) means adding one handler there, and the desk, persistence and source-node code
  * stay as they are. A kind with no handler can still be captured whole.
  *
  * Capture is a copy. Items keep their original ids, so a captured event is still recognisable as the
@@ -65,8 +65,8 @@ export interface DataBlockLineage {
 
 /** Where a data-block was captured from. Information only: nothing follows it afterwards. */
 export interface DataBlockOrigin {
-  moduleInstance: string;
-  /** The source output port, when the capture came from a module output. */
+  nodeInstance: string;
+  /** The source output port, when the capture came from a node output. */
   portId?: string;
   /** The ids of the selected items. Absent when the whole packet was captured. */
   itemIds?: string[];
@@ -79,7 +79,7 @@ export interface CaptureRequest {
   name: string;
   note?: string;
   packet: DataPacket;
-  moduleInstance: string;
+  nodeInstance: string;
   portId?: string;
   /** Item ids to keep. Omit to capture the whole packet. */
   itemIds?: string[];
@@ -183,7 +183,7 @@ export function captureDataBlock(request: CaptureRequest): CaptureResult {
 
   let selection: Selection;
   if (itemIds === undefined) {
-    // A deep copy, so the data-block never shares state with the live module output.
+    // A deep copy, so the data-block never shares state with the live node output.
     selection = { packet: structuredClone(source), warnings: [] };
   } else {
     const handler = captureHandlers[source.kind];
@@ -205,7 +205,7 @@ export function captureDataBlock(request: CaptureRequest): CaptureResult {
     provenance: [
       ...item.provenance,
       {
-        sourceModuleInstance: request.moduleInstance,
+        sourceNodeInstance: request.nodeInstance,
         sourceItemIds: [item.id],
         transformation: 'capture',
         parameters: { dataBlockId: request.id },
@@ -224,7 +224,7 @@ export function captureDataBlock(request: CaptureRequest): CaptureResult {
       createdAt: request.createdAt,
       packet: { ...selection.packet, items },
       origin: {
-        moduleInstance: request.moduleInstance,
+        nodeInstance: request.nodeInstance,
         portId: request.portId,
         ...(itemIds === undefined
           ? {}
@@ -260,7 +260,7 @@ export function duplicateDataBlock(
     provenance: [
       ...item.provenance,
       {
-        sourceModuleInstance: dataBlock.origin?.moduleInstance ?? 'desk',
+        sourceNodeInstance: dataBlock.origin?.nodeInstance ?? 'desk',
         sourceItemIds: [item.id],
         transformation: 'duplicate',
         parameters: { dataBlockId: request.id, sourceDataBlockId: dataBlock.id },
@@ -594,7 +594,7 @@ export function commitDataBlockEdit(
       provenance: [
         ...item.provenance,
         {
-          sourceModuleInstance: dataBlock.origin?.moduleInstance ?? 'desk',
+          sourceNodeInstance: dataBlock.origin?.nodeInstance ?? 'desk',
           sourceItemIds: [item.id],
           transformation: operation,
           parameters: { dataBlockId: dataBlock.id, versionId, change },
@@ -734,7 +734,7 @@ export function createDataBlockFromVersion(
     provenance: [
       ...item.provenance,
       {
-        sourceModuleInstance: dataBlock.origin?.moduleInstance ?? 'desk',
+        sourceNodeInstance: dataBlock.origin?.nodeInstance ?? 'desk',
         sourceItemIds: [item.id],
         transformation: operation,
         parameters: { dataBlockId: request.id, sourceDataBlockId: dataBlock.id, versionId },
@@ -860,7 +860,7 @@ export function convertDataBlockToPitchClass(
       provenance: [
         ...item.provenance,
         {
-          sourceModuleInstance: dataBlock.origin?.moduleInstance ?? 'desk',
+          sourceNodeInstance: dataBlock.origin?.nodeInstance ?? 'desk',
           sourceItemIds: [item.id],
           transformation: 'to-pitch-class',
           parameters: {

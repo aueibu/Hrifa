@@ -1,7 +1,7 @@
 // Leaf module: the stored-key table and the undo classification, so the state store can use them without importing the hook.
 export const compositionStateKeys = {
   activeView: 'hrifa.composition-workbench.ui.active-view.v1',
-  activeCompositionModule: 'hrifa.composition-workbench.ui.active-composition-module.v1',
+  activeCompositionNode: 'hrifa.composition-workbench.ui.active-composition-node.v1',
   compositionInspectorTarget: 'hrifa.composition-workbench.ui.inspector-target.v1',
   editorTarget: 'hrifa.composition-workbench.ui.editor-target.v1',
   compositionInstances: 'hrifa.composition-workbench.ui.instances.v3',
@@ -11,7 +11,7 @@ export const compositionStateKeys = {
   // The project's screensets (layout of the center, per project; one JSON value).
   screensets: 'hrifa.composition-workbench.ui.screensets.v1',
   settingsOpen: 'hrifa.composition-workbench.ui.settings-open.v1',
-  moduleRouteStates: 'hrifa.composition-workbench.routing.module-routes.v1',
+  nodeRouteStates: 'hrifa.composition-workbench.routing.node-routes.v1',
   melodicizationBindings: 'hrifa.composition-workbench.routing.melodicization.v1',
   melodicizationPitchTreatment: 'hrifa.composition-workbench.routing.pitch-treatment.v1',
   melodicizationRhythmTreatment: 'hrifa.composition-workbench.routing.rhythm-treatment.v1',
@@ -97,12 +97,12 @@ export const compositionStateKeys = {
  * Keys whose changes never become undo steps: what is showing (selection, view, scroll, zoom,
  * panels, follow), and preview-only settings (volumes, steps, units, gates, octaves, sounds,
  * audition). Authored content (patterns, values, routes, instances, the desk) is everything else.
- * The classification lives here, beside the key list, not in each module.
+ * The classification lives here, beside the key list, not in each node.
  */
 export const unrecordedStateKeys: ReadonlySet<string> = new Set<string>([
   // Selection, layout and view.
   compositionStateKeys.activeView,
-  compositionStateKeys.activeCompositionModule,
+  compositionStateKeys.activeCompositionNode,
   compositionStateKeys.compositionInspectorTarget,
   compositionStateKeys.editorTarget,
   compositionStateKeys.inspectorOpen,

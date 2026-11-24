@@ -3,9 +3,9 @@ import { midiNoteName } from './interference';
 
 /**
  * Preview sounds. Two global voice sets — one for rhythm previews, one for the metronome — each
- * with a primary, secondary, and tertiary voice. Modules play their layers on these voices in
+ * with a primary, secondary, and tertiary voice. Nodes play their layers on these voices in
  * order (Interference: generator 1 → primary, 2 → secondary, …; Rhythm Householder: input →
- * primary, candidate → secondary), and any module may override a layer with its own sound and
+ * primary, candidate → secondary), and any node may override a layer with its own sound and
  * pitch. Stored with the other global settings (compositionSettings.tsx).
  */
 export type SoundType = 'click' | 'pluck' | 'woodblock' | 'drum' | 'tone';
@@ -77,7 +77,7 @@ export const defaultSoundSettings: SoundSettings = {
 
 export const voiceNames = ['Primary', 'Secondary', 'Tertiary'] as const;
 
-/** A module's own choice for one layer, replacing the global voice. */
+/** A node's own choice for one layer, replacing the global voice. */
 export interface SoundOverride {
   type: SoundType;
   /** Written pitch in MIDI cents. */
@@ -103,7 +103,7 @@ export function voiceSound(set: SoundSet, index: number): SoundOverride {
   return { type: voice.type, midicents: set.baseMidicents + voice.offsetCents };
 }
 
-/** The sound for one layer: the module's override when it has one, else the set's voice. */
+/** The sound for one layer: the node's override when it has one, else the set's voice. */
 export function layerSound(set: SoundSet, index: number, override?: SoundOverride | null) {
   const written = override ?? voiceSound(set, index);
   return resolveSound(written.type, written.midicents);

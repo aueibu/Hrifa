@@ -44,18 +44,18 @@ import {
 } from '../compositionRouting';
 import {
   compositionInstanceLabel,
-  compositionModuleLabels,
-  isAddableModule,
+  compositionNodeLabels,
+  isAddableNode,
   mixerPortLabels,
   type CompositionInspectorTarget,
-  type CompositionModuleId,
-  type CompositionModuleInstance,
-  type ModuleRouteStates,
+  type CompositionNodeId,
+  type CompositionNodeInstance,
+  type NodeRouteStates,
 } from '../compositionWorkspace';
-import { modulePorts } from '../runtime/modulePorts';
+import { nodePorts } from '../runtime/nodePorts';
 import {
   categoryOfInlet,
-  categoryOfModule,
+  categoryOfNode,
   categoryOfPacket,
   signalCategoryColor,
   type SignalCategory,
@@ -67,25 +67,25 @@ import classes from './CompositionCanvas.module.css';
 interface CompositionCanvasProps {
   activeInstanceId: string | null;
   selected: CompositionInspectorTarget;
-  instances: CompositionModuleInstance[];
-  routes: ModuleRouteStates;
+  instances: CompositionNodeInstance[];
+  routes: NodeRouteStates;
   outputs: PublishedCompositionOutput[];
-  onSelectModule(instanceId: string): void;
+  onSelectNode(instanceId: string): void;
   onSelectRoute(instanceId: string, port: string): void;
   onSelectCanvas(): void;
-  onMoveModules(positions: Record<string, CanvasPosition>): void;
+  onMoveNodes(positions: Record<string, CanvasPosition>): void;
   onTidy(positions: Record<string, CanvasPosition>): void;
-  /** Without a position the module takes the first free slot; a position is in canvas coordinates. */
-  onAddModule(moduleId: CompositionModuleId, position?: CanvasPosition): void;
+  /** Without a position the node takes the first free slot; a position is in canvas coordinates. */
+  onAddNode(nodeId: CompositionNodeId, position?: CanvasPosition): void;
 }
 
 interface RouteDescriptor {
   id: string;
-  receiver: CompositionModuleInstance;
+  receiver: CompositionNodeInstance;
   port: string;
   binding: CompositionOutputRef;
   output?: PublishedCompositionOutput;
-  source?: CompositionModuleInstance;
+  source?: CompositionNodeInstance;
   bypassed: boolean;
   summary: string;
   identity: boolean;
@@ -97,7 +97,7 @@ interface PortLabel {
   shortLabel?: string;
 }
 
-// Labels by port id; which ports a module has comes from the module registry's port table.
+// Labels by port id; which ports a node has comes from the node registry's port table.
 const portLabels: Record<string, Omit<PortLabel, 'id'>> = {
   rhythm: { label: 'Rhythm' },
   pitches: { label: 'Pitch' },
@@ -107,15 +107,12 @@ const portLabels: Record<string, Omit<PortLabel, 'id'>> = {
   axis: { label: 'Axis' },
 };
 
-/** A module's inlets: fixed per module, except the mixer, whose channels live in its route state. */
-function inletsFor(
-  moduleId: CompositionModuleId,
-  routeState: ModuleRouteStates[string] | undefined
-) {
-  if (moduleId === 'mixer') {
+/** A node's inlets: fixed per node, except the mixer, whose channels live in its route state. */
+function inletsFor(nodeId: CompositionNodeId, routeState: NodeRouteStates[string] | undefined) {
+  if (nodeId === 'mixer') {
     return mixerPortLabels(routeState);
   }
-  return modulePorts[moduleId]?.map((port) => ({ id: port.id, ...portLabels[port.id] }));
+  return nodePorts[nodeId]?.map((port) => ({ id: port.id, ...portLabels[port.id] }));
 }
 
 function outputFor(outputs: PublishedCompositionOutput[], ref: CompositionOutputRef | undefined) {
@@ -170,10 +167,10 @@ function estimateHandles(inlets: FlowCellPort[], outlets: FlowCellPort[]): NodeH
   return [...place(inlets, 'target'), ...place(outlets, 'source')];
 }
 
-type ModuleNodeData = { cell: Parameters<typeof FlowCell>[0] } & Record<string, unknown>;
-type ModuleNode = Node<ModuleNodeData, 'module'>;
+type NodeCardData = { cell: Parameters<typeof FlowCell>[0] } & Record<string, unknown>;
+type NodeCard = Node<NodeCardData, 'node'>;
 
-const ModuleNodeView = memo(function ModuleNodeView({ data }: NodeProps<ModuleNode>) {
+const NodeCardView = memo(function NodeCardView({ data }: NodeProps<NodeCard>) {
   return <FlowCell {...data.cell} />;
 });
 
@@ -251,10 +248,10 @@ function RouteEdgeView({
   );
 }
 
-const nodeTypes = { module: ModuleNodeView };
+const nodeTypes = { node: NodeCardView };
 const edgeTypes = { route: RouteEdgeView };
 
-/** Modules reachable from `start` following connections forward and backward. */
+/** Nodes reachable from `start` following connections forward and backward. */
 function connectedFlow(start: string, descriptors: RouteDescriptor[]) {
   const reachable = new Set<string>();
   const walk = (from: 'source' | 'receiver') => {
@@ -279,14 +276,14 @@ function connectedFlow(start: string, descriptors: RouteDescriptor[]) {
   return reachable;
 }
 
-function ModuleMenuItems({ onPick }: { onPick(moduleId: CompositionModuleId): void }) {
+function NodeMenuItems({ onPick }: { onPick(nodeId: CompositionNodeId): void }) {
   return (
     <>
-      {(Object.keys(compositionModuleLabels) as CompositionModuleId[])
-        .filter(isAddableModule)
-        .map((moduleId) => (
-          <Menu.Item key={moduleId} onClick={() => onPick(moduleId)}>
-            {compositionModuleLabels[moduleId]}
+      {(Object.keys(compositionNodeLabels) as CompositionNodeId[])
+        .filter(isAddableNode)
+        .map((nodeId) => (
+          <Menu.Item key={nodeId} onClick={() => onPick(nodeId)}>
+            {compositionNodeLabels[nodeId]}
           </Menu.Item>
         ))}
     </>
@@ -299,26 +296,26 @@ function CanvasBody({
   instances,
   routes,
   outputs,
-  onSelectModule,
+  onSelectNode,
   onSelectRoute,
   onSelectCanvas,
-  onMoveModules,
+  onMoveNodes,
   onTidy,
-  onAddModule,
+  onAddNode,
 }: CompositionCanvasProps) {
   const colorScheme = useComputedColorScheme('light');
   const { fitView, screenToFlowPosition } = useReactFlow();
-  // Where a right-click opened the module menu: the screen point for the menu, the canvas point for the card.
+  // Where a right-click opened the node menu: the screen point for the menu, the canvas point for the card.
   const [contextMenu, setContextMenu] = useState<{
     screen: { x: number; y: number };
     canvas: CanvasPosition;
   } | null>(null);
-  // A module placed at a chosen point must stay where it was put, so the re-frame is skipped.
+  // A node placed at a chosen point must stay where it was put, so the re-frame is skipped.
   const keepView = useRef(false);
   const instanceById = new Map(instances.map((instance) => [instance.id, instance]));
   const descriptors: RouteDescriptor[] = instances.flatMap((instance) => {
     const routeState = routes[instance.id];
-    const ports = inletsFor(instance.moduleId, routeState);
+    const ports = inletsFor(instance.nodeId, routeState);
     if (!ports || !routeState) {
       return [];
     }
@@ -351,37 +348,36 @@ function CanvasBody({
             descriptor.receiver.id === selected.instanceId && descriptor.port === selected.port
         )
       : undefined;
-  const flowOfSelectedModule = useMemo(
-    () =>
-      selected.kind === 'module' ? connectedFlow(selected.instanceId, descriptors) : undefined,
+  const flowOfSelectedNode = useMemo(
+    () => (selected.kind === 'node' ? connectedFlow(selected.instanceId, descriptors) : undefined),
     // `descriptors` is rebuilt every render; its content only changes with these inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [selected, instances, routes, outputs]
   );
 
   // Cards: everything FlowCell needs, derived from the same routing state as before.
-  const derivedNodes = useMemo<ModuleNode[]>(() => {
+  const derivedNodes = useMemo<NodeCard[]>(() => {
     return instances.map((instance) => {
       const label = compositionInstanceLabel(instance, instances);
-      const selectedModule = selected.kind === 'module' && selected.instanceId === instance.id;
+      const selectedNode = selected.kind === 'node' && selected.instanceId === instance.id;
       const instanceOutputs = outputs.filter(
         (candidate) => candidate.ref.instanceId === instance.id
       );
       const primaryOutput =
-        instance.moduleId === 'interference'
+        instance.nodeId === 'interference'
           ? instanceOutputs.find((candidate) => candidate.ref.port === 'resultant')
           : instanceOutputs[0];
-      const isMixer = instance.moduleId === 'mixer';
+      const isMixer = instance.nodeId === 'mixer';
       const mixerChannelCount = Object.keys(routes[instance.id] ?? {}).length;
       const subtitle = isMixer
         ? `mix | ${mixerChannelCount} ${mixerChannelCount === 1 ? 'channel' : 'channels'}`
         : primaryOutput
           ? `${primaryOutput.packet.kind} | ${primaryOutput.packet.domain}`
-          : instance.moduleId === 'melodicization'
+          : instance.nodeId === 'melodicization'
             ? 'events | note'
-            : instance.moduleId === 'pitch-list'
+            : instance.nodeId === 'pitch-list'
               ? 'list | pitch'
-              : instance.moduleId === 'arithmetic'
+              : instance.nodeId === 'arithmetic'
                 ? 'list | integer'
                 : 'list | duration';
       const useCount = descriptors.filter(
@@ -391,7 +387,7 @@ function CanvasBody({
         selectedRoute?.receiver.id === instance.id ||
         selectedRoute?.binding.instanceId === instance.id;
       const incoming = descriptors.filter((descriptor) => descriptor.receiver.id === instance.id);
-      // A module producing no output at all is a real problem (red footer bar). A module
+      // A node producing no output at all is a real problem (red footer bar). A node
       // that produced output but has soft notices — e.g. Zip trimming trailing items — is
       // expected/informational, not an error: it gets a small flag on the card's edge
       // instead of hijacking the footer with alarming text.
@@ -400,7 +396,7 @@ function CanvasBody({
       // an empty mix is a problem.
       const footerError = isMixer ? incoming.length === 0 : !primaryOutput;
       const footerDetail = footerError
-        ? 'Connect this module’s required inputs to produce output.'
+        ? 'Connect this node’s required inputs to produce output.'
         : undefined;
       const noticeDetail = footerWarnings.length > 0 ? footerWarnings.join('\n') : undefined;
       const footer = isMixer
@@ -411,20 +407,20 @@ function CanvasBody({
           ? 'Needs inputs'
           : instanceOutputs.length > 1
             ? '' // Multiple valid outputs: no single count is representative.
-            : instance.moduleId === 'pitch-list'
+            : instance.nodeId === 'pitch-list'
               ? `Pitches | ${primaryOutput.packet.items.length}`
-              : instance.moduleId === 'arithmetic'
+              : instance.nodeId === 'arithmetic'
                 ? `Result | ${primaryOutput.packet.items.length}`
-                : instance.moduleId === 'fractioning' ||
-                    instance.moduleId === 'rhythm-list' ||
-                    instance.moduleId === 'rhythm-edit'
+                : instance.nodeId === 'fractioning' ||
+                    instance.nodeId === 'rhythm-list' ||
+                    instance.nodeId === 'rhythm-edit'
                   ? `Durations | ${primaryOutput.packet.items.length}`
-                  : instance.moduleId === 'data-block-source'
+                  : instance.nodeId === 'data-block-source'
                     ? `${primaryOutput.packet.kind} | ${primaryOutput.packet.items.length}`
                     : `Notes | ${primaryOutput.packet.items.length}`;
       const selectRoute = (descriptor: RouteDescriptor) =>
         onSelectRoute(descriptor.receiver.id, descriptor.port);
-      const inlets: FlowCellPort[] = (inletsFor(instance.moduleId, routes[instance.id]) ?? []).map(
+      const inlets: FlowCellPort[] = (inletsFor(instance.nodeId, routes[instance.id]) ?? []).map(
         ({ id: port, label: portName, shortLabel }) => {
           const descriptor = incoming.find((candidate) => candidate.port === port);
           if (!descriptor) {
@@ -434,7 +430,7 @@ function CanvasBody({
               shortLabel: shortLabel ?? portName[0],
               ariaLabel: `${portName} input | unconnected`,
               unavailable: true,
-              category: categoryOfInlet(instance.moduleId, port),
+              category: categoryOfInlet(instance.nodeId, port),
             };
           }
           return {
@@ -453,7 +449,7 @@ function CanvasBody({
               selected.port === descriptor.port,
             bypassed: descriptor.bypassed,
             unavailable: !descriptor.output,
-            category: categoryOfInlet(instance.moduleId, port),
+            category: categoryOfInlet(instance.nodeId, port),
             onClick: () => selectRoute(descriptor),
           };
         }
@@ -469,12 +465,12 @@ function CanvasBody({
         selected:
           selectedRoute?.binding.instanceId === instance.id &&
           selectedRoute.binding.port === candidate.ref.port,
-        onClick: () => onSelectModule(instance.id),
+        onClick: () => onSelectNode(instance.id),
       }));
 
       return {
         id: instance.id,
-        type: 'module',
+        type: 'node',
         position: { x: instance.x, y: instance.y },
         initialWidth: NODE_WIDTH,
         initialHeight: NODE_HEIGHT,
@@ -482,7 +478,7 @@ function CanvasBody({
         data: {
           cell: {
             title: label,
-            category: categoryOfModule(instance.moduleId),
+            category: categoryOfNode(instance.nodeId),
             subtitle,
             footer,
             footerDetail,
@@ -492,20 +488,20 @@ function CanvasBody({
             outlets,
             instanceId: instance.id,
             active: activeInstanceId === instance.id,
-            selected: selectedModule,
+            selected: selectedNode,
             flowActive: participatesInSelectedFlow,
-            onSelect: () => onSelectModule(instance.id),
+            onSelect: () => onSelectNode(instance.id),
           },
         },
       };
     });
     // `descriptors` and `selectedRoute` derive from these inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [instances, routes, outputs, selected, activeInstanceId, onSelectModule, onSelectRoute]);
+  }, [instances, routes, outputs, selected, activeInstanceId, onSelectNode, onSelectRoute]);
 
   // React Flow needs to own each node's measured size and drag state between renders, so the nodes
   // live in local state and are re-synced from the derived cards whenever routing state changes.
-  const [nodes, setNodes] = useState<ModuleNode[]>(derivedNodes);
+  const [nodes, setNodes] = useState<NodeCard[]>(derivedNodes);
   useEffect(() => {
     setNodes((previous) => {
       const byId = new Map(previous.map((node) => [node.id, node]));
@@ -514,7 +510,7 @@ function CanvasBody({
         if (!old) {
           return node;
         }
-        const next: ModuleNode = {
+        const next: NodeCard = {
           ...node,
           measured: old.measured,
           selected: old.selected,
@@ -530,7 +526,7 @@ function CanvasBody({
     });
   }, [derivedNodes]);
 
-  const onNodesChange = useCallback((changes: NodeChange<ModuleNode>[]) => {
+  const onNodesChange = useCallback((changes: NodeChange<NodeCard>[]) => {
     setNodes((current) =>
       applyNodeChanges(changes, current).map((node) => {
         if (node.measured?.width && node.handles) {
@@ -551,7 +547,7 @@ function CanvasBody({
         const receiverLabel = compositionInstanceLabel(descriptor.receiver, instances);
         const sourceLabel = descriptor.output.label;
         const portName =
-          inletsFor(descriptor.receiver.moduleId, routes[descriptor.receiver.id])?.find(
+          inletsFor(descriptor.receiver.nodeId, routes[descriptor.receiver.id])?.find(
             (candidate) => candidate.id === descriptor.port
           )?.label ?? descriptor.port;
         const isSelected =
@@ -572,8 +568,8 @@ function CanvasBody({
               selected: isSelected,
               muted: descriptor.bypassed,
               related: Boolean(
-                flowOfSelectedModule?.has(descriptor.receiver.id) &&
-                flowOfSelectedModule.has(descriptor.source.id)
+                flowOfSelectedNode?.has(descriptor.receiver.id) &&
+                flowOfSelectedNode.has(descriptor.source.id)
               ),
               badge: descriptor.identity ? null : descriptor.summary,
               category: categoryOfPacket(descriptor.output.packet),
@@ -584,10 +580,10 @@ function CanvasBody({
       }),
     // `descriptors` derives from these inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [instances, routes, outputs, selected, flowOfSelectedModule, onSelectRoute]
+    [instances, routes, outputs, selected, flowOfSelectedNode, onSelectRoute]
   );
 
-  // Frame the patch whenever modules are added or removed, so a new card is never off-screen.
+  // Frame the node tree whenever nodes are added or removed, so a new card is never off-screen.
   const instanceCount = useRef(instances.length);
   useEffect(() => {
     if (instanceCount.current !== instances.length) {
@@ -615,7 +611,7 @@ function CanvasBody({
         aria-label="Composition canvas"
         data-multi-selection={nodes.filter((node) => node.selected).length > 1 || undefined}
       >
-        <ReactFlow<ModuleNode, RouteEdge>
+        <ReactFlow<NodeCard, RouteEdge>
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -623,7 +619,7 @@ function CanvasBody({
           onNodesChange={onNodesChange}
           // `dragged` holds every card that moved, so a multi-selection lands together.
           onNodeDragStop={(_event, _node, dragged) =>
-            onMoveModules(
+            onMoveNodes(
               Object.fromEntries(
                 dragged.map((node) => [
                   node.id,
@@ -658,7 +654,7 @@ function CanvasBody({
           nodesConnectable={false}
           // Ctrl/Cmd-click adds to the selection and Shift-drag box-selects; dragging any
           // selected card moves the whole group. Delete must not drop cards from the canvas
-          // while leaving their modules in the patch.
+          // while leaving their nodes in the node tree.
           multiSelectionKeyCode={['Control', 'Meta']}
           deleteKeyCode={null}
           nodesFocusable={false}
@@ -677,17 +673,17 @@ function CanvasBody({
           <Panel position="bottom-left" className={classes.tools}>
             <Menu position="top-start" withinPortal>
               <Menu.Target>
-                <Button variant="light">Add module</Button>
+                <Button variant="light">Add node</Button>
               </Menu.Target>
               <Menu.Dropdown>
-                <ModuleMenuItems onPick={(moduleId) => onAddModule(moduleId)} />
+                <NodeMenuItems onPick={(nodeId) => onAddNode(nodeId)} />
               </Menu.Dropdown>
             </Menu>
             <Button
               variant="default"
               disabled={instances.length === 0}
               onClick={handleTidy}
-              title="Rearrange modules top to bottom by signal flow. Connections are not changed."
+              title="Rearrange nodes top to bottom by signal flow. Connections are not changed."
             >
               Tidy
             </Button>
@@ -709,12 +705,12 @@ function CanvasBody({
           />
         </Menu.Target>
         <Menu.Dropdown>
-          <Menu.Label>Add module here</Menu.Label>
-          <ModuleMenuItems
-            onPick={(moduleId) => {
+          <Menu.Label>Add node here</Menu.Label>
+          <NodeMenuItems
+            onPick={(nodeId) => {
               if (contextMenu) {
                 keepView.current = true;
-                onAddModule(moduleId, contextMenu.canvas);
+                onAddNode(nodeId, contextMenu.canvas);
               }
             }}
           />

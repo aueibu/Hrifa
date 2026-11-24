@@ -37,8 +37,8 @@ function InspectorHarness() {
       outputs={[]}
       instances={[]}
       routes={{}}
-      onRemoveModule={() => undefined}
-      onModuleSlot={() => undefined}
+      onRemoveNode={() => undefined}
+      onNodeSlot={() => undefined}
       onRouteTreatment={() => undefined}
     />
   );

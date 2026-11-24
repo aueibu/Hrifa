@@ -433,9 +433,7 @@ describe('rotate in time (bounded, circular)', () => {
 
   it('a chord split carries all its pitches, velocity and provenance to the wrapped piece', () => {
     const chord = item('k', 3.5, 1, [6000, 6400], 0.7);
-    chord.provenance = [
-      { sourceModuleInstance: 'm', sourceItemIds: ['s'], transformation: 'edit' },
-    ];
+    chord.provenance = [{ sourceNodeInstance: 'm', sourceItemIds: ['s'], transformation: 'edit' }];
     const after = ok(rotateInTime(frozenWith([chord]), none, 1, 1));
     // 4.5..5.5 stays whole (no crossing at 8): use a shift that crosses instead.
     expect(after.items).toHaveLength(1);
@@ -1280,7 +1278,7 @@ describe('copy and paste', () => {
     const source = base();
     source.items[2] = {
       ...source.items[2],
-      provenance: [{ sourceModuleInstance: 'm', sourceItemIds: ['q'], transformation: 'edit' }],
+      provenance: [{ sourceNodeInstance: 'm', sourceItemIds: ['q'], transformation: 'edit' }],
     };
     const copied = copyToClipboard(source, notes(['c', 'b']));
     if (!copied.ok) {
@@ -1363,7 +1361,7 @@ describe('copy and paste', () => {
     const source = base();
     source.items[0] = {
       ...source.items[0],
-      provenance: [{ sourceModuleInstance: 'm', sourceItemIds: ['q'], transformation: 'edit' }],
+      provenance: [{ sourceNodeInstance: 'm', sourceItemIds: ['q'], transformation: 'edit' }],
     };
     const copied = copyToClipboard(source, notes(['a']));
     if (!copied.ok) {

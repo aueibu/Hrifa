@@ -223,7 +223,7 @@ describe('compositionRouting', () => {
       expect(options).toEqual([]);
     });
 
-    it('excludes outputs from the requesting module itself', () => {
+    it('excludes outputs from the requesting node itself', () => {
       const options = compositionOutputOptions([listOutput()], 'if', () => true);
       expect(options).toEqual([]);
     });

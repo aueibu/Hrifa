@@ -31,7 +31,7 @@
   width: fit-content;
 }
 
-/* Messages from a module: small, with a colored edge, at the top of its controls. */
+/* Messages from a node: small, with a colored edge, at the top of its controls. */
 .notices {
   display: flex;
   flex-direction: column;

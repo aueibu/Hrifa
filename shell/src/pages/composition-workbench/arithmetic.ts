@@ -307,7 +307,7 @@ export function computeArithmetic({
         ...aItem.provenance,
         ...(isUnary ? [] : bItem.provenance),
         {
-          sourceModuleInstance: instanceId,
+          sourceNodeInstance: instanceId,
           sourceItemIds: isUnary ? [aItem.id] : [aItem.id, bItem.id],
           transformation: operator,
         },

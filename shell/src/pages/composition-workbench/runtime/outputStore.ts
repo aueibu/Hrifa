@@ -5,15 +5,15 @@ import {
 } from '../compositionRouting';
 
 /**
- * The published outputs of every module instance, outside React. A module publishes the outputs it
- * computes; a routed module, the canvas and the inspector read them. Keeping them here (not in a
+ * The published outputs of every node instance, outside React. A node publishes the outputs it
+ * computes; a routed node, the canvas and the inspector read them. Keeping them here (not in a
  * page `useState`) means a publish notifies only the subscribers that read outputs, instead of
- * re-rendering the page and every module.
+ * re-rendering the page and every node.
  */
 export interface OutputStore {
   /** Replaces one instance's outputs. Notifies only when a packet or label really changed. */
   publish(instanceId: string, outputs: PublishedCompositionOutput[]): void;
-  /** Drops the outputs of every instance not in the list (an undone add, a removed module). */
+  /** Drops the outputs of every instance not in the list (an undone add, a removed node). */
   prune(liveInstanceIds: Iterable<string>): void;
   /** The output behind a ref, looked up by `outputRefKey` (a bank-entry index is part of the key). */
   get(ref: CompositionOutputRef): PublishedCompositionOutput | undefined;

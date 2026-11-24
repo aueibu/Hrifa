@@ -20,7 +20,7 @@ describe('decibel fader', () => {
   });
 });
 
-describe('shared module volume', () => {
+describe('shared node volume', () => {
   it('maps the fader from silence to unity with a logarithmic dB readout', () => {
     expect(volumePercentToGain(0)).toBe(0);
     expect(volumePercentToGain(25)).toBe(0.25);

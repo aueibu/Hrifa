@@ -1,7 +1,7 @@
 /**
  * Horizontal zoom for the rhythm roll. Zoom changes only how wide a pulse is drawn; row heights are
  * fixed, so the vertical scale never changes. The roll is sized so its shortest note is `cellWidth`
- * px across (see RhythmEditModule), which makes `cellWidth` the one number zoom changes.
+ * px across (see RhythmEditNode), which makes `cellWidth` the one number zoom changes.
  */
 
 export const DEFAULT_CELL_WIDTH = 30;

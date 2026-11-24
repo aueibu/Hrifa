@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PublishedCompositionOutput } from '../../compositionRouting';
-import { createDefaultModuleRouteState } from '../../compositionWorkspace';
+import { createDefaultNodeRouteState } from '../../compositionWorkspace';
 import {
   householderCandidatesPacket,
   householderSelectedPacket,
@@ -26,8 +26,8 @@ import { packet } from '../../model';
 import { editRhythm } from '../../rhythmEdit';
 import { signalTypeRegistry } from '../../signalTypes';
 import { createMemo } from '../memo';
-import { moduleEvaluators } from '../moduleEvaluators';
-import { modulePorts } from '../modulePorts';
+import { nodeEvaluators } from '../nodeEvaluators';
+import { nodePorts } from '../nodePorts';
 import {
   computeHouseholder,
   defaultHouseholderSettings,
@@ -248,10 +248,10 @@ const unrelatedOutput: PublishedCompositionOutput = {
 };
 
 function boundState(
-  moduleId: 'rhythm-householder' | 'rhythm-edit',
+  nodeId: 'rhythm-householder' | 'rhythm-edit',
   bindings: Record<string, { instanceId: string; port: string }>
 ) {
-  const state = createDefaultModuleRouteState(modulePorts[moduleId] ?? []);
+  const state = createDefaultNodeRouteState(nodePorts[nodeId] ?? []);
   for (const [port, source] of Object.entries(bindings)) {
     state[port] = { ...state[port], source };
   }
@@ -262,7 +262,7 @@ const sourceRef = { instanceId: sourceCtx.instanceId, port: 'rhythm' };
 
 describe('evaluateHouseholder', () => {
   const ctx = { instanceId: 'householder-1', instanceLabel: 'Rhythm Householder 1', edo: 12 };
-  const unbound = createDefaultModuleRouteState(modulePorts['rhythm-householder'] ?? []);
+  const unbound = createDefaultNodeRouteState(nodePorts['rhythm-householder'] ?? []);
   const bound = boundState('rhythm-householder', { rhythm: sourceRef });
   const state = { settings: defaultHouseholderSettings, selectedIndex: 0 };
 
@@ -462,7 +462,7 @@ describe('evaluateHouseholder', () => {
 
 describe('evaluateRhythmEdit', () => {
   const ctx = { instanceId: 'rhythm-edit-1', instanceLabel: 'Rhythm Edit 1', edo: 12 };
-  const unbound = createDefaultModuleRouteState(modulePorts['rhythm-edit'] ?? []);
+  const unbound = createDefaultNodeRouteState(nodePorts['rhythm-edit'] ?? []);
   const bound = boundState('rhythm-edit', { rhythm: sourceRef });
   const editSettings: EditSettings = {
     programPhase: 0,
@@ -600,15 +600,15 @@ describe('evaluateRhythmEdit', () => {
   });
 });
 
-describe('moduleEvaluators table (batch 3)', () => {
-  it('registers the four batch 3 modules', () => {
+describe('nodeEvaluators table (batch 3)', () => {
+  it('registers the four batch 3 nodes', () => {
     for (const id of [
       'interference',
       'swirling-mists',
       'rhythm-householder',
       'rhythm-edit',
     ] as const) {
-      expect(moduleEvaluators[id]).toBeDefined();
+      expect(nodeEvaluators[id]).toBeDefined();
     }
   });
 });

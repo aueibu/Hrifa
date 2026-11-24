@@ -41,7 +41,7 @@ vi.mock('./audio/AudioEngineProvider', () => ({
   useAudioEngine: () => ({ stopAll }),
 }));
 
-const moduleKey = 'hrifa.composition-workbench.fractioning.a.v1';
+const nodeKey = 'hrifa.composition-workbench.fractioning.a.v1';
 const extraKey = 'hrifa.composition-workbench.interference.generators.v1.instance.x';
 
 function notes(count: number, shift = 0): DataItem[] {
@@ -95,21 +95,21 @@ afterEach(() => {
 
 describe('workbench state helpers', () => {
   it('captures only workbench entries', () => {
-    localStorage.setItem(moduleKey, '5');
+    localStorage.setItem(nodeKey, '5');
     localStorage.setItem('hrifa.other-page.v1', 'x');
     localStorage.setItem(currentProjectKey, '{}');
-    expect(captureWorkbenchState()).toEqual({ [moduleKey]: '5' });
+    expect(captureWorkbenchState()).toEqual({ [nodeKey]: '5' });
   });
 
   it('restores exactly the project, removing entries added since, and can keep settings', () => {
     localStorage.setItem(settingsKey, '{"edo":12}');
-    localStorage.setItem(moduleKey, '5');
+    localStorage.setItem(nodeKey, '5');
     const project = createProject('A', null);
     localStorage.setItem(settingsKey, '{"edo":19}');
-    localStorage.setItem(moduleKey, '7');
+    localStorage.setItem(nodeKey, '7');
     localStorage.setItem(extraKey, '[]');
     restoreWorkbenchState(project.entries, { includeSettings: false });
-    expect(localStorage.getItem(moduleKey)).toBe('5');
+    expect(localStorage.getItem(nodeKey)).toBe('5');
     expect(localStorage.getItem(extraKey)).toBeNull();
     expect(localStorage.getItem(settingsKey)).toBe('{"edo":19}');
     restoreWorkbenchState(project.entries, { includeSettings: true });
@@ -123,12 +123,12 @@ describe('workbench state helpers', () => {
   it('round-trips through a file with fresh ids, only workbench keys and the desk', () => {
     const project = {
       ...createProject('A', [dataBlock('a')]),
-      entries: { [moduleKey]: '5', 'evil.key': 'x' },
+      entries: { [nodeKey]: '5', 'evil.key': 'x' },
     };
     const [imported] = parseProjectFile(projectFileText([project]));
     expect(imported.name).toBe('A');
     expect(imported.id).not.toBe(project.id);
-    expect(imported.entries).toEqual({ [moduleKey]: '5' });
+    expect(imported.entries).toEqual({ [nodeKey]: '5' });
     expect(imported.desk).toEqual([dataBlock('a')]);
   });
 
@@ -151,7 +151,7 @@ describe('saving and opening a project', () => {
     act(() => first.result.current.addDataBlock(dataBlock('b')));
     act(() => edit(first.result.current, 'a', 1));
     act(() => edit(first.result.current, 'a', 2));
-    localStorage.setItem(moduleKey, '5');
+    localStorage.setItem(nodeKey, '5');
     const saved = plain(first.result.current.dataBlocks);
     expect(saved[0].lineage!.versions).toHaveLength(3);
 
@@ -163,12 +163,12 @@ describe('saving and opening a project', () => {
     expect(result.ok).toBe(true);
     const [listed] = await listProjects();
     expect(listed).toMatchObject({ name: 'Alpha', hasDesk: true });
-    expect(listed.entries).toEqual({ [moduleKey]: '5' });
+    expect(listed.entries).toEqual({ [nodeKey]: '5' });
     // The desk drifts after the save, and a fresh page loads that drifted desk.
     act(() => first.result.current.addDataBlock(dataBlock('drifted')));
     act(() => first.result.current.removeDataBlock('a'));
     first.unmount();
-    localStorage.setItem(moduleKey, '9');
+    localStorage.setItem(nodeKey, '9');
     const second = await renderDesk();
     expect(second.result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual([
       'b',
@@ -183,7 +183,7 @@ describe('saving and opening a project', () => {
       });
     });
     expect(opened?.ok).toBe(true);
-    expect(localStorage.getItem(moduleKey)).toBe('5');
+    expect(localStorage.getItem(nodeKey)).toBe('5');
     // The page on screen is left alone until the reload.
     expect(second.result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual([
       'b',
@@ -234,16 +234,16 @@ describe('saving and opening a project', () => {
   it('leaves the desk alone when a project holds none (saved while the desk was unreadable)', async () => {
     const { result } = await renderDesk();
     act(() => result.current.addDataBlock(dataBlock('stay')));
-    localStorage.setItem(moduleKey, '5');
+    localStorage.setItem(nodeKey, '5');
     const saved = await saveProject({ name: 'No desk', existing: null, desk: null });
     if (!saved.ok) {
       throw new Error(saved.error);
     }
-    localStorage.setItem(moduleKey, '9');
+    localStorage.setItem(nodeKey, '9');
     await act(async () => {
       await openProject({ id: saved.project.id, desk: result.current, includeSettings: true });
     });
-    expect(localStorage.getItem(moduleKey)).toBe('5');
+    expect(localStorage.getItem(nodeKey)).toBe('5');
     expect(result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['stay']);
   });
 });
@@ -253,7 +253,7 @@ describe('a failed or refused open', () => {
     const rendered = await renderDesk();
     act(() => rendered.result.current.addDataBlock(dataBlock('now')));
     await storedDesk(rendered.result.current);
-    localStorage.setItem(moduleKey, '9');
+    localStorage.setItem(nodeKey, '9');
     const saved = await saveProject({
       name: 'Other',
       existing: null,
@@ -263,9 +263,7 @@ describe('a failed or refused open', () => {
       throw new Error(saved.error);
     }
     // The project's own key value differs from what is live.
-    await putProjects([
-      { ...(await getProject(saved.project.id))!, entries: { [moduleKey]: '5' } },
-    ]);
+    await putProjects([{ ...(await getProject(saved.project.id))!, entries: { [nodeKey]: '5' } }]);
     return { ...rendered, id: saved.project.id };
   }
 
@@ -274,7 +272,7 @@ describe('a failed or refused open', () => {
     result: Awaited<ReturnType<typeof openProject>> | undefined
   ) {
     expect(result?.ok).toBe(false);
-    expect(localStorage.getItem(moduleKey)).toBe('9');
+    expect(localStorage.getItem(nodeKey)).toBe('9');
     expect(rendered.result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['now']);
     expect((await loadDesk()).dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['now']);
   }
@@ -317,7 +315,7 @@ describe('a failed or refused open', () => {
       });
     });
     expect(result?.ok).toBe(false);
-    expect(localStorage.getItem(moduleKey)).toBe('9');
+    expect(localStorage.getItem(nodeKey)).toBe('9');
     expect(rendered.result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['now']);
     expect((await loadDesk()).dataBlocks.map((dataBlock) => dataBlock.id)).toEqual([
       'now',
@@ -353,7 +351,7 @@ describe('a failed or refused open', () => {
       key: string,
       value: string
     ) {
-      if (key === moduleKey && value === '5') {
+      if (key === nodeKey && value === '5') {
         throw new DOMException('full', 'QuotaExceededError');
       }
       return real.call(this, key, value);
@@ -380,17 +378,15 @@ describe('the page closing for a reload', () => {
     if (!saved.ok) {
       throw new Error(saved.error);
     }
-    await putProjects([
-      { ...(await getProject(saved.project.id))!, entries: { [moduleKey]: '5' } },
-    ]);
-    localStorage.setItem(moduleKey, '9');
+    await putProjects([{ ...(await getProject(saved.project.id))!, entries: { [nodeKey]: '5' } }]);
+    localStorage.setItem(nodeKey, '9');
     return { ...rendered, id: saved.project.id };
   }
 
   it('after a successful open, later writes and recorded changes leave storage and the count alone', async () => {
     const rendered = await openSeeded();
     const hook = renderHook(() =>
-      usePersistentState(moduleKey, '9', (value): value is string => typeof value === 'string')
+      usePersistentState(nodeKey, '9', (value): value is string => typeof value === 'string')
     );
     const before = historyChangeCount();
     await act(async () => {
@@ -402,15 +398,15 @@ describe('the page closing for a reload', () => {
       expect(result.ok).toBe(true);
     });
     expect(isReloading()).toBe(true);
-    expect(localStorage.getItem(moduleKey)).toBe('5');
+    expect(localStorage.getItem(nodeKey)).toBe('5');
     // The old page keeps running: a state write, a recorded change and a desk edit.
     act(() => hook.result.current[1]('stale'));
-    recordChange({ key: moduleKey, previous: '"a"', next: '"b"' });
+    recordChange({ key: nodeKey, previous: '"a"', next: '"b"' });
     act(() => rendered.result.current.addDataBlock(dataBlock('late')));
     await act(async () => {
       await rendered.result.current.flushDesk();
     });
-    expect(localStorage.getItem(moduleKey)).toBe('5');
+    expect(localStorage.getItem(nodeKey)).toBe('5');
     expect(historyChangeCount()).toBe(before);
     // The reload reads the project's desk, not the stale one.
     expect((await loadDesk()).dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['then']);
@@ -484,7 +480,7 @@ describe('the page closing for a reload', () => {
       key: string,
       value: string
     ) {
-      if (key === moduleKey && value === '5') {
+      if (key === nodeKey && value === '5') {
         throw new DOMException('full', 'QuotaExceededError');
       }
       return realSet.call(this, key, value);
@@ -529,18 +525,18 @@ describe('ProjectMenu', () => {
     const { desk, reload } = renderMenu();
     await waitFor(() => expect(desk().loading).toBe(false));
     act(() => desk().addDataBlock(dataBlock('a')));
-    localStorage.setItem(moduleKey, '5');
+    localStorage.setItem(nodeKey, '5');
     await user.click(screen.getByRole('button', { name: 'Projects' }));
     await saveAs(user, 'Test A');
     expect(screen.getByText(/Current project: Test A$/)).toBeInTheDocument();
     expect(readCurrentProject()).toEqual({ id: expect.any(String), name: 'Test A', dirty: false });
 
-    localStorage.setItem(moduleKey, '9');
+    localStorage.setItem(nodeKey, '9');
     await user.click(await screen.findByRole('button', { name: 'Open project Test A' }));
     await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
     expect(screen.queryByRole('dialog', { name: 'Unsaved changes' })).toBeNull();
     expect(stopAll).toHaveBeenCalled();
-    expect(localStorage.getItem(moduleKey)).toBe('5');
+    expect(localStorage.getItem(nodeKey)).toBe('5');
   });
 
   it.each([
@@ -585,7 +581,7 @@ describe('ProjectMenu', () => {
 
   it('never captures the developer option in a project', async () => {
     localStorage.setItem(DEVELOPER_OPTIONS_KEY, '{"openIncludesSettings":false}');
-    localStorage.setItem(moduleKey, '1');
+    localStorage.setItem(nodeKey, '1');
     const captured = captureWorkbenchState();
     expect(Object.keys(captured)).not.toContain(DEVELOPER_OPTIONS_KEY);
   });

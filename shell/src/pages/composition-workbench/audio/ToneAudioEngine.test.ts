@@ -164,7 +164,7 @@ describe('ToneAudioEngine', () => {
     engine.dispose();
   });
 
-  it('replaces only an earlier session from the same module source', async () => {
+  it('replaces only an earlier session from the same node source', async () => {
     const fake = createFakeTone();
     const engine = new ToneAudioEngine(async () => fake.tone as never);
     const pitch = await engine.play({ plan: plan('pitch-list') });

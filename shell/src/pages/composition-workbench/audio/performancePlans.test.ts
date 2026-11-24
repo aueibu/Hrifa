@@ -14,7 +14,7 @@ describe('performance-plan compilation', () => {
   it('turns a pitch list into timed, provenance-preserving audition events', () => {
     const provenance = [
       {
-        sourceModuleInstance: 'pitch-list',
+        sourceNodeInstance: 'pitch-list',
         sourceItemIds: ['inline:0'],
         transformation: 'read-as-midicent',
       },

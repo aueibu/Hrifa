@@ -3,18 +3,18 @@ import type { NoteSelection } from './noteSelection';
 
 /**
  * The read-only selection chain (design one-stage 7.4): `[note-or-time selection, data-block,
- * module-or-canvas]`, derived from the three stored shapes (the editor's note selection, the page's
+ * node-or-canvas]`, derived from the three stored shapes (the editor's note selection, the page's
  * `editorTarget`, the page's inspector target). The stored shapes and their semantics do not
  * change; the chain only makes consumers independent of where each part lives.
  */
 export type WorkbenchSelectionNode =
   | { level: 'note'; dataBlockId: string; selection: NoteSelection }
   | { level: 'data-block'; dataBlockId: string }
-  | { level: 'module'; instanceId: string }
+  | { level: 'node'; instanceId: string }
   | { level: 'route'; instanceId: string; port: string }
   | { level: 'canvas' };
 
-/** Most specific first; always ends with a module, route or the canvas (the project). */
+/** Most specific first; always ends with a node, route or the canvas (the project). */
 export type WorkbenchSelectionChain = readonly WorkbenchSelectionNode[];
 
 export interface SelectionChainInputs {
@@ -42,8 +42,8 @@ export function buildSelectionChain({
     }
     chain.push({ level: 'data-block', dataBlockId });
   }
-  if (inspectorTarget?.kind === 'module') {
-    chain.push({ level: 'module', instanceId: inspectorTarget.instanceId });
+  if (inspectorTarget?.kind === 'node') {
+    chain.push({ level: 'node', instanceId: inspectorTarget.instanceId });
   } else if (inspectorTarget?.kind === 'route') {
     chain.push({
       level: 'route',
@@ -57,7 +57,7 @@ export function buildSelectionChain({
 }
 
 /**
- * One step up: note to data-block, data-block to the module-or-canvas it sits under, a module or route to the
+ * One step up: note to data-block, data-block to the node-or-canvas it sits under, a node or route to the
  * canvas (the project), the canvas to null.
  */
 export function parentSelection(

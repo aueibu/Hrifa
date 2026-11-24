@@ -170,7 +170,7 @@ export function scaleSequencePacket(sequence: ScaleSequence, sourceId: string): 
     value,
     provenance: [
       {
-        sourceModuleInstance: sourceId,
+        sourceNodeInstance: sourceId,
         sourceItemIds: [],
         transformation: 'scale-construction',
         parameters: { intervals: sequence.intervals, index },
@@ -199,7 +199,7 @@ export function melodicFormsPacket(
         label: form.values.join('+'),
         provenance: [
           {
-            sourceModuleInstance: sourceId,
+            sourceNodeInstance: sourceId,
             sourceItemIds: [],
             transformation: mode === 'circular' ? 'circular-permutation' : 'general-permutation',
             parameters: { intervals, mode, index, family: family.cycle, shift: form.shift },
@@ -259,7 +259,7 @@ export function scalePitchClassPacket(
     label: pitchClassName(pitchClass, edo),
     provenance: [
       {
-        sourceModuleInstance: sourceId,
+        sourceNodeInstance: sourceId,
         sourceItemIds: [],
         transformation: 'realize-scale',
         parameters: { intervals, root, degree: index },

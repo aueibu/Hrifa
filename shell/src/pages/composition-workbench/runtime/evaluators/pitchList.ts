@@ -41,7 +41,7 @@ export function computePitchList(
       index,
       [
         {
-          sourceModuleInstance: instanceId,
+          sourceNodeInstance: instanceId,
           sourceItemIds: [],
           transformation: 'select-forte-set',
           parameters: {

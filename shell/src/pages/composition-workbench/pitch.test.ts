@@ -125,7 +125,7 @@ describe('pitch-list interpretation', () => {
       inlineProvenance: {
         '1': [
           {
-            sourceModuleInstance: 'pitch-list',
+            sourceNodeInstance: 'pitch-list',
             sourceItemIds: [],
             transformation: 'select-forte-set',
             parameters: { forteNumber: '3-11', transposition: 0, inverted: false },

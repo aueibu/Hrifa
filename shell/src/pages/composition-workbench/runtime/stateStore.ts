@@ -5,7 +5,7 @@ import { isRecordedStateKey } from '../stateKeys';
 /**
  * The keyed store that owns every persisted workbench value (R3a). `usePersistentState` is a thin
  * hook over it. A key is created on first use and stays alive after its last hook unmounts, so undo
- * and redo reach a module whose view is not mounted. A key is released when its module is deleted:
+ * and redo reach a node whose view is not mounted. A key is released when its node is deleted:
  * the delete removes the stored value, and the next time the last hook of that key goes away the
  * store sees the missing storage entry and drops it (`releaseIfRemoved`). A project open reloads
  * the page (a fresh store); a key read again after storage changed underneath it is re-read.
@@ -36,7 +36,7 @@ interface Entry {
   /** A storage write failed: the store is the only copy, never reload from storage. */
   unsynced: boolean;
   /**
-   * The key belongs to a deleted module instance (see `deleteState`): the entry may live in memory
+   * The key belongs to a deleted node instance (see `deleteState`): the entry may live in memory
    * (a render that was already under way) but never writes storage or history, so nothing late can
    * bring the deleted state back. An undo that restores the storage value clears it.
    */
@@ -206,7 +206,7 @@ export function subscribeState<T>(
 /**
  * Writes the current value to storage once a hook has mounted (the initial value persists too).
  * A mounted hook means the instance is live, so a key flagged as deleted is live again: only a
- * render that never committed (a late one while the module was being deleted) stays detached.
+ * render that never committed (a late one while the node was being deleted) stays detached.
  */
 export function persistState(key: string) {
   deletedKeys.delete(key);
@@ -242,7 +242,7 @@ export function setState<T>(key: string, action: Action<T>, options?: StateSetOp
   }
 }
 
-/** Drops a key (its applier and value). Called when its module instance is deleted. */
+/** Drops a key (its applier and value). Called when its node instance is deleted. */
 export function releaseState(key: string) {
   const entry = entries.get(key);
   if (entry) {
@@ -252,7 +252,7 @@ export function releaseState(key: string) {
 }
 
 /**
- * A module instance was deleted: drops its keys and keeps them from being written again until an
+ * A node instance was deleted: drops its keys and keeps them from being written again until an
  * undo restores the storage value. Call it after the stored value was removed (and recorded), so a
  * late `set` or a render that re-creates the key cannot write storage back and resurrect it.
  */

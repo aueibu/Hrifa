@@ -150,7 +150,7 @@ describe('the page mounts WorkbenchSessions', () => {
     act(() => {
       chordSession().setAnchor({ pitchMidicents: 6000, start: 0, step: 1 });
     });
-    // Selecting a module (the canvas screenset) clears the data-block target and unmounts the editor.
+    // Selecting a node (the canvas screenset) clears the data-block target and unmounts the editor.
     await user.click(screen.getByRole('tab', { name: 'Canvas' }));
     await user.click(
       within(screen.getByLabelText('Composition canvas')).getByRole('button', {
@@ -162,18 +162,18 @@ describe('the page mounts WorkbenchSessions', () => {
     expect(dataBlockSession().openDataBlockId).toBeNull();
   }, 20_000);
 
-  it('useWorkbenchSelection resolves the live module, data-block and note targets', async () => {
+  it('useWorkbenchSelection resolves the live node, data-block and note targets', async () => {
     const user = userEvent.setup();
     await seed();
     render(<CompositionWorkbenchPage />);
     await screen.findByDisplayValue('Alpha');
-    // No data-block open: the stored module target (the default Interference module).
-    expect(selection()?.chain.map((node) => node.level)).toEqual(['module']);
-    expect(selection()?.chain[0]).toMatchObject({ level: 'module', instanceId: 'interference' });
+    // No data-block open: the stored node target (the default Interference node).
+    expect(selection()?.chain.map((node) => node.level)).toEqual(['node']);
+    expect(selection()?.chain[0]).toMatchObject({ level: 'node', instanceId: 'interference' });
 
     await openDataBlock(user, 'Alpha');
     await screen.findByRole('group', { name: /Notes piano roll/ });
-    // A data-block is open: nothing else is selected, so the module falls back to the canvas.
+    // A data-block is open: nothing else is selected, so the node falls back to the canvas.
     await waitFor(() =>
       expect(selection()?.chain).toEqual([
         { level: 'data-block', dataBlockId: 'block-a' },

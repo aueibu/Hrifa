@@ -5,7 +5,7 @@ import { useDesk } from '../desk';
 import classes from './DataBlockEditorSlot.module.css';
 
 interface DataBlockEditorSlotProps {
-  /** The data-block the bottom panel targets, or null (a module, or a blank panel when none is open). */
+  /** The data-block the bottom panel targets, or null (a node, or a blank panel when none is open). */
   dataBlockId: string | null;
   /** The targeted data-block is gone from the desk (deleted, or removed by an undo or project open). */
   onMissing(): void;
@@ -27,14 +27,14 @@ export function EditorTargetGuard({ dataBlockId, onMissing }: DataBlockEditorSlo
   return null;
 }
 
-/** The plain floor of a panel with nothing open (no text), shared with the module panel's blank state. */
+/** The plain floor of a panel with nothing open (no text), shared with the node panel's blank state. */
 export function BlankFloor() {
   return <div className={classes.empty} />;
 }
 
 /**
  * The data-block editor panel's content. It ends the data-block's hand-edit session whenever the target
- * moves off the data-block (another data-block, a module, or the data-block's removal), and asks the page to drop a
+ * moves off the data-block (another data-block, a node, or the data-block's removal), and asks the page to drop a
  * target that no longer exists. A data-block type without an editor shows an empty state.
  */
 export function DataBlockEditorSlot({ dataBlockId, onMissing }: DataBlockEditorSlotProps) {
@@ -58,7 +58,7 @@ export function DataBlockEditorSlot({ dataBlockId, onMissing }: DataBlockEditorS
   }, [missing, onMissing]);
 
   if (!dataBlock) {
-    // No data-block: the panel is blank (a plain floor, no text) unless a module is shown instead.
+    // No data-block: the panel is blank (a plain floor, no text) unless a node is shown instead.
     return dataBlockId === null ? <BlankFloor /> : null;
   }
   const Editor = dataBlockEditorFor(dataBlock);

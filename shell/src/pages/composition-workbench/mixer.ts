@@ -81,7 +81,7 @@ export interface MixerChannel {
 }
 
 export interface MixerPlanOptions {
-  /** The mixer module instance; the plan's sourceId, so global Stop and the playhead find it. */
+  /** The mixer node instance; the plan's sourceId, so global Stop and the playhead find it. */
   sourceId: string;
   timeline: MusicalTimeline;
   channels: MixerChannel[];
@@ -354,7 +354,7 @@ export function compileMixerPlan({
       provenance: [
         ...event.provenance,
         {
-          sourceModuleInstance: sourceId,
+          sourceNodeInstance: sourceId,
           sourceItemIds: [event.id],
           transformation: 'mixer-place',
           parameters: { channel: channel.config.id, pass, loop: channel.config.loop },

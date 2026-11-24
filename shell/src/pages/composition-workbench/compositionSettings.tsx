@@ -26,9 +26,9 @@ import {
   type TransportSettings,
 } from './transport';
 
-// Global, workbench-wide settings — as opposed to per-module state (which lives in each
-// module's own usePersistentState calls) or per-route treatments (routeTreatments.ts). A
-// setting belongs here when several unrelated modules need to agree on it without wiring it
+// Global, workbench-wide settings — as opposed to per-node state (which lives in each
+// node's own usePersistentState calls) or per-route treatments (routeTreatments.ts). A
+// setting belongs here when several unrelated nodes need to agree on it without wiring it
 // through every connection between them (EDO is the first case: Scale Construction, Scale
 // Evolution, Pitch List, Arithmetic, and route treatments all need the same answer to "how many
 // steps per octave").
@@ -44,7 +44,7 @@ export interface CompositionSettings {
   // pitch-class material, and has no other meaning to redefine.
   edo: number;
   // Tempo, meter, pulse length, metronome and count-in — the DAW-style transport in the header.
-  // Every rhythm preview follows it, so rhythms sound at the same speed in every module and line
+  // Every rhythm preview follows it, so rhythms sound at the same speed in every node and line
   // up with one shared beat. See transport.ts.
   transport: TransportSettings;
   // Primary/secondary/tertiary preview voices for rhythm and for the metronome. See sounds.ts.

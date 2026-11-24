@@ -67,7 +67,7 @@ export function fractioningDurationPacket(
       value: duration,
       provenance: [
         {
-          sourceModuleInstance: sourceId,
+          sourceNodeInstance: sourceId,
           sourceItemIds: [`generator:a:${a}`, `generator:b:${b}`],
           transformation: 'fractioning-resultant',
           parameters: { a, b, attackTime: result.attacks[index], period: result.period },

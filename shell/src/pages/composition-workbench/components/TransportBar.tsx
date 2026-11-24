@@ -150,7 +150,7 @@ function MeterAndPulse({
 }
 
 /**
- * The header transport: Play/Stop for the selected module's preview, tempo, meter, pulse value,
+ * The header transport: Play/Stop for the selected node's preview, tempo, meter, pulse value,
  * and the metronome. Also keeps the audio engine's copy of the transport settings current.
  */
 export function TransportBar({ selectedInstanceId }: { selectedInstanceId: string | null }) {
@@ -228,7 +228,7 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
             variant="default"
             size="lg"
             aria-label="Undo"
-            data-info="Undo the last change to the patch, a module or the desk. History lasts until the page is reloaded."
+            data-info="Undo the last change to the node tree, a node or the desk. History lasts until the page is reloaded."
             disabled={!canUndo}
             onClick={undo}
           >
@@ -249,14 +249,12 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
         </Tooltip>
       </Group>
       <Tooltip
-        label={
-          playSelected ? 'Play the selected module (Space)' : 'The selected module has no preview'
-        }
+        label={playSelected ? 'Play the selected node (Space)' : 'The selected node has no preview'}
       >
         <ActionIcon
           variant={playing ? 'light' : 'filled'}
           size="lg"
-          aria-label="Play selected module"
+          aria-label="Play selected node"
           disabled={!playSelected}
           onClick={() => playSelected?.()}
         >

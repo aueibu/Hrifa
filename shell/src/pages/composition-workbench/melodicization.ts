@@ -234,7 +234,7 @@ function melodicizeUnguarded({
       provenance: [
         ...inheritedProvenance(rhythmItem.provenance, pitchGroup.item.provenance),
         {
-          sourceModuleInstance: instanceId,
+          sourceNodeInstance: instanceId,
           sourceItemIds: [rhythmItem.id, pitchGroup.item.id],
           transformation: 'melodicize',
           parameters: {
@@ -345,7 +345,7 @@ function melodicizeUnguarded({
 
 /**
  * Turns a rhythm and a pitch list into note events. Anything that goes wrong while resolving time
- * comes back as an error on the result, never as an exception: this runs while a module renders, and
+ * comes back as an error on the result, never as an exception: this runs while a node renders, and
  * a throw there would take the whole page down.
  */
 export function melodicize(

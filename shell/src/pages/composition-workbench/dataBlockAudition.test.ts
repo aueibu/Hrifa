@@ -46,7 +46,7 @@ describe('auditioning a captured data-block on the transport', () => {
       createdAt: 'now',
       name: 'x',
       packet: source,
-      moduleInstance: 'mel',
+      nodeInstance: 'mel',
       itemIds: selected.map((index) => source.items[index].id),
     });
     if (!captured.ok) {

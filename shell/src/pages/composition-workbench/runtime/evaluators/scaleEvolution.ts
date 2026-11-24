@@ -3,7 +3,7 @@ import {
   resolvePacketFromOutput,
   type PublishedCompositionOutput,
 } from '../../compositionRouting';
-import type { ModuleRouteBinding, ModuleRouteState } from '../../compositionWorkspace';
+import type { NodeRouteBinding, NodeRouteState } from '../../compositionWorkspace';
 import type { DataPacket } from '../../model';
 import {
   evolveScale,
@@ -24,11 +24,11 @@ export interface ScaleEvolutionState {
 /**
  * What Scale Evolution reads from upstream: the bound output and the route binding of its
  * `sequence` port, picked by `pickScaleEvolutionInputs` so they keep their identity when an
- * unrelated output changes (otherwise the module's own publish would re-run it forever).
+ * unrelated output changes (otherwise the node's own publish would re-run it forever).
  */
 export interface ScaleEvolutionInputs {
   sequenceOutput: PublishedCompositionOutput | undefined;
-  binding: ModuleRouteBinding | undefined;
+  binding: NodeRouteBinding | undefined;
 }
 
 export interface ScaleEvolutionContext {
@@ -65,11 +65,11 @@ export function parseEvolutionIntervalText(value: string): number[] {
 
 /**
  * Resolves the `sequence` port. A binding pointing at this same instance (stale data) would feed
- * the module's own output back into itself, so it reads as disconnected.
+ * the node's own output back into itself, so it reads as disconnected.
  */
 export function pickScaleEvolutionInputs(
   outputs: PublishedCompositionOutput[],
-  routeState: ModuleRouteState,
+  routeState: NodeRouteState,
   instanceId: string
 ): ScaleEvolutionInputs {
   const binding = routeState.sequence;

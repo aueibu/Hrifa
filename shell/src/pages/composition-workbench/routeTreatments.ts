@@ -148,14 +148,14 @@ function sequenceSteps(
   const steps: Provenance[] = [];
   if (retrograde) {
     steps.push({
-      sourceModuleInstance: routeId,
+      sourceNodeInstance: routeId,
       sourceItemIds: [sourceItemId],
       transformation: 'retrograde-sequence',
     });
   }
   if (rotation !== 0) {
     steps.push({
-      sourceModuleInstance: routeId,
+      sourceNodeInstance: routeId,
       sourceItemIds: [sourceItemId],
       transformation: 'rotate-sequence',
       parameters: { rotation },
@@ -244,7 +244,7 @@ function pitchClassSequenceSteps(
   const steps: Provenance[] = [];
   if (treatment.inverted) {
     steps.push({
-      sourceModuleInstance: routeId,
+      sourceNodeInstance: routeId,
       sourceItemIds: [sourceItemId],
       transformation: 'invert-pitch-classes',
       parameters: { axis: 0 },
@@ -252,7 +252,7 @@ function pitchClassSequenceSteps(
   }
   if (treatment.transposition !== 0) {
     steps.push({
-      sourceModuleInstance: routeId,
+      sourceNodeInstance: routeId,
       sourceItemIds: [sourceItemId],
       transformation: 'transpose-pitch-classes',
       parameters: { semitones: treatment.transposition },
@@ -284,7 +284,7 @@ function concreteGroupFromPitchClasses(
   const steps = [
     ...pitchClassSequenceSteps(treatment, routeId, sourceItemId),
     {
-      sourceModuleInstance: routeId,
+      sourceNodeInstance: routeId,
       sourceItemIds: [sourceItemId],
       transformation: 'assign-register',
       parameters: {
@@ -341,7 +341,7 @@ function transformedConcreteGroup(
   const steps: Provenance[] = [];
   if (treatment.inverted) {
     steps.push({
-      sourceModuleInstance: routeId,
+      sourceNodeInstance: routeId,
       sourceItemIds: [sourceItemId],
       transformation: 'invert-pitches',
       parameters: { axisMidi: treatment.inversionAxisMidi },
@@ -349,7 +349,7 @@ function transformedConcreteGroup(
   }
   if (treatment.transposition !== 0) {
     steps.push({
-      sourceModuleInstance: routeId,
+      sourceNodeInstance: routeId,
       sourceItemIds: [sourceItemId],
       transformation: 'transpose-pitches',
       parameters: { semitones: treatment.transposition },
@@ -357,7 +357,7 @@ function transformedConcreteGroup(
   }
   if (treatment.voicingInversion !== 0) {
     steps.push({
-      sourceModuleInstance: routeId,
+      sourceNodeInstance: routeId,
       sourceItemIds: [sourceItemId],
       transformation: 'voice-inversion',
       parameters: { inversion: treatment.voicingInversion },
@@ -446,7 +446,7 @@ export function applyPitchRouteTreatment(
     const interpretStep: Provenance[] = readsAsMidi
       ? [
           {
-            sourceModuleInstance: routeId,
+            sourceNodeInstance: routeId,
             sourceItemIds: [item.id],
             transformation: 'read-as-midi-note',
             parameters: { base: treatment.midiNoteBase },
@@ -520,7 +520,7 @@ function interpretRhythmSource(source: DataPacket, routeId: string): DataPacket 
     provenance: [
       ...item.provenance,
       {
-        sourceModuleInstance: routeId,
+        sourceNodeInstance: routeId,
         sourceItemIds: [item.id],
         transformation: 'interpret-as-rhythm',
       },
@@ -561,7 +561,7 @@ export function applyRhythmRouteTreatment(
         ? []
         : [
             {
-              sourceModuleInstance: routeId,
+              sourceNodeInstance: routeId,
               sourceItemIds: [item.id],
               transformation: 'scale-durations',
               parameters: { factor: treatment.durationScale },

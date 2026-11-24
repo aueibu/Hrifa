@@ -3,7 +3,7 @@
  * workflow (W-20), the hover cell, the audition and the claim model, in a store that lives above any
  * one host. Plain TypeScript, no React (the hooks and the provider are `ChordSessionProvider.tsx`).
  *
- * A HOST (the Notes editor today; a progression list, a module later) CLAIMS the session with a
+ * A HOST (the Notes editor today; a progression list, a node later) CLAIMS the session with a
  * `ChordTarget`: where a chord goes, how the host reads the project (pitch set, EDO, entry length),
  * and what to do on insert. The LAST claim wins; releasing the active claim reactivates the previous
  * one that is still held (its host never released it). With no claim there is no target and the

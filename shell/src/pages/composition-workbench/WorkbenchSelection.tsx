@@ -12,7 +12,7 @@ import {
 
 export interface WorkbenchSelectionValue {
   chain: WorkbenchSelectionChain;
-  /** The next node up from `node` (note to data-block to module-or-canvas to canvas), or null. */
+  /** The next node up from `node` (note to data-block to node-or-canvas to canvas), or null. */
   parent(node: WorkbenchSelectionNode): WorkbenchSelectionNode | null;
 }
 

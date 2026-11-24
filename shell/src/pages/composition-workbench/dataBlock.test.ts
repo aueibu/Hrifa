@@ -56,7 +56,7 @@ const base = {
   id: 'data-block-1',
   createdAt: '2026-11-11T00:00:00Z',
   name: 'Gesture',
-  moduleInstance: 'mel-1',
+  nodeInstance: 'mel-1',
 };
 
 describe('captureDataBlock', () => {
@@ -107,7 +107,7 @@ describe('captureDataBlock', () => {
     const [item] = result.dataBlock.packet.items;
     const last = item.provenance[item.provenance.length - 1];
     expect(last).toMatchObject({
-      sourceModuleInstance: 'mel-1',
+      sourceNodeInstance: 'mel-1',
       sourceItemIds: [source.items[0].id],
       transformation: 'capture',
     });
@@ -163,11 +163,11 @@ describe('captureDataBlock', () => {
     expect(result.dataBlock.packet.kind).toBe('list');
     expect(result.dataBlock.packet.frame).toEqual(source.frame);
     expect(result.dataBlock.packet.items.map((item) => item.value)).toEqual([2, 1, 1, 2]);
-    expect(result.dataBlock.origin?.moduleInstance).toBe('mel-1');
+    expect(result.dataBlock.origin?.nodeInstance).toBe('mel-1');
     expect(result.dataBlock.origin).not.toHaveProperty('itemIds');
   });
 
-  it('snapshots a whole module output as a copy that does not share state with the source', () => {
+  it('snapshots a whole node output as a copy that does not share state with the source', () => {
     const source = notes();
     const before = JSON.stringify(source);
     const result = captureDataBlock({ ...base, packet: source, portId: 'notes' });
@@ -175,7 +175,7 @@ describe('captureDataBlock', () => {
       throw new Error(result.error);
     }
     const { dataBlock } = result;
-    expect(dataBlock.origin).toEqual({ moduleInstance: 'mel-1', portId: 'notes' });
+    expect(dataBlock.origin).toEqual({ nodeInstance: 'mel-1', portId: 'notes' });
     expect(dataBlock.packet.items.map((item) => item.id)).toEqual(source.items.map((i) => i.id));
     expect(dataBlock.packet.items.at(-1)?.provenance.at(-1)?.transformation).toBe('capture');
     expect(dataBlock.packet).not.toBe(source);

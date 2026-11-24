@@ -1,7 +1,7 @@
 .slot {
   box-sizing: border-box;
   display: grid;
-  /* Every module is the same size, with or without inlets or outlets: a rail row, the card, a rail
+  /* Every node is the same size, with or without inlets or outlets: a rail row, the card, a rail
      row. Keep the width and height in step with NODE_WIDTH and NODE_HEIGHT in compositionLayout.ts. */
   block-size: 112px;
   grid-template-rows: 1.1rem minmax(0, 1fr) 1.1rem;
@@ -23,7 +23,7 @@
 
 /* Bitwig Grid style: the canvas is the darkest tier and a node is a lighter plate sitting on it. */
 .card {
-  /* A shade over the outer 5% at the top and bottom of the plate, as on Bitwig's Grid modules. */
+  /* A shade over the outer 5% at the top and bottom of the plate, as on Bitwig's Grid nodes. */
   --card-shade: color-mix(in srgb, var(--panel-well) 20%, transparent);
 
   background-color: var(--panel-body);
@@ -62,8 +62,8 @@
   width: 4px;
 }
 
-/* State reads from an outline, as in Bitwig: selected gets a light gray outline; the module open in
-   the workspace and modules in the selected flow get a quieter gray one plus a slightly lighter plate. */
+/* State reads from an outline, as in Bitwig: selected gets a light gray outline; the node open in
+   the workspace and nodes in the selected flow get a quieter gray one plus a slightly lighter plate. */
 .card[data-selected='true'] {
   border-color: var(--text);
   box-shadow: 0 0 0 1px var(--text);

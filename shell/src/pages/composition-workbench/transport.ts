@@ -33,7 +33,7 @@ export interface TransportSettings {
   /** How long one rhythm pulse lasts, as a key of transportPulseOptions. */
   pulse: string;
   metronome: boolean;
-  /** 0–100, same scale as every module's volume fader. */
+  /** 0–100, same scale as every node's volume fader. */
   metronomeVolume: number;
   /** One bar of clicks before playback starts. */
   countIn: boolean;
@@ -138,7 +138,7 @@ export function countInSeconds(settings: TransportSettings) {
   return settings.countIn ? barSeconds(settings) : 0;
 }
 
-/** Buses the transport owns. Their gain follows the transport, not any module's fader. */
+/** Buses the transport owns. Their gain follows the transport, not any node's fader. */
 export const METER_BUS = 'meter';
 export const COUNT_IN_BUS = 'count-in';
 
@@ -196,7 +196,7 @@ export function applyTransport(
         busId,
         provenance: [
           {
-            sourceModuleInstance: plan.sourceId,
+            sourceNodeInstance: plan.sourceId,
             sourceItemIds: [],
             transformation: busId === METER_BUS ? 'transport-meter-click' : 'transport-count-in',
             parameters: { beat: click.index, accented: click.accented },
@@ -242,7 +242,7 @@ export function applyTransport(
       busId,
       provenance: [
         {
-          sourceModuleInstance: plan.sourceId,
+          sourceNodeInstance: plan.sourceId,
           sourceItemIds: [],
           transformation: busId === METER_BUS ? 'transport-meter-click' : 'transport-count-in',
           parameters: { beat: click.index, accented: click.accented },

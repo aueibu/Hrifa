@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { arithmeticOperatorDefaults, computeArithmetic } from '../../arithmetic';
-import { createDefaultModuleRouteState } from '../../compositionWorkspace';
+import { createDefaultNodeRouteState } from '../../compositionWorkspace';
 import { packet } from '../../model';
 import { defaultModuloTreatment } from '../../moduloTreatment';
 import { interpretPitchList } from '../../pitch';
 import { parseRhythmText } from '../../rhythmNotation';
 import { rhythmAttacks } from '../../rhythmRealization';
-import { moduleEvaluators } from '../moduleEvaluators';
-import { modulePorts } from '../modulePorts';
+import { nodeEvaluators } from '../nodeEvaluators';
+import { nodePorts } from '../nodePorts';
 import {
   arithmeticOutputs,
-  computeArithmeticModule,
+  computeArithmeticNode,
   evaluateArithmetic,
   pickArithmeticInputs,
   type ArithmeticState,
@@ -73,7 +73,7 @@ describe('evaluatePitchList', () => {
       inlineProvenance: {
         '0': [
           {
-            sourceModuleInstance: ctx.instanceId,
+            sourceNodeInstance: ctx.instanceId,
             sourceItemIds: [],
             transformation: 'select-forte-set',
             parameters: { ...origin },
@@ -105,7 +105,7 @@ describe('evaluateRhythmList', () => {
         label: step.duration < 0 ? `r${-step.duration}` : `${step.duration}${step.tie ? '~' : ''}`,
         provenance: [
           {
-            sourceModuleInstance: ctx.instanceId,
+            sourceNodeInstance: ctx.instanceId,
             sourceItemIds: [],
             transformation: 'rhythm-list-read',
             parameters: { text: step.duration < 0 ? `r${-step.duration}` : String(step.duration) },
@@ -151,7 +151,7 @@ describe('evaluateRhythmList', () => {
 
 describe('evaluateArithmetic', () => {
   const ctx = { instanceId: 'arithmetic-1', instanceLabel: 'Arithmetic 1', edo: 12 };
-  const unbound = createDefaultModuleRouteState(modulePorts.arithmetic ?? []);
+  const unbound = createDefaultNodeRouteState(nodePorts.arithmetic ?? []);
   const defaultState: ArithmeticState = {
     operator: 'add',
     fallbackA: arithmeticOperatorDefaults.add.a,
@@ -270,8 +270,8 @@ describe('a rename keeps the packet', () => {
       rhythmListOutputs(rcore, rctx)[0].packet
     );
     const actx = { instanceId: 'arithmetic-1', instanceLabel: 'Arithmetic 1', edo: 12 };
-    const unbound = createDefaultModuleRouteState(modulePorts.arithmetic ?? []);
-    const acore = computeArithmeticModule(
+    const unbound = createDefaultNodeRouteState(nodePorts.arithmetic ?? []);
+    const acore = computeArithmeticNode(
       {
         operator: 'add',
         fallbackA: 0,
@@ -288,10 +288,10 @@ describe('a rename keeps the packet', () => {
   });
 });
 
-describe('moduleEvaluators table', () => {
-  // The modules ported to evaluators so far (R2 adds to this list batch by batch).
-  it('registers every ported module', () => {
-    expect(Object.keys(moduleEvaluators).sort()).toEqual([
+describe('nodeEvaluators table', () => {
+  // The nodes ported to evaluators so far (R2 adds to this list batch by batch).
+  it('registers every ported node', () => {
+    expect(Object.keys(nodeEvaluators).sort()).toEqual([
       'arithmetic',
       'data-block-source',
       'fractioning',

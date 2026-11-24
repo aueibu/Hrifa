@@ -205,7 +205,7 @@ export function realizeRhythm({
     const at = pulsesToQuarterNotes(attack.at, pulseUnit);
     const slot = pulsesToQuarterNotes(attack.slot, pulseUnit);
     const provenance: Provenance = {
-      sourceModuleInstance: sourceId,
+      sourceNodeInstance: sourceId,
       sourceItemIds: attack.itemId ? [attack.itemId] : [],
       transformation: 'realize-rhythm',
       parameters: { layer: layerId, index: attack.index, gatePercent: gate },

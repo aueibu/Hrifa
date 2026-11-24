@@ -3,7 +3,7 @@ import {
   resolvePacketFromOutput,
   type PublishedCompositionOutput,
 } from '../../compositionRouting';
-import type { ModuleRouteBinding, ModuleRouteState } from '../../compositionWorkspace';
+import type { NodeRouteBinding, NodeRouteState } from '../../compositionWorkspace';
 import type { DataPacket } from '../../model';
 import {
   editRhythm,
@@ -38,11 +38,11 @@ export interface RhythmEditState {
 /**
  * What Rhythm Edit reads from upstream: the bound output and the route binding of its `rhythm`
  * port, picked by `pickRhythmEditInputs` so they keep their identity when an unrelated output
- * changes (otherwise the module's own publish would re-run it forever).
+ * changes (otherwise the node's own publish would re-run it forever).
  */
 export interface RhythmEditInputs {
   rhythmOutput: PublishedCompositionOutput | undefined;
-  binding: ModuleRouteBinding | undefined;
+  binding: NodeRouteBinding | undefined;
 }
 
 export interface RhythmEditContext {
@@ -64,11 +64,11 @@ export type RhythmEditEvaluation = RhythmEditCore & { outputs: PublishedComposit
 
 /**
  * Resolves the `rhythm` port. A binding pointing at this same instance (stale data) would feed the
- * module's own output back into itself, so it reads as disconnected.
+ * node's own output back into itself, so it reads as disconnected.
  */
 export function pickRhythmEditInputs(
   outputs: PublishedCompositionOutput[],
-  routeState: ModuleRouteState,
+  routeState: NodeRouteState,
   instanceId: string
 ): RhythmEditInputs {
   const binding = routeState.rhythm;

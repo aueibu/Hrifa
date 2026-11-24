@@ -24,7 +24,7 @@ export function applyModulo(
       provenance: [
         ...item.provenance,
         {
-          sourceModuleInstance: item.id,
+          sourceNodeInstance: item.id,
           sourceItemIds: [item.id],
           transformation: 'modulo',
           parameters: { divisor: treatment.divisor },

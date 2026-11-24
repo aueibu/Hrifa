@@ -769,7 +769,7 @@ export function householderSelectedPacket(
       provenance: [
         ...(source?.provenance ?? []),
         {
-          sourceModuleInstance: sourceId,
+          sourceNodeInstance: sourceId,
           sourceItemIds: source ? [source.id] : [],
           transformation,
           parameters,
@@ -810,7 +810,7 @@ export function householderCandidatesPacket(
     label: candidateLabel(candidate, inputOrigin),
     provenance: [
       {
-        sourceModuleInstance: sourceId,
+        sourceNodeInstance: sourceId,
         sourceItemIds: input.items.map((item) => item.id),
         transformation,
         parameters: {

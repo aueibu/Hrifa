@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { act, render, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataBlockSourceModule } from './components/DataBlockSourceModule';
+import { DataBlockSourceNode } from './components/DataBlockSourceNode';
 import type { PublishedCompositionOutput } from './compositionRouting';
 import {
   acceptsDataBlocks,
@@ -24,7 +24,7 @@ import { packet, type DataPacket } from './model';
 import { musicalDuration } from './musicalTime';
 import { interpretPitchList } from './pitch';
 import { createEvaluationStore, EvaluationStoreContext } from './runtime/evaluationStore';
-import { ModuleEvaluationRunner } from './runtime/ModuleEvaluationRunner';
+import { NodeEvaluationRunner } from './runtime/NodeEvaluationRunner';
 import { createOutputStore } from './runtime/outputStore';
 
 vi.mock('./audio/AudioEngineProvider', () => ({
@@ -37,7 +37,7 @@ vi.mock('./audio/AudioEngineProvider', () => ({
 }));
 
 /**
- * A data-block source module as the page places it: its runner (which evaluates and publishes) and its
+ * A data-block source node as the page places it: its runner (which evaluates and publishes) and its
  * view (which draws the evaluation). `onPublish` sees every publish.
  */
 function SourceWithRunner({
@@ -58,16 +58,16 @@ function SourceWithRunner({
   const [evaluationStore] = useState(createEvaluationStore);
   return (
     <EvaluationStoreContext.Provider value={evaluationStore}>
-      <ModuleEvaluationRunner
+      <NodeEvaluationRunner
         outputStore={outputStore}
         evaluationStore={evaluationStore}
         instanceId="source-1"
-        moduleId="data-block-source"
+        nodeId="data-block-source"
         instanceLabel="Source"
         dataBlockId="data-block-1"
         routeState={undefined}
       />
-      <DataBlockSourceModule
+      <DataBlockSourceNode
         instanceId="source-1"
         instanceLabel="Source"
         dataBlockId="data-block-1"
@@ -101,7 +101,7 @@ function noteDataBlock(id = 'data-block-1'): DataBlock {
     id,
     createdAt: '2026-11-11T00:00:00Z',
     name: 'Gesture',
-    moduleInstance: 'mel-1',
+    nodeInstance: 'mel-1',
     packet: result.packet,
   });
   if (!captured.ok) {
@@ -274,7 +274,7 @@ describe('commitDataBlockEditById', () => {
     expect(canUndo()).toBe(false);
   });
 
-  it('a Make-source module for the data-block publishes the new packet after an edit, and after undo', async () => {
+  it('a Make-source node for the data-block publishes the new packet after an edit, and after undo', async () => {
     const published: Record<string, PublishedCompositionOutput[]> = {};
     const onOutputsChange = (id: string, outputs: PublishedCompositionOutput[]) => {
       published[id] = outputs;
@@ -600,7 +600,7 @@ describe('lineage operations on the desk', () => {
     reloaded.unmount();
   });
 
-  it('a Make-source module follows an edit and a restore', async () => {
+  it('a Make-source node follows an edit and a restore', async () => {
     const published: Record<string, PublishedCompositionOutput[]> = {};
     let desk: ReturnType<typeof useDesk> | undefined;
     function Probe() {

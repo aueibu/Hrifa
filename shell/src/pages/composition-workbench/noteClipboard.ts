@@ -25,7 +25,7 @@ export interface NoteClipboard {
 }
 
 // On globalThis for the same reason as the editor channel: one clipboard per page even if this
-// module is hot-reloaded or loaded twice.
+// node is hot-reloaded or loaded twice.
 const shared = globalThis as typeof globalThis & {
   __noteClipboard?: { value: NoteClipboard | null; listeners: Set<() => void> };
 };

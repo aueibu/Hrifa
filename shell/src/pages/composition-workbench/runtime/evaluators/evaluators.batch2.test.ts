@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createDefaultModuleRouteState } from '../../compositionWorkspace';
+import { createDefaultNodeRouteState } from '../../compositionWorkspace';
 import { fractioningDurationPacket, generateFractioning } from '../../fractioning';
 import { packet } from '../../model';
 import {
@@ -23,8 +23,8 @@ import {
   stagePitchClassesPacket,
 } from '../../scaleEvolution';
 import { createMemo } from '../memo';
-import { moduleEvaluators } from '../moduleEvaluators';
-import { modulePorts } from '../modulePorts';
+import { nodeEvaluators } from '../nodeEvaluators';
+import { nodePorts } from '../nodePorts';
 import { computeFractioning, evaluateFractioning, fractioningOutputs } from './fractioning';
 import {
   computePairComposition,
@@ -208,7 +208,7 @@ describe('evaluateScaleConstruction', () => {
 
 describe('evaluateScaleEvolution', () => {
   const ctx = { instanceId: 'scale-evolution-1', instanceLabel: 'Scale Evolution 1', edo: 12 };
-  const unbound = createDefaultModuleRouteState(modulePorts['scale-evolution'] ?? []);
+  const unbound = createDefaultNodeRouteState(nodePorts['scale-evolution'] ?? []);
   const noInputs = pickScaleEvolutionInputs([], unbound, ctx.instanceId);
 
   function expectedOutputs(intervals: number[], root: number, label = ctx.instanceLabel) {
@@ -326,15 +326,15 @@ describe('evaluateScaleEvolution', () => {
   });
 });
 
-describe('moduleEvaluators table (batch 2)', () => {
-  it('registers the four batch 2 modules', () => {
+describe('nodeEvaluators table (batch 2)', () => {
+  it('registers the four batch 2 nodes', () => {
     for (const id of [
       'fractioning',
       'pair-composition',
       'scale-construction',
       'scale-evolution',
     ] as const) {
-      expect(moduleEvaluators[id]).toBeDefined();
+      expect(nodeEvaluators[id]).toBeDefined();
     }
   });
 });
@@ -367,7 +367,7 @@ describe('a shared memo keeps the parts a root or EDO change does not touch', ()
     const state = { intervalText: '3, 2', root: 0 };
     const none = pickScaleEvolutionInputs(
       [],
-      createDefaultModuleRouteState(modulePorts['scale-evolution'] ?? []),
+      createDefaultNodeRouteState(nodePorts['scale-evolution'] ?? []),
       ctx.instanceId
     );
     const first = computeScaleEvolution(state, none, ctx, memo);

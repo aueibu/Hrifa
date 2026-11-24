@@ -59,7 +59,7 @@ export const acceptsFiniteNumber = (value: unknown): value is number =>
 export const acceptsIntegerList = (value: unknown): value is number[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'number' && Number.isInteger(item));
 
-/** The stored key of one module instance's value: every instance uses its own suffixed key. */
+/** The stored key of one node instance's value: every instance uses its own suffixed key. */
 export function compositionInstanceStateKey(baseKey: string, instanceId: string) {
   return `${baseKey}.instance.${instanceId}`;
 }

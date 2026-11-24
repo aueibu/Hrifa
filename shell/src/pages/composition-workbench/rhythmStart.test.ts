@@ -25,7 +25,7 @@ function rhythm(values: number[], frame: Partial<PacketFrame> = {}): DataPacket<
     values.map((value, index) => ({
       id: `r:${index}`,
       value,
-      provenance: [{ sourceModuleInstance: 'src', sourceItemIds: [], transformation: 'authored' }],
+      provenance: [{ sourceNodeInstance: 'src', sourceItemIds: [], transformation: 'authored' }],
     })),
     [],
     undefined,

@@ -123,7 +123,7 @@ export function scaleEvolutionStagesPacket(
     label: stage.durations.join('+'),
     provenance: [
       {
-        sourceModuleInstance: sourceId,
+        sourceNodeInstance: sourceId,
         sourceItemIds: [],
         transformation: 'scale-evolution',
         parameters: {
@@ -172,7 +172,7 @@ export function finalStagePacket(
     value,
     provenance: [
       {
-        sourceModuleInstance: sourceId,
+        sourceNodeInstance: sourceId,
         sourceItemIds: [],
         transformation: 'scale-evolution-final',
         parameters: { stage: result.stages.length - 1, period: last.period },
@@ -213,7 +213,7 @@ export function stagePitchClassesPacket(
       label: pitchClasses.map((pitchClass) => pitchClassName(pitchClass, edo)).join('-'),
       provenance: [
         {
-          sourceModuleInstance: sourceId,
+          sourceNodeInstance: sourceId,
           sourceItemIds: [],
           transformation: 'scale-evolution-realize',
           parameters: { stage: index, root, durations: stage.durations },

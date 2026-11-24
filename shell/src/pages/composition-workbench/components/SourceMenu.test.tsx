@@ -25,7 +25,7 @@ const options: SourceOption[] = [
 describe('buildSourceTree', () => {
   const tree = buildSourceTree(options);
 
-  it('groups outputs under their module, in order', () => {
+  it('groups outputs under their node, in order', () => {
     expect(tree.map((node) => node.label)).toEqual([
       'Interference',
       'Pitch List · Pitches',
@@ -34,7 +34,7 @@ describe('buildSourceTree', () => {
     expect(tree[0].children.map((node) => node.label)).toEqual(['Resultant', 'Generator 1']);
   });
 
-  it('collapses a module with a single output into one pickable item', () => {
+  it('collapses a node with a single output into one pickable item', () => {
     expect(tree[1].option?.value).toBe('pl|pitches');
     expect(tree[1].children).toEqual([]);
   });
@@ -78,7 +78,7 @@ describe('SourceMenu', () => {
     expect(trigger).toHaveTextContent('Pitch List · Pitches');
   });
 
-  it('opens a module to its outputs on click, three levels deep for bank entries', async () => {
+  it('opens a node to its outputs on click, three levels deep for bank entries', async () => {
     const user = userEvent.setup();
     render(<Harness />);
     await user.click(screen.getByRole('button', { name: 'Rhythm source' }));

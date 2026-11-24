@@ -15,7 +15,7 @@ import {
 
 /**
  * Dense control sizing for the composition workbench only, in the spirit of a DAW: small buttons,
- * inputs and badges so more of the patch, inspector and module editor fit on screen at once.
+ * inputs and badges so more of the node tree, inspector and node editor fit on screen at once.
  *
  * Applied with `MantineThemeProvider` around the workbench page, so it merges component defaults
  * into the app theme without touching colours, CSS variables or any other page. A component that

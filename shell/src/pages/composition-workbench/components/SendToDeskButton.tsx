@@ -5,9 +5,9 @@ import { captureDataBlock } from '../dataBlock';
 import { newDataBlockId, useDesk } from '../desk';
 
 /**
- * Sends a module output to the desk as a whole-packet data-block. Any kind can be captured whole, so
- * this works for every output a module publishes; selecting part of one is done in the editor that
- * shows it (the piano roll for notes). The data-block is a copy: later changes to the module do not
+ * Sends a node output to the desk as a whole-packet data-block. Any kind can be captured whole, so
+ * this works for every output a node publishes; selecting part of one is done in the editor that
+ * shows it (the piano roll for notes). The data-block is a copy: later changes to the node do not
  * reach it.
  */
 export function SendToDeskButton({ output }: { output: PublishedCompositionOutput }) {
@@ -38,7 +38,7 @@ export function SendToDeskButton({ output }: { output: PublishedCompositionOutpu
       createdAt: new Date().toISOString(),
       name: output.label,
       packet: output.packet,
-      moduleInstance: output.ref.instanceId,
+      nodeInstance: output.ref.instanceId,
       portId: output.ref.port,
     });
     if (!captured.ok) {

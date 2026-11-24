@@ -1,8 +1,8 @@
-import type { CompositionModuleId } from './compositionWorkspace';
+import type { CompositionNodeId } from './compositionWorkspace';
 import type { DataPacket } from './model';
 
 /**
- * What a port or module is about, for color on the patch canvas. This is not the routing signal type
+ * What a port or node is about, for color on the node tree canvas. This is not the routing signal type
  * (`signalTypes.ts` decides treatments): it adds events and audio, which routing has no treatment for.
  * Colors follow Bitwig's Grid: gates yellow, pitch orange, audio red; events are green and untyped
  * numbers stay neutral. The accent never encodes data (see THEMING.md).
@@ -51,9 +51,9 @@ export function categoryOfPacket(source?: DataPacket): SignalCategory {
   return 'numeric';
 }
 
-/** A module's title color: fixed by what it is for, so it does not change with what is wired in. */
-export function categoryOfModule(moduleId: CompositionModuleId): SignalCategory {
-  switch (moduleId) {
+/** A node's title color: fixed by what it is for, so it does not change with what is wired in. */
+export function categoryOfNode(nodeId: CompositionNodeId): SignalCategory {
+  switch (nodeId) {
     case 'interference':
     case 'fractioning':
     case 'rhythm-list':
@@ -74,8 +74,8 @@ export function categoryOfModule(moduleId: CompositionModuleId): SignalCategory 
 }
 
 /** What an inlet expects, shown even while nothing is connected to it. */
-export function categoryOfInlet(moduleId: CompositionModuleId, port: string): SignalCategory {
-  if (moduleId === 'mixer') {
+export function categoryOfInlet(nodeId: CompositionNodeId, port: string): SignalCategory {
+  if (nodeId === 'mixer') {
     return 'audio';
   }
   if (port === 'rhythm') {

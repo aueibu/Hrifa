@@ -1,7 +1,7 @@
 import type { CompositionOutputRef } from './compositionRouting';
 import { signalTypeRegistry, type SignalTypeId } from './signalTypes';
 
-export type CompositionModuleId =
+export type CompositionNodeId =
   | 'interference'
   | 'pitch-list'
   | 'rhythm-list'
@@ -18,38 +18,38 @@ export type CompositionModuleId =
   | 'mixer';
 
 /**
- * A module placed on the free canvas. `x`/`y` are the card's top-left corner in canvas units; they
+ * A node placed on the free canvas. `x`/`y` are the card's top-left corner in canvas units; they
  * are pure presentation and never affect routing.
  */
-export interface CompositionModuleInstance {
+export interface CompositionNodeInstance {
   id: string;
-  moduleId: CompositionModuleId;
+  nodeId: CompositionNodeId;
   x: number;
   y: number;
-  /** A `data-block-source` module only: the desk data-block it publishes. It is not added from the Add menu. */
+  /** A `data-block-source` node only: the desk data-block it publishes. It is not added from the Add menu. */
   dataBlockId?: string;
 }
 
-/** Modules the Add module menu offers. A data-block module is made from a desk card instead. */
-export function isAddableModule(moduleId: CompositionModuleId) {
-  return moduleId !== 'data-block-source';
+/** Nodes the Add node menu offers. A data-block node is made from a desk card instead. */
+export function isAddableNode(nodeId: CompositionNodeId) {
+  return nodeId !== 'data-block-source';
 }
 
-export interface ModuleRouteBinding {
+export interface NodeRouteBinding {
   source?: CompositionOutputRef;
   signalType: SignalTypeId;
   treatment: unknown;
 }
 
-export type ModuleRouteState = Record<string, ModuleRouteBinding>;
-export type ModuleRouteStates = Record<string, ModuleRouteState>;
+export type NodeRouteState = Record<string, NodeRouteBinding>;
+export type NodeRouteStates = Record<string, NodeRouteState>;
 
 export type CompositionInspectorTarget =
-  | { kind: 'module'; instanceId: string }
+  | { kind: 'node'; instanceId: string }
   | { kind: 'route'; instanceId: string; port: string }
   | { kind: 'canvas' };
 
-export const compositionModuleLabels: Record<CompositionModuleId, string> = {
+export const compositionNodeLabels: Record<CompositionNodeId, string> = {
   interference: 'Interference',
   'pitch-list': 'Pitch List',
   'rhythm-list': 'Rhythm List',
@@ -66,14 +66,14 @@ export const compositionModuleLabels: Record<CompositionModuleId, string> = {
   mixer: 'Mixer',
 };
 
-export const defaultCompositionInstances: CompositionModuleInstance[] = [
-  { id: 'interference', moduleId: 'interference', x: 0, y: 0 },
-  { id: 'pitch-list', moduleId: 'pitch-list', x: 200, y: 0 },
-  { id: 'melodicization', moduleId: 'melodicization', x: 100, y: 170 },
+export const defaultCompositionInstances: CompositionNodeInstance[] = [
+  { id: 'interference', nodeId: 'interference', x: 0, y: 0 },
+  { id: 'pitch-list', nodeId: 'pitch-list', x: 200, y: 0 },
+  { id: 'melodicization', nodeId: 'melodicization', x: 100, y: 170 },
 ];
 
 /**
- * Normalizes stored instance entries to `{ id, moduleId, x, y, dataBlockId? }`. Entries that are not
+ * Normalizes stored instance entries to `{ id, nodeId, x, y, dataBlockId? }`. Entries that are not
  * placed on the canvas (no finite `x` and `y`) pass through unchanged.
  */
 export function migrateCompositionInstances(value: unknown): unknown {
@@ -88,7 +88,7 @@ export function migrateCompositionInstances(value: unknown): unknown {
     if (isFiniteNumber(stored.x) && isFiniteNumber(stored.y)) {
       return {
         id: stored.id,
-        moduleId: stored.moduleId,
+        nodeId: stored.nodeId,
         x: stored.x,
         y: stored.y,
         ...(typeof stored.dataBlockId === 'string' ? { dataBlockId: stored.dataBlockId } : {}),
@@ -112,7 +112,7 @@ export function defaultMixerPorts(): { id: string; signalType: SignalTypeId }[] 
 }
 
 /** Labels for the mixer's channels, numbered by position: Ch 1, Ch 2, … */
-export function mixerPortLabels(routeState: ModuleRouteState | undefined) {
+export function mixerPortLabels(routeState: NodeRouteState | undefined) {
   return Object.keys(routeState ?? {}).map((id, index) => ({
     id,
     label: `Ch ${index + 1}`,
@@ -120,9 +120,9 @@ export function mixerPortLabels(routeState: ModuleRouteState | undefined) {
   }));
 }
 
-export function createDefaultModuleRouteState(
+export function createDefaultNodeRouteState(
   ports: { id: string; signalType: SignalTypeId }[]
-): ModuleRouteState {
+): NodeRouteState {
   return Object.fromEntries(
     ports.map(({ id, signalType }) => [
       id,
@@ -132,12 +132,12 @@ export function createDefaultModuleRouteState(
 }
 
 export function compositionInstanceLabel(
-  instance: CompositionModuleInstance,
-  instances: CompositionModuleInstance[]
+  instance: CompositionNodeInstance,
+  instances: CompositionNodeInstance[]
 ) {
-  const siblings = instances.filter((candidate) => candidate.moduleId === instance.moduleId);
+  const siblings = instances.filter((candidate) => candidate.nodeId === instance.nodeId);
   const index = siblings.findIndex((candidate) => candidate.id === instance.id);
-  const base = compositionModuleLabels[instance.moduleId];
+  const base = compositionNodeLabels[instance.nodeId];
   return siblings.length > 1 ? `${base} ${index + 1}` : base;
 }
 
@@ -145,7 +145,7 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
-function isModuleId(value: unknown): value is CompositionModuleId {
+function isNodeId(value: unknown): value is CompositionNodeId {
   return (
     value === 'interference' ||
     value === 'pitch-list' ||
@@ -177,7 +177,7 @@ function acceptsOutputRef(value: unknown): value is CompositionOutputRef {
   );
 }
 
-export function acceptsCompositionInstances(value: unknown): value is CompositionModuleInstance[] {
+export function acceptsCompositionInstances(value: unknown): value is CompositionNodeInstance[] {
   if (!Array.isArray(value)) {
     return false;
   }
@@ -186,11 +186,11 @@ export function acceptsCompositionInstances(value: unknown): value is Compositio
     if (!candidate || typeof candidate !== 'object') {
       return false;
     }
-    const instance = candidate as CompositionModuleInstance;
+    const instance = candidate as CompositionNodeInstance;
     if (
       typeof instance.id !== 'string' ||
       ids.has(instance.id) ||
-      !isModuleId(instance.moduleId) ||
+      !isNodeId(instance.nodeId) ||
       !isFiniteNumber(instance.x) ||
       !isFiniteNumber(instance.y) ||
       (instance.dataBlockId !== undefined && typeof instance.dataBlockId !== 'string')
@@ -202,7 +202,7 @@ export function acceptsCompositionInstances(value: unknown): value is Compositio
   });
 }
 
-export function acceptsModuleRouteStates(value: unknown): value is ModuleRouteStates {
+export function acceptsNodeRouteStates(value: unknown): value is NodeRouteStates {
   if (!value || typeof value !== 'object') {
     return false;
   }
@@ -210,11 +210,11 @@ export function acceptsModuleRouteStates(value: unknown): value is ModuleRouteSt
     if (!state || typeof state !== 'object') {
       return false;
     }
-    return Object.values(state as ModuleRouteState).every((binding) => {
+    return Object.values(state as NodeRouteState).every((binding) => {
       if (!binding || typeof binding !== 'object') {
         return false;
       }
-      const candidate = binding as ModuleRouteBinding;
+      const candidate = binding as NodeRouteBinding;
       return (
         (!candidate.source || acceptsOutputRef(candidate.source)) &&
         isSignalTypeId(candidate.signalType) &&
@@ -231,7 +231,7 @@ export function acceptsCompositionInspectorTarget(
     return false;
   }
   const target = value as Record<string, unknown>;
-  if (target.kind === 'module') {
+  if (target.kind === 'node') {
     return typeof target.instanceId === 'string';
   }
   if (target.kind === 'route') {

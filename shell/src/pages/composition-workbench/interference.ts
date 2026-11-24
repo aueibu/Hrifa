@@ -211,7 +211,7 @@ export function interferenceDurationPacket(
         value: duration,
         provenance: [
           {
-            sourceModuleInstance: 'interference',
+            sourceNodeInstance: 'interference',
             sourceItemIds,
             transformation: 'interference-resultant',
             parameters: {
@@ -259,7 +259,7 @@ export function interferenceGeneratorDurationPacket(
       value: duration,
       provenance: [
         {
-          sourceModuleInstance: 'interference',
+          sourceNodeInstance: 'interference',
           sourceItemIds: [generator.id],
           transformation: 'interference-generator-lane',
           parameters: {

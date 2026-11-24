@@ -38,7 +38,7 @@ import {
 import { DeskView } from './composition-workbench/components/DeskView';
 import { DeveloperMenu } from './composition-workbench/components/DeveloperMenu';
 import { InfoBarActiveContext } from './composition-workbench/components/hoverInfo';
-import { ModuleInspectorSlotContext } from './composition-workbench/components/ModuleHost';
+import { NodeInspectorSlotContext } from './composition-workbench/components/NodeHost';
 import { ProjectMenu } from './composition-workbench/components/ProjectMenu';
 import { TransportBar } from './composition-workbench/components/TransportBar';
 import { WorkbenchStatusBar } from './composition-workbench/components/WorkbenchStatusBar';
@@ -48,17 +48,17 @@ import { CompositionSettingsProvider } from './composition-workbench/composition
 import {
   acceptsCompositionInspectorTarget,
   acceptsCompositionInstances,
-  acceptsModuleRouteStates,
+  acceptsNodeRouteStates,
   compositionInstanceLabel,
-  createDefaultModuleRouteState,
+  createDefaultNodeRouteState,
   defaultCompositionInstances,
   defaultMixerPorts,
   migrateCompositionInstances,
   newMixerChannelId,
   type CompositionInspectorTarget,
-  type CompositionModuleId,
-  type CompositionModuleInstance,
-  type ModuleRouteStates,
+  type CompositionNodeId,
+  type CompositionNodeInstance,
+  type NodeRouteStates,
 } from './composition-workbench/compositionWorkspace';
 import { DeskProvider } from './composition-workbench/desk';
 import { recordChange, recordGroup } from './composition-workbench/history';
@@ -73,7 +73,7 @@ import {
   bringPanelForward,
   DATA_BLOCK_EDITOR_PANEL,
   defaultWorkbenchScreensets,
-  MODULE_DETAIL_PANEL,
+  NODE_DETAIL_PANEL,
   parseStoredScreensets,
   screensetForCanvas,
 } from './composition-workbench/layout/workbenchScreensets';
@@ -83,11 +83,11 @@ import {
   createEvaluationStore,
   EvaluationStoreContext,
 } from './composition-workbench/runtime/evaluationStore';
-import { ModuleEvaluationRunner } from './composition-workbench/runtime/ModuleEvaluationRunner';
-import { moduleEvaluators } from './composition-workbench/runtime/moduleEvaluators';
-import { ModuleInstanceHost } from './composition-workbench/runtime/ModuleInstanceHost';
-import { modulePorts } from './composition-workbench/runtime/modulePorts';
-import { moduleRegistry } from './composition-workbench/runtime/moduleRegistry';
+import { NodeEvaluationRunner } from './composition-workbench/runtime/NodeEvaluationRunner';
+import { nodeEvaluators } from './composition-workbench/runtime/nodeEvaluators';
+import { NodeInstanceHost } from './composition-workbench/runtime/NodeInstanceHost';
+import { nodePorts } from './composition-workbench/runtime/nodePorts';
+import { nodeRegistry } from './composition-workbench/runtime/nodeRegistry';
 import { createOutputStore } from './composition-workbench/runtime/outputStore';
 import { deleteState } from './composition-workbench/runtime/stateStore';
 import { useOutputs } from './composition-workbench/runtime/useOutputs';
@@ -106,15 +106,15 @@ function uniqueId(prefix: string) {
 
 /**
  * Removes an instance's stored state and records each removed raw value in the history, so undoing
- * the delete can write them back before the module remounts (its hooks read storage only once).
+ * the delete can write them back before the node remounts (its hooks read storage only once).
  * Call inside recordGroup so the removal is one step with the instance list change.
  */
-function removeCompositionInstanceStorage(instance: CompositionModuleInstance) {
+function removeCompositionInstanceStorage(instance: CompositionNodeInstance) {
   // A project open has already written the opened project's keys; removing any now would delete them.
   if (isReloading()) {
     return;
   }
-  const keys = moduleRegistry[instance.moduleId].stateKeys.map((base) =>
+  const keys = nodeRegistry[instance.nodeId].stateKeys.map((base) =>
     compositionInstanceStateKey(base, instance.id)
   );
   try {
@@ -140,24 +140,24 @@ export function CompositionWorkbenchPage() {
   const [activeCompositionInstanceId, setActiveCompositionInstanceId] = usePersistentState<
     string | null
   >(
-    compositionStateKeys.activeCompositionModule,
+    compositionStateKeys.activeCompositionNode,
     'interference',
     (value): value is string | null => value === null || typeof value === 'string'
   );
   const [compositionInspectorTarget, setCompositionInspectorTarget] =
     usePersistentState<CompositionInspectorTarget>(
       compositionStateKeys.compositionInspectorTarget,
-      { kind: 'module', instanceId: 'interference' },
+      { kind: 'node', instanceId: 'interference' },
       acceptsCompositionInspectorTarget
     );
-  // The bottom panel targets a module (the active one) or, when this is set, a desk data-block.
+  // The bottom panel targets a node (the active one) or, when this is set, a desk data-block.
   const [editorTarget, setEditorTarget] = usePersistentState<string | null>(
     compositionStateKeys.editorTarget,
     null,
     (value): value is string | null => value === null || typeof value === 'string'
   );
   const [compositionInstances, setCompositionInstances] = usePersistentState<
-    CompositionModuleInstance[]
+    CompositionNodeInstance[]
   >(
     compositionStateKeys.compositionInstances,
     defaultCompositionInstances,
@@ -166,8 +166,8 @@ export function CompositionWorkbenchPage() {
     // Add, remove and move are discrete actions, never merged with a neighbour.
     { coalesce: false }
   );
-  // The inspector element the active module's setup controls are portaled into.
-  const [moduleInspectorSlot, setModuleInspectorSlot] = useState<HTMLElement | null>(null);
+  // The inspector element the active node's setup controls are portaled into.
+  const [nodeInspectorSlot, setNodeInspectorSlot] = useState<HTMLElement | null>(null);
   // The center's layout: this project's screensets (Canvas, Desk, Edit and the person's own). A project with none
   // starts with the defaults; the key is never an undo step.
   const [screensetStore, setScreensetStore] = usePersistentState(
@@ -207,29 +207,29 @@ export function CompositionWorkbenchPage() {
     false,
     (value): value is boolean => typeof value === 'boolean'
   );
-  // Published outputs live outside React: a publish reaches only the modules that read them.
+  // Published outputs live outside React: a publish reaches only the nodes that read them.
   const [outputStore] = useState(createOutputStore);
-  // Each placed module's latest evaluation, written by its runner and read by its view.
+  // Each placed node's latest evaluation, written by its runner and read by its view.
   const [evaluationStore] = useState(createEvaluationStore);
   const publishedCompositionOutputs = useOutputs(outputStore);
-  const [moduleRouteStates, setModuleRouteStates] = usePersistentState<ModuleRouteStates>(
-    compositionStateKeys.moduleRouteStates,
-    { melodicization: createDefaultModuleRouteState(modulePorts.melodicization!) },
-    acceptsModuleRouteStates
+  const [nodeRouteStates, setNodeRouteStates] = usePersistentState<NodeRouteStates>(
+    compositionStateKeys.nodeRouteStates,
+    { melodicization: createDefaultNodeRouteState(nodePorts.melodicization!) },
+    acceptsNodeRouteStates
   );
-  // While a data-block is open nothing else is selected: no module counts as active or highlighted.
-  const moduleShown = editorTarget === null;
-  const shownInstanceId = moduleShown ? activeCompositionInstanceId : null;
+  // While a data-block is open nothing else is selected: no node counts as active or highlighted.
+  const nodeShown = editorTarget === null;
+  const shownInstanceId = nodeShown ? activeCompositionInstanceId : null;
   const shownInspectorTarget = useMemo<CompositionInspectorTarget>(
-    () => (moduleShown ? compositionInspectorTarget : { kind: 'canvas' }),
-    [moduleShown, compositionInspectorTarget]
+    () => (nodeShown ? compositionInspectorTarget : { kind: 'canvas' }),
+    [nodeShown, compositionInspectorTarget]
   );
-  // The panel is blank when neither a data-block nor an existing module is open.
+  // The panel is blank when neither a data-block nor an existing node is open.
   const panelBlank =
-    moduleShown && !compositionInstances.some((instance) => instance.id === shownInstanceId);
+    nodeShown && !compositionInstances.some((instance) => instance.id === shownInstanceId);
 
-  // Undoing an add, or a stored id for a removed module, can leave the active module missing.
-  // The panel then goes blank: no other module is ever promoted in its place.
+  // Undoing an add, or a stored id for a removed node, can leave the active node missing.
+  // The panel then goes blank: no other node is ever promoted in its place.
   useEffect(() => {
     if (
       activeCompositionInstanceId !== null &&
@@ -251,14 +251,14 @@ export function CompositionWorkbenchPage() {
     }
   }, [compositionInspectorTarget, compositionInstances, setCompositionInspectorTarget]);
 
-  // Outputs published by a module that is gone (an undone add) must not linger as sources.
+  // Outputs published by a node that is gone (an undone add) must not linger as sources.
   useEffect(() => {
     const live = compositionInstances.map((instance) => instance.id);
     outputStore.prune(live);
     evaluationStore.prune(live);
   }, [compositionInstances, outputStore, evaluationStore]);
 
-  // The front tab of the Detail docker follows the exclusive target (a data-block, or a module): when the target flips, the
+  // The front tab of the Detail docker follows the exclusive target (a data-block, or a node): when the target flips, the
   // matching panel comes to the front in every screenset (expanding nothing). A click on the other tab does not change
   // the target, and stays until the target flips again.
   const editorOpen = editorTarget !== null;
@@ -269,24 +269,24 @@ export function CompositionWorkbenchPage() {
       return;
     }
     lastEditorOpen.current = editorOpen;
-    const panel = editorOpen ? DATA_BLOCK_EDITOR_PANEL : MODULE_DETAIL_PANEL;
+    const panel = editorOpen ? DATA_BLOCK_EDITOR_PANEL : NODE_DETAIL_PANEL;
     setScreensetStore((store) => bringPanelForward(store, panel));
   }, [editorOpen, setScreensetStore]);
 
-  // The latest data-block target, read by the stable bindModulePort below.
+  // The latest data-block target, read by the stable bindNodePort below.
   const editorTargetRef = useRef(editorTarget);
   editorTargetRef.current = editorTarget;
 
-  const bindModulePort = useCallback(
+  const bindNodePort = useCallback(
     (
       instanceId: string,
-      moduleId: CompositionModuleId,
+      nodeId: CompositionNodeId,
       port: string,
       source: CompositionOutputRef | null
     ) => {
-      setModuleRouteStates((current) => {
-        const ports = moduleRegistry[moduleId].ports ?? [];
-        const receiver = current[instanceId] ?? createDefaultModuleRouteState(ports);
+      setNodeRouteStates((current) => {
+        const ports = nodeRegistry[nodeId].ports ?? [];
+        const receiver = current[instanceId] ?? createDefaultNodeRouteState(ports);
         const existing = receiver[port];
         const preferredSignalType =
           ports.find((candidate) => candidate.id === port)?.signalType ?? 'numeric';
@@ -319,30 +319,25 @@ export function CompositionWorkbenchPage() {
         setActiveCompositionInstanceId(instanceId);
       }
     },
-    [
-      outputStore,
-      setActiveCompositionInstanceId,
-      setCompositionInspectorTarget,
-      setModuleRouteStates,
-    ]
+    [outputStore, setActiveCompositionInstanceId, setCompositionInspectorTarget, setNodeRouteStates]
   );
 
   const addMixerChannel = useCallback(
     (instanceId: string) => {
-      setModuleRouteStates((current) => ({
+      setNodeRouteStates((current) => ({
         ...current,
         [instanceId]: {
           ...current[instanceId],
-          ...createDefaultModuleRouteState([{ id: newMixerChannelId(), signalType: 'numeric' }]),
+          ...createDefaultNodeRouteState([{ id: newMixerChannelId(), signalType: 'numeric' }]),
         },
       }));
     },
-    [setModuleRouteStates]
+    [setNodeRouteStates]
   );
 
   const removeMixerChannel = useCallback(
     (instanceId: string, port: string) => {
-      setModuleRouteStates((current) => {
+      setNodeRouteStates((current) => {
         const receiver = current[instanceId];
         if (!receiver || !(port in receiver) || Object.keys(receiver).length <= 1) {
           return current;
@@ -356,16 +351,16 @@ export function CompositionWorkbenchPage() {
       });
       setCompositionInspectorTarget((target) =>
         target.kind === 'route' && target.instanceId === instanceId && target.port === port
-          ? { kind: 'module', instanceId }
+          ? { kind: 'node', instanceId }
           : target
       );
     },
-    [setCompositionInspectorTarget, setModuleRouteStates]
+    [setCompositionInspectorTarget, setNodeRouteStates]
   );
 
   const updateRouteTreatment = useCallback(
     (instanceId: string, port: string, treatment: unknown) => {
-      setModuleRouteStates((current) => {
+      setNodeRouteStates((current) => {
         const receiver = current[instanceId];
         const binding = receiver?.[port];
         if (!receiver || !binding) {
@@ -374,17 +369,17 @@ export function CompositionWorkbenchPage() {
         return { ...current, [instanceId]: { ...receiver, [port]: { ...binding, treatment } } };
       });
     },
-    [setModuleRouteStates]
+    [setNodeRouteStates]
   );
 
   // Stable identities: the canvas memoizes its cards on these callbacks.
-  const selectCompositionModule = useCallback(
+  const selectCompositionNode = useCallback(
     (instanceId: string) => {
       setActiveCompositionInstanceId(instanceId);
-      setCompositionInspectorTarget({ kind: 'module', instanceId });
+      setCompositionInspectorTarget({ kind: 'node', instanceId });
       setEditorTarget(null);
-      // Opening a module brings its panel forward and expands its docker if it was collapsed.
-      stageApiRef.current?.show(MODULE_DETAIL_PANEL);
+      // Opening a node brings its panel forward and expands its docker if it was collapsed.
+      stageApiRef.current?.show(NODE_DETAIL_PANEL);
     },
     [setActiveCompositionInstanceId, setCompositionInspectorTarget, setEditorTarget]
   );
@@ -395,7 +390,7 @@ export function CompositionWorkbenchPage() {
     },
     [setEditorTarget]
   );
-  // The open data-block is gone: the panel goes blank (nothing open), not back to a module.
+  // The open data-block is gone: the panel goes blank (nothing open), not back to a node.
   const clearEditorTarget = useCallback(() => {
     setEditorTarget(null);
     setActiveCompositionInstanceId(null);
@@ -410,55 +405,55 @@ export function CompositionWorkbenchPage() {
     [setActiveCompositionInstanceId, setCompositionInspectorTarget, setEditorTarget]
   );
 
-  function addCompositionModule(
-    moduleId: CompositionModuleId,
+  function addCompositionNode(
+    nodeId: CompositionNodeId,
     position?: Position,
     dataBlockId?: string
   ) {
-    const instanceId = uniqueId(moduleId);
+    const instanceId = uniqueId(nodeId);
     // The instance and its route state are one undo step.
     recordGroup(() => {
       setCompositionInstances((current) => [
         ...current,
         {
           id: instanceId,
-          moduleId,
+          nodeId,
           ...(position ?? nextFreePosition(current)),
           ...(dataBlockId ? { dataBlockId } : {}),
         },
       ]);
-      const ports = moduleId === 'mixer' ? defaultMixerPorts() : moduleRegistry[moduleId].ports;
+      const ports = nodeId === 'mixer' ? defaultMixerPorts() : nodeRegistry[nodeId].ports;
       if (ports) {
-        setModuleRouteStates((current) => ({
+        setNodeRouteStates((current) => ({
           ...current,
-          [instanceId]: createDefaultModuleRouteState(ports),
+          [instanceId]: createDefaultNodeRouteState(ports),
         }));
       }
     });
-    selectCompositionModule(instanceId);
+    selectCompositionNode(instanceId);
   }
 
-  function removeCompositionModule(instanceId: string) {
+  function removeCompositionNode(instanceId: string) {
     const removed = compositionInstances.find((candidate) => candidate.id === instanceId);
     if (!removed) {
       return;
     }
     const remaining = compositionInstances.filter((candidate) => candidate.id !== instanceId);
-    // The instance, its route state and its stored per-module state are one undo step.
+    // The instance, its route state and its stored per-node state are one undo step.
     recordGroup(() => {
       removeCompositionInstanceStorage(removed);
       setCompositionInstances(remaining);
       outputStore.prune(remaining.map((candidate) => candidate.id));
       evaluationStore.prune(remaining.map((candidate) => candidate.id));
-      if (moduleRegistry[removed.moduleId].ports) {
-        setModuleRouteStates((current) => {
+      if (nodeRegistry[removed.nodeId].ports) {
+        setNodeRouteStates((current) => {
           const next = { ...current };
           delete next[instanceId];
           return next;
         });
       }
     });
-    // Whatever is open stays open; only removing the open module blanks the panel.
+    // Whatever is open stays open; only removing the open node blanks the panel.
     if (instanceId === activeCompositionInstanceId) {
       setActiveCompositionInstanceId(null);
       setCompositionInspectorTarget({ kind: 'canvas' });
@@ -466,7 +461,7 @@ export function CompositionWorkbenchPage() {
   }
 
   // Used for both drops (one card or a whole selection) and Tidy.
-  function placeCompositionModules(positions: Record<string, Position>) {
+  function placeCompositionNodes(positions: Record<string, Position>) {
     setCompositionInstances((current) =>
       current.map((instance) => ({ ...instance, ...(positions[instance.id] ?? {}) }))
     );
@@ -481,14 +476,14 @@ export function CompositionWorkbenchPage() {
           activeInstanceId={shownInstanceId}
           selected={shownInspectorTarget}
           instances={compositionInstances}
-          routes={moduleRouteStates}
+          routes={nodeRouteStates}
           outputs={publishedCompositionOutputs}
-          onSelectModule={selectCompositionModule}
+          onSelectNode={selectCompositionNode}
           onSelectRoute={selectCompositionRoute}
           onSelectCanvas={() => setCompositionInspectorTarget({ kind: 'canvas' })}
-          onMoveModules={placeCompositionModules}
-          onTidy={placeCompositionModules}
-          onAddModule={addCompositionModule}
+          onMoveNodes={placeCompositionNodes}
+          onTidy={placeCompositionNodes}
+          onAddNode={addCompositionNode}
         />
       </>
     ),
@@ -496,8 +491,8 @@ export function CompositionWorkbenchPage() {
       <DeskView
         onOpenDataBlock={(dataBlock) => openDataBlockEditor(dataBlock.id)}
         onMakeSource={(dataBlock) => {
-          addCompositionModule('data-block-source', undefined, dataBlock.id);
-          // Back to a screenset that shows the canvas, where the new source module appears.
+          addCompositionNode('data-block-source', undefined, dataBlock.id);
+          // Back to a screenset that shows the canvas, where the new source node appears.
           const target = screensetForCanvas(screensetStore);
           if (target !== null) {
             setScreensetStore((store) => setActiveScreenset(store, target));
@@ -505,20 +500,20 @@ export function CompositionWorkbenchPage() {
         }}
       />
     ),
-    moduleDetail: (
+    nodeDetail: (
       <div className={classes.detailBody}>
         {panelBlank && <BlankFloor />}
         {compositionInstances.map((instance) => (
-          <ModuleInstanceHost
+          <NodeInstanceHost
             key={instance.id}
             store={outputStore}
             instanceId={instance.id}
-            moduleId={instance.moduleId}
+            nodeId={instance.nodeId}
             instanceLabel={compositionInstanceLabel(instance, compositionInstances)}
             dataBlockId={instance.dataBlockId}
             shown={shownInstanceId === instance.id}
-            routeState={moduleRouteStates[instance.id]}
-            onBind={bindModulePort}
+            routeState={nodeRouteStates[instance.id]}
+            onBind={bindNodePort}
             onAddChannel={addMixerChannel}
             onRemoveChannel={removeMixerChannel}
           />
@@ -526,17 +521,17 @@ export function CompositionWorkbenchPage() {
         {compositionInstances.length === 0 && (
           <Surface p="lg">
             <Title order={2} size="h4">
-              No modules placed
+              No nodes placed
             </Title>
             <Text c="dimmed" size="sm" mt="xs">
-              Use Add module on the canvas, or right-click it, to place one.
+              Use Add node on the canvas, or right-click it, to place one.
             </Text>
           </Surface>
         )}
       </div>
     ),
     dataBlockEditor: (
-      <div className={classes.moduleHost}>
+      <div className={classes.nodeHost}>
         <DataBlockEditorSlot dataBlockId={editorTarget} onMissing={clearEditorTarget} />
       </div>
     ),
@@ -551,20 +546,20 @@ export function CompositionWorkbenchPage() {
               <InfoBarActiveContext.Provider value>
                 <EvaluationStoreContext.Provider value={evaluationStore}>
                   <EditorTargetGuard dataBlockId={editorTarget} onMissing={clearEditorTarget} />
-                  {/* Every placed module is evaluated and publishes here, whether or not its view is
+                  {/* Every placed node is evaluated and publishes here, whether or not its view is
                     mounted. Before the panels, so a view reads its evaluation on its first render. */}
                   {compositionInstances.map(
                     (instance) =>
-                      instance.moduleId in moduleEvaluators && (
-                        <ModuleEvaluationRunner
+                      instance.nodeId in nodeEvaluators && (
+                        <NodeEvaluationRunner
                           key={instance.id}
                           outputStore={outputStore}
                           evaluationStore={evaluationStore}
                           instanceId={instance.id}
-                          moduleId={instance.moduleId as keyof typeof moduleEvaluators}
+                          nodeId={instance.nodeId as keyof typeof nodeEvaluators}
                           instanceLabel={compositionInstanceLabel(instance, compositionInstances)}
                           dataBlockId={instance.dataBlockId}
-                          routeState={moduleRouteStates[instance.id]}
+                          routeState={nodeRouteStates[instance.id]}
                         />
                       )
                   )}
@@ -636,15 +631,15 @@ export function CompositionWorkbenchPage() {
                                     dataBlockId={editorTarget}
                                     outputs={publishedCompositionOutputs}
                                     instances={compositionInstances}
-                                    routes={moduleRouteStates}
-                                    onRemoveModule={removeCompositionModule}
-                                    onModuleSlot={setModuleInspectorSlot}
+                                    routes={nodeRouteStates}
+                                    onRemoveNode={removeCompositionNode}
+                                    onNodeSlot={setNodeInspectorSlot}
                                     onRouteTreatment={updateRouteTreatment}
                                   />
                                 </div>
                               )}
                               <div className={classes.stageColumn} ref={stageBox.ref}>
-                                <ModuleInspectorSlotContext.Provider value={moduleInspectorSlot}>
+                                <NodeInspectorSlotContext.Provider value={nodeInspectorSlot}>
                                   <WorkbenchPanelsContext.Provider value={panelNodes}>
                                     <DockStage
                                       registry={WORKBENCH_REGISTRY}
@@ -655,7 +650,7 @@ export function CompositionWorkbenchPage() {
                                       onApi={onStageApi}
                                     />
                                   </WorkbenchPanelsContext.Provider>
-                                </ModuleInspectorSlotContext.Provider>
+                                </NodeInspectorSlotContext.Provider>
                               </div>
                               {settingsOpened && (
                                 <div className={classes.settingsColumn}>

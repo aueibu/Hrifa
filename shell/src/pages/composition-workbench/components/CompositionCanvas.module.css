@@ -13,14 +13,14 @@
   --composition-modified-text: var(--tint-orange-text);
 }
 
-/* Add module and Tidy sit just above React Flow's zoom controls (three 26px buttons plus a gap). */
+/* Add node and Tidy sit just above React Flow's zoom controls (three 26px buttons plus a gap). */
 .tools {
   display: flex;
   gap: 0.25rem;
   margin-bottom: calc(15px + 82px);
 }
 
-/* A zero-size anchor at the right-click point, for the module menu to open from. */
+/* A zero-size anchor at the right-click point, for the node menu to open from. */
 .contextAnchor {
   height: 0;
   pointer-events: none;

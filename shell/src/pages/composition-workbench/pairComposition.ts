@@ -131,7 +131,7 @@ function durationsPacket(
       value: duration,
       provenance: [
         {
-          sourceModuleInstance: sourceId,
+          sourceNodeInstance: sourceId,
           sourceItemIds: [] as string[],
           transformation: 'pair-composition',
           parameters: { ...parameters, index, attackTime: onset },

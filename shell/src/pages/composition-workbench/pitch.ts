@@ -527,7 +527,7 @@ export function interpretPitchList({
       provenance: [
         ...inherited,
         {
-          sourceModuleInstance: instanceId,
+          sourceNodeInstance: instanceId,
           sourceItemIds: upstream ? [sourceId] : [],
           transformation: `read-as-${format}`,
           parameters: {

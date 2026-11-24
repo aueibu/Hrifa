@@ -7,9 +7,9 @@ import {
   type ReactNode,
 } from 'react';
 
-// Lets the header transport's Play button (and the space bar) start the selected module's own
-// preview. Each module with a preview registers its play function under its instance id; the
-// transport looks up whichever module is selected.
+// Lets the header transport's Play button (and the space bar) start the selected node's own
+// preview. Each node with a preview registers its play function under its instance id; the
+// transport looks up whichever node is selected.
 interface PreviewRegistry {
   register(instanceId: string, play: () => void): () => void;
   get(instanceId: string | null | undefined): (() => void) | undefined;
@@ -59,7 +59,7 @@ export function PreviewRegistryProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Registers a module's main preview so the header transport can start it. */
+/** Registers a node's main preview so the header transport can start it. */
 export function useTransportPreview(instanceId: string, play: () => void) {
   const registry = useContext(PreviewRegistryContext);
   const latest = useRef(play);
@@ -67,7 +67,7 @@ export function useTransportPreview(instanceId: string, play: () => void) {
   useEffect(() => registry?.register(instanceId, () => latest.current()), [registry, instanceId]);
 }
 
-/** The selected module's preview, or undefined when it has none. */
+/** The selected node's preview, or undefined when it has none. */
 export function useRegisteredPreview(instanceId: string | null | undefined) {
   const registry = useContext(PreviewRegistryContext);
   useSyncExternalStore(registry?.subscribe ?? (() => () => {}), registry?.version ?? (() => 0));

@@ -11,8 +11,8 @@ import {
 import { setReloading } from './reloading';
 
 /**
- * Saved projects. Everything the workbench remembers (modules, their settings, routes, the
- * construction patch, transport, voices, UI state) lives in localStorage under one prefix, and the
+ * Saved projects. Everything the workbench remembers (nodes, their settings, routes, the
+ * node tree, transport, voices, UI state) lives in localStorage under one prefix, and the
  * desk, with every data-block's version history, lives in IndexedDB. A project is a copy of both, kept in
  * IndexedDB (`deskStore.ts`). Opening one replaces the whole workbench like opening a file: the raw
  * keys are written back and the desk is replaced (nothing merges), then the page reloads.
@@ -56,8 +56,8 @@ export function captureWorkbenchState(storage: KeyValueStorage = localStorage) {
 
 /**
  * Replaces the workbench's stored state with a project's. Entries the project lacks are removed, so
- * modules added since then disappear and missing settings fall back to defaults. Reload afterwards:
- * mounted modules don't re-read storage.
+ * nodes added since then disappear and missing settings fall back to defaults. Reload afterwards:
+ * mounted nodes don't re-read storage.
  */
 export function restoreWorkbenchState(
   entries: Record<string, string>,

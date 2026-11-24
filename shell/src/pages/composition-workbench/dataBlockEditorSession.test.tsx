@@ -237,19 +237,19 @@ describe('panel commands reach the roll', () => {
 });
 
 describe('the selection chain', () => {
-  it('resolves note, then data-block, then module-or-canvas, and parent walks up to the project', () => {
+  it('resolves note, then data-block, then node-or-canvas, and parent walks up to the project', () => {
     const chain = buildSelectionChain({
-      inspectorTarget: { kind: 'module', instanceId: 'm1' },
+      inspectorTarget: { kind: 'node', instanceId: 'm1' },
       dataBlockId: 'c1',
       noteSelection: { ids: ['n1'], range: null },
     });
-    expect(chain.map((node) => node.level)).toEqual(['note', 'data-block', 'module']);
+    expect(chain.map((node) => node.level)).toEqual(['note', 'data-block', 'node']);
     const note = chain[0];
     const dataBlock = parentSelection(chain, note);
     expect(dataBlock).toEqual({ level: 'data-block', dataBlockId: 'c1' });
-    const module = parentSelection(chain, dataBlock!);
-    expect(module).toEqual({ level: 'module', instanceId: 'm1' });
-    const project = parentSelection(chain, module!);
+    const node = parentSelection(chain, dataBlock!);
+    expect(node).toEqual({ level: 'node', instanceId: 'm1' });
+    const project = parentSelection(chain, node!);
     expect(project).toEqual({ level: 'canvas' });
     expect(parentSelection(chain, project!)).toBeNull();
   });

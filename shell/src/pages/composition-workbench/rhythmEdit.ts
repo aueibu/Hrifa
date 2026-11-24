@@ -657,7 +657,7 @@ export function editRhythm({
     const provenance = [...item.provenance];
     if (lengthChanged) {
       provenance.push({
-        sourceModuleInstance: instanceId,
+        sourceNodeInstance: instanceId,
         sourceItemIds: [item.id],
         transformation: 'edit-length',
         parameters: { action: formatLengthAction(action), rule: ruleSources[index] },
@@ -665,7 +665,7 @@ export function editRhythm({
     }
     if (op !== 'keep') {
       provenance.push({
-        sourceModuleInstance: instanceId,
+        sourceNodeInstance: instanceId,
         sourceItemIds: [item.id],
         transformation: 'edit-rhythm',
         parameters: { op, mode, rule: ruleSources[index] },

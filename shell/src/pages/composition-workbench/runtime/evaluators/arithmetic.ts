@@ -4,7 +4,7 @@ import {
   resolvePacketFromOutput,
   type PublishedCompositionOutput,
 } from '../../compositionRouting';
-import type { ModuleRouteBinding, ModuleRouteState } from '../../compositionWorkspace';
+import type { NodeRouteBinding, NodeRouteState } from '../../compositionWorkspace';
 import type { PitchAllocation } from '../../melodicization';
 import type { DataPacket } from '../../model';
 import type { ModuloTreatment } from '../../moduloTreatment';
@@ -21,14 +21,14 @@ export interface ArithmeticState {
 /**
  * What Arithmetic reads from upstream: the bound output and the route binding of each port. These
  * are picked out of the full outputs and the route state (`pickArithmeticInputs`) so the inputs
- * keep their identity when an unrelated output changes. Without that, the module's own published
+ * keep their identity when an unrelated output changes. Without that, the node's own published
  * result would count as a changed input and it would re-evaluate itself forever.
  */
 export interface ArithmeticInputs {
   outputA: PublishedCompositionOutput | undefined;
   outputB: PublishedCompositionOutput | undefined;
-  bindingA: ModuleRouteBinding | undefined;
-  bindingB: ModuleRouteBinding | undefined;
+  bindingA: NodeRouteBinding | undefined;
+  bindingB: NodeRouteBinding | undefined;
 }
 
 export interface ArithmeticContext {
@@ -48,11 +48,11 @@ export type ArithmeticEvaluation = ArithmeticCore & { outputs: PublishedComposit
 
 /**
  * Resolves ports a and b against the published outputs. A binding pointing at this same instance
- * (stale data) would feed the module's own output back into itself, so it reads as disconnected.
+ * (stale data) would feed the node's own output back into itself, so it reads as disconnected.
  */
 export function pickArithmeticInputs(
   outputs: PublishedCompositionOutput[],
-  routeState: ModuleRouteState,
+  routeState: NodeRouteState,
   instanceId: string
 ): ArithmeticInputs {
   const bindingA = routeState.a;
@@ -72,7 +72,7 @@ export function pickArithmeticInputs(
 }
 
 /** Arithmetic: treats each routed operand by its signal type, combines them, publishes `result`. */
-export function computeArithmeticModule(
+export function computeArithmeticNode(
   state: ArithmeticState,
   inputs: ArithmeticInputs,
   ctx: Omit<ArithmeticContext, 'instanceLabel'>
@@ -138,6 +138,6 @@ export function evaluateArithmetic(
   inputs: ArithmeticInputs,
   ctx: ArithmeticContext
 ): ArithmeticEvaluation {
-  const core = computeArithmeticModule(state, inputs, ctx);
+  const core = computeArithmeticNode(state, inputs, ctx);
   return { ...core, outputs: arithmeticOutputs(core, ctx) };
 }

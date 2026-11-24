@@ -5,20 +5,20 @@ import type { NoteEventValue } from '../melodicization';
 import type { DataPacket } from '../model';
 import { musicalDuration, musicalPosition } from '../musicalTime';
 import { transportTimeline } from '../transport';
-import { useModulePreview } from '../useModulePreview';
+import { useNodePreview } from '../useNodePreview';
 import type { ChordSession } from './chordSession';
 import type { PlacedNote } from './placement';
 
 /**
  * The Chords tool's audition: sounds one chord through the same preview path the desk uses (an ad
- * hoc one-item note packet, `createNotePacketPerformancePlan`, `useModulePreview`). A component of
+ * hoc one-item note packet, `createNotePacketPerformancePlan`, `useNodePreview`). A component of
  * its own, mounted by the session's provider only while the active claim wants the picker, so the
  * audio engine is needed only then; it registers its function as the session's audition sink. Sound
  * only ever starts from a click, never a hover. (Moved from the Notes editor, M4a.)
  */
 export function ChordAudition({ sourceId, session }: { sourceId: string; session: ChordSession }) {
   const { settings } = useCompositionSettings();
-  const preview = useModulePreview({
+  const preview = useNodePreview({
     instanceId: sourceId,
     volume: 30,
     transportPlay: () => undefined,

@@ -41,7 +41,7 @@ export const DESK_GESTURE_WRITE_DEBOUNCE_MS = 1000;
 
 /**
  * The desk: data-blocks set aside for reuse, kept per browser. One provider at the workbench root so
- * every module sends to, and every view reads from, the same list.
+ * every node sends to, and every view reads from, the same list.
  */
 interface DeskContextValue {
   dataBlocks: DataBlock[];
@@ -583,7 +583,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
         settledRef.current = next;
         if (options.reloading) {
           // The page is about to reload from storage: leave what is on screen alone (replacing it
-          // would republish modules and fire resets on the old page) and write nothing more.
+          // would republish nodes and fire resets on the old page) and write nothing more.
           window.clearTimeout(timerRef.current);
           timerRef.current = undefined;
           writableRef.current = false;

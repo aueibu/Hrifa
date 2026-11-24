@@ -16,7 +16,7 @@ import {
 
 export const CANVAS_PANEL = 'canvas';
 export const DESK_PANEL = 'desk';
-export const MODULE_DETAIL_PANEL = 'module-detail';
+export const NODE_DETAIL_PANEL = 'node-detail';
 export const DATA_BLOCK_EDITOR_PANEL = 'data-block-editor';
 /** The chord picker panel; its home is the `Tools` docker. */
 export const CHORDS_PANEL = 'chords';
@@ -25,7 +25,7 @@ export const CHORDS_PANEL = 'chords';
 export const WORKBENCH_PANEL_IDS = [
   CANVAS_PANEL,
   DESK_PANEL,
-  MODULE_DETAIL_PANEL,
+  NODE_DETAIL_PANEL,
   DATA_BLOCK_EDITOR_PANEL,
   CHORDS_PANEL,
 ] as const;
@@ -56,7 +56,7 @@ function baseScreenset(top: Top): Screenset {
     collapsed: [],
     lastDocker: {
       [top.panel]: { docker: DOCKER_TOP, name: top.name, index: 0 },
-      [MODULE_DETAIL_PANEL]: { docker: DOCKER_DETAIL, name: DETAIL_NAME, index: 0 },
+      [NODE_DETAIL_PANEL]: { docker: DOCKER_DETAIL, name: DETAIL_NAME, index: 0 },
       [DATA_BLOCK_EDITOR_PANEL]: { docker: DOCKER_DETAIL, name: DETAIL_NAME, index: 1 },
       [CHORDS_PANEL]: { docker: DOCKER_TOOLS, name: TOOLS_NAME, index: 0 },
     },
@@ -79,8 +79,8 @@ function baseScreenset(top: Top): Screenset {
                 node: makeDocker(
                   DOCKER_DETAIL,
                   DETAIL_NAME,
-                  [MODULE_DETAIL_PANEL, DATA_BLOCK_EDITOR_PANEL],
-                  MODULE_DETAIL_PANEL
+                  [NODE_DETAIL_PANEL, DATA_BLOCK_EDITOR_PANEL],
+                  NODE_DETAIL_PANEL
                 ),
               },
               { rem: DEFAULT_TOOLS_REM, node: makeDocker(DOCKER_TOOLS, TOOLS_NAME) },
@@ -93,7 +93,7 @@ function baseScreenset(top: Top): Screenset {
 }
 
 /**
- * The three default screensets: Canvas and Desk at 0.6 over 0.4, Edit at 0.3 over 0.7, `Detail` open on the module panel,
+ * The three default screensets: Canvas and Desk at 0.6 over 0.4, Edit at 0.3 over 0.7, `Detail` open on the node panel,
  * `Tools` empty at 30rem, the chord picker remembered at `Tools`. Canvas is active.
  */
 export function defaultWorkbenchScreensets(): ScreensetStore {
@@ -176,7 +176,7 @@ export function screensetForCanvas(store: ScreensetStore): string | null {
 
 /**
  * `panel` comes to the front of its docker in EVERY screenset that has it open (nothing is expanded or opened). The
- * Detail tab follows the exclusive target (a data-block or a module), so it must hold in the screensets that are not showing too.
+ * Detail tab follows the exclusive target (a data-block or a node), so it must hold in the screensets that are not showing too.
  */
 export function bringPanelForward(store: ScreensetStore, panel: string): ScreensetStore {
   let changed = false;

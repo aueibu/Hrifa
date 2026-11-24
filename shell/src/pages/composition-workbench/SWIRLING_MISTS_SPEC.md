@@ -1,4 +1,4 @@
-# Swirling Mists module: spec (draft)
+# Swirling Mists node: spec (draft)
 
 Status: v1 built (see ARCHITECTURE.md, "Swirling Mists"). Source: the retired WPF lens (`SwirlingMists-source.zip`), read in full.
 v1 differences from this draft: the open check on group items resolved in favor of `list | integer` with group
@@ -34,7 +34,7 @@ Drop `x`. Stratum `i` at sampling position `s` reads cell `phase0_i + speed_i ·
 Strata are the second axis, so the field is strata × `s`: a 2D surface. A sample step reads one value
 per stratum (a vertical slice); a stratum read across steps is a melodic line.
 
-Each stratum repeats every `L_i / speed_i` steps. The module shows the **realigns every** period of the
+Each stratum repeats every `L_i / speed_i` steps. The node shows the **realigns every** period of the
 whole field (the least common multiple of those periods as exact rationals, via `rationalFromNumber`),
 the same badge Mixer shows. That is the number that tells you whether the mist ever repeats.
 
@@ -54,7 +54,7 @@ Presets Soft Drift, Ripple, Misty Walk port over with their parameters rewritten
 
 ## Outputs
 
-Raw doubles are not useful downstream, so the module maps them: `map` takes the full theoretical
+Raw doubles are not useful downstream, so the node maps them: `map` takes the full theoretical
 range of the field (`center ± amplitude` across strata, not the sampled window) to `[low, high]` and
 rounds to `step`. This keeps pitches stable while you scrub or change N.
 
@@ -88,26 +88,26 @@ Device layout per ARCHITECTURE.md ("panel versus inspector"):
 - The plot is plain SVG, no new dependency. A true 3D surface (strata, `s`, value; orbit with
   drag) is deferred until the ridgeline is tried; it would be a separate component behind the same props.
 
-Preview reuses `createPitchPreviewPlan` through `useModulePreview`, like Pitch List: a mapped MIDI
+Preview reuses `createPitchPreviewPlan` through `useNodePreview`, like Pitch List: a mapped MIDI
 preview with its own step length, since a mist has no rhythm. The Pitch List `Register` control pattern
 applies if the map is read as pitch classes later.
 
 ## Files and wiring
 
 - `mist.ts` (pure: waveform tables, PRNG, evaluate, periods, map, packets) and `mist.test.ts`.
-- `components/SwirlingMistsModule.tsx`.
-- `compositionWorkspace.ts`: add `'swirling-mists'` to the module id union, label map and validator.
-- `runtime/moduleRegistry.tsx`: one entry (`stateKeys`, `takesOutputs`, `render`).
+- `components/SwirlingMistsNode.tsx`.
+- `compositionWorkspace.ts`: add `'swirling-mists'` to the node id union, label map and validator.
+- `runtime/nodeRegistry.tsx`: one entry (`stateKeys`, `takesOutputs`, `render`).
 - `usePersistentState.ts`: new `compositionStateKeys`; only parameters persist, tables and samples are
   rebuilt.
-- `signalCategories.ts`: falls through to `numeric` with no change; revisit only if the module should
+- `signalCategories.ts`: falls through to `numeric` with no change; revisit only if the node should
   carry its own hue.
 - ARCHITECTURE.md: a Swirling Mists section after Arithmetic.
 
 ## Deliberately not in v1
 
 Custom tables, keyframes, a second time mode, the Units label, flatten policies (ByStratum is the
-`voices` bank concatenated; ByValue is a sort Arithmetic or a later list module can do), and 3D.
+`voices` bank concatenated; ByValue is a sort Arithmetic or a later list node can do), and 3D.
 
 ## Tests that matter
 

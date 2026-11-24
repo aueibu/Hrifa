@@ -3,7 +3,7 @@ import {
   resolvePacketFromOutput,
   type PublishedCompositionOutput,
 } from '../../compositionRouting';
-import type { ModuleRouteBinding, ModuleRouteState } from '../../compositionWorkspace';
+import type { NodeRouteBinding, NodeRouteState } from '../../compositionWorkspace';
 import { melodicize, type MelodicizationResult, type PitchAllocation } from '../../melodicization';
 import type { DataPacket } from '../../model';
 import type { MusicalDuration } from '../../musicalTime';
@@ -19,13 +19,13 @@ export interface MelodicizationState {
 /**
  * What Melodicization reads from upstream: the bound outputs and route bindings of its `rhythm` and
  * `pitches` ports, picked by `pickMelodicizationInputs` so they keep their identity when an
- * unrelated output changes (otherwise the module's own publish would re-run it forever).
+ * unrelated output changes (otherwise the node's own publish would re-run it forever).
  */
 export interface MelodicizationInputs {
   rhythmOutput: PublishedCompositionOutput | undefined;
   pitchOutput: PublishedCompositionOutput | undefined;
-  bindingRhythm: ModuleRouteBinding | undefined;
-  bindingPitches: ModuleRouteBinding | undefined;
+  bindingRhythm: NodeRouteBinding | undefined;
+  bindingPitches: NodeRouteBinding | undefined;
 }
 
 export interface MelodicizationContext {
@@ -53,7 +53,7 @@ export type MelodicizationEvaluation = MelodicizationCore & {
  */
 export function pickMelodicizationInputs(
   outputs: PublishedCompositionOutput[],
-  routeState: ModuleRouteState,
+  routeState: NodeRouteState,
   _instanceId: string
 ): MelodicizationInputs {
   const bindingRhythm = routeState.rhythm;

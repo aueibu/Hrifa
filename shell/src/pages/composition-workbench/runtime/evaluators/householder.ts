@@ -3,7 +3,7 @@ import {
   resolvePacketFromOutput,
   type PublishedCompositionOutput,
 } from '../../compositionRouting';
-import type { ModuleRouteBinding, ModuleRouteState } from '../../compositionWorkspace';
+import type { NodeRouteBinding, NodeRouteState } from '../../compositionWorkspace';
 import {
   householderCandidatesPacket,
   householderSelectedPacket,
@@ -70,13 +70,13 @@ export interface HouseholderState {
 /**
  * What Householder reads from upstream: the bound output and the route binding of its `rhythm` and
  * `axis` ports, picked by `pickHouseholderInputs` so they keep their identity when an unrelated
- * output changes (otherwise the module's own publish would re-run it forever).
+ * output changes (otherwise the node's own publish would re-run it forever).
  */
 export interface HouseholderInputs {
   rhythmOutput: PublishedCompositionOutput | undefined;
   axisOutput: PublishedCompositionOutput | undefined;
-  bindingRhythm: ModuleRouteBinding | undefined;
-  bindingAxis: ModuleRouteBinding | undefined;
+  bindingRhythm: NodeRouteBinding | undefined;
+  bindingAxis: NodeRouteBinding | undefined;
 }
 
 export interface HouseholderContext {
@@ -114,11 +114,11 @@ function parseNumberList(text: string): number[] | undefined {
 
 /**
  * Resolves ports `rhythm` and `axis`. A binding pointing at this same instance (stale data) would
- * feed the module's own output back into itself, so it reads as disconnected.
+ * feed the node's own output back into itself, so it reads as disconnected.
  */
 export function pickHouseholderInputs(
   outputs: PublishedCompositionOutput[],
-  routeState: ModuleRouteState,
+  routeState: NodeRouteState,
   instanceId: string
 ): HouseholderInputs {
   const bindingRhythm = routeState.rhythm;

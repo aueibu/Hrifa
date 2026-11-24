@@ -54,8 +54,8 @@ function Harness() {
         outputs={[]}
         instances={[]}
         routes={{}}
-        onRemoveModule={() => undefined}
-        onModuleSlot={() => undefined}
+        onRemoveNode={() => undefined}
+        onNodeSlot={() => undefined}
         onRouteTreatment={() => undefined}
       />
     </>
@@ -984,8 +984,8 @@ function TwoDataBlocks() {
         outputs={[]}
         instances={[]}
         routes={{}}
-        onRemoveModule={() => undefined}
-        onModuleSlot={() => undefined}
+        onRemoveNode={() => undefined}
+        onNodeSlot={() => undefined}
         onRouteTreatment={() => undefined}
       />
     </>

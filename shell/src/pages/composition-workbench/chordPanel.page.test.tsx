@@ -257,7 +257,7 @@ describe('the Chords panel on the page Stage', () => {
     );
   }, 30_000);
 
-  it('A8 and A6: with the roll hidden behind the Modules tab the picker stays and the keys are not captured; flipping screensets keeps the picker and the anchor', async () => {
+  it('A8 and A6: with the roll hidden behind the Nodes tab the picker stays and the keys are not captured; flipping screensets keeps the picker and the anchor', async () => {
     const user = userEvent.setup();
     await seed();
     render(<CompositionWorkbenchPage />);
@@ -269,8 +269,8 @@ describe('the Chords panel on the page Stage', () => {
     const anchored = chordSession().getState().anchor!;
     expect(anchored).not.toBeNull();
 
-    // A8: the roll is parked behind Modules. The picker stays; Shift+ArrowRight does not move the anchor.
-    await user.click(screen.getByRole('tab', { name: 'Modules' }));
+    // A8: the roll is parked behind Nodes. The picker stays; Shift+ArrowRight does not move the anchor.
+    await user.click(screen.getByRole('tab', { name: 'Nodes' }));
     await waitFor(() => expect(roll.closest('[inert]')).not.toBeNull());
     expect(screen.getByRole('button', { name: 'Am' })).toBeInTheDocument();
     fireEvent.keyDown(document.body, { key: 'ArrowRight', shiftKey: true });
@@ -292,7 +292,7 @@ describe('the Chords panel on the page Stage', () => {
     expect(screen.getByRole('tab', { name: 'Chords' })).toBeInTheDocument();
   }, 30_000);
 
-  it('A6: a tab (Modules) the person put in front of Chords stays in front, and Chords stays open, after a flip to the other screenset and back', async () => {
+  it('A6: a tab (Nodes) the person put in front of Chords stays in front, and Chords stays open, after a flip to the other screenset and back', async () => {
     const user = userEvent.setup();
     await seed();
     render(<CompositionWorkbenchPage />);
@@ -300,13 +300,13 @@ describe('the Chords panel on the page Stage', () => {
     roll.focus();
     fireEvent.keyDown(roll, { key: '7' });
     await screen.findByRole('tab', { name: 'Chords' });
-    // Move Chords into the Detail docker (beside Modules and Data-block editor), then put Modules in front of it.
+    // Move Chords into the Detail docker (beside Nodes and Data-block editor), then put Nodes in front of it.
     fireEvent.contextMenu(screen.getByRole('tab', { name: 'Chords' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Detail' }));
     await waitFor(() => expect(chordsDocker('desk')).toBe('Detail'));
-    const modulesTab = screen.getByRole('tab', { name: 'Modules' });
-    await user.click(modulesTab);
-    await waitFor(() => expect(modulesTab).toHaveAttribute('aria-selected', 'true'));
+    const nodesTab = screen.getByRole('tab', { name: 'Nodes' });
+    await user.click(nodesTab);
+    await waitFor(() => expect(nodesTab).toHaveAttribute('aria-selected', 'true'));
     expect(screen.getByRole('tab', { name: 'Chords' })).toHaveAttribute('aria-selected', 'false');
 
     await user.click(footerTab('Canvas'));
@@ -314,7 +314,7 @@ describe('the Chords panel on the page Stage', () => {
     await user.click(footerTab('Desk'));
     await waitFor(() => expect(footerTab('Desk')).toHaveAttribute('aria-selected', 'true'));
     expect(screen.getByRole('tab', { name: 'Chords' })).toHaveAttribute('aria-selected', 'false');
-    expect(screen.getByRole('tab', { name: 'Modules' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Nodes' })).toHaveAttribute('aria-selected', 'true');
   }, 30_000);
 
   it('M6c: selection mode follows the Stage: the panel behind another tab is off screen (ghosts and Insert off), in front it works', async () => {
@@ -333,8 +333,8 @@ describe('the Chords panel on the page Stage', () => {
     await waitFor(() => expect(chordSession().getState().pickerWanted).toBe(false));
     expect(chordSession().getState().panelShown).toBe(true);
 
-    // Modules in front of Chords: the panel is off screen, selection mode is idle.
-    await user.click(screen.getByRole('tab', { name: 'Modules' }));
+    // Nodes in front of Chords: the panel is off screen, selection mode is idle.
+    await user.click(screen.getByRole('tab', { name: 'Nodes' }));
     await waitFor(() => expect(chordSession().getState().panelShown).toBe(false));
     expect(chordSession().isSelectionMode()).toBe(false);
 

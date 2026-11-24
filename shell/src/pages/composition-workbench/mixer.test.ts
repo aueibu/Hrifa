@@ -201,7 +201,7 @@ describe('limits and guards', () => {
   it('records the mixer placement in each event’s provenance', () => {
     const { plan } = compile([channel('a', 2, [0])]);
     expect(plan!.events[0].provenance.at(-1)).toMatchObject({
-      sourceModuleInstance: SOURCE,
+      sourceNodeInstance: SOURCE,
       transformation: 'mixer-place',
       parameters: { channel: 'a', loop: 'free' },
     });

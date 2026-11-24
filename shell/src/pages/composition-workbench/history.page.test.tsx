@@ -26,14 +26,14 @@ describe('workbench page history', () => {
     expect(pattern).toHaveValue('7');
   }, 15_000);
 
-  it('records a module add as one step and undoes it', async () => {
+  it('records a node add as one step and undoes it', async () => {
     const user = userEvent.setup();
     render(<CompositionWorkbenchPage />);
     const grid = screen.getByLabelText('Composition canvas');
     const count = () => within(grid).queryAllByRole('button', { name: /^Pitch List/ }).length;
     expect(count()).toBe(1);
 
-    await user.click(screen.getByRole('button', { name: 'Add module' }));
+    await user.click(screen.getByRole('button', { name: 'Add node' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Pitch List' }));
     expect(count()).toBe(2);
 
@@ -43,7 +43,7 @@ describe('workbench page history', () => {
     expect(count()).toBe(2);
   }, 15_000);
 
-  it('restores a deleted module with its state, and removes it again on redo', async () => {
+  it('restores a deleted node with its state, and removes it again on redo', async () => {
     const user = userEvent.setup();
     render(<CompositionWorkbenchPage />);
     const grid = screen.getByLabelText('Composition canvas');
@@ -84,11 +84,11 @@ describe('workbench page history', () => {
     expect(positions()).toBe(after);
   }, 15_000);
 
-  it('undoes and redoes connecting two modules', async () => {
+  it('undoes and redoes connecting two nodes', async () => {
     const user = userEvent.setup();
     render(<CompositionWorkbenchPage />);
     const grid = screen.getByLabelText('Composition canvas');
-    const routes = () => localStorage.getItem(compositionStateKeys.moduleRouteStates);
+    const routes = () => localStorage.getItem(compositionStateKeys.nodeRouteStates);
     await user.click(within(grid).getByRole('button', { name: /^Melodicization/ }));
     const before = routes();
     await user.click(screen.getByRole('button', { name: 'Rhythm source' }));

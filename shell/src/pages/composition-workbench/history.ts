@@ -283,7 +283,7 @@ function applyEntry(entry: HistoryEntry, direction: 'undo' | 'redo') {
     raw: direction === 'undo' ? change.previous : change.next,
     value: direction === 'undo' ? change.previousValue : change.nextValue,
   }));
-  // Storage first, for every key: a module that remounts as a result reads it in its initializer.
+  // Storage first, for every key: a node that remounts as a result reads it in its initializer.
   ordered.forEach((change, index) => {
     if (!change.virtual) {
       writeStorage(targets[index].key, targets[index].raw);

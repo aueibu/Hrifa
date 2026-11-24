@@ -631,7 +631,7 @@ function stepProvenance(
   extra: Record<string, unknown>
 ): Provenance {
   return {
-    sourceModuleInstance: instanceId,
+    sourceNodeInstance: instanceId,
     sourceItemIds: [],
     transformation: 'sample-mist',
     parameters: {

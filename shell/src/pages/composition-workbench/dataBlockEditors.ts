@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-// Importing an editor module registers it (`registerDataBlockEditor`), so every built-in editor is
+// Importing an editor node registers it (`registerDataBlockEditor`), so every built-in editor is
 // imported here, where the slot looks editors up.
 import './components/NotesEditor';
 import type { DataBlock } from './dataBlock';

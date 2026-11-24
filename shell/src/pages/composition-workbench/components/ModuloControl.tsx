@@ -9,7 +9,7 @@ interface ModuloControlProps {
 
 export function ModuloControl({ value, onChange }: ModuloControlProps) {
   return (
-    <div className={classes.moduleParameterRow}>
+    <div className={classes.nodeParameterRow}>
       <Text size="xs">Modulo</Text>
       <Group gap="xs" wrap="nowrap">
         <Switch

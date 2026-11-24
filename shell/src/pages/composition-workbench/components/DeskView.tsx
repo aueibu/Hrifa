@@ -8,7 +8,7 @@ import { useDesk } from '../desk';
 import type { NoteEventValue } from '../melodicization';
 import type { DataPacket } from '../model';
 import { transportTimeline } from '../transport';
-import { useModulePreview } from '../useModulePreview';
+import { useNodePreview } from '../useNodePreview';
 import { DataBlockPreview } from './DataBlockPreview';
 import { NewDataBlockPopover } from './NewDataBlockPopover';
 import classes from './DeskView.module.css';
@@ -24,9 +24,9 @@ function describe(dataBlock: DataBlock) {
 }
 
 /**
- * The desk as a workspace view beside the patch canvas: every data-block set aside, as a card. A card
- * can be heard, renamed or removed, and made into a source module on the canvas on request. Nothing
- * here reaches the patch until the user asks (see ARCHITECTURE.md, "The desk").
+ * The desk as a workspace view beside the node tree canvas: every data-block set aside, as a card. A card
+ * can be heard, renamed or removed, and made into a source node on the canvas on request. Nothing
+ * here reaches the node tree until the user asks (see ARCHITECTURE.md, "The desk").
  */
 export function DeskView({
   onMakeSource,
@@ -57,7 +57,7 @@ export function DeskView({
       <NewDataBlockPopover onCreated={(dataBlock) => onOpenDataBlock?.(dataBlock)} />
     </div>
   );
-  const preview = useModulePreview({
+  const preview = useNodePreview({
     instanceId: 'desk',
     volume: 30,
     // On the transport like every other preview, so the metronome and count-in apply.
@@ -202,7 +202,7 @@ export function DeskView({
                 disabled={!onMakeSource || makeSourceRefusal(dataBlock) !== null}
                 data-info={
                   makeSourceRefusal(dataBlock) ??
-                  'Place this data-block on the canvas as a source module that other modules can read.'
+                  'Place this data-block on the canvas as a source node that other nodes can read.'
                 }
                 onClick={() => onMakeSource?.(dataBlock)}
               >
@@ -231,7 +231,7 @@ export function DeskView({
               <Button
                 size="compact-xs"
                 variant="default"
-                data-info="Remove this data-block from the desk. Modules made from it show a missing source."
+                data-info="Remove this data-block from the desk. Nodes made from it show a missing source."
                 onClick={() => {
                   if (confirmingId === dataBlock.id) {
                     setConfirmingId(null);

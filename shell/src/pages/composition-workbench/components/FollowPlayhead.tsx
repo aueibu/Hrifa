@@ -49,10 +49,10 @@ export function pageScrollLeft({
 export type FollowMode = 'off' | 'page' | 'center';
 
 /**
- * Renders nothing. While `active`, it follows its module's preview clock and scrolls `scroller` so
+ * Renders nothing. While `active`, it follows its node's preview clock and scrolls `scroller` so
  * the playhead stays centered once it reaches the middle (see `followScrollLeft`). Every row of the rhythm diagram shares one pulse scale, so a position
  * in pulses is the same fraction of the scrolling width on every row. Only this component works
- * each frame, not the module around it.
+ * each frame, not the node around it.
  */
 export function FollowPlayhead({
   scroller,
@@ -64,7 +64,7 @@ export function FollowPlayhead({
   mode,
 }: {
   scroller: RefObject<HTMLElement | null>;
-  /** The module instance whose preview drives it. */
+  /** The node instance whose preview drives it. */
   sourceId: string;
   /** Seconds per pulse. */
   unitSeconds: number;

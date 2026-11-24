@@ -21,7 +21,7 @@ export interface FlowCellPort {
 
 interface FlowCellProps {
   title: string;
-  /** Colors the title. Fixed per module type. */
+  /** Colors the title. Fixed per node type. */
   category?: SignalCategory;
   subtitle: string;
   footer: string;
@@ -29,7 +29,7 @@ interface FlowCellProps {
   footerError?: boolean;
   // A soft notice (e.g. "2 trailing items unused by Zip") — expected/informational, not a
   // problem. Shown as a small flag on the card's left edge rather than the loud red footer bar,
-  // which is reserved for the module actually failing to produce output.
+  // which is reserved for the node actually failing to produce output.
   noticeDetail?: string;
   inlets?: FlowCellPort[];
   outlets?: FlowCellPort[];
@@ -150,7 +150,7 @@ export function FlowCell({
   onSelect,
 }: FlowCellProps) {
   return (
-    <div className={classes.slot} data-module-slot="true" data-instance-id={instanceId}>
+    <div className={classes.slot} data-node-slot="true" data-instance-id={instanceId}>
       {inlets.length > 0 && <PortRail ports={inlets} edge="top" />}
       <UnstyledButton
         className={classes.card}
@@ -162,7 +162,7 @@ export function FlowCell({
         style={
           category ? ({ '--category': signalCategoryColor(category) } as CSSProperties) : undefined
         }
-        // A modifier-click is building a multi-selection, not opening this module.
+        // A modifier-click is building a multi-selection, not opening this node.
         onClick={(event) => {
           if (!(event.ctrlKey || event.metaKey || event.shiftKey)) {
             onSelect();

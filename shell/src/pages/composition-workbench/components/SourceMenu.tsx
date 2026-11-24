@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Combobox, Input, InputBase, Menu } from '@mantine/core';
 import classes from './SourceMenu.module.css';
 
-/** One selectable output. `path` is its place in the tree: module, output, then bank entry. */
+/** One selectable output. `path` is its place in the tree: node, output, then bank entry. */
 export interface SourceOption {
   value: string;
   label: string;
@@ -21,9 +21,9 @@ export interface SourceTreeNode {
 }
 
 /**
- * Groups options into a tree of modules and their outputs, like a DAW's track-then-channel menu. A
- * module with a single compatible output collapses to one item named "Module · Output", so the
- * common case stays one click, and only modules with several outputs (or bank entries) open a
+ * Groups options into a tree of nodes and their outputs, like a DAW's track-then-channel menu. A
+ * node with a single compatible output collapses to one item named "Node · Output", so the
+ * common case stays one click, and only nodes with several outputs (or bank entries) open a
  * submenu.
  */
 export function buildSourceTree(options: SourceOption[]): SourceTreeNode[] {
@@ -68,8 +68,8 @@ interface SourceMenuProps {
 }
 
 /**
- * A source picker for an inlet: a menu of modules, each opening to its outputs. Replaces a flat
- * dropdown of "Interference · Generator 2"-style rows, which grows unmanageable as patches do.
+ * A source picker for an inlet: a menu of nodes, each opening to its outputs. Replaces a flat
+ * dropdown of "Interference · Generator 2"-style rows, which grows unmanageable as node trees do.
  */
 export function SourceMenu({
   label,

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { packet } from './model';
 import {
   categoryOfInlet,
-  categoryOfModule,
+  categoryOfNode,
   categoryOfPacket,
   signalCategoryColor,
   signalCategoryHue,
@@ -30,12 +30,12 @@ describe('signal categories', () => {
     expect(categoryOfPacket(undefined)).toBe('numeric');
   });
 
-  it('gives every module a fixed category and every inlet an expected one', () => {
-    expect(categoryOfModule('interference')).toBe('rhythm');
-    expect(categoryOfModule('pitch-list')).toBe('pitch');
-    expect(categoryOfModule('melodicization')).toBe('events');
-    expect(categoryOfModule('mixer')).toBe('audio');
-    expect(categoryOfModule('arithmetic')).toBe('numeric');
+  it('gives every node a fixed category and every inlet an expected one', () => {
+    expect(categoryOfNode('interference')).toBe('rhythm');
+    expect(categoryOfNode('pitch-list')).toBe('pitch');
+    expect(categoryOfNode('melodicization')).toBe('events');
+    expect(categoryOfNode('mixer')).toBe('audio');
+    expect(categoryOfNode('arithmetic')).toBe('numeric');
     expect(categoryOfInlet('melodicization', 'rhythm')).toBe('rhythm');
     expect(categoryOfInlet('melodicization', 'pitches')).toBe('pitch');
     expect(categoryOfInlet('mixer', 'channel-1')).toBe('audio');

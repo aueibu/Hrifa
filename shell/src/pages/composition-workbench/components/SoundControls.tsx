@@ -223,7 +223,7 @@ export function SoundSetEditor({
 }
 
 /**
- * A module's sound for one layer: the global voice by default, or the module's own sound and
+ * A node's sound for one layer: the global voice by default, or the node's own sound and
  * pitch. `value` null/undefined means "use the voice".
  */
 export function SoundOverrideControl({

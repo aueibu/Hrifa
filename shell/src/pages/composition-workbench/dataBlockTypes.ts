@@ -155,7 +155,7 @@ export function auditionRefusal(dataBlock: DataBlock): string | null {
 
 /**
  * Why the data-block cannot be placed on the canvas as a source, or null when it can. An empty data-block
- * publishes nothing for a downstream module to read, so it waits until it has content.
+ * publishes nothing for a downstream node to read, so it waits until it has content.
  */
 export function makeSourceRefusal(dataBlock: DataBlock): string | null {
   return dataBlock.packet.items.length === 0

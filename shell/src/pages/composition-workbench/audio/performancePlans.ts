@@ -166,7 +166,7 @@ export function createInterferencePreviewPlan({
               busId: GROUPING_BUS,
               provenance: [
                 {
-                  sourceModuleInstance: sourceId,
+                  sourceNodeInstance: sourceId,
                   sourceItemIds: [grouping.id],
                   transformation: 'realize-grouping-metronome',
                   parameters: { time, units: grouping.units, accented },

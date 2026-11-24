@@ -3,9 +3,9 @@ import { useAudioEngine } from '../audio/AudioEngineProvider';
 import classes from './Playhead.module.css';
 
 /**
- * A moving line over a duration strip while its module's preview sounds. Place it inside a
+ * A moving line over a duration strip while its node's preview sounds. Place it inside a
  * positioned container (the strips' `durationTimeline` already is). Only this component
- * re-renders per frame, not the module around it.
+ * re-renders per frame, not the node around it.
  */
 export function Playhead({
   sourceId,
@@ -14,7 +14,7 @@ export function Playhead({
   cyclic = true,
   visible = true,
 }: {
-  /** The module instance whose preview drives it. */
+  /** The node instance whose preview drives it. */
   sourceId: string;
   /** Seconds per strip unit (the transport pulse). */
   unitSeconds: number;
@@ -22,7 +22,7 @@ export function Playhead({
   length: number;
   /** In a loop, material that runs past the end wraps to the start (a late-starting rhythm). */
   cyclic?: boolean;
-  /** For modules with several strips: whether this strip is the one sounding. */
+  /** For nodes with several strips: whether this strip is the one sounding. */
   visible?: boolean;
 }) {
   const engine = useAudioEngine();

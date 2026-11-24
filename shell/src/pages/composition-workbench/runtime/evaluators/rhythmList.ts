@@ -47,7 +47,7 @@ export function computeRhythmList(
       label: step.duration < 0 ? `r${-step.duration}` : `${step.duration}${step.tie ? '~' : ''}`,
       provenance: [
         {
-          sourceModuleInstance: instanceId,
+          sourceNodeInstance: instanceId,
           sourceItemIds: [],
           transformation: 'rhythm-list-read',
           parameters: { text: step.duration < 0 ? `r${-step.duration}` : String(step.duration) },

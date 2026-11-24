@@ -175,7 +175,7 @@ describe('stateStore', () => {
     setState<number>(KEY, 99);
     expect(storage.has(KEY)).toBe(false);
     persistState(KEY);
-    // A mount means the module is live again.
+    // A mount means the node is live again.
     setState<number>(KEY, 5);
     expect(storage.get(KEY)).toBe('5');
   });

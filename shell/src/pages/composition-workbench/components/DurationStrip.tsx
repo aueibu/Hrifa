@@ -81,9 +81,9 @@ export function visibleBoundaries(boundaries: number[] | undefined, total: numbe
 }
 
 /**
- * The numbered duration bar every rhythm module draws: block widths proportional to durations,
+ * The numbered duration bar every rhythm node draws: block widths proportional to durations,
  * an optional late start, and the playhead while this strip sounds. See ARCHITECTURE.md,
- * "Adding a module with playback".
+ * "Adding a node with playback".
  */
 export function DurationStrip({
   label,

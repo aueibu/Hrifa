@@ -273,9 +273,7 @@ describe('helpers and packets', () => {
       [3, 1, 3, 1].map((value, index) => ({
         id: `src:${index}`,
         value,
-        provenance: [
-          { sourceModuleInstance: 'src', sourceItemIds: [], transformation: 'authored' },
-        ],
+        provenance: [{ sourceNodeInstance: 'src', sourceItemIds: [], transformation: 'authored' }],
       })),
       [],
       undefined,

@@ -28,7 +28,7 @@ function clearProject() {
 describe('the workbench center on the dock Stage', () => {
   beforeEach(clearProject);
 
-  it('keeps the canvas and every module editor mounted when screensets flip, and outputs still reach a routed module', async () => {
+  it('keeps the canvas and every node editor mounted when screensets flip, and outputs still reach a routed node', async () => {
     const user = userEvent.setup();
     render(<CompositionWorkbenchPage />);
     const canvas = screen.getByLabelText('Composition canvas');

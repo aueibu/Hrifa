@@ -8,7 +8,7 @@ const getNoOutputs = () => noOutputs;
 
 /**
  * Every published output, re-rendering the caller only when one changes. `enabled: false` (a source
- * module that takes no outputs) subscribes to nothing and always returns the same empty list.
+ * node that takes no outputs) subscribes to nothing and always returns the same empty list.
  */
 export function useOutputs(store: OutputStore, enabled = true): PublishedCompositionOutput[] {
   return useSyncExternalStore(

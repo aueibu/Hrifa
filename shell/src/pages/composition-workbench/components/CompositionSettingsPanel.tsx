@@ -151,10 +151,10 @@ export function CompositionSettingsPanel({ onClose }: { onClose(): void }) {
             Rhythm sounds
           </Title>
           <Text size="xs" c="dimmed" mb="xs">
-            Modules play their layers on these voices in order — Interference's generators 1, 2, 3;
-            Rhythm Householder's input and candidate — unless a module sets its own sound. Clicks
-            and woodblocks sound two to three octaves above the written pitch and drums two below,
-            so one pitch suits every sound.
+            Nodes play their layers on these voices in order — Interference's generators 1, 2, 3;
+            Rhythm Householder's input and candidate — unless a node sets its own sound. Clicks and
+            woodblocks sound two to three octaves above the written pitch and drums two below, so
+            one pitch suits every sound.
           </Text>
           <SoundSetEditor
             name="Rhythm"

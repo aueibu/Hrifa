@@ -10,7 +10,7 @@
   padding: 0.25rem 0.5rem;
 }
 
-.moduleIndicator {
+.nodeIndicator {
   background: var(--accent);
   border-radius: var(--radius-control);
   display: block;

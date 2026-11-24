@@ -9,9 +9,9 @@ import {
   compositionInstanceLabel,
   mixerPortLabels,
   type CompositionInspectorTarget,
-  type CompositionModuleInstance,
-  type CompositionModuleId,
-  type ModuleRouteStates,
+  type CompositionNodeInstance,
+  type CompositionNodeId,
+  type NodeRouteStates,
 } from '../compositionWorkspace';
 import { useOptionalDesk } from '../desk';
 import { hasNotesProperties } from '../notesProperties';
@@ -25,20 +25,20 @@ import classes from './CompositionInspector.module.css';
 
 interface CompositionInspectorProps {
   selected: CompositionInspectorTarget;
-  /** The module open in the main panel; a selected cable makes its receiver active. */
+  /** The node open in the main panel; a selected cable makes its receiver active. */
   activeInstanceId: string | null;
-  /** A desk data-block open in the main panel; the lower part then shows it instead of a module. */
+  /** A desk data-block open in the main panel; the lower part then shows it instead of a node. */
   dataBlockId: string | null;
   outputs: PublishedCompositionOutput[];
-  instances: CompositionModuleInstance[];
-  routes: ModuleRouteStates;
-  onRemoveModule(instanceId: string): void;
-  /** Receives the element the active module's setup controls are portaled into. */
-  onModuleSlot(element: HTMLElement | null): void;
+  instances: CompositionNodeInstance[];
+  routes: NodeRouteStates;
+  onRemoveNode(instanceId: string): void;
+  /** Receives the element the active node's setup controls are portaled into. */
+  onNodeSlot(element: HTMLElement | null): void;
   onRouteTreatment(instanceId: string, port: string, treatment: unknown): void;
 }
 
-const moduleDescriptions: Record<CompositionModuleId, string> = {
+const nodeDescriptions: Record<CompositionNodeId, string> = {
   interference: 'Authors inter-onset duration streams and their resultant.',
   'pitch-list': 'Authors ordered pitch groups and pitch-class material.',
   'rhythm-list': 'Authors a rhythm by typing it, with rests (r1) and ties (2~).',
@@ -85,7 +85,7 @@ function CanvasPart({
   if (!route || !binding) {
     return (
       <Text size="xs" c="dimmed">
-        Select a cable to adjust how its material is treated between modules.
+        Select a cable to adjust how its material is treated between nodes.
       </Text>
     );
   }
@@ -101,7 +101,7 @@ function CanvasPart({
     (binding.source ? `Missing source · ${binding.source.port}` : 'No source');
   // A mixer channel is named by its position (Ch 2), never by its internal id.
   const routePortLabel =
-    receiver?.moduleId === 'mixer'
+    receiver?.nodeId === 'mixer'
       ? (mixerPortLabels(routeState).find((port) => port.id === route.port)?.label ?? route.port)
       : portLabel(route.port);
 
@@ -158,16 +158,16 @@ function CanvasPart({
   );
 }
 
-/** Lower part: the module being edited in the main panel. */
-function ModulePart({
+/** Lower part: the node being edited in the main panel. */
+function NodePart({
   activeInstanceId,
   dataBlockId,
   instances,
-  onRemoveModule,
-  onModuleSlot,
+  onRemoveNode,
+  onNodeSlot,
 }: Pick<
   CompositionInspectorProps,
-  'activeInstanceId' | 'dataBlockId' | 'instances' | 'onRemoveModule' | 'onModuleSlot'
+  'activeInstanceId' | 'dataBlockId' | 'instances' | 'onRemoveNode' | 'onNodeSlot'
 >) {
   const dataBlocks = useOptionalDesk()?.dataBlocks ?? [];
   const dataBlock =
@@ -193,22 +193,22 @@ function ModulePart({
   if (!instance) {
     return (
       <Text size="xs" c="dimmed">
-        Select a module on the canvas.
+        Select a node on the canvas.
       </Text>
     );
   }
-  const moduleName = compositionInstanceLabel(instance, instances);
+  const nodeName = compositionInstanceLabel(instance, instances);
   return (
     <Stack gap="xs">
       <Title order={3} size="h6">
-        {moduleName} module
+        {nodeName} node
       </Title>
-      <Text size="xs">{moduleDescriptions[instance.moduleId]}</Text>
-      <Button variant="light" color="red" onClick={() => onRemoveModule(instance.id)}>
-        Remove {moduleName}
+      <Text size="xs">{nodeDescriptions[instance.nodeId]}</Text>
+      <Button variant="light" color="red" onClick={() => onRemoveNode(instance.id)}>
+        Remove {nodeName}
       </Button>
-      {/* The active module's setup controls are portaled in here; see ModuleHost. */}
-      <div ref={onModuleSlot} className={classes.moduleSlot} />
+      {/* The active node's setup controls are portaled in here; see NodeHost. */}
+      <div ref={onNodeSlot} className={classes.nodeSlot} />
     </Stack>
   );
 }
@@ -245,15 +245,15 @@ function Part({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** Two stacked parts: canvas and cables above, the active module below. */
+/** Two stacked parts: canvas and cables above, the active node below. */
 export function CompositionInspector(props: CompositionInspectorProps) {
   return (
     <div className={classes.panel}>
       <Part label="Canvas & cables">
         <CanvasPart {...props} />
       </Part>
-      <Part label={props.dataBlockId === null ? 'Module' : 'Data-block'}>
-        <ModulePart {...props} />
+      <Part label={props.dataBlockId === null ? 'Node' : 'Data-block'}>
+        <NodePart {...props} />
       </Part>
     </div>
   );

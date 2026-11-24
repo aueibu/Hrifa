@@ -4,7 +4,7 @@ import type { DataBlock } from '../../dataBlock';
 export type DataBlockSourceState = Record<string, never>;
 
 /**
- * The desk data-block this module shows, or undefined when it was deleted. It is the desk store's own
+ * The desk data-block this node shows, or undefined when it was deleted. It is the desk store's own
  * object, so it keeps its identity until the data-block is edited.
  */
 export interface DataBlockSourceInputs {

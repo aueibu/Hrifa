@@ -42,8 +42,8 @@ export function WorkbenchStatusBar({
           aria-pressed={inspectorOpen}
           data-info={
             inspectorOpen
-              ? 'Hide the inspector: the selected module’s settings and routes.'
-              : 'Show the inspector: the selected module’s settings and routes.'
+              ? 'Hide the inspector: the selected node’s settings and routes.'
+              : 'Show the inspector: the selected node’s settings and routes.'
           }
           onClick={onToggleInspector}
         >
@@ -62,7 +62,7 @@ export function WorkbenchStatusBar({
         </ActionIcon>
         <div
           className={classes.screensets}
-          data-info="Screensets: arrangements of the canvas, desk, modules and data-block editor. Switch, add, rename or duplicate them."
+          data-info="Screensets: arrangements of the canvas, desk, nodes and data-block editor. Switch, add, rename or duplicate them."
         >
           <ScreensetTabs {...screensets} />
         </div>

@@ -2,20 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { NODE_WIDTH, nextFreePosition, tidyLayout } from './compositionLayout';
 import {
   acceptsCompositionInstances,
-  isAddableModule,
+  isAddableNode,
   migrateCompositionInstances,
-  type CompositionModuleInstance,
+  type CompositionNodeInstance,
 } from './compositionWorkspace';
 
-const at = (id: string, x = 0, y = 0): CompositionModuleInstance => ({
+const at = (id: string, x = 0, y = 0): CompositionNodeInstance => ({
   id,
-  moduleId: 'pitch-list',
+  nodeId: 'pitch-list',
   x,
   y,
 });
 
 describe('tidyLayout', () => {
-  it('puts every module below the modules that feed it', () => {
+  it('puts every node below the nodes that feed it', () => {
     const positions = tidyLayout(
       [at('mel'), at('rhythm'), at('pitch'), at('mix')],
       [
@@ -29,7 +29,7 @@ describe('tidyLayout', () => {
     expect(positions.mix.y).toBeGreaterThan(positions.mel.y);
   });
 
-  it('uses the deepest source for layering and centres a lone module under its sources', () => {
+  it('uses the deepest source for layering and centres a lone node under its sources', () => {
     const positions = tidyLayout(
       [at('a'), at('b'), at('c'), at('d')],
       [
@@ -73,7 +73,7 @@ describe('tidyLayout', () => {
 });
 
 describe('nextFreePosition', () => {
-  it('starts at the origin and never lands on an existing module', () => {
+  it('starts at the origin and never lands on an existing node', () => {
     expect(nextFreePosition([])).toEqual({ x: 0, y: 0 });
     const placed = nextFreePosition([at('a', 0, 0)]);
     expect(placed.x).toBeGreaterThanOrEqual(NODE_WIDTH);
@@ -88,7 +88,7 @@ describe('nextFreePosition', () => {
 
 describe('migrateCompositionInstances', () => {
   it('passes entries without canvas coordinates through unchanged', () => {
-    const entries = [{ id: 'a', moduleId: 'pitch-list', laneId: 1, row: 1 }];
+    const entries = [{ id: 'a', nodeId: 'pitch-list', laneId: 1, row: 1 }];
     const migrated = migrateCompositionInstances(entries);
     expect(migrated).toEqual(entries);
     expect(acceptsCompositionInstances(migrated)).toBe(false);
@@ -96,27 +96,27 @@ describe('migrateCompositionInstances', () => {
 
   it('leaves canvas placements alone and drops stale lane fields', () => {
     expect(
-      migrateCompositionInstances([{ id: 'a', moduleId: 'mixer', x: 12, y: 34, laneId: 2, row: 1 }])
-    ).toEqual([{ id: 'a', moduleId: 'mixer', x: 12, y: 34 }]);
+      migrateCompositionInstances([{ id: 'a', nodeId: 'mixer', x: 12, y: 34, laneId: 2, row: 1 }])
+    ).toEqual([{ id: 'a', nodeId: 'mixer', x: 12, y: 34 }]);
   });
 
-  it('keeps the data-block a data-block module points at, and rejects a non-string one', () => {
+  it('keeps the data-block a data-block node points at, and rejects a non-string one', () => {
     const saved = [
-      { id: 's', moduleId: 'data-block-source', x: 1, y: 2, dataBlockId: 'data-block-abc' },
+      { id: 's', nodeId: 'data-block-source', x: 1, y: 2, dataBlockId: 'data-block-abc' },
     ];
     expect(migrateCompositionInstances(saved)).toEqual(saved);
     expect(acceptsCompositionInstances(migrateCompositionInstances(saved))).toBe(true);
     expect(acceptsCompositionInstances([{ ...saved[0], dataBlockId: 7 }])).toBe(false);
   });
 
-  it('keeps a data-block module out of the Add module menu', () => {
-    expect(isAddableModule('data-block-source')).toBe(false);
-    expect(isAddableModule('mixer')).toBe(true);
+  it('keeps a data-block node out of the Add node menu', () => {
+    expect(isAddableNode('data-block-source')).toBe(false);
+    expect(isAddableNode('mixer')).toBe(true);
   });
 
   it('rejects a placement with neither shape', () => {
     expect(
-      acceptsCompositionInstances(migrateCompositionInstances([{ id: 'a', moduleId: 'mixer' }]))
+      acceptsCompositionInstances(migrateCompositionInstances([{ id: 'a', nodeId: 'mixer' }]))
     ).toBe(false);
   });
 });

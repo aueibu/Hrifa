@@ -52,7 +52,7 @@ export interface PacketFrame {
 }
 
 export interface Provenance {
-  sourceModuleInstance: string;
+  sourceNodeInstance: string;
   sourceItemIds: string[];
   transformation: string;
   parameters?: Record<string, unknown>;

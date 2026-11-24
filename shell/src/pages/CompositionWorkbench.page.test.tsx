@@ -25,18 +25,18 @@ function renderPersistedPage() {
   return render(<CompositionWorkbenchPage />);
 }
 
-async function openCompositionModule(
+async function openCompositionNode(
   user: ReturnType<typeof userEvent.setup>,
   name: 'Interference' | 'Pitch List' | 'Melodicization'
 ) {
   await user.click(screen.getByRole('button', { name: new RegExp(`^${name}`) }));
 }
 
-async function addCompositionModule(
+async function addCompositionNode(
   user: ReturnType<typeof userEvent.setup>,
   name: 'Pitch List' | 'Melodicization'
 ) {
-  await user.click(screen.getByRole('button', { name: 'Add module' }));
+  await user.click(screen.getByRole('button', { name: 'Add node' }));
   await user.click(await screen.findByRole('menuitem', { name }));
 }
 
@@ -46,15 +46,15 @@ async function chooseSource(
   label: string
 ) {
   await user.click(screen.getByRole('button', { name }));
-  // A module with one compatible output is a single item ("Pitch List · Pitches"); a module with
-  // several opens a submenu: the module first, then its output.
+  // A node with one compatible output is a single item ("Pitch List · Pitches"); a node with
+  // several opens a submenu: the node first, then its output.
   const direct = screen.queryByRole('menuitem', { name: label });
   if (direct) {
     await user.click(direct);
     return;
   }
-  const [moduleName, output] = label.split(' · ');
-  await user.click(await screen.findByRole('menuitem', { name: moduleName }));
+  const [nodeName, output] = label.split(' · ');
+  await user.click(await screen.findByRole('menuitem', { name: nodeName }));
   await user.click(await screen.findByRole('menuitem', { name: output }));
 }
 
@@ -68,16 +68,16 @@ async function setVolumeToThirty(user: ReturnType<typeof userEvent.setup>, acces
 }
 
 describe('CompositionWorkbenchPage', () => {
-  it('opens in the module-first composition view', () => {
+  it('opens in the node-first composition view', () => {
     renderPage();
-    // Exactly these tabs and no other (a module must not get one): the Canvas, Modules and Data-block editor docker
+    // Exactly these tabs and no other (a node must not get one): the Canvas, Nodes and Data-block editor docker
     // tabs and the Canvas, Desk and Edit screenset tabs in the footer.
     expect(
       screen
         .getAllByRole('tab')
         .map((tab) => tab.textContent)
         .sort()
-    ).toEqual(['Canvas', 'Canvas', 'Data-block editor', 'Desk', 'Edit', 'Modules']);
+    ).toEqual(['Canvas', 'Canvas', 'Data-block editor', 'Desk', 'Edit', 'Nodes']);
     expect(screen.getByRole('heading', { name: 'Interference' })).toBeInTheDocument();
   });
 
@@ -112,54 +112,54 @@ describe('CompositionWorkbenchPage', () => {
     expect(screen.getByRole('button', { name: 'Remove Generator 4' })).toBeEnabled();
   });
 
-  it('uses the patch canvas as the composition navigator', async () => {
+  it('uses the node tree canvas as the composition navigator', async () => {
     const user = userEvent.setup();
     renderPage();
     const grid = screen.getByLabelText('Composition canvas');
-    expect(grid.querySelectorAll('[data-module-slot="true"]')).toHaveLength(3);
+    expect(grid.querySelectorAll('[data-node-slot="true"]')).toHaveLength(3);
     expect(within(grid).queryByRole('button', { name: /Note events/ })).not.toBeInTheDocument();
     expect(within(grid).getByRole('button', { name: /^Melodicization/ })).toHaveTextContent(
       'Notes | 0'
     );
     // Placement is stored as free canvas coordinates.
     expect(localStorage.getItem(compositionStateKeys.compositionInstances)).toContain(
-      '"moduleId":"melodicization","x":100,"y":170'
+      '"nodeId":"melodicization","x":100,"y":170'
     );
-    await openCompositionModule(user, 'Pitch List');
+    await openCompositionNode(user, 'Pitch List');
     expect(screen.getByRole('heading', { name: 'Pitch List', level: 2 })).toBeInTheDocument();
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
     expect(screen.getByRole('heading', { name: 'Melodicization', level: 2 })).toBeInTheDocument();
-    await openCompositionModule(user, 'Interference');
+    await openCompositionNode(user, 'Interference');
     expect(screen.getByRole('heading', { name: 'Interference', level: 2 })).toBeInTheDocument();
   }, 15_000);
 
-  it('removes modules and adds them back from the canvas', async () => {
+  it('removes nodes and adds them back from the canvas', async () => {
     const user = userEvent.setup();
     renderPage();
     const grid = screen.getByLabelText('Composition canvas');
 
-    await openCompositionModule(user, 'Pitch List');
+    await openCompositionNode(user, 'Pitch List');
     await user.click(screen.getByRole('button', { name: 'Remove Pitch List' }));
     expect(within(grid).queryByRole('button', { name: /^Pitch List/ })).not.toBeInTheDocument();
 
-    await addCompositionModule(user, 'Pitch List');
+    await addCompositionNode(user, 'Pitch List');
     expect(within(grid).getByRole('button', { name: /^Pitch List/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Pitch List', level: 2 })).toBeInTheDocument();
     await waitFor(() => {
       expect(localStorage.getItem(compositionStateKeys.compositionInstances)).toMatch(
-        /"moduleId":"pitch-list","x":\d+,"y":\d+/
+        /"nodeId":"pitch-list","x":\d+,"y":\d+/
       );
     });
   }, 15_000);
 
-  it('Ctrl-click builds a multi-selection without changing the inspected module', async () => {
+  it('Ctrl-click builds a multi-selection without changing the inspected node', async () => {
     const user = userEvent.setup();
     renderPage();
     const grid = screen.getByLabelText('Composition canvas');
     const slot = (name: RegExp) =>
       within(grid).getByRole('button', { name }).closest('.react-flow__node') as HTMLElement;
 
-    await openCompositionModule(user, 'Interference');
+    await openCompositionNode(user, 'Interference');
     await user.keyboard('{Control>}');
     await user.click(within(grid).getByRole('button', { name: /^Pitch List/ }));
     await user.click(within(grid).getByRole('button', { name: /^Melodicization/ }));
@@ -167,35 +167,35 @@ describe('CompositionWorkbenchPage', () => {
 
     expect(slot(/^Pitch List/)).toHaveClass('selected');
     expect(slot(/^Melodicization/)).toHaveClass('selected');
-    // Modifier clicks only select; the module editor stays on Interference.
+    // Modifier clicks only select; the node editor stays on Interference.
     expect(screen.getByRole('heading', { name: 'Interference', level: 2 })).toBeInTheDocument();
   }, 15_000);
 
-  it('keeps a module’s setup controls in the inspector, and reachable when it is hidden', async () => {
+  it('keeps a node’s setup controls in the inspector, and reachable when it is hidden', async () => {
     const user = userEvent.setup();
     renderPage();
     const inspector = screen
-      .getByRole('button', { name: /^Module$/ })
+      .getByRole('button', { name: /^Node$/ })
       .closest('[class*="_part_"]') as HTMLElement;
 
-    // Setup (preview volume) lives in the inspector's Module part; shaping stays in the panel.
+    // Setup (preview volume) lives in the inspector's Node part; shaping stays in the panel.
     expect(
       within(inspector).getByRole('slider', { name: 'Interference preview volume' })
     ).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Generator 1 pattern' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Hide inspector' }));
-    // With the inspector hidden the same controls fall back into the module panel.
+    // With the inspector hidden the same controls fall back into the node panel.
     expect(screen.getByRole('slider', { name: 'Interference preview volume' })).toBeInTheDocument();
   }, 15_000);
 
-  it('places any number of independently authored module instances', async () => {
+  it('places any number of independently authored node instances', async () => {
     const user = userEvent.setup();
     renderPage();
     const grid = screen.getByLabelText('Composition canvas');
 
-    await addCompositionModule(user, 'Pitch List');
-    await addCompositionModule(user, 'Pitch List');
+    await addCompositionNode(user, 'Pitch List');
+    await addCompositionNode(user, 'Pitch List');
 
     expect(within(grid).getAllByRole('button', { name: /^Pitch List/ })).toHaveLength(3);
     expect(screen.getByRole('heading', { name: 'Pitch List 3', level: 2 })).toBeInTheDocument();
@@ -207,13 +207,13 @@ describe('CompositionWorkbenchPage', () => {
     expect(screen.getByRole('textbox', { name: 'Pitch values' })).toHaveValue(
       '60, 62, 64, 67, 66.5'
     );
-    // Each new module lands in its own free slot rather than on top of another.
+    // Each new node lands in its own free slot rather than on top of another.
     const stored = JSON.parse(localStorage.getItem(compositionStateKeys.compositionInstances)!) as {
-      moduleId: string;
+      nodeId: string;
       x: number;
       y: number;
     }[];
-    const pitchLists = stored.filter((instance) => instance.moduleId === 'pitch-list');
+    const pitchLists = stored.filter((instance) => instance.nodeId === 'pitch-list');
     expect(pitchLists).toHaveLength(3);
     expect(new Set(pitchLists.map((instance) => `${instance.x},${instance.y}`)).size).toBe(3);
   }, 20_000);
@@ -223,7 +223,7 @@ describe('CompositionWorkbenchPage', () => {
     renderPage();
     const grid = screen.getByLabelText('Composition canvas');
 
-    await addCompositionModule(user, 'Melodicization');
+    await addCompositionNode(user, 'Melodicization');
     expect(screen.getByRole('heading', { name: 'Melodicization 2', level: 2 })).toBeInTheDocument();
 
     await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
@@ -266,12 +266,12 @@ describe('CompositionWorkbenchPage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
     await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
 
-    await openCompositionModule(user, 'Pitch List');
+    await openCompositionNode(user, 'Pitch List');
     await user.click(screen.getByRole('button', { name: 'Remove Pitch List' }));
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
 
     expect(screen.getByRole('button', { name: 'Pitch source' })).toHaveTextContent(
       'Missing source · pitches'
@@ -282,7 +282,7 @@ describe('CompositionWorkbenchPage', () => {
   it('opens Pitch List with explicit input interpretations', async () => {
     const user = userEvent.setup();
     renderPage();
-    await openCompositionModule(user, 'Pitch List');
+    await openCompositionNode(user, 'Pitch List');
     expect(screen.getByRole('heading', { name: 'Pitch List' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Read list as' })).toHaveValue('MIDI notes');
     expect(screen.getByRole('textbox', { name: 'Pitch values' })).toHaveValue(
@@ -308,7 +308,7 @@ describe('CompositionWorkbenchPage', () => {
   it('populates one provenance-aware pitch-class group from the Forte catalog', async () => {
     const user = userEvent.setup();
     renderPage();
-    await openCompositionModule(user, 'Pitch List');
+    await openCompositionNode(user, 'Pitch List');
     await user.click(screen.getByRole('button', { name: 'Browse Forte catalog' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Forte set-class catalog' });
@@ -341,7 +341,7 @@ describe('CompositionWorkbenchPage', () => {
     renderPage();
 
     expect(screen.queryByRole('button', { name: 'Use in…' })).not.toBeInTheDocument();
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
     expect(screen.getByRole('heading', { name: 'Melodicization' })).toBeInTheDocument();
     await chooseSource(user, 'Rhythm source', 'Interference · Resultant');
     await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
@@ -368,17 +368,17 @@ describe('CompositionWorkbenchPage', () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText('1.1.1.00')).toBeInTheDocument();
 
-    // Rearranging the canvas never rewires the patch.
+    // Rearranging the canvas never rewires the node tree.
     await user.click(screen.getByRole('button', { name: 'Tidy' }));
     await waitFor(() =>
       expect(localStorage.getItem(compositionStateKeys.compositionInstances)).toContain(
-        '"moduleId":"melodicization","x":100,"y":'
+        '"nodeId":"melodicization","x":100,"y":'
       )
     );
     expect(localStorage.getItem(compositionStateKeys.compositionInstances)).not.toContain(
-      '"moduleId":"melodicization","x":100,"y":170'
+      '"nodeId":"melodicization","x":100,"y":170'
     );
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
     expect(screen.getByRole('button', { name: 'Rhythm source' })).toHaveTextContent(
       'Interference · Resultant'
     );
@@ -392,7 +392,7 @@ describe('CompositionWorkbenchPage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await openCompositionModule(user, 'Pitch List');
+    await openCompositionNode(user, 'Pitch List');
     const interpretation = screen.getByRole('combobox', { name: 'Read list as' });
     await user.click(interpretation);
     await user.click(screen.getByRole('option', { name: 'Pitch classes' }));
@@ -401,7 +401,7 @@ describe('CompositionWorkbenchPage', () => {
     await user.click(values);
     await user.paste('[0 3 7]');
 
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
     await chooseSource(user, 'Rhythm source', 'Interference · Resultant');
     await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
 
@@ -421,23 +421,23 @@ describe('CompositionWorkbenchPage', () => {
     expect(modifiedPitchInlet).toHaveTextContent(/^P$/);
     expect(modifiedPitchInlet).toHaveAttribute('data-modified', 'true');
 
-    await openCompositionModule(user, 'Pitch List');
+    await openCompositionNode(user, 'Pitch List');
     expect(screen.getByRole('textbox', { name: 'Pitch values' })).toHaveValue('[0 3 7]');
     await waitFor(() =>
-      expect(localStorage.getItem(compositionStateKeys.moduleRouteStates)).toContain(
+      expect(localStorage.getItem(compositionStateKeys.nodeRouteStates)).toContain(
         '"transposition":2'
       )
     );
   }, 15_000);
 
-  it('offers each interference lane under its module at the receiving rhythm input', async () => {
+  it('offers each interference lane under its node at the receiving rhythm input', async () => {
     const user = userEvent.setup();
     renderPage();
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
 
     const rhythmSource = screen.getByRole('button', { name: 'Rhythm source' });
     await user.click(rhythmSource);
-    // Modules come first; a module with several outputs opens to them, like a track's channels.
+    // Nodes come first; a node with several outputs opens to them, like a track's channels.
     await user.click(await screen.findByRole('menuitem', { name: 'Interference' }));
     expect(await screen.findByRole('menuitem', { name: 'Resultant' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Generator 1' })).toBeInTheDocument();
@@ -451,12 +451,12 @@ describe('CompositionWorkbenchPage', () => {
   it('leaves a removed connected generator visibly disconnected', async () => {
     const user = userEvent.setup();
     renderPage();
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
     await chooseSource(user, 'Rhythm source', 'Interference · Generator 3');
 
-    await openCompositionModule(user, 'Interference');
+    await openCompositionNode(user, 'Interference');
     await user.click(screen.getByRole('button', { name: 'Remove Generator 3' }));
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
 
     expect(screen.getByRole('button', { name: 'Rhythm source' })).toHaveTextContent(
       'Missing source · generator:generator-c'
@@ -467,7 +467,7 @@ describe('CompositionWorkbenchPage', () => {
   it('makes pitch allocation policy inspectable', async () => {
     const user = userEvent.setup();
     renderPage();
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
 
     await chooseSource(user, 'Rhythm source', 'Interference · Resultant');
     await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
@@ -485,10 +485,10 @@ describe('CompositionWorkbenchPage', () => {
   it('restores composition state and live bindings after remounting', async () => {
     const user = userEvent.setup();
     const firstRender = renderPage();
-    await openCompositionModule(user, 'Pitch List');
+    await openCompositionNode(user, 'Pitch List');
     await user.clear(screen.getByRole('textbox', { name: 'Pitch values' }));
     await user.type(screen.getByRole('textbox', { name: 'Pitch values' }), '60, 63, 67');
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
 
     await chooseSource(user, 'Rhythm source', 'Interference · Resultant');
     await chooseSource(user, 'Pitch source', 'Pitch List · Pitches');
@@ -500,15 +500,13 @@ describe('CompositionWorkbenchPage', () => {
     await user.click(screen.getByRole('switch', { name: 'Follow playback' }));
 
     await waitFor(() => {
-      expect(localStorage.getItem(compositionStateKeys.activeCompositionModule)).toBe(
+      expect(localStorage.getItem(compositionStateKeys.activeCompositionNode)).toBe(
         '"melodicization"'
       );
       expect(
         localStorage.getItem(melodicizationKey(compositionStateKeys.melodicizationVolume))
       ).toBe('30');
-      expect(localStorage.getItem(compositionStateKeys.moduleRouteStates)).toContain(
-        'interference'
-      );
+      expect(localStorage.getItem(compositionStateKeys.nodeRouteStates)).toContain('interference');
       expect(
         localStorage.getItem(melodicizationKey(compositionStateKeys.melodicizationPianoRollView))
       ).toContain('"followPlayback":true');
@@ -533,7 +531,7 @@ describe('CompositionWorkbenchPage', () => {
     );
     expect(screen.getByRole('switch', { name: 'Follow playback' })).toBeChecked();
 
-    await openCompositionModule(user, 'Pitch List');
+    await openCompositionNode(user, 'Pitch List');
     expect(screen.getByRole('textbox', { name: 'Pitch values' })).toHaveValue('60, 63, 67');
     await user.click(screen.getByRole('button', { name: 'Reset Pitch List' }));
     expect(screen.getByRole('textbox', { name: 'Pitch values' })).toHaveValue(
@@ -571,15 +569,15 @@ describe('CompositionWorkbenchPage', () => {
         localStorage.getItem(melodicizationKey(compositionStateKeys.melodicizationPianoRollView)) ??
           '{}'
       );
-    // Stored before mount: rendering the page with another module open keeps the framing.
+    // Stored before mount: rendering the page with another node open keeps the framing.
     renderPersistedPage();
     expect(view().framed).toBe(true);
-    await openCompositionModule(user, 'Melodicization');
+    await openCompositionNode(user, 'Melodicization');
     await waitFor(() => expect(view().framed).toBe(false));
     expect(view().pixelsPerQuarter).toBe(40);
   });
 
-  it('inserts a module from the canvas right-click menu', async () => {
+  it('inserts a node from the canvas right-click menu', async () => {
     const user = userEvent.setup();
     renderPage();
     const count = () => screen.queryAllByRole('button', { name: /^Pitch List/ }).length;
@@ -587,7 +585,7 @@ describe('CompositionWorkbenchPage', () => {
     const pane = document.querySelector('.react-flow__pane');
     expect(pane).not.toBeNull();
     fireEvent.contextMenu(pane as Element, { clientX: 300, clientY: 200 });
-    expect(await screen.findByText('Add module here')).toBeInTheDocument();
+    expect(await screen.findByText('Add node here')).toBeInTheDocument();
     await user.click(await screen.findByRole('menuitem', { name: 'Pitch List' }));
     await waitFor(() => expect(count()).toBe(before + 1));
   });

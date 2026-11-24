@@ -7,9 +7,9 @@ export interface CompositionOutputRef {
   /**
    * Selects one entry when the resolved output is `kind: 'bank'` — picking a bank entry
    * happens directly in the same source dropdown a plain list output uses (see
-   * compositionOutputOptions), not through a separate module. A stale index (the bank
+   * compositionOutputOptions), not through a separate node. A stale index (the bank
    * regenerated shorter, or differently, since the pick was made) clamps to the nearest still-
-   * valid entry at resolution time rather than failing outright; the producing module's own
+   * valid entry at resolution time rather than failing outright; the producing node's own
    * in-UI preview/browse state (if it has one) is intentionally unrelated to this — same
    * "realization control, not output" separation Pitch List's preview controls already use.
    */
@@ -28,7 +28,7 @@ export function outputRefKey(ref: CompositionOutputRef) {
     : `${ref.instanceId}|${ref.port}|${ref.index}`;
 }
 
-// The published-output key, ignoring any bank-entry index — a module publishes exactly one
+// The published-output key, ignoring any bank-entry index — a node publishes exactly one
 // output per port regardless of how many entries a bank holds, so looking up the underlying
 // PublishedCompositionOutput must strip the index before matching. outputRefKey (above) is for
 // the dropdown's own option value, which needs the index to keep per-entry rows unique.
@@ -64,7 +64,7 @@ function clampedBankIndex(bank: DataPacket, index: number) {
  * or no index, passes through unchanged.
  *
  * Split from resolveBoundPacket (below) specifically so a component can memoize on `output`
- * itself — a stable reference across renders as long as the producing module's own packet
+ * itself — a stable reference across renders as long as the producing node's own packet
  * hasn't changed — rather than on the whole `outputs` array, which the workbench page rebuilds
  * fresh every render. Keying a memo on `outputs` directly defeats memoization entirely (it
  * "changes" every render regardless of content) and, since this function always allocates a
@@ -95,7 +95,7 @@ export function resolvePacketFromOutput(
     provenance: [
       ...entry.provenance,
       {
-        sourceModuleInstance: sourceId,
+        sourceNodeInstance: sourceId,
         sourceItemIds: [entry.id],
         transformation: 'select-bank-entry',
         parameters: { index: clamped, position },
@@ -206,7 +206,7 @@ function packetHasRestsOrTies(packet: DataPacket): boolean {
  * Builds the selectable option rows for an inlet's source dropdown: an ordinary list/value
  * output appears as one row; a compatible bank output is flattened into one row per entry, so
  * picking which bank entry to use happens directly in the same dropdown rather than requiring
- * a separate module. `isCompatible` is checked against the packet SHAPE a candidate would have
+ * a separate node. `isCompatible` is checked against the packet SHAPE a candidate would have
  * once resolved — a bank entry is checked as the `list` it would become, not as `kind: 'bank'`.
  */
 export function compositionOutputOptions(
@@ -226,7 +226,7 @@ export function compositionOutputOptions(
     if (!allowRestsAndTies && packetHasRestsOrTies(output.packet)) {
       continue;
     }
-    // Published labels read "<module> · <output>"; the path lets a menu show modules first.
+    // Published labels read "<node> · <output>"; the path lets a menu show nodes first.
     const split = output.label.indexOf(' · ');
     const outputPath =
       split < 0 ? [output.label] : [output.label.slice(0, split), output.label.slice(split + 3)];

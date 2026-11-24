@@ -12,7 +12,7 @@ function rhythmPacket(values = [2, 1, 1, 2]) {
       value,
       provenance: [
         {
-          sourceModuleInstance: 'interference',
+          sourceNodeInstance: 'interference',
           sourceItemIds: [`generator:${index}`],
           transformation: 'interference-resultant',
         },

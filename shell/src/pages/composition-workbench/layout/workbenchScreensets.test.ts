@@ -14,7 +14,7 @@ import {
   defaultWorkbenchScreensets,
   DESK_PANEL,
   isPanelShown,
-  MODULE_DETAIL_PANEL,
+  NODE_DETAIL_PANEL,
   parseStoredScreensets,
   screensetForCanvas,
 } from './workbenchScreensets';
@@ -41,7 +41,7 @@ describe('the default screensets', () => {
     const canvas = store.screensets.canvas;
     expect(treeDockers(canvas.tree).map((d) => [d.name, d.tabs])).toEqual([
       ['Canvas', [CANVAS_PANEL]],
-      ['Detail', [MODULE_DETAIL_PANEL, DATA_BLOCK_EDITOR_PANEL]],
+      ['Detail', [NODE_DETAIL_PANEL, DATA_BLOCK_EDITOR_PANEL]],
       ['Tools', []],
     ]);
     const desk = store.screensets.desk;
@@ -54,13 +54,13 @@ describe('the default screensets', () => {
     });
   });
 
-  it('weigh the top 0.6, 0.6 and 0.3, open on the module panel, and remember the picker at Tools', () => {
+  it('weigh the top 0.6, 0.6 and 0.3, open on the node panel, and remember the picker at Tools', () => {
     expect(rootWeights(store.screensets.canvas)).toEqual([0.6, 0.4]);
     expect(rootWeights(store.screensets.desk)).toEqual([0.6, 0.4]);
     expect(rootWeights(store.screensets.edit)).toEqual([0.3, 0.7]);
     for (const id of store.order) {
       const s = store.screensets[id];
-      expect(dockerByName(s.tree, 'Detail')?.active).toBe(MODULE_DETAIL_PANEL);
+      expect(dockerByName(s.tree, 'Detail')?.active).toBe(NODE_DETAIL_PANEL);
       expect(s.collapsed ?? []).toEqual([]);
       expect(s.lastDocker.chords).toMatchObject({ name: 'Tools', index: 0 });
     }
@@ -88,11 +88,11 @@ describe('page helpers', () => {
   it('says which panels are showing: in front and not collapsed', () => {
     const canvas = store.screensets.canvas;
     expect(isPanelShown(canvas, CANVAS_PANEL)).toBe(true);
-    expect(isPanelShown(canvas, MODULE_DETAIL_PANEL)).toBe(true);
+    expect(isPanelShown(canvas, NODE_DETAIL_PANEL)).toBe(true);
     expect(isPanelShown(canvas, DATA_BLOCK_EDITOR_PANEL)).toBe(false);
     expect(isPanelShown(canvas, DESK_PANEL)).toBe(false);
     const detail = dockerByName(canvas.tree, 'Detail')!;
-    expect(isPanelShown({ ...canvas, collapsed: [detail.id] }, MODULE_DETAIL_PANEL)).toBe(false);
+    expect(isPanelShown({ ...canvas, collapsed: [detail.id] }, NODE_DETAIL_PANEL)).toBe(false);
   });
 
   it('brings a panel forward in every screenset, and returns the same store when nothing changes', () => {
