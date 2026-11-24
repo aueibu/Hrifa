@@ -5,7 +5,7 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
 ## Status
 - Arc: Live Series: drone and raga thinking on the harmonic series (`arcs/live-series`)
 - Current milestone: M6 (a home in the app: own page `/live-series`, LIVESERIES-2), ahead of M2; M1 done 2026-11-23
-- State: M6a builder running (full scope; mountable full view); locks taken in this worktree (main checkout lock table not writable from here)
+- State: M6a attempt 1 built and reviewed but NOT committed (human: "looks pretty rough"; whole-page scroll is a nonstarter); waiting for the human's layout sketch
 
 ## Where the work is (read this first after a /clear)
 - **Branch** `interval-placement-live-series` on `aueibu/Hrifa`, pushed, **not merged** into `main`. It already
@@ -49,6 +49,7 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
 | M1 phasing drawn (2026-11-23) | Human: visualize the rhythm between the beats the same way ("that macro phasing syncs up at its own period too right?"), "yes build both now", plus listen toggles in both lane panels. **Second correction** of the rhythm columns: the beats are unaccented, so the 166 s "phases through" figure (numbered beats) cannot be heard, and two formulas mispredicted the simulation; columns are now measured from the live pairs' peaks over the next 10 minutes ("together about every", "longest wait"; C/B♭ 1.4 s and 156 s). Built **Phasing, drawn** (one row per pair of notes, 5-minute window, a bar per peak of the slower stream sized by how close the other stream's nearest peak is, together bars marked) with a tick-row closer view; Beats, drawn now has one row per note plus interval rows; listen toggles in every row of both panels, one shared state with the table and listings. | smoke 131 checks (toggle sync across four places, 6 coincidence marks, measured rhythm columns match a separate simulation); muted Edge walk: only the trail width moves; muted screenshot shows C/B♭ drifting out of step for about 2.5 minutes and back | Rows that are off are drawn as a faint flat line. |
 | M1 beat speed (2026-11-23) | Human: hear the beats and rhythms slowed by ½ etc.; asked whether it changes the played note (yes: the partner tone, never the typed note, Notes, Arpeggio or drone); "I'm willing to try it". Built one global **Beat speed: 1 / ½ / ¼ / ⅛** in both lane panels (synced): each listen pair's partner moves to fa + (fb − fa) × speed, retuned smoothly with phase kept; row labels show real and heard rates; listings stay real (measured rhythm columns scaled back). | smoke 136 checks (½: G partner 393.89, B♭ 463.95; coincidence marks use a 30 ms heard-time window, so 2 at ½); muted Edge walk incl. a speed change: only the trail width moves | Not yet heard by the human. |
 | M1 beat speed fix (2026-11-23) | Human: "something broke there. lanes dont stretch and audio stays the same". In real (muted) Edge the control worked (½: df 3.769 → 1.884, partner 395.77 → 393.91 Hz), so the jsdom test had not covered the failure. Likely cause found: browsers refill menus on reload while the page's setting restarts at 1, so a menu can show ½ while ½ plays nothing and choosing ½ again fires no change. Fix: `autocomplete="off"` on all 11 menus and fields; the beat speed is read from the menu whenever pairs are set; `pageshow` re-syncs the menus, drone style and reverb with the page. Verified in Edge: a menu restored to ¼ without an event now plays at ¼ (partner 392.94 Hz). | smoke 136 checks; Edge repro (muted) | Human confirmed: "perfect that works now". |
+| M6a attempt 1 (2026-11-23) | Builder (sonnet) built the page: route, Home entry, entry file, `LiveSeriesView` (mountable full view), lab look copied, panels in the confirmed order, sound controls in place but disabled, pure core with tests from the confirmed numbers, remembered state. Reviewer (opus): PASS-WITH-HUMAN-CHECK; core line-for-line equal to the standalone. Review fixes sent to a fresh builder: trail scrollbar jump, scroll the trail list to its newest step, tables copied from the lab's `.dt`, facts formatting, the drone sentence wording, a constant footnote, no fixed DOM ids, storage sanitizing, a stronger persistence test. Human's calls pending: chips and facts growing on wrap (strict fixed-row version?), the sounding-column tint, Beat speed's final place. | gate attempt 1 green (typecheck, format, lint, stylelint, 43 tests, smoke); Home page test 3/3 | Dev server for the look: `http://127.0.0.1:5181/Hrifa/live-series` (this worktree). Deferred: the "Who consumes what" row for Live Series in `shell/ARCHITECTURE.md` (the workbench holds its lock in the main checkout). |
 | C0 (2026-11-23) | Context scan done (section "C0 scan result" below): no locks, no conflicts, no importers; overlaps noted (Harmonic ring backlog item, ratio-rhythm for M5, required-interval explorer location for M2). | no code change; gate last green at Setup | Read directly after the scan agent stopped on the org spend limit. |
 
 ## C0 scan result (2026-11-23, main checkout's coordination docs)
@@ -86,11 +87,15 @@ Orchestrator updates after every milestone step. After a compaction or a /clear,
   a taraf bed from the series; sam and tala from the ratios.
 
 ## Next action
-M1 is DONE. M6 runs next (human: own page `/live-series`, ahead of M2; ARC "ARC revision for app code", LIVESERIES-2).
-Before the first builder (look and storage are the human's): get the panel layout (screensets on the dock Stage) and
-persistence (remember notes, trail and sound settings or start fresh) decided; then M6a with a builder + reviewer
-(brief: the human's words, no-jumping rule verbatim, reuse the dock Stage, lab `VoiceEngine` in M6b, lib `beats.ts`;
-tests from the smoke's confirmed numbers); lock the entry file, Router, applets and package.json in M6a. After M6:
+M6a attempt 1 is built (page, core with tests, gate green: 45 tests) and reviewed, review fixes applied, but it is
+UNCOMMITTED in the worktree (`src/Router.tsx`, `src/data/applets.ts`, `src/pages/LiveSeries.page.tsx`,
+`src/pages/live-series/`): the human found it "pretty rough" and a whole-page scroll "a nonstarter", and will send a
+layout sketch. Next: take the sketch, restate it with the human's words, rework the layout (the page fits the window,
+panels scroll inside; no jumping) with a builder + reviewer, then the human's look, then commit and release the locks
+(entry, Router, applets, package.json). Human's three open questions (chips/facts strict fixed height, the sounding
+column's accent tint, Beat speed's final place) are likely answered by the sketch. The branch already contains local
+main (merge b131846, so main can fast-forward); dev servers: this worktree on 5181, the human's usual on 5174 (main
+checkout), both started by this session. After M6:
 M2 (scenario table first: the explorer's default 0 3 8 13 19 with hung A♭2 C♯3, plus one of theirs). Open:
 publish the current page to https://claude.ai/artifact/Mdtwb8v22H9CpnzUFnXnMW (copy to the scratchpad first, `url` =
 that link; it failed three times on 2026-11-23 with HTTP 403 on the read-back: try once in a fresh session, else ask

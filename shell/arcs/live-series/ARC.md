@@ -41,6 +41,8 @@ pushed, not merged). Every human decision so far, in order (details in PROGRESS.
 Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:5:6 (fundamental 1/4) → +7/4 no move
 → +9/8 8:9:10:12 (1/8) → +6/5 20:24:25:30 (1/20, 13.08 Hz under C4 = 261.63 Hz); 12-EDO 0 4 7 = 4:5:6 within 15¢ but
 30:38:45 within 10¢; 0 4 7 10 = 20:25:30:36 at 20¢; the required-interval default 0 3 8 13 19 = 10:12:16:21:30 at 20¢.
+(Superseded by M1's shared error, 2026-11-23: 0 4 7 = 4:5:6 at worst 7.8¢, so also within 10¢; 0 4 7 10 = 4:5:6:7 at
+16.6¢; the required-interval default is unchanged.)
 
 ## Parameters
 
@@ -318,6 +320,15 @@ Confirmed scenario numbers (the smoke test checks all of them): 1/1 5/4 3/2 = 4:
 - [ ] Remember per viewer under `hrifa.live-series.v1` (sanitized on load): notes, chosen rung, trail and settings
       (1/1, steps, fit limit, notes tuned, drone range, style, octave, bare sine, pulse rate, reverb, beat speed).
 - [ ] `check:live-series` passes.
+- Human's look at M6a attempt 1 (2026-11-23): "It looks pretty rough, to be honest. Let me sketch a layout and get
+  back to you. The scroll requirement for the whole screen is a nonstarter." So: **the page must fit the window with
+  no whole-page scroll** (panels scroll inside themselves, as the module-surfaces rule "the window never scrolls");
+  the layout waits for the human's sketch. M6a stays uncommitted in the worktree until then.
+- Builder decisions recorded (M6a, 2026-11-23; reviewer: fine): the sound settings that drive readouts (notes bare
+  sine, notes tuned, drone range / octave / bare sine / style, pulse rate, reverb and mix) are live and remembered in
+  M6a while the sound actions and listen toggles are disabled; fixed 2.75rem single-line rows with the full text in
+  tooltips; the Trail list is a fixed 6-row box that scrolls to its newest step; "What a note can be" is a hover
+  tooltip; new limits 64 notes and 500 trail steps (the standalone had none).
 
 *(approval)* M3–M5 order is open; the human may reorder or drop any of them. Order after M6 (human, 2026-11-23):
 M2, then M3–M5.
