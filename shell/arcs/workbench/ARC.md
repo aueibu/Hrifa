@@ -85,20 +85,43 @@ Each milestone is small enough for one builder run (split if not) and has criter
 - Acceptance: as B1a.
 - Human checkpoint after: **yes** (the workspace tabs and labels are what the human sees)
 
-### B1: References and users (pure TS)
-- Scope: the pure core under the page folder (types registered: Notes, Pitch set, Pitch classes, Rhythm, Values, Collection, each with a default `audition`; Curve and Steps follow in T0/T1): `dataBlockUsers(id)` over project state (Make source instances today), Make single user (duplicate with `derivedFrom`, repoint one user), delete impact (the list shown before a delete), Remap users (count first), the Unused filter and manual Purge, collections as a stored record with roles and its validation; persistence and undo through the existing recorders.
-- Acceptance:
-  - [ ] `check:workbench` passes
-  - [ ] Unit tests from the confirmed B0 rows (node env), including: users of a data-block used by a Make source and a collection; Make single user repoints only the chosen user; delete lists every user
-  - [ ] DECISIONS row: references and users are computed; collections
+### B1-i: References and users (pure TS): DONE 2026-11-23 (df8cb2a, W-57)
+- `dataBlockRefs.ts`: computed users from registered referencers, delete impact, make single user, unlink, remap, unused and purge. Hand-offs to B2: undo wiring, remap from a missing data-block, unlink wording, disable Make single user at 1 user.
+
+### Registry rebuild, phase A (human, 2026-11-24: "a ground up build probably makes the most sense"; scope A and B, A first)
+Source of truth: `SCENARIOS.registry.md` (confirmed 2026-11-24). Only the contracts stay (`DataPacket`, exact-rational time, midicent pitch, evaluators' math, version tree, PianoRoll, audio engine); the old registry code is not read for shape, only to port a specific piece. New code in `src/pages/composition-workbench/dataBlocks/`; each old caller is moved to it and its old logic deleted in the same step (no two registries side by side after a step).
+
+#### R0: Registry core
+- Scope: `registerDataBlockType` (id, label, payload, one `accepts`, `createBlank`, `validate`, optional `preview`, `editorId`, `audition`, `refs`), `dataBlockRefs.ts` moved in. No UI.
+- Acceptance: [ ] `check:workbench` passes [ ] unit tests for R1 to R4 of the scenarios (one registration is enough for a new type; a type with no audition reports why) [ ] DECISIONS row
 - Human checkpoint after: no
 
-### B2: data-block menu and desk user counts (UI)
-- Scope: one shared `data-block menu` (type icon, searchable list with `SnippetPreview` thumbnails, filtered by what the input accepts via `clipTypeOf` and `acceptsPacket`, name, user count that makes a unique copy, New, unlink; a select-only variant; an optional version sub-field) in the page folder with a pure core (moved to `src/components/` only later, under a lock, if it stays free of workbench types); used first by Make source (swap its clip in place from its header instead of deleting the module) and shown on the desk card (user count, "Used by" list in the delete confirm, Unused filter, Purge). Thin slice first (look), then polish.
-- Acceptance:
-  - [ ] `check:workbench` passes; the page test passes; component tests from the B0 rows (including the picker's "Reinterpret as" submenu)
-  - [ ] "C major" Pitch set: audition from the desk with no wiring
+#### R1: Register the packet types and move the callers
+- Scope: Notes, Pitch set, Pitch classes, Rhythm, Values registered; desk, Make source and capture read the registry; delete `clipTypeOf`, `acceptsPacket`, `packetMatches` duplicates as each caller moves.
+- Acceptance: [ ] `check:workbench` passes [ ] page test passes, no visible change
+- Human checkpoint after: no
+
+#### R2: Audition core (pure)
+- Scope: `audition(dataBlock, listenerSettings) -> plan` for the rows A1 to A8: in sequence (default) or together, base octave, offset (transposition), loop (toggle, default on while held), cycle or stop at shortest, project tempo; refusals with reasons; Values only through the explicit "Hear as MIDI note numbers".
+- Acceptance: [ ] `check:workbench` passes [ ] tests written from the A rows with the human's actual examples (`0 1 4 6` plays exactly those four pitches, no octave added; `{0,4,7}` with offset 3 gives 3, 7, 10; 3 pitches over 5 onsets: cycle `p1 p2 p3 p1 p2`, stop at shortest `p1 p2 p3`)
+- Human checkpoint after: no
+
+#### R3: Audition control on the desk card (thin slice)
+- Scope: Play with the listener settings (sequence or together, base octave, offset, loop) on the desk card, through the transport; Values refusing with the Hear-as button; empty refusing.
+- Acceptance: [ ] `check:workbench` and the page test pass [ ] "C major"-style Pitch set audible from the desk with no wiring
+- Human checkpoint after: **yes** (the human listens)
+
+#### R4: Collection type
+- Scope: Collection record (named entries, role plus reference, two entries of one role allowed, a missing reference shows as missing), its referencer, its audition through the Melodicization evaluator in cycle or stop-at-shortest mode; two melodies in one collection layer from the same start. Read the OpenMusic manual (voice, poly) before any composite beyond this.
+- Acceptance: [ ] `check:workbench` passes [ ] tests from A7 and R4 rows
+- Human checkpoint after: **yes** (the human listens: Ring A on Clave in both modes)
+
+#### B2 (moved after R4): data-block menu and desk user counts (UI)
+- Scope as before (one data-block menu with filtering by `accepts`, "Reinterpret as" submenu, user count that makes a unique copy, New, unlink, Make source swap in place, desk "Used by" list in the delete confirm, Unused filter, Purge) plus the B1-i hand-offs (undo wiring through a desk method that takes the next list, apply the desk first then instances in one `recordGroup`; remap from a missing data-block; unlink wording; disable Make single user at 1 user). Thin slice first.
 - Human checkpoint after: **yes** (look and feel)
+
+### Phase B (node layer), planned after R4 with its own scenarios (`SCENARIOS.registry.md` Part 3)
+Each node declares its inputs and outputs against the registry (N1 to N5); the connection check and the picker read one `accepts`; `signalTypeFor` and the signal type table fold into the registry; Make source disconnects wires that no longer fit and says which. One node at a time, Melodicization first.
 
 ### T0: Scenarios (no code)
 - Scope: `arcs/workbench/SCENARIOS.T.md`, with a recommended answer per row from `RESEARCH.blender.md` section 5 (NLA table) and section 6 (markers); where the human has not changed it, the recommendation stands: a strip references its clip (B0), **extrapolation per strip** (Hold Forward so a short pitch strip governs a long rhythm strip, or Nothing), crop, repeat, scale and reverse live on the strip, tracks combine by order plus Replace or Add, double-click is tweak mode (edit the clip in place, Pin toggles clip time or timeline time), meta strips and placed collections, mute, solo and lock per track and mute per strip, bake as Push Down in reverse, sections are shared markers (a marker bound to a pitch context is the T6b model). The human's concrete cases, each choice shown with an example where the options give different results. First question: **how strips get associated** — (A) by overlap in time (a realization track combines whatever pitch and rhythm strips sit above it at each moment), (B) by an explicit link between two strips, (C) by a realize strip whose pitch source, rhythm source and rule are chosen in its settings, or a mix (e.g. C's rule with A's overlap). Then: which combining rules come first (Melodicization's; others from the canvas modules); what happens where the pitch and rhythm strips have different lengths or start at different bars; what tracks are (typed by material kind, or free); a strip as a reference to its desk clip (edit once, every use follows) or a copy, and "make single user"; bake (realization → note clip) and what stays linked; what a sounding track owns (sound, volume, mute, solo); what happens when a source clip is deleted; one tempo and meter or changes; how material gets onto the timeline first (Send to timeline, then drag); the Arrange panel's place in the screensets; how the canvas modules relate (can a canvas module's output be a strip?).

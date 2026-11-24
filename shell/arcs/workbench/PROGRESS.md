@@ -4,7 +4,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Timeline (`arcs/workbench`), APPROVED 2026-11-23 (human), committed a836990
-- Current milestone: B1-ii (type registrations with audition, collection record, signalTypeFor fold); B1-i done 2026-11-23
+- Current milestone: R0 (registry core, ground-up rebuild); B1-i done 2026-11-23
 - State: B1a committed (data-block vocabulary: Snippet and clip renamed everywhere in the page folder; gate green 105 files / 1,548 tests; review fixed). Next: B1b. Page-entry lock held; vite.config.mjs and ARCHITECTURE.md locks released after the commit.
 
 ## Where to look
@@ -34,4 +34,4 @@ None yet.
 - Approve the revised `ARC.md` (milestones C0, T0 to T6b).
 
 ## Next action
-**RESUME HERE (2026-11-23):** B1a, B1b, B1c and B1-i are committed. Next B1-ii: register the data-block types (Notes, Pitch set, Pitch classes, Rhythm, Values, Collection) in one registry extending `dataBlockTypes.ts`, each with a default `audition`; the collection record `{ role, ref }` with validation and a referencer for `dataBlockRefs.ts`; fold the duplicated accepts logic and `signalTypeFor` order into the registry. Then B2 (UI; takes the B1-i hand-offs listed in the B1-i row).
+**RESUME HERE (2026-11-24):** B1a to B1c and B1-i are committed. The human chose a ground-up registry rebuild (scope A, then B): `ARC.md` now has R0 to R4 (checkpoints at R3 and R4: the human listens), B2 moved after R4, phase B (node layer) after that. Scenarios confirmed in `SCENARIOS.registry.md`. Next: R0 (registry core in `dataBlocks/`, `dataBlockRefs.ts` moves in; no UI). B1-i hand-offs are in the B1-i row and in B2.
