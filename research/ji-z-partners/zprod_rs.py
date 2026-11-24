@@ -45,6 +45,8 @@ def main():
     ap.add_argument("--max-nodes", type=int, default=2_000_000)
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--count-only", action="store_true")
+    ap.add_argument("--vminus2", action="store_true",
+                    help="also try each small factor with one minus point at -2 (residue families)")
     ap.add_argument("--no-types", action="store_true")
     ap.add_argument("--hull-cache", default="", help="ignored (no hull computation)")
     ap.add_argument("--rs-bin", default="")
@@ -64,6 +66,8 @@ def main():
            "--max-nodes", str(a.max_nodes), "--threads", str(a.workers), "--out", prod_path]
     if a.count_only:
         cmd.append("--count-only")
+    if a.vminus2:
+        cmd.append("--vminus2")
     if a.enumerate:
         cmd += ["--enum", "--mem-gb", str(a.mem_gb)]
     t0 = time.time()

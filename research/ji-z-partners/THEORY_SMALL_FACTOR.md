@@ -391,3 +391,26 @@ irreducible factors with one flipped; 39 with a coefficient 2 next to a 3-term f
 3+12 15, 3+13 4, 3+14 2, 3+10 1), 20 with both factors signed (4+9 6, 7+7 5, 4+11 4, 6+6 2, 4+12 2,
 4+10 1). 47 of the 59 are at exactly q = 6,561 = 3^8. So the residue is real and grows with q; none is
 known at 7-limit or above, where the proven ranges stop below q 2,187.
+
+### 6.8 Residue structure (the 59 hunt families, `tables/chordsum/residue_q6561_factors.txt`)
+
+Every one is two irreducible factors, one small. By the small factor (plus, minus terms; the other
+factor in brackets):
+
+| small factor | weight | other factor | families | reading |
+|---|---|---|---|---|
+| 2 plus, 1 minus (e.g. {1, −9/8, 27/16}) | 1 | plain, 12-15 notes, **exactly one note counted twice** | 38 | merge whose stacking set has one doubled point; gives 13- to 16-note pairs |
+| 3 plus, 1 minus | 2 | 8-10 plus, 1-2 minus | 13 | both signed |
+| 5 plus, 2 minus | 3 | 6 plus, 1 minus | 5 | balanced, 7 + 7 terms |
+| 5 plus, 1 minus | 4 | 5 plus, 1 minus | 2 | balanced, 6 + 6 terms |
+| plain 3-note chord | 3 | 7 plus, 3 minus, one coefficient 2 | 1 | hole whose stacking set has a doubled point |
+
+So the residue is the hole/merge picture with two relaxations: a stacking point used twice (a
+coefficient 2; 39 families), or minus signs in both factors (20). In the 38 of the first row, the
+doubled note must meet the subtracted copy (2 − 1 = 1 or 2 − 1 − 1 = 0), so it is still a merge.
+
+Generator: each row is one factor-search shape (2,1 with second-factor coefficients 0..2; 3,1, 5,1,
+5,2 with signed second factor; 3,0 with second factor −1..2). With no node budget the search is
+exhaustive for those shapes (`data/vm/res_gen.sh`, check against the 9 proven residue families).
+Gap: family 15/19292's small factor has a coefficient −2 ({45/32, 3/2, 25/16, −2·15/8}); the Rust
+factor generation builds ±1 coefficients only, so it cannot be reached without extending gen_V.

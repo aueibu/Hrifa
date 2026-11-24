@@ -6,7 +6,8 @@
 //! the zgen code. Standard library only.
 //!
 //! usage: zprod-rs --primes 3 5 7 --q 99 --k 6 7 8 --shapes 3,1 4,1 [--ucoeffs 0 1 2] [--max-neg 1]
-//!                 [--max-nodes 2000000] [--threads 16] [--count-only] --out products.jsonl
+//!                 [--max-nodes 2000000] [--threads 16] [--count-only] [--vminus2] --out products.jsonl
+//! --vminus2: also emit each factor with one of its minus points at -2 (residue families, THEORY 6.8).
 
 use std::collections::{HashMap, HashSet};
 use std::io::{BufWriter, Write};
@@ -30,6 +31,7 @@ struct Args {
     threads: usize,
     count_only: bool,
     no_upair: bool,
+    vminus2: bool, // also try each factor with one minus point at -2 (residue families, THEORY 6.8)
     out: String,
     cliques: usize,
     enumerate: bool,
@@ -49,6 +51,7 @@ fn parse_args() -> Args {
         threads: 2,
         count_only: false,
         no_upair: false,
+        vminus2: false,
         out: String::new(),
         cliques: 0,
         enumerate: false,
@@ -92,6 +95,7 @@ fn parse_args() -> Args {
             "--threads" => a.threads = vals(&mut i)[0].parse().unwrap(),
             "--count-only" => a.count_only = true,
             "--no-upair" => a.no_upair = true,
+            "--vminus2" => a.vminus2 = true,
             "--selftest-hull" => SELFTEST.store(true, std::sync::atomic::Ordering::Relaxed),
             "--out" => a.out = vals(&mut i)[0].clone(),
             "--cliques" => a.cliques = vals(&mut i)[0].parse().unwrap(),
@@ -607,10 +611,11 @@ struct GenCtx {
     comp: Vec<u8>, // comp[a * n + b] = 1 when boxv[a] - boxv[b] is an allowed interval
     n: usize,
     dim: usize,
+    minus2: bool, // --vminus2
 }
 
 impl GenCtx {
-    fn new(d: &[Pt]) -> GenCtx {
+    fn new(d: &[Pt], minus2: bool) -> GenCtx {
         let dim = d[0].len();
         let zero = vec![0; dim];
         let dset: HashSet<Pt> = d.iter().cloned().collect();
@@ -624,7 +629,7 @@ impl GenCtx {
                 }
             }
         }
-        GenCtx { boxv, comp, n, dim }
+        GenCtx { boxv, comp, n, dim, minus2 }
     }
     #[inline]
     fn ok(&self, a: usize, b: usize) -> bool {
@@ -697,17 +702,21 @@ fn gen_v_impl<Fn_: FnMut(Factor)>(g: &GenCtx, shapes: &[(usize, usize)], prefix:
                 combinations(inner.len(), vm).into_iter().map(|c| c.iter().map(|&i| inner[i].clone()).collect()).collect()
             };
             for minus in minus_sets {
-                let mut terms: Vec<(Pt, i32)> = plus.iter().map(|p| (p.clone(), 1)).collect();
-                for p in &minus {
-                    terms.push((p.clone(), -1));
+                // which minus point (if any) carries -2: none, then (with --vminus2) each in turn
+                let variants = if g.minus2 { minus.len() + 1 } else { 1 };
+                for two in 0..variants {
+                    let mut terms: Vec<(Pt, i32)> = plus.iter().map(|p| (p.clone(), 1)).collect();
+                    for (i, p) in minus.iter().enumerate() {
+                        terms.push((p.clone(), if two > 0 && i == two - 1 { -2 } else { -1 }));
+                    }
+                    let v = normalize(&terms);
+                    let r = reversal(&v);
+                    let negv: Vec<(Pt, i32)> = v.iter().map(|(p, c)| (p.clone(), -c)).collect();
+                    if r == v || r == normalize(&negv) {
+                        continue;
+                    }
+                    emit(v);
                 }
-                let v = normalize(&terms);
-                let r = reversal(&v);
-                let negv: Vec<(Pt, i32)> = v.iter().map(|(p, c)| (p.clone(), -c)).collect();
-                if r == v || r == normalize(&negv) {
-                    continue;
-                }
-                emit(v);
             }
         });
     }
@@ -1849,7 +1858,7 @@ fn main() {
     let args = parse_args();
     let t0 = Instant::now();
     let d = gamut(&args.primes, args.q);
-    let g = Arc::new(GenCtx::new(&d));
+    let g = Arc::new(GenCtx::new(&d, args.vminus2));
     eprintln!(
         "zprod-rs: {} allowed intervals (primes {:?}, q {}), {} lexicographically positive; k {:?}; shapes {:?}; U coefficients {:?}",
         d.len(),

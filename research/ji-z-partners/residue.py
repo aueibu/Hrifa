@@ -82,12 +82,13 @@ def main():
         facs = []
         for g, e in fl:
             facs += [Poly(g, *xs)] * e
-        print(f"\n== {f['k']} notes, family {f['family']} ({f['description'].strip()}); "
+        print(f"\n== {f['k']} notes, q {f.get('q', '?')}, family {f.get('family', '-')} ({f.get('description', '').strip()}); "
               f"members: {', '.join(f['members'][0])}  |  {', '.join(f['members'][1])}")
         for i, g in enumerate(facs):
             cs = [int(c) for _, c in g.terms()]
             selfrec = norm(flip(g, xs), xs) in (norm(g, xs), norm(-g, xs))
-            print(f"   f{i}: {len(cs)} terms, coefficients {min(cs)}..{max(cs)}, weight {sum(cs)}"
+            pl, mi, tw = sum(c > 0 for c in cs), sum(c < 0 for c in cs), sum(abs(c) == 2 for c in cs)
+            print(f"   f{i}: {len(cs)} terms ({pl} plus, {mi} minus, {tw} with |c| = 2), weight {sum(cs)}"
                   f"{', self-reciprocal' if selfrec else ''}: {show(g, a.primes)}")
         n = len(facs)
         for which, Qset in (("as given", M[1]), ("mirrored", [tuple(-c for c in p) for p in M[1]])):
