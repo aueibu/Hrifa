@@ -346,6 +346,19 @@ describe('remap (S5)', () => {
     expect(dataBlockUserCount(state, 'R')).toBe(3);
   });
 
+  it('repoints the users of a deleted data-block (S1 repair)', () => {
+    const state = project({ dataBlocks: [R2, P, M] });
+    const preview = remapPreview(state, 'R', 'R2');
+    expect(preview.count).toBe(3);
+    expect(preview.refusal).toBeNull();
+    const result = remapUsers(state, 'R', 'R2');
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+    expect(dataBlockUserCount(result.project, 'R2')).toBe(3);
+    expect(dataBlockUserCount(result.project, 'R')).toBe(0);
+  });
+
   it('refuses the same data-block, an unknown one, and an empty one a Make source cannot show', () => {
     expect(remapUsers(project(), 'R', 'R').ok).toBe(false);
     expect(remapUsers(project(), 'R', 'gone').ok).toBe(false);

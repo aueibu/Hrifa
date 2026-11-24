@@ -577,6 +577,24 @@ describe('CompositionWorkbenchPage', () => {
     expect(view().pixelsPerQuarter).toBe(40);
   });
 
+  it('offers the same nodes, including a blank Data-block node, in the Add node and right-click menus', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const names = () => screen.getAllByRole('menuitem').map((item) => item.textContent);
+    await user.click(screen.getByRole('button', { name: 'Add node' }));
+    await screen.findByRole('menuitem', { name: 'Pitch List' });
+    const fromButton = names();
+    expect(fromButton).toContain('Data-block');
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryAllByRole('menuitem')).toHaveLength(0));
+    const pane = document.querySelector('.react-flow__pane');
+    expect(pane).not.toBeNull();
+    fireEvent.contextMenu(pane as Element, { clientX: 300, clientY: 200 });
+    await screen.findByText('Add node here');
+    await screen.findByRole('menuitem', { name: 'Pitch List' });
+    expect(names()).toEqual(fromButton);
+  });
+
   it('inserts a node from the canvas right-click menu', async () => {
     const user = userEvent.setup();
     renderPage();

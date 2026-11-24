@@ -267,7 +267,7 @@ describe('New data-block', () => {
     expect(input).toBeVisible();
     expect(canUndo()).toBe(true);
     const scope = input.closest('div[class*="card"]') as HTMLElement;
-    expect(within(scope).getByRole('button', { name: /Audition/ })).toBeDisabled();
+    expect(within(scope).getByRole('button', { name: /Play/ })).toBeDisabled();
     expect(within(scope).getByRole('button', { name: 'Make source' })).toBeDisabled();
   }, 15_000);
 

@@ -137,7 +137,7 @@ describe('the Notes editor', () => {
     const card = (await screen.findByDisplayValue('New data-block')).closest(
       'div[class*="card"]'
     ) as HTMLElement;
-    expect(within(card).getByRole('button', { name: /Audition/ })).toBeDisabled();
+    expect(within(card).getByRole('button', { name: /Play/ })).toBeDisabled();
     expect(auditionRefusal(desk.dataBlocks[0])).not.toBeNull();
     const blank = desk.dataBlocks[0];
     expect(blank.payload.packet.items).toHaveLength(0);
@@ -174,9 +174,7 @@ describe('the Notes editor', () => {
       timeline: defaultMusicalTimeline,
     });
     expect(plan.events).toHaveLength(2);
-    await waitFor(() =>
-      expect(within(card).getByRole('button', { name: /Audition/ })).toBeEnabled()
-    );
+    await waitFor(() => expect(within(card).getByRole('button', { name: /Play/ })).toBeEnabled());
     expect(within(card).getByRole('button', { name: 'Make source' })).toBeEnabled();
   });
 

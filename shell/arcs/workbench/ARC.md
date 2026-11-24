@@ -116,7 +116,7 @@ Source of truth: `SCENARIOS.registry.md` (confirmed 2026-11-24). Only the contra
 - Acceptance: [ ] `check:workbench` passes [ ] tests from A7 and R4 rows
 - Human checkpoint after: **yes** (the human listens: Ring A on Clave in both modes)
 
-#### B2 (moved after R4): data-block menu and desk user counts (UI)
+#### B2 (built before R4; see PROGRESS): data-block menu and desk user counts (UI)
 - Scope as before (one data-block menu with filtering by `accepts`, "Reinterpret as" submenu, user count that makes a unique copy, New, unlink, Make source swap in place, desk "Used by" list in the delete confirm, Unused filter, Purge) plus the B1-i hand-offs (undo wiring through a desk method that takes the next list, apply the desk first then instances in one `recordGroup`; remap from a missing data-block; unlink wording; disable Make single user at 1 user). Thin slice first.
 - Human checkpoint after: **yes** (look and feel)
 

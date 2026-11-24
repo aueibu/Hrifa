@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { NODE_WIDTH, nextFreePosition, tidyLayout } from './compositionLayout';
 import {
   acceptsCompositionInstances,
-  isAddableNode,
   migrateCompositionInstances,
   type CompositionNodeInstance,
 } from './compositionWorkspace';
@@ -109,9 +108,13 @@ describe('migrateCompositionInstances', () => {
     expect(acceptsCompositionInstances([{ ...saved[0], dataBlockId: 7 }])).toBe(false);
   });
 
-  it('keeps a data-block node out of the Add node menu', () => {
-    expect(isAddableNode('data-block-source')).toBe(false);
-    expect(isAddableNode('mixer')).toBe(true);
+  it('accepts a blank data-block node (no data-block chosen) as a saved instance', () => {
+    const blank: CompositionNodeInstance = {
+      ...at('blank-source'),
+      nodeId: 'data-block-source',
+    };
+    expect(blank.dataBlockId).toBeUndefined();
+    expect(acceptsCompositionInstances([blank])).toBe(true);
   });
 
   it('rejects a placement with neither shape', () => {

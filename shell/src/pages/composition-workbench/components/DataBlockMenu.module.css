@@ -1,0 +1,102 @@
+/*
+ * A fixed-size dropdown: the search row, the list (scrolls inside its own height) and the footer never
+ * change size when the filter, the selection or the open state changes (no jumping layout).
+ */
+.dropdown {
+  background: var(--panel-body);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 20rem;
+  padding: 0.4rem;
+  width: 23rem;
+}
+
+.list {
+  background: var(--panel-slot);
+  border-radius: var(--radius-hairline);
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.heading {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  padding: 0.3rem 0.5rem 0.1rem;
+}
+
+.row {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 1.1rem 1fr 5rem 1rem;
+  height: 2.4rem;
+  padding: 0 0.5rem;
+  text-align: left;
+  width: 100%;
+}
+
+.row:hover:not(:disabled) {
+  background: var(--panel-body);
+}
+
+.row:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.glyph {
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumb {
+  background: var(--panel-well);
+  border-radius: var(--radius-hairline);
+  height: 1.6rem;
+  overflow: hidden;
+  width: 5rem;
+}
+
+.check {
+  text-align: center;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  padding: 0.6rem 0.5rem;
+}
+
+.footer {
+  display: flex;
+  gap: 0.25rem;
+  min-height: 1.6rem;
+}

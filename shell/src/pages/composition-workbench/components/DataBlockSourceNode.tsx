@@ -1,6 +1,11 @@
-import { Alert, Badge, Text } from '@mantine/core';
+import { useState } from 'react';
+import { Alert, Badge, Button, Text } from '@mantine/core';
+import { EnsureDataBlockOps, useDataBlockOps } from '../dataBlockOps';
+import { makeSourceInputSpec } from '../dataBlocks/dataBlockMenuModel';
+import { makeSourceRefusal } from '../dataBlocks/registry';
 import { useDesk } from '../desk';
 import { useNodeEvaluationResult } from '../runtime/evaluationStore';
+import { DataBlockMenu } from './DataBlockMenu';
 import { DataBlockPreview } from './DataBlockPreview';
 import { NodeDevice } from './NodeDevice';
 import { NodeInspectorContent, NodeOutputsSection } from './NodeHost';
@@ -14,23 +19,55 @@ export interface DataBlockSourceNodeProps {
 
 /**
  * A desk data-block placed on the canvas as a source. It publishes the data-block's packet on one output,
- * unchanged, so any node that accepts that kind of packet can read it. The desk owns the data-block;
- * if it is deleted this node publishes nothing and its receivers show a missing source.
+ * unchanged, so any node that accepts that kind of packet can read it. The desk owns the data-block.
+ * Three truthful states: a data-block chosen, blank ("No data-block chosen": after Unlink or when
+ * nothing was chosen) and missing ("no longer on the desk": it was deleted). The menu swaps the
+ * data-block in place and never removes the node; Unlink clears the choice; a missing one can be
+ * replaced everywhere (every user of the deleted data-block repointed, S1 repair).
  */
-export function DataBlockSourceNode({
+export function DataBlockSourceNode(props: DataBlockSourceNodeProps) {
+  return (
+    <EnsureDataBlockOps>
+      <DataBlockSourceNodeBody {...props} />
+    </EnsureDataBlockOps>
+  );
+}
+
+function DataBlockSourceNodeBody({
   instanceId,
   instanceLabel,
   dataBlockId,
 }: DataBlockSourceNodeProps) {
   const { dataBlocks } = useDesk();
-  const dataBlock = dataBlocks.find((candidate) => candidate.id === dataBlockId);
+  const ops = useDataBlockOps();
+  const [error, setError] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<{ id: string; name: string } | null>(null);
+  const chosen = dataBlockId !== undefined && dataBlockId !== '';
+  const dataBlock = chosen
+    ? dataBlocks.find((candidate) => candidate.id === dataBlockId)
+    : undefined;
+  const state = !chosen ? 'blank' : dataBlock ? 'present' : 'missing';
+  const spec = makeSourceInputSpec();
 
   const { outputs: publishedOutputs } = useNodeEvaluationResult('data-block-source', instanceId);
+
+  function report(result: { ok: true } | { ok: false; error: string }) {
+    setError(result.ok ? null : result.error);
+  }
+
+  const replacePreview =
+    state === 'missing' && confirm ? ops.remapPreview(dataBlockId as string, confirm.id) : null;
 
   return (
     <NodeDevice
       name={instanceLabel}
-      status={dataBlock ? dataBlock.name : 'Missing data-block'}
+      status={
+        state === 'present'
+          ? dataBlock?.name
+          : state === 'blank'
+            ? 'No data-block chosen'
+            : 'Missing data-block'
+      }
       badges={
         dataBlock && (
           <>
@@ -41,9 +78,57 @@ export function DataBlockSourceNode({
           </>
         )
       }
+      actions={
+        <>
+          <DataBlockMenu
+            spec={spec}
+            label="Data-block"
+            ariaLabel="Choose data-block"
+            info="Choose which desk data-block this node reads. The node stays where it is."
+            selectedId={dataBlockId}
+            refuse={makeSourceRefusal}
+            onPick={(row) => {
+              setConfirm(null);
+              report(ops.setSourceBlock(instanceId, row.block.id));
+            }}
+            onNew={(created) => report(ops.setSourceBlock(instanceId, created.id))}
+          />
+          <Button
+            size="compact-xs"
+            variant="default"
+            disabled={!chosen}
+            data-info={
+              chosen
+                ? 'Stop reading this data-block. The node stays, blank; the data-block stays on the desk.'
+                : 'No data-block is chosen.'
+            }
+            onClick={() => {
+              setConfirm(null);
+              report(ops.setSourceBlock(instanceId, null));
+            }}
+          >
+            Unlink
+          </Button>
+          {state === 'missing' && (
+            <DataBlockMenu
+              spec={spec}
+              label="Replace everywhere with"
+              ariaLabel="Replace everywhere with"
+              info="Point every place that used the deleted data-block at another one."
+              refuse={makeSourceRefusal}
+              onPick={(row) => setConfirm({ id: row.block.id, name: row.block.name })}
+            />
+          )}
+        </>
+      }
       footer={
         <Text size="xs" c="dimmed" truncate>
-          A copy kept on the desk. Edit or delete it there.
+          {error ??
+            (state === 'present'
+              ? 'Reads a data-block on the desk. Edit or delete it there.'
+              : state === 'blank'
+                ? 'Choose a data-block from the menu above.'
+                : 'Choose another data-block, or replace it everywhere.')}
         </Text>
       }
       controls={
@@ -52,13 +137,37 @@ export function DataBlockSourceNode({
         </NodeInspectorContent>
       }
     >
-      {dataBlock ? (
+      {state === 'present' && dataBlock ? (
         <div className={classes.screen}>
           <DataBlockPreview packet={dataBlock.payload.packet} />
         </div>
+      ) : state === 'blank' ? (
+        <Alert color="gray" title="No data-block chosen">
+          Receivers show a missing source until you choose one.
+        </Alert>
       ) : (
         <Alert color="yellow" title="This data-block is no longer on the desk">
-          Receivers show a missing source. Remove this node, or restore the data-block.
+          Receivers show a missing source. Choose another data-block, Unlink, or replace it
+          everywhere.
+          {confirm && replacePreview && (
+            <div>
+              <Text size="xs" mt="xs">
+                {replacePreview.refusal ??
+                  `Replace it in ${replacePreview.count} ${replacePreview.count === 1 ? 'place' : 'places'} with ${confirm.name}?`}
+              </Text>
+              <Button
+                size="compact-xs"
+                mt="xs"
+                disabled={replacePreview.refusal !== null}
+                onClick={() => {
+                  report(ops.remap(dataBlockId as string, confirm.id));
+                  setConfirm(null);
+                }}
+              >
+                Replace everywhere
+              </Button>
+            </div>
+          )}
         </Alert>
       )}
     </NodeDevice>

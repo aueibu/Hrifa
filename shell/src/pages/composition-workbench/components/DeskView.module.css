@@ -74,3 +74,16 @@
   color: var(--text-muted);
   padding: 1rem;
 }
+
+.usage {
+  align-items: center;
+  display: flex;
+  height: 1.5rem;
+}
+
+.impactList {
+  margin: 0.25rem 0;
+  max-height: 10rem;
+  overflow-y: auto;
+  padding-left: 1rem;
+}

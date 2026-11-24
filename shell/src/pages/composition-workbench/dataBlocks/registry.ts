@@ -1,7 +1,9 @@
+import type { MusicalPerformancePlan } from '../audio/types';
 import { duplicateDataBlock, type DataBlockLineage, type DataBlockOrigin } from '../dataBlock';
 import type { Operator } from '../dataBlockOperators';
 import type { DataPacket } from '../model';
-import type { Rational } from '../musicalTime';
+import type { MusicalDuration, Rational } from '../musicalTime';
+import type { ResolvedSound } from '../sounds';
 
 /**
  * The data-block registry (rebuild, R0; W-58, W-59). One definition per kind of data-block,
@@ -69,13 +71,58 @@ export interface BlankRequest {
 export type PreviewRef = string | { id: string; options?: Record<string, unknown> };
 
 /**
- * How a type is heard. Both hooks are pure. `build` and its settings type are defined with the
- * audition milestone (R2); until then it is optional and untyped.
+ * How the listener hears a block (R2, W-63). Per viewer, never written to the data-block.
+ * `offset` and `baseOctave` matter to pitch classes only (a pitch set plays exactly its pitches);
+ * `lengthMismatch` is read by the Collection (R4) and ignored elsewhere.
  */
+export interface AuditionSettings {
+  mode: 'sequence' | 'together';
+  /** Octave of middle C: 4 puts pitch class 0 at C4 (6000 midicents). */
+  baseOctave: number;
+  /** Transposition in steps of the data's EDO, added to every pitch class (no wrap). */
+  offset: number;
+  /** Repeat the cycle while held; the control reads this, a plan is always one cycle. */
+  loop: boolean;
+  lengthMismatch: 'cycle' | 'stop-at-shortest';
+}
+
+export const defaultAuditionSettings: AuditionSettings = {
+  mode: 'sequence',
+  baseOctave: 4,
+  offset: 0,
+  loop: true,
+  lengthMismatch: 'cycle',
+};
+
+/**
+ * What a type builds: ONE cycle as a musical plan (positions are exact rationals in quarter notes,
+ * so the transport's tempo applies automatically). The plan carries the default timeline; the
+ * caller swaps in the transport's. `cycleLength` is the loop period.
+ */
+export interface AuditionPlan {
+  plan: MusicalPerformancePlan;
+  cycleLength: MusicalDuration;
+  label: string;
+}
+
+/**
+ * What the transport and sound settings contribute, passed in so the core stays pure: the pulse a
+ * rhythm's durations are counted in (`transportRhythmContext(...).pulseUnit`) and the rhythm voice
+ * (`layerSound(settings.sounds.rhythm, 0)`). Absent, `defaultAuditionContext` is used.
+ */
+export interface AuditionContext {
+  pulseUnit: MusicalDuration;
+  rhythmSound: ResolvedSound;
+}
+
+/** How a type is heard. Both hooks are pure; `build` is required, so `audition: {}` is no audition. */
+/** A listener setting a type's audition uses. */
+export type AuditionControl = 'mode' | 'octave' | 'offset' | 'loop';
+
 export interface AuditionHooks {
   /** Why this particular block cannot be heard now (such as empty), or null. */
   refuse?(block: StoredDataBlock): string | null;
-  build?(block: StoredDataBlock, settings: unknown): unknown;
+  build(block: StoredDataBlock, settings: AuditionSettings, context: AuditionContext): AuditionPlan;
 }
 
 export interface DuplicateRequest {
@@ -108,6 +155,11 @@ interface DataBlockTypeBase {
   operators?: readonly Operator[];
   /** Absent means "no audition": `auditionSupport` reports `noAuditionReason` or a default. */
   audition?: AuditionHooks;
+  /**
+   * Which of the listener's settings the desk's gear shows for this type (R3). Absent or empty: no
+   * gear. A type heard only through Hear as (Values) declares the settings that conversion uses.
+   */
+  auditionControls?: readonly AuditionControl[];
   noAuditionReason?: string;
   /**
    * A copy under a new id named "<name> (variation)" that shares no state with the original.
@@ -197,7 +249,7 @@ export type AuditionSupport = { supported: true } | { supported: false; reason: 
 
 /** R3: whether a type can be heard, and when it cannot, why (Play shows the reason). */
 export function auditionSupport(def: DataBlockTypeDef): AuditionSupport {
-  return def.audition
+  return def.audition?.build
     ? { supported: true }
     : { supported: false, reason: def.noAuditionReason ?? `${def.label} has no audition yet.` };
 }

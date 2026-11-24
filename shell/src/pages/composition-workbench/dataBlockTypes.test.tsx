@@ -99,9 +99,9 @@ describe('the data-block-type registry', () => {
     expect(makeSourceRefusal(dataBlock)).toMatch(/empty/);
   });
 
-  it('reports a type with no audition yet by name (R3: Play is disabled with the reason)', () => {
-    expect(auditionRefusal(blank('pitch-set'))).toBe('Pitch set has no audition yet.');
-    expect(auditionRefusal(blank('rhythm'))).toBe('Rhythm has no audition yet.');
+  it('refuses an empty block with a reason and a type with no sound by its own reason', () => {
+    expect(auditionRefusal(blank('pitch-set'))).toMatch(/empty/);
+    expect(auditionRefusal(blank('rhythm'))).toMatch(/empty/);
     expect(auditionRefusal(blank('values'))).toBe('Values have no sound of their own.');
   });
 

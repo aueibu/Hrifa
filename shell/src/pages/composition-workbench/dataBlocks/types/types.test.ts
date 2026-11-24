@@ -253,10 +253,18 @@ describe('the built-in packet types', () => {
     );
   });
 
-  it('has an audition only for Notes, which refuses when empty', () => {
+  it('has an audition for the four specific types, each refusing when empty', () => {
     const withAudition = dataBlockTypes().filter((type) => type.audition);
-    expect(withAudition.map((type) => type.id)).toEqual(['notes']);
-    expect(withAudition[0].audition?.refuse).toBeTypeOf('function');
+    expect(withAudition.map((type) => type.id)).toEqual([
+      'notes',
+      'pitch-set',
+      'pitch-classes',
+      'rhythm',
+    ]);
+    withAudition.forEach((type) => {
+      expect(type.audition?.refuse).toBeTypeOf('function');
+      expect(type.audition?.build).toBeTypeOf('function');
+    });
   });
 
   it('makes a blank of every type that its own type validates', () => {

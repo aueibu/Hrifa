@@ -1,7 +1,8 @@
 import { packet, type DataPacket } from '../model';
-import { rational } from '../musicalTime';
+import { defaultMusicalTimeline, rational } from '../musicalTime';
 import {
   DATA_BLOCK_SCHEMA_VERSION,
+  type AuditionPlan,
   type BlankRequest,
   type DataBlockTypeDef,
   type PacketBlock,
@@ -12,6 +13,22 @@ import {
 } from './registry';
 
 /** Types used only by tests. The real registrations are in ./types. */
+
+function fakeAudition(block: StoredDataBlock): AuditionPlan {
+  const cycleLength = { quarterNotes: rational(1) };
+  return {
+    plan: {
+      id: `${block.id}:audition`,
+      sourceId: block.id,
+      timebase: { kind: 'musical', timeline: defaultMusicalTimeline },
+      duration: cycleLength,
+      events: [],
+      warnings: [],
+    },
+    cycleLength,
+    label: block.name,
+  };
+}
 
 function packetBlock(request: BlankRequest, typeId: string, p: DataPacket): PacketBlock {
   return {
@@ -38,6 +55,7 @@ export const pitchSetTestType: DataBlockTypeDef = {
       block.payload.kind === 'packet' && block.payload.packet.items.length === 0
         ? 'This data-block is empty, so there is nothing to play yet.'
         : null,
+    build: (block) => fakeAudition(block),
   },
 };
 
@@ -61,7 +79,7 @@ export const notesTestType: DataBlockTypeDef = {
   accepts: (p) => p.kind === 'events' && p.domain === 'note',
   createBlank: (request) => packetBlock(request, 'notes-test', packet('events', 'note', [])),
   editorId: 'note-roll',
-  audition: {},
+  audition: { build: (block) => fakeAudition(block) },
 };
 
 export interface CollectionTestData {

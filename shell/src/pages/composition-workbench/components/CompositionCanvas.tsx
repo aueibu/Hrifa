@@ -45,7 +45,6 @@ import {
 import {
   compositionInstanceLabel,
   compositionNodeLabels,
-  isAddableNode,
   mixerPortLabels,
   type CompositionInspectorTarget,
   type CompositionNodeId,
@@ -279,13 +278,11 @@ function connectedFlow(start: string, descriptors: RouteDescriptor[]) {
 function NodeMenuItems({ onPick }: { onPick(nodeId: CompositionNodeId): void }) {
   return (
     <>
-      {(Object.keys(compositionNodeLabels) as CompositionNodeId[])
-        .filter(isAddableNode)
-        .map((nodeId) => (
-          <Menu.Item key={nodeId} onClick={() => onPick(nodeId)}>
-            {compositionNodeLabels[nodeId]}
-          </Menu.Item>
-        ))}
+      {(Object.keys(compositionNodeLabels) as CompositionNodeId[]).map((nodeId) => (
+        <Menu.Item key={nodeId} onClick={() => onPick(nodeId)}>
+          {compositionNodeLabels[nodeId]}
+        </Menu.Item>
+      ))}
     </>
   );
 }
@@ -404,7 +401,9 @@ function CanvasBody({
           ? `Channels | ${incoming.length}`
           : 'Needs inputs'
         : !primaryOutput
-          ? 'Needs inputs'
+          ? instance.nodeId === 'data-block-source'
+            ? 'No data-block'
+            : 'Needs inputs'
           : instanceOutputs.length > 1
             ? '' // Multiple valid outputs: no single count is representative.
             : instance.nodeId === 'pitch-list'

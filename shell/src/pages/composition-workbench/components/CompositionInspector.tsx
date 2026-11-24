@@ -58,7 +58,7 @@ const nodeDescriptions: Record<CompositionNodeId, string> = {
   'swirling-mists':
     'Layered looping waves sampled into numbers: one chord per step and one melody per stratum, mapped to a range you set.',
   'data-block-source':
-    'A data-block from the desk, placed as a source. It publishes a copy of the captured material unchanged.',
+    'A data-block from the desk, placed as a source. It refers to a desk data-block and publishes its material unchanged; it may be blank until one is chosen.',
   mixer:
     'Auditions several ideas together: each connected channel loops on its own cycle, so the mix becomes a meta interference pattern. A preview layer before arranging, not a timeline.',
   'scale-evolution':

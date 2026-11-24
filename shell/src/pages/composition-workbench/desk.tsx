@@ -122,6 +122,14 @@ interface DeskContextValue {
    * from the latest packet at the moment it commits.
    */
   latestDataBlockById(id: string): PacketBlock | undefined;
+  /** The whole desk list as it is right now (not as last rendered): what a `RefsProject` is built from. */
+  latestDataBlockList(): PacketBlock[];
+  /**
+   * Replaces the desk list with the one a `RefsProject` operation returned (delete, make single user,
+   * remap, purge): one undo step. Refused (false) while the desk is loading or locked, so a caller
+   * applying instances in the same `recordGroup` can skip them. The same list changes nothing and is `true`.
+   */
+  applyDataBlockList(next: PacketBlock[]): boolean;
   /** Moves the data-block back (or forward) to a kept version; same data-block, one undo step. */
   restoreDataBlockVersionById(id: string, versionId: string): DataBlockEditResult;
   /** Adds a new data-block made from a version, directly after the original. Returns it. */
@@ -470,6 +478,23 @@ export function DeskProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const latestDataBlockList = useCallback(() => dataBlocksRef.current, []);
+  const applyDataBlockList = useCallback(
+    (next: PacketBlock[]): boolean => {
+      if (!loadedRef.current || !writableRef.current) {
+        return false;
+      }
+      const current = dataBlocksRef.current;
+      const same = next.length === current.length && next.every((block, i) => block === current[i]);
+      if (same) {
+        return true;
+      }
+      applyChange(() => next);
+      return true;
+    },
+    [applyChange]
+  );
+
   const commitDataBlockEditById = useCallback(
     (
       id: string,
@@ -631,6 +656,8 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       convertToPitchClassById,
       commitDataBlockEditById,
       latestDataBlockById,
+      latestDataBlockList,
+      applyDataBlockList,
       restoreDataBlockVersionById,
       createDataBlockFromVersionById,
     }),
@@ -651,6 +678,8 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       convertToPitchClassById,
       commitDataBlockEditById,
       latestDataBlockById,
+      latestDataBlockList,
+      applyDataBlockList,
       restoreDataBlockVersionById,
       createDataBlockFromVersionById,
     ]

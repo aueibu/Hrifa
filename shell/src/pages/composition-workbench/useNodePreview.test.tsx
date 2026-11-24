@@ -6,11 +6,17 @@ import { useNodePreview } from './useNodePreview';
 // A stand-in engine: records requests and lets the test end sessions either way.
 const listeners = new Set<() => void>();
 const sessions: { request: PlaybackRequest; active: boolean; gains: Record<string, number> }[] = [];
+let finishBeforeResolve = false;
 const notify = () => listeners.forEach((listener) => listener());
 const fakeEngine = {
   play: async (request: PlaybackRequest) => {
     const state = { request, active: true, gains: { ...request.busGains } };
     sessions.push(state);
+    if (finishBeforeResolve) {
+      // The plan ends before `play` resolves.
+      state.active = false;
+      queueMicrotask(() => request.onComplete?.());
+    }
     return {
       id: String(sessions.length),
       sourceId: request.plan.sourceId,
@@ -55,6 +61,19 @@ describe('useNodePreview', () => {
   beforeEach(() => {
     sessions.length = 0;
     listeners.clear();
+    finishBeforeResolve = false;
+  });
+
+  it('a plan that completes before play resolves does not stay playing', async () => {
+    finishBeforeResolve = true;
+    const { result, onEnd } = setup();
+    let started = true;
+    await act(async () => {
+      started = await result.current.play(plan, 'Playing');
+    });
+    expect(started).toBe(false);
+    expect(result.current.playing).toBe(false);
+    expect(onEnd).toHaveBeenCalledWith('complete');
   });
 
   it('plays with the node volume, extra buses and the transport flag', async () => {

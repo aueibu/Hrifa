@@ -1,14 +1,26 @@
 import { useState } from 'react';
-import { Alert, Button, Group, Modal, Text, TextInput } from '@mantine/core';
-import { createNotePacketPerformancePlan } from '../audio/performancePlans';
+import { Alert, Button, Group, Modal, Popover, Text, TextInput } from '@mantine/core';
+import type { PerformancePlan } from '../audio/types';
+import { useAuditionSettings } from '../auditionPreferences';
 import { useCompositionSettings } from '../compositionSettings';
 import { pitchClassConversionRefusal, type PacketBlock } from '../dataBlock';
-import { auditionRefusal, makeSourceRefusal } from '../dataBlocks/registry';
+import { EnsureDataBlockOps, useDataBlockOps, type OpResult } from '../dataBlockOps';
+import { getConversion } from '../dataBlocks/acceptance';
+import { auditionBlock, HEAR_AS_CONVERSION_IDS } from '../dataBlocks/audition';
+import {
+  dataBlockUsers,
+  deleteImpact,
+  purgePlan,
+  unusedDataBlocks,
+} from '../dataBlocks/dataBlockRefs';
+import { makeSourceRefusal, type AuditionSettings } from '../dataBlocks/registry';
 import { useDesk } from '../desk';
-import type { NoteEventValue } from '../melodicization';
-import type { DataPacket } from '../model';
+import { transportRhythmContext } from '../rhythmRealization';
+import { layerSound } from '../sounds';
 import { transportTimeline } from '../transport';
 import { useNodePreview } from '../useNodePreview';
+import { AuditionSettingsPopover, auditionControlsOf } from './AuditionSettingsPopover';
+import { DataBlockMenu } from './DataBlockMenu';
 import { DataBlockPreview } from './DataBlockPreview';
 import { NewDataBlockPopover } from './NewDataBlockPopover';
 import classes from './DeskView.module.css';
@@ -24,37 +36,171 @@ function describe(dataBlock: PacketBlock) {
 }
 
 /**
+ * A card's Play, its settings and, for Values, the explicit Hear as MIDI note numbers. The refusal
+ * (`auditionBlock`'s reason) is the disabled Play's hover text; Hear as is the only way Values
+ * play, and the stored block is unchanged.
+ */
+function PlayButtons({
+  dataBlock,
+  playing,
+  settings,
+  onPlay,
+}: {
+  dataBlock: PacketBlock;
+  playing: boolean;
+  settings: AuditionSettings;
+  onPlay(hearAs?: string): void;
+}) {
+  const result = auditionBlock(dataBlock, settings);
+  // Every Hear as conversion registered for this type, each its own button (R1: no type ids here).
+  const hearAsList = HEAR_AS_CONVERSION_IDS.map((id) => getConversion(id)).filter(
+    (conversion) => conversion?.from === dataBlock.typeId
+  );
+  return (
+    <>
+      <Button
+        size="compact-xs"
+        variant="default"
+        // While playing, Stop is always available.
+        disabled={!playing && !result.ok}
+        data-info={result.ok ? 'Play this data-block.' : result.reason}
+        onClick={() => onPlay()}
+      >
+        {playing ? '■ Stop' : '▶ Play'}
+      </Button>
+      {hearAsList.map((conversion) => {
+        if (!conversion) {
+          return null;
+        }
+        const refusal = auditionBlock(dataBlock, settings, conversion.id);
+        return (
+          <Button
+            key={conversion.id}
+            size="compact-xs"
+            variant="default"
+            disabled={!playing && !refusal.ok}
+            data-info={refusal.ok ? conversion.describe : refusal.reason}
+            onClick={() => onPlay(conversion.id)}
+          >
+            {conversion.label}
+          </Button>
+        );
+      })}
+      <AuditionSettingsPopover typeId={dataBlock.typeId} />
+    </>
+  );
+}
+
+interface DeskViewProps {
+  onMakeSource?(dataBlock: PacketBlock): void;
+  /** Double-clicking a card (not its fields or buttons) opens the data-block in the bottom panel. */
+  onOpenDataBlock?(dataBlock: PacketBlock): void;
+}
+
+/**
  * The desk as a workspace view beside the node tree canvas: every data-block set aside, as a card. A card
  * can be heard, renamed or removed, and made into a source node on the canvas on request. Nothing
  * here reaches the node tree until the user asks (see ARCHITECTURE.md, "The desk").
  */
-export function DeskView({
-  onMakeSource,
-  onOpenDataBlock,
-}: {
-  onMakeSource?(dataBlock: PacketBlock): void;
-  /** Double-clicking a card (not its fields or buttons) opens the data-block in the bottom panel. */
-  onOpenDataBlock?(dataBlock: PacketBlock): void;
-}) {
+export function DeskView(props: DeskViewProps) {
+  return (
+    <EnsureDataBlockOps>
+      <DeskViewBody {...props} />
+    </EnsureDataBlockOps>
+  );
+}
+
+function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
   const {
     dataBlocks,
     loading,
     locked,
     persistError,
-    removeDataBlock,
     renameDataBlock,
     setDataBlockNote,
     duplicateDataBlockById,
     convertToPitchClassById,
   } = useDesk();
+  const ops = useDataBlockOps();
   const { settings } = useCompositionSettings();
+  const [auditionSettings] = useAuditionSettings();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [onlyUnused, setOnlyUnused] = useState(false);
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const [purgeIds, setPurgeIds] = useState<string[]>([]);
+  const [usersOpenId, setUsersOpenId] = useState<string | null>(null);
+  const [replacing, setReplacing] = useState<{ fromId: string; toId: string } | null>(null);
+  const [opError, setOpError] = useState<string | null>(null);
   const [snapPrompt, setSnapPrompt] = useState<{ id: string; message: string } | null>(null);
+  const project = ops.project;
+  const unusedIds = new Set(unusedDataBlocks(project).map((block) => block.id));
+  const shown = onlyUnused ? dataBlocks.filter((block) => unusedIds.has(block.id)) : dataBlocks;
+
+  function report(result: OpResult) {
+    setOpError(result.ok ? null : result.error);
+  }
+
   // The desk's own action row: New data-block lives here so it is there when the desk is empty too.
   const toolbar = (
     <div className={classes.actions}>
       <NewDataBlockPopover onCreated={(dataBlock) => onOpenDataBlock?.(dataBlock)} />
+      <Button
+        size="compact-xs"
+        variant={onlyUnused ? 'filled' : 'default'}
+        aria-pressed={onlyUnused}
+        data-info="Show only the data-blocks nothing uses. Nothing is removed by this."
+        onClick={() => setOnlyUnused((current) => !current)}
+      >
+        Unused ({unusedIds.size})
+      </Button>
+      <Popover
+        opened={purgeOpen}
+        onChange={setPurgeOpen}
+        position="bottom-start"
+        withinPortal={false}
+        transitionProps={{ duration: 0 }}
+      >
+        <Popover.Target>
+          <Button
+            size="compact-xs"
+            variant="default"
+            disabled={unusedIds.size === 0}
+            data-info={
+              unusedIds.size === 0
+                ? 'Every data-block on the desk is used.'
+                : 'List the unused data-blocks and delete them after you confirm. Nothing is ever purged automatically.'
+            }
+            onClick={() => {
+              setPurgeIds(purgePlan(project));
+              setPurgeOpen((current) => !current);
+            }}
+          >
+            Purge unused
+          </Button>
+        </Popover.Target>
+        <Popover.Dropdown>
+          <Text size="xs" fw={600}>
+            Delete these {purgeIds.length} unused data-blocks?
+          </Text>
+          <ul className={classes.impactList}>
+            {purgeIds.map((id) => (
+              <li key={id}>
+                <Text size="xs">{dataBlocks.find((block) => block.id === id)?.name ?? id}</Text>
+              </li>
+            ))}
+          </ul>
+          <Button
+            size="compact-xs"
+            onClick={() => {
+              report(ops.purge(purgeIds));
+              setPurgeOpen(false);
+            }}
+          >
+            Confirm purge
+          </Button>
+        </Popover.Dropdown>
+      </Popover>
     </div>
   );
   const preview = useNodePreview({
@@ -77,20 +223,40 @@ export function DeskView({
     }
   }
 
-  async function audition(dataBlock: PacketBlock) {
+  async function audition(dataBlock: PacketBlock, hearAs?: string) {
     if (playingId === dataBlock.id) {
       preview.stop('');
       return;
     }
+    // The listener's settings only reach the plan here; the stored block is never written.
+    const loopable = auditionControlsOf(dataBlock.typeId).loop;
+    const result = auditionBlock(
+      dataBlock,
+      { ...auditionSettings, loop: loopable && auditionSettings.loop },
+      hearAs,
+      // A rhythm's pulse and click sound come from the transport and the rhythm voice.
+      {
+        pulseUnit: transportRhythmContext(settings.transport).pulseUnit,
+        rhythmSound: layerSound(settings.sounds.rhythm, 0),
+      }
+    );
+    if (!result.ok) {
+      preview.setStatus(result.reason);
+      return;
+    }
     try {
-      const plan = createNotePacketPerformancePlan({
-        sourceId: 'desk',
-        packet: dataBlock.payload.packet as DataPacket<NoteEventValue>,
-        timeline: transportTimeline(settings.transport),
-      });
-      setPlayingId(dataBlock.id);
-      if (!(await preview.play(plan, `Auditioning ${dataBlock.name}.`))) {
-        setPlayingId(null);
+      // The plan carries the default timeline; the transport's tempo replaces it.
+      const plan: PerformancePlan =
+        result.plan.timebase.kind === 'musical'
+          ? {
+              ...result.plan,
+              timebase: { kind: 'musical', timeline: transportTimeline(settings.transport) },
+            }
+          : result.plan;
+      // A looping plan is exactly one cycle; the engine repeats it until Stop. `play` first stops
+      // whatever was playing (which clears the playing id), so the id is set once sound has started.
+      if (await preview.play(plan, result.label, { loop: loopable && auditionSettings.loop })) {
+        setPlayingId(dataBlock.id);
       }
     } catch (error) {
       setPlayingId(null);
@@ -136,120 +302,267 @@ export function DeskView({
     );
   }
 
+  const replacement = replacing ? ops.remapPreview(replacing.fromId, replacing.toId) : null;
+  const nameOf = (id: string, fallback: string) =>
+    dataBlocks.find((block) => block.id === id)?.name ?? fallback;
+
   return (
     <div className={classes.desk}>
       {saveWarning}
       {toolbar}
+      {shown.length === 0 && (
+        <Text className={classes.empty} size="sm">
+          Every data-block is used.
+        </Text>
+      )}
       <div className={classes.grid}>
-        {dataBlocks.map((dataBlock) => (
-          <div
-            key={dataBlock.id}
-            className={classes.card}
-            onDoubleClick={(event) => {
-              if (!(event.target as Element).closest('input, button, textarea')) {
-                onOpenDataBlock?.(dataBlock);
-              }
-            }}
-          >
-            <TextInput
-              size="xs"
-              variant="unstyled"
-              aria-label="Data-block name"
-              classNames={{ input: classes.name }}
-              defaultValue={dataBlock.name}
-              onBlur={(event) => {
-                const name = event.currentTarget.value.trim();
-                if (name && name !== dataBlock.name) {
-                  renameDataBlock(dataBlock.id, name);
-                } else {
-                  event.currentTarget.value = dataBlock.name;
+        {shown.map((dataBlock) => {
+          const users = dataBlockUsers(project, dataBlock.id);
+          const impact = confirmingId === dataBlock.id ? deleteImpact(project, dataBlock.id) : null;
+          return (
+            <div
+              key={dataBlock.id}
+              className={classes.card}
+              onDoubleClick={(event) => {
+                if (!(event.target as Element).closest('input, button, textarea')) {
+                  onOpenDataBlock?.(dataBlock);
                 }
               }}
-            />
-            <TextInput
-              size="xs"
-              variant="unstyled"
-              aria-label="Data-block note"
-              placeholder="Add a note"
-              classNames={{ input: classes.noteInput }}
-              // Keyed on the stored note so an external change shows up in the uncontrolled input.
-              key={`note-${dataBlock.id}-${dataBlock.note ?? ''}`}
-              defaultValue={dataBlock.note ?? ''}
-              onBlur={(event) => {
-                const note = event.currentTarget.value.trim();
-                if (note !== (dataBlock.note ?? '')) {
-                  setDataBlockNote(dataBlock.id, note);
-                }
-              }}
-            />
-            <div className={classes.screen}>
-              <DataBlockPreview packet={dataBlock.payload.packet} />
-            </div>
-            <div className={classes.meta}>{describe(dataBlock)}</div>
-            <div className={classes.actions}>
-              <Button
-                size="compact-xs"
-                variant="default"
-                disabled={auditionRefusal(dataBlock) !== null}
-                data-info={auditionRefusal(dataBlock) ?? 'Play this data-block.'}
-                onClick={() => audition(dataBlock)}
-              >
-                {playingId === dataBlock.id ? '■ Stop' : '▶ Audition'}
-              </Button>
-              <Button
-                size="compact-xs"
-                variant="default"
-                disabled={!onMakeSource || makeSourceRefusal(dataBlock) !== null}
-                data-info={
-                  makeSourceRefusal(dataBlock) ??
-                  'Place this data-block on the canvas as a source node that other nodes can read.'
-                }
-                onClick={() => onMakeSource?.(dataBlock)}
-              >
-                Make source
-              </Button>
-              <Button
-                size="compact-xs"
-                variant="default"
-                data-info="Add a copy of this data-block to the desk, named as a variation, to change without losing the original."
-                onClick={() => duplicateDataBlockById(dataBlock.id)}
-              >
-                Duplicate
-              </Button>
-              <Button
-                size="compact-xs"
-                variant="default"
-                disabled={pitchClassConversionRefusal(dataBlock) !== null}
-                data-info={
-                  pitchClassConversionRefusal(dataBlock) ??
-                  `Add a copy of this data-block to the desk with each pitch reduced to its pitch class in the project's ${settings.edo}-EDO (0 to ${settings.edo - 1}), keeping the timing. Pitches off the grid ask before snapping.`
-                }
-                onClick={() => toPitchClasses(dataBlock.id)}
-              >
-                To pitch classes
-              </Button>
-              <Button
-                size="compact-xs"
-                variant="default"
-                data-info="Remove this data-block from the desk. Nodes made from it show a missing source."
-                onClick={() => {
-                  if (confirmingId === dataBlock.id) {
-                    setConfirmingId(null);
-                    removeDataBlock(dataBlock.id);
+            >
+              <TextInput
+                size="xs"
+                variant="unstyled"
+                aria-label="Data-block name"
+                classNames={{ input: classes.name }}
+                defaultValue={dataBlock.name}
+                onBlur={(event) => {
+                  const name = event.currentTarget.value.trim();
+                  if (name && name !== dataBlock.name) {
+                    renameDataBlock(dataBlock.id, name);
                   } else {
-                    setConfirmingId(dataBlock.id);
+                    event.currentTarget.value = dataBlock.name;
                   }
                 }}
-                onBlur={() =>
-                  setConfirmingId((current) => (current === dataBlock.id ? null : current))
-                }
-              >
-                {confirmingId === dataBlock.id ? 'Confirm delete' : 'Delete'}
-              </Button>
+              />
+              <TextInput
+                size="xs"
+                variant="unstyled"
+                aria-label="Data-block note"
+                placeholder="Add a note"
+                classNames={{ input: classes.noteInput }}
+                // Keyed on the stored note so an external change shows up in the uncontrolled input.
+                key={`note-${dataBlock.id}-${dataBlock.note ?? ''}`}
+                defaultValue={dataBlock.note ?? ''}
+                onBlur={(event) => {
+                  const note = event.currentTarget.value.trim();
+                  if (note !== (dataBlock.note ?? '')) {
+                    setDataBlockNote(dataBlock.id, note);
+                  }
+                }}
+              />
+              <div className={classes.screen}>
+                <DataBlockPreview packet={dataBlock.payload.packet} />
+              </div>
+              <div className={classes.meta}>{describe(dataBlock)}</div>
+              <div className={classes.usage}>
+                {users.length === 0 ? (
+                  <Text size="xs" c="dimmed">
+                    Not used
+                  </Text>
+                ) : (
+                  <Popover
+                    opened={usersOpenId === dataBlock.id}
+                    onChange={(open) => setUsersOpenId(open ? dataBlock.id : null)}
+                    position="bottom-start"
+                    withinPortal={false}
+                    transitionProps={{ duration: 0 }}
+                  >
+                    <Popover.Target>
+                      <Button
+                        size="compact-xs"
+                        variant="subtle"
+                        data-info="Where this data-block is used. Make single user gives one place its own copy."
+                        onClick={() =>
+                          setUsersOpenId((current) =>
+                            current === dataBlock.id ? null : dataBlock.id
+                          )
+                        }
+                      >
+                        Used by {users.length}
+                      </Button>
+                    </Popover.Target>
+                    <Popover.Dropdown>
+                      {users.map((user) => (
+                        <Group
+                          key={`${user.ownerKind}:${user.ownerId}:${user.slot ?? ''}`}
+                          gap="xs"
+                          wrap="nowrap"
+                          justify="space-between"
+                        >
+                          <Text size="xs">{user.label}</Text>
+                          <Button
+                            size="compact-xs"
+                            variant="default"
+                            disabled={users.length < 2}
+                            data-info={
+                              users.length < 2
+                                ? 'Only one place uses this data-block, so it is already single user.'
+                                : 'Give this place its own copy, named as a variation. The other places keep the original.'
+                            }
+                            onClick={() => {
+                              report(ops.makeSingleUser(dataBlock.id, user));
+                              setUsersOpenId(null);
+                            }}
+                          >
+                            Make single user
+                          </Button>
+                        </Group>
+                      ))}
+                    </Popover.Dropdown>
+                  </Popover>
+                )}
+              </div>
+              <div className={classes.actions}>
+                <PlayButtons
+                  dataBlock={dataBlock}
+                  playing={playingId === dataBlock.id}
+                  settings={auditionSettings}
+                  onPlay={(hearAs) => audition(dataBlock, hearAs)}
+                />
+                <Button
+                  size="compact-xs"
+                  variant="default"
+                  disabled={!onMakeSource || makeSourceRefusal(dataBlock) !== null}
+                  data-info={
+                    makeSourceRefusal(dataBlock) ??
+                    'Place this data-block on the canvas as a source node that other nodes can read.'
+                  }
+                  onClick={() => onMakeSource?.(dataBlock)}
+                >
+                  Make source
+                </Button>
+                <Button
+                  size="compact-xs"
+                  variant="default"
+                  data-info="Add a copy of this data-block to the desk, named as a variation, to change without losing the original."
+                  onClick={() => duplicateDataBlockById(dataBlock.id)}
+                >
+                  Duplicate
+                </Button>
+                <Button
+                  size="compact-xs"
+                  variant="default"
+                  disabled={pitchClassConversionRefusal(dataBlock) !== null}
+                  data-info={
+                    pitchClassConversionRefusal(dataBlock) ??
+                    `Add a copy of this data-block to the desk with each pitch reduced to its pitch class in the project's ${settings.edo}-EDO (0 to ${settings.edo - 1}), keeping the timing. Pitches off the grid ask before snapping.`
+                  }
+                  onClick={() => toPitchClasses(dataBlock.id)}
+                >
+                  To pitch classes
+                </Button>
+                <DataBlockMenu
+                  spec={{ accepts: [dataBlock.typeId] }}
+                  label="Replace everywhere with"
+                  ariaLabel={`Replace ${dataBlock.name} everywhere with`}
+                  info="Point every place that uses this data-block at another one of the same type."
+                  exclude={[dataBlock.id]}
+                  disabledReason={users.length === 0 ? 'Nothing uses this data-block.' : null}
+                  onPick={(row) => setReplacing({ fromId: dataBlock.id, toId: row.block.id })}
+                />
+                <Popover
+                  opened={confirmingId === dataBlock.id}
+                  onChange={(open) => setConfirmingId(open ? dataBlock.id : null)}
+                  position="bottom-start"
+                  withinPortal={false}
+                  transitionProps={{ duration: 0 }}
+                >
+                  <Popover.Target>
+                    <Button
+                      size="compact-xs"
+                      variant="default"
+                      data-info="Remove this data-block from the desk. Places that use it show it as missing."
+                      onClick={() =>
+                        setConfirmingId((current) =>
+                          current === dataBlock.id ? null : dataBlock.id
+                        )
+                      }
+                    >
+                      Delete
+                    </Button>
+                  </Popover.Target>
+                  <Popover.Dropdown>
+                    {impact && (
+                      <>
+                        <Text size="xs" fw={600}>
+                          Delete {dataBlock.name}?
+                        </Text>
+                        {impact.users.length > 0 ? (
+                          <Text size="xs">
+                            Used by {impact.users.length}:{' '}
+                            {impact.users.map((user) => user.label).join(', ')}. They will show it
+                            as missing.
+                          </Text>
+                        ) : (
+                          <Text size="xs">Nothing uses it.</Text>
+                        )}
+                        {impact.descendants.length > 0 && (
+                          <Text size="xs">
+                            Derived from it:{' '}
+                            {impact.descendants.map((block) => block.name).join(', ')}. They are not
+                            changed.
+                          </Text>
+                        )}
+                        <Button
+                          size="compact-xs"
+                          mt="xs"
+                          onClick={() => {
+                            setConfirmingId(null);
+                            report(ops.deleteBlock(dataBlock.id));
+                          }}
+                        >
+                          Confirm delete
+                        </Button>
+                      </>
+                    )}
+                  </Popover.Dropdown>
+                </Popover>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+      <Modal
+        opened={replacing !== null}
+        onClose={() => setReplacing(null)}
+        title="Replace everywhere"
+        size="sm"
+        transitionProps={{ duration: 0 }}
+      >
+        {replacing && replacement && (
+          <>
+            <Text size="sm">
+              {replacement.refusal ??
+                `Replace ${nameOf(replacing.fromId, 'it')} in ${replacement.count} ${replacement.count === 1 ? 'place' : 'places'} with ${nameOf(replacing.toId, 'the replacement')}?`}
+            </Text>
+            <Group justify="flex-end" mt="md" gap="xs">
+              <Button size="compact-sm" variant="default" onClick={() => setReplacing(null)}>
+                Cancel
+              </Button>
+              <Button
+                size="compact-sm"
+                disabled={replacement.refusal !== null}
+                onClick={() => {
+                  report(ops.remap(replacing.fromId, replacing.toId));
+                  setReplacing(null);
+                }}
+              >
+                Replace
+              </Button>
+            </Group>
+          </>
+        )}
+      </Modal>
       <Modal
         opened={snapPrompt !== null}
         onClose={() => setSnapPrompt(null)}
@@ -275,6 +588,11 @@ export function DeskView({
           </Button>
         </Group>
       </Modal>
+      {opError && (
+        <Text className={classes.meta} mt="xs" role="alert">
+          {opError}
+        </Text>
+      )}
       {preview.status && (
         <Text className={classes.meta} mt="xs">
           {preview.status}

@@ -26,13 +26,8 @@ export interface CompositionNodeInstance {
   nodeId: CompositionNodeId;
   x: number;
   y: number;
-  /** A `data-block-source` node only: the desk data-block it publishes. It is not added from the Add menu. */
+  /** A `data-block-source` node only: the desk data-block it publishes; absent for a blank node, which the Add node menu places. */
   dataBlockId?: string;
-}
-
-/** Nodes the Add node menu offers. A data-block node is made from a desk card instead. */
-export function isAddableNode(nodeId: CompositionNodeId) {
-  return nodeId !== 'data-block-source';
 }
 
 export interface NodeRouteBinding {

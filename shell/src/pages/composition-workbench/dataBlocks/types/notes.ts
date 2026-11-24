@@ -1,6 +1,10 @@
-import { rational } from '../../musicalTime';
+import { createNotePacketPerformancePlan } from '../../audio/performancePlans';
+import type { NoteEventValue } from '../../melodicization';
+import type { DataPacket } from '../../model';
+import { defaultMusicalTimeline, rational } from '../../musicalTime';
 import { DEFAULT_TIME_SIGNATURE, withNotesProperties } from '../../notesProperties';
 import { notesOperators } from '../../noteTransforms';
+import { auditionLabel } from '../auditionPlans';
 import { registerDataBlockType } from '../registry';
 import { blankFrame, emptyPacket, packetBlock, refuseWhenEmpty } from './blank';
 
@@ -36,7 +40,21 @@ export function registerNotesType() {
     editorId: 'note-roll',
     preview: 'note-strip',
     operators: notesOperators,
-    // Notes keeps playing through the existing desk path (createNotePacketPerformancePlan).
-    audition: { refuse: refuseWhenEmpty },
+    // As written, through the existing note plan (A1). One cycle: the packet's extent or the end of
+    // the last note (the plan's own duration).
+    audition: {
+      refuse: refuseWhenEmpty,
+      build: (block) => {
+        if (block.payload.kind !== 'packet') {
+          throw new Error('Notes hold a packet.');
+        }
+        const plan = createNotePacketPerformancePlan({
+          sourceId: block.id,
+          packet: block.payload.packet as DataPacket<NoteEventValue>,
+          timeline: defaultMusicalTimeline,
+        });
+        return { plan, cycleLength: plan.duration, label: auditionLabel(block) };
+      },
+    },
   });
 }

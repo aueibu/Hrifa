@@ -67,19 +67,29 @@ export function useNodePreview({
     const version = requestVersion.current;
     setStatus(message);
     try {
+      // The plan can finish before `play` resolves; the callback then only notes it.
+      let finishedEarly = false;
+      const latest: { current?: PlaybackSession } = {};
       const started = await engine.play({
         plan,
         busGains: { preview: volumePercentToGain(volume), ...busGains },
         followTransport,
         loop: options.loop,
         onComplete: () => {
-          if (session.current === started) {
+          if (latest.current === undefined) {
+            finishedEarly = true;
+          } else if (session.current === latest.current) {
             end('complete', 'Preview complete.');
           }
         },
       });
+      latest.current = started;
       if (version !== requestVersion.current) {
         started.stop();
+        return false;
+      }
+      if (finishedEarly || !started.active) {
+        end('complete', 'Preview complete.');
         return false;
       }
       session.current = started;

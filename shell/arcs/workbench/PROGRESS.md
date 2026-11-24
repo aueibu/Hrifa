@@ -4,7 +4,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Timeline (`arcs/workbench`), APPROVED 2026-11-23 (human), committed a836990
-- Current milestone: R2 (audition core); R0, R1, R1c done 2026-11-24. Next after R2/R3/R4: the velocity migration (W-62) and the mask and warp-grid operators (DESIGN.channels.md)
+- Current milestone: R4 (Collection); R0, R1, R1c, R2, R3, B2 done 2026-11-24 (R3 and B2 human-approved by look; the human listens at R3 audio when convenient)
 - State: R0 committed (registry core in `dataBlocks/`, W-59). Next: R1.
 
 ## Where to look
@@ -30,6 +30,8 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 | R1 (2026-11-24) | done, committed | `check:workbench` green (110 files, 1,628 tests) | Desk, Make source and capture run on the registry stored shape (`PacketBlock`, `typeId`, schemaVersion 2, W-60); five types registered with non-overlapping `accepts` (notes, pitch-set, pitch-classes, rhythm, values), the old `dataBlockTypes.ts` logic deleted, `toLegacy` gone. Review PASS-with-human-check: Send to desk refused six real outputs (interval list and bank, scale stages, pitch-class bank, duration bank, mist voices): button now greyed with a reason; List, Bank and a `family` field held pending the channel design. Small fixes: operators look up by stored type, types import where used, no cast on dropped v1 records, non-overlap test from real packets. A dev desk with schemaVersion 1 opens empty with a warning. |
 | R1c (2026-11-24) | done, committed | `check:workbench` green (110 files, 1,635 tests) | `family` and `channels` on every type; List and Bank generic types (domain kept in the packet; capture picks non-generic first, then generic; the stored typeId is never re-guessed); the six blocked Send to desk outputs capture again; W-61. Human answers to DESIGN.channels.md recorded (M1 to M9, Q1 to Q3, amplitude rule W-62). |
 
+| R2, R3, B2 (2026-11-24) | done, committed | `check:workbench` green (114 files, 1,696 tests) | R2: pure audition core (settings, context, one-cycle plans, explicit Hear-as; review FAIL on Rhythm fixed by reusing `realizeRhythm` with transport pulse and the rhythm voice). R3: Play/Stop control with per-viewer settings popover (`hrifa.audition-settings.v1`), loop through the engine, Values Hear-as button (W-64). B2: shared data-block menu, Used by and Make single user, delete impact, Unused and Purge, one apply helper with desk-first undo grouping, remap including from a missing block, three Make source states, blank Data-block node in the Add node and right-click menus (W-65). Review fixes: audition controls from the registry, `useNodePreview` completion race, wording. Human approved after looking: the Nodes tab is blank until a node is selected on the Canvas (by design). |
+
 ## Shared touches (locks taken)
 None yet.
 
@@ -37,4 +39,4 @@ None yet.
 - Approve the revised `ARC.md` (milestones C0, T0 to T6b).
 
 ## Next action
-**RESUME HERE (2026-11-24):** R0, R1 and R1c are committed. The human answered `DESIGN.channels.md` (mask reads timing with reach and touch; pitch filter separate; warp grid piecewise-linear; amplitude 0 to 127 fractional, W-62; timbre stays on the voice or bus). Next: R2 (audition core from SCENARIOS.registry.md Part 1), then R3 (the human listens), R4 (Collection). Later: the velocity migration (W-62), mask and warp-grid operators, audio-capabilities map (BACKLOG).
+**RESUME HERE (2026-11-24):** R0, R1, R1c, R2 (audition core), R3 (desk Play control, W-64) and B2 (data-block menu, user counts, undo grouping, blank Data-block node in both Add menus, W-65) are committed. Next: R4 (Collection type and its referencer, audition through the Melodicization evaluator with cycle or stop-at-shortest, two melodies layer; read the OpenMusic manual for voice and poly before any larger composite), then the velocity migration (W-62), mask and warp-grid operators (DESIGN.channels.md), audio-capabilities map (BACKLOG). Open decision (vetoable): Pitch classes from events plays as a set (W-63).

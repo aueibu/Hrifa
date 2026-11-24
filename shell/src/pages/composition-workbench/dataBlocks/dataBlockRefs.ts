@@ -239,7 +239,7 @@ export function makeSingleUser(
 
 /**
  * S4: removes one user's reference; the data-block stays on the desk. A Make source node keeps its
- * place on the canvas with no `dataBlockId`, which it already renders as a missing data-block.
+ * place on the canvas with no `dataBlockId`, which it renders as blank ("No data-block chosen").
  */
 export function unlinkUser(project: RefsProject, user: UserEntry): RefsResult {
   const referencer = referencers.get(user.ownerKind);
@@ -273,9 +273,7 @@ function remapRefusal(project: RefsProject, fromId: string, toId: string): strin
   if (fromId === toId) {
     return 'Choose a different data-block to replace it with.';
   }
-  if (!project.dataBlocks.some((dataBlock) => dataBlock.id === fromId)) {
-    return 'The data-block to replace is no longer on the desk.';
-  }
+  // `fromId` may be missing from the desk: its users are then repointed (S1 repair, B2).
   if (!to) {
     return 'The replacement is no longer on the desk.';
   }
@@ -295,7 +293,8 @@ export function remapPreview(project: RefsProject, fromId: string, toId: string)
 }
 
 /**
- * S5: points every user of `fromId` at `toId`. `fromId` is left on the desk with no users. Refused
+ * S5: points every user of `fromId` at `toId` (`fromId` may be a deleted data-block: that repairs its
+ * users). A present `fromId` is left on the desk with no users. Refused
  * when a user does not accept the replacement (today only a Make source refusing an empty data-block).
  */
 export function remapUsers(project: RefsProject, fromId: string, toId: string): RefsResult {
