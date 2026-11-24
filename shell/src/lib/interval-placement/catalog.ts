@@ -47,19 +47,22 @@ import type {
 export type ScoreWeights = Partial<Record<ScoreKey, number>>;
 
 /**
- * The default mix: `EQUAL_WEIGHTS` as written (interference -1, periodicity 0, harmonicity +1, where `harmonicity` is
- * the faithful pitch-class harmonicity, `harmonicityPc`; DECISIONS INTERVALPLACEMENT-3). Which harmonicity carries the
- * harmonicity-leaning default is the human's choice (ARC revision decision 4), shown with an example where the two
- * rank differently; until then this stays the literal preset.
+ * The default mix: interference -1, periodicity 0, **pitch-space** harmonicity (`harmonicityPitch`) +1 (human,
+ * 2026-11-23, DECISIONS INTERVALPLACEMENT-4): the catalog compares placements of one interval set, which pitch-class
+ * harmonicity barely tells apart (two chords with the same pitch-class shape score the same wherever their notes sit).
+ * `EQUAL_WEIGHTS` keeps its meaning (its `harmonicity` is the faithful pitch-class score) and stays available.
  */
 export const DEFAULT_CATALOG_WEIGHTS: Readonly<ScoreWeights> = {
   interference: EQUAL_WEIGHTS.interference,
   periodicity: EQUAL_WEIGHTS.periodicity,
-  harmonicityPc: EQUAL_WEIGHTS.harmonicity,
+  harmonicityPitch: EQUAL_WEIGHTS.harmonicity,
 };
 
-/** The default two Pareto axes: interference (lower is better) and pitch-class harmonicity (higher is better). */
-export const DEFAULT_PARETO_KEYS: readonly [ScoreKey, ScoreKey] = ['interference', 'harmonicityPc'];
+/** The default two Pareto axes: interference (lower is better) and pitch-space harmonicity (higher is better). */
+export const DEFAULT_PARETO_KEYS: readonly [ScoreKey, ScoreKey] = [
+  'interference',
+  'harmonicityPitch',
+];
 
 /**
  * Weights as `rankCatalog` accepts them: per flat score key, or the `EQUAL_WEIGHTS` shape, whose `harmonicity` key

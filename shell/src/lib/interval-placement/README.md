@@ -229,7 +229,7 @@ const result = buildCatalog(
     cap: 5040, // orderings looked at (DEFAULT_ORDERING_CAP); each is placed at every width
     score: { decompose: false }, // ScoreOptions for scoreVoicing (the default skips the per-note marginals)
   },
-  { weights: DEFAULT_CATALOG_WEIGHTS, paretoKeys: ['interference', 'harmonicityPc'] } // both optional (these are the defaults)
+  { weights: DEFAULT_CATALOG_WEIGHTS, paretoKeys: ['interference', 'harmonicityPitch'] } // both optional (these are the defaults)
 );
 // { entries: RankedEntry[] (best mix first), orderings, placements, cannotFit: [{widthSteps, orderings}], filtered }
 ```
@@ -243,10 +243,12 @@ const result = buildCatalog(
   pitch set (any pair of notes) before scoring; `filtered` counts rejected pitch sets.
 - `rankCatalog(entries, {weights, paretoKeys})`: `mix` = `combine` of the standardized columns (within the list) with
   `weights` (`Partial<Record<ScoreKey, number>>`, or the `EQUAL_WEIGHTS` shape, whose `harmonicity` means `harmonicityPc`;
-  any other key, or a non-finite weight, throws a `RangeError`). The default `DEFAULT_CATALOG_WEIGHTS` is `EQUAL_WEIGHTS`
-  as written (interference -1, periodicity 0, pitch-class harmonicity +1); which harmonicity carries the
-  harmonicity-leaning default is still the human's choice (ARC revision decision 4). `layer` = the 0-based Pareto layer
-  over the two keys (default interference × `harmonicityPc`; `paretoLayers` in `../consonance/ranking.ts`, repeated
+  any other key, or a non-finite weight, throws a `RangeError`). The default `DEFAULT_CATALOG_WEIGHTS` is interference -1,
+  periodicity 0, **pitch-space** harmonicity (`harmonicityPitch`) +1 (human, 2026-11-23, DECISIONS INTERVALPLACEMENT-4):
+  pitch-class harmonicity scores two chords with the same pitch-class shape the same wherever their notes sit, so it
+  barely separates placements of one set. Example (`11 7 16`, Open, C2, 54 chords): the default puts C2 A2 C3 E3 B3
+  first; `EQUAL_WEIGHTS` (pitch-class) puts C2 G2 B2 E3 first. `layer` = the 0-based Pareto layer over the two keys
+  (default interference × `harmonicityPitch`; `paretoLayers` in `../consonance/ranking.ts`, repeated
   peeling of `paretoFront`, each key's min/max sense from `SCORE_SENSE`). Sorted by `mix`, best first. `paretoLayers`
   costs about layers × n² (5,000 entries 0.4 s, 20,000 entries 4 s): rank in the worker for large catalogs.
 - `catalogChunks(spec, {chunkMs = 16, now})` is the worker generator: each `next()` places whole orderings until the budget

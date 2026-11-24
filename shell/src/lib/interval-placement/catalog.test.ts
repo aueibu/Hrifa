@@ -585,9 +585,9 @@ describe('ranking and Pareto layers', () => {
       for (const e of r.entries) {
         const dominates =
           e.flat.interference <= f.flat.interference &&
-          e.flat.harmonicityPc >= f.flat.harmonicityPc &&
+          e.flat.harmonicityPitch >= f.flat.harmonicityPitch &&
           (e.flat.interference < f.flat.interference ||
-            e.flat.harmonicityPc > f.flat.harmonicityPc);
+            e.flat.harmonicityPitch > f.flat.harmonicityPitch);
         expect(dominates).toBe(false);
       }
     }
@@ -600,10 +600,20 @@ describe('ranking and Pareto layers', () => {
     }
     expect(byPer.some((e) => e.layer === 0)).toBe(true);
   });
-  it('weights: EQUAL_WEIGHTS ranks exactly as the default (harmonicity = harmonicityPc); unknown keys throw', () => {
+  it('default ranks by pitch-space harmonicity (human, 2026-11-23): 11 7 16, Open, C2', () => {
+    // the checkpoint example: the two harmonicities pick different chords at the top
+    const r = buildCatalog(spec([11, 7, 16], { spacing: spacingPreset('open') }));
+    expect(r.entries).toHaveLength(54);
+    const top = (list: { cents: number[] }[]) => list[0].cents.map((c) => Math.round(c / 100));
+    expect(top(r.entries)).toEqual([0, 9, 12, 16, 23]); // C2 A2 C3 E3 B3
+    const viaEqual = rankCatalog(r.entries, { weights: EQUAL_WEIGHTS }); // pitch-class harmonicity
+    expect(top(viaEqual)).toEqual([0, 7, 11, 16]); // C2 G2 B2 E3
+  });
+  it('weights: EQUAL_WEIGHTS means pitch-class harmonicity (harmonicity = harmonicityPc); unknown keys throw', () => {
     const r = buildCatalog(spec([11, 7, 16], { spacing: { fromSteps: 16, toSteps: 30 } }));
     const viaEqual = rankCatalog(r.entries, { weights: EQUAL_WEIGHTS });
-    expect(viaEqual.map((e) => e.id)).toEqual(r.entries.map((e) => e.id));
+    const viaPc = rankCatalog(r.entries, { weights: { interference: -1, harmonicityPc: 1 } });
+    expect(viaEqual.map((e) => e.id)).toEqual(viaPc.map((e) => e.id));
     // not interference alone: the harmonicity column changes the order
     const interferenceOnly = rankCatalog(r.entries, { weights: { interference: -1 } });
     expect(interferenceOnly.map((e) => e.id)).not.toEqual(viaEqual.map((e) => e.id));
