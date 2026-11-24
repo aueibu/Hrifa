@@ -60,7 +60,7 @@ function numberOr(value: number | string, fallback: number) {
 }
 
 export function SwirlingMistsModule({ instanceId, instanceLabel }: SwirlingMistsModuleProps) {
-  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'swirling-mists');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [{ settings }, { settings: setSettings }] = useModuleState(swirlingMistsState, instanceId);
   const [stepMilliseconds, setStepMilliseconds] = usePersistentState(
     stateKey(compositionStateKeys.mistStep),

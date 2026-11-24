@@ -129,7 +129,7 @@ export function MixerModule({
 }: MixerModuleProps) {
   const { settings } = useCompositionSettings();
   const engine = useAudioEngine();
-  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'mixer');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [channelState, setChannelState] = usePersistentState<MixerChannelsState>(
     stateKey(compositionStateKeys.mixerChannels),
     {},

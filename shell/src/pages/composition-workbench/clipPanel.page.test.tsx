@@ -2,7 +2,9 @@ import { render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CompositionWorkbenchPage } from '../CompositionWorkbench.page';
 import { CLIP_DEFAULTS_KEY } from './clipPreferences';
+import { seedDesk } from './deskTestUtils';
 import { canUndo, resetHistory } from './history';
+import { storeDefaultScreensets } from './layout/screensetFixtures';
 import { packet } from './model';
 import { captureSnippet } from './snippet';
 import * as snippetModule from './snippet';
@@ -34,13 +36,9 @@ const clipStatus = () =>
 const footerTab = (name: string) =>
   within(screen.getByRole('contentinfo')).getByRole('tab', { name });
 
-function seed(options: { view?: 'canvas' | 'desk'; collapsed?: boolean } = {}) {
-  localStorage.setItem(
-    compositionStateKeys.desk,
-    JSON.stringify([clip('clip-a', 'Alpha'), clip('clip-b', 'Beta')])
-  );
-  localStorage.setItem(compositionStateKeys.workspaceView, JSON.stringify(options.view ?? 'desk'));
-  localStorage.setItem(compositionStateKeys.detailCollapsed, JSON.stringify(!!options.collapsed));
+async function seed(options: { view?: 'canvas' | 'desk'; collapsed?: boolean } = {}) {
+  await seedDesk([clip('clip-a', 'Alpha'), clip('clip-b', 'Beta')]);
+  storeDefaultScreensets({ active: options.view ?? 'desk', detailCollapsed: !!options.collapsed });
 }
 
 async function card(name: string) {
@@ -57,7 +55,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('still shows a selected module editor, and the clip slot stays empty', async () => {
     const user = userEvent.setup();
-    seed({ view: 'canvas' });
+    await seed({ view: 'canvas' });
     render(<CompositionWorkbenchPage />);
     const grid = screen.getByLabelText('Composition canvas');
     await user.click(within(grid).getByRole('button', { name: /^Pitch List/ }));
@@ -67,7 +65,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('double-clicking a desk card targets that clip and expands a collapsed panel', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     const alpha = await card('Alpha');
     // Collapse the Detail docker through its own menu first.
@@ -92,7 +90,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('does not open a clip on a double-click in its name field', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     await user.dblClick(await screen.findByDisplayValue('Alpha'));
     expect(screen.queryByText('No editor for this clip yet.')).not.toBeInTheDocument();
@@ -100,7 +98,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('works from the canvas view too, with the hidden-view rule unchanged', async () => {
     const user = userEvent.setup();
-    seed({ view: 'desk' });
+    await seed({ view: 'desk' });
     render(<CompositionWorkbenchPage />);
     await user.dblClick(within(await card('Alpha')).getByText(/^list \| pitch/));
     const canvas = screen.getByLabelText('Composition canvas');
@@ -125,7 +123,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('ends the edit session when the target leaves the clip', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     await user.dblClick(within(await card('Alpha')).getByText(/^list \| pitch/));
     expect(snippetModule.endEditSession).not.toHaveBeenCalled();
@@ -149,7 +147,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('shows a blank panel when the targeted clip is deleted, and promotes no module', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     const alpha = await openAlpha(user);
 
@@ -166,7 +164,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('counts no module as active while a clip is open', async () => {
     const user = userEvent.setup();
-    seed({ view: 'canvas' });
+    await seed({ view: 'canvas' });
     render(<CompositionWorkbenchPage />);
     const grid = screen.getByLabelText('Composition canvas');
     await user.click(within(grid).getByRole('button', { name: /^Pitch List/ }));
@@ -184,7 +182,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('keeps the clip open when an earlier module add is undone', async () => {
     const user = userEvent.setup();
-    seed({ view: 'canvas' });
+    await seed({ view: 'canvas' });
     render(<CompositionWorkbenchPage />);
     await user.click(screen.getByRole('button', { name: 'Add module' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Pitch List' }));
@@ -198,7 +196,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('shows a blank panel when the open module is removed, and promotes no other', async () => {
     const user = userEvent.setup();
-    seed({ view: 'canvas' });
+    await seed({ view: 'canvas' });
     render(<CompositionWorkbenchPage />);
     const grid = screen.getByLabelText('Composition canvas');
     await user.click(within(grid).getByRole('button', { name: /^Pitch List/ }));
@@ -211,7 +209,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('shows a blank panel, without errors, when undo removes the open module', async () => {
     const user = userEvent.setup();
-    seed({ view: 'canvas' });
+    await seed({ view: 'canvas' });
     render(<CompositionWorkbenchPage />);
     const grid = screen.getByLabelText('Composition canvas');
     await user.click(screen.getByRole('button', { name: 'Add module' }));
@@ -230,7 +228,7 @@ describe('the bottom panel targets a module or a clip', () => {
 
   it('records no history entry for targeting a clip', async () => {
     const user = userEvent.setup();
-    seed();
+    await seed();
     render(<CompositionWorkbenchPage />);
     await user.dblClick(within(await card('Alpha')).getByText(/^list \| pitch/));
     expect(clipStatus()).toBeVisible();
@@ -246,8 +244,7 @@ describe('New clip', () => {
   });
 
   async function renderEmptyDesk() {
-    localStorage.setItem(compositionStateKeys.workspaceView, JSON.stringify('desk'));
-    localStorage.setItem(compositionStateKeys.detailCollapsed, JSON.stringify(true));
+    storeDefaultScreensets({ active: 'desk', detailCollapsed: true });
     render(<CompositionWorkbenchPage />);
     // Disabled until the desk has loaded, so enabled means ready.
     // The loading view and the loaded view are different elements, so look the button up each time.

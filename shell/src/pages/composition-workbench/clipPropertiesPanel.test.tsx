@@ -8,13 +8,12 @@ import { NoteClipEditor } from './components/NoteClipEditor';
 import { CompositionSettingsProvider, useCompositionSettings } from './compositionSettings';
 import { DeskProvider, useDesk } from './desk';
 import { getProject, listProjects } from './deskStore';
-import { renderDesk, storedDesk } from './deskTestUtils';
+import { renderDesk, seedDesk, storedDesk } from './deskTestUtils';
 import { canUndo, historyChangeCount, resetHistory, undo } from './history';
 import { packet, type DataItem } from './model';
 import { musicalDuration, musicalPosition, rational } from './musicalTime';
 import { openProject, saveProject } from './projects';
 import type { Snippet } from './snippet';
-import { compositionStateKeys } from './usePersistentState';
 
 vi.mock('./audio/AudioEngineProvider', () => ({
   useAudioEngine: () => ({
@@ -372,9 +371,9 @@ describe('clip properties robustness', () => {
 });
 
 describe('clip properties in storage', () => {
-  it('loads an earlier desk unchanged and reads defaults from it', async () => {
+  it('loads a stored desk unchanged and reads defaults from it', async () => {
     const old = [legacyClip('a', 8), legacyClip('b', 4)];
-    localStorage.setItem(compositionStateKeys.desk, JSON.stringify(old));
+    await seedDesk(old);
     const { result } = await renderDesk();
     expect(result.current.snippets).toHaveLength(2);
     // Nothing was written into the stored clips by loading.

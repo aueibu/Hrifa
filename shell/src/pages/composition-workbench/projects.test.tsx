@@ -35,14 +35,13 @@ import {
 } from './projects';
 import { isReloading } from './reloading';
 import { acceptsSnippets, endEditSession, type Snippet } from './snippet';
-import { compositionStateKeys, usePersistentState } from './usePersistentState';
+import { usePersistentState } from './usePersistentState';
 
 const stopAll = vi.fn();
 vi.mock('./audio/AudioEngineProvider', () => ({
   useAudioEngine: () => ({ stopAll }),
 }));
 
-const LEGACY_DESK = compositionStateKeys.desk;
 const moduleKey = 'hrifa.composition-workbench.fractioning.a.v1';
 const extraKey = 'hrifa.composition-workbench.interference.generators.v1.instance.x';
 
@@ -100,7 +99,6 @@ describe('workbench state helpers', () => {
     localStorage.setItem(moduleKey, '5');
     localStorage.setItem('hrifa.other-page.v1', 'x');
     localStorage.setItem(currentProjectKey, '{}');
-    localStorage.setItem(LEGACY_DESK, '[]');
     expect(captureWorkbenchState()).toEqual({ [moduleKey]: '5' });
   });
 
@@ -135,22 +133,13 @@ describe('workbench state helpers', () => {
     expect(imported.desk).toEqual([clip('a')]);
   });
 
-  it('reads the earlier snapshot file format and rejects other files', () => {
-    const file = JSON.stringify({
+  it('rejects files that are not a project export', () => {
+    const snapshots = JSON.stringify({
       format: 'hrifa-workbench-snapshots',
       version: 1,
-      snapshots: [
-        {
-          id: 'snapshot-1',
-          name: 'Old',
-          savedAt: '2026-11-01T00:00:00Z',
-          entries: { [moduleKey]: '5', [LEGACY_DESK]: JSON.stringify([clip('a')]) },
-        },
-      ],
+      snapshots: [],
     });
-    const [imported] = parseProjectFile(file);
-    expect(imported.entries).toEqual({ [moduleKey]: '5' });
-    expect(imported.desk).toEqual([clip('a')]);
+    expect(() => parseProjectFile(snapshots)).toThrow(/not a workbench project/);
     expect(() => parseProjectFile('nope')).toThrow(/not valid JSON/);
     expect(() => parseProjectFile('{"projects":[]}')).toThrow(/not a workbench project/);
   });
@@ -215,7 +204,7 @@ describe('saving and opening a project', () => {
     await act(async () => {
       await openProject({ id: listed.id, desk: result.current, includeSettings: true });
     });
-    const stored = await loadDesk('x');
+    const stored = await loadDesk();
     expect(plain(stored.snippets)).toEqual(project);
     expect(stored.snippets.map((snippet) => snippet.id)).toEqual(['keep']);
     expect(stored.snippets[0].lineage!.versions).toHaveLength(2);
@@ -282,7 +271,7 @@ describe('a failed or refused open', () => {
     expect(result?.ok).toBe(false);
     expect(localStorage.getItem(moduleKey)).toBe('9');
     expect(rendered.result.current.snippets.map((snippet) => snippet.id)).toEqual(['now']);
-    expect((await loadDesk('x')).snippets.map((snippet) => snippet.id)).toEqual(['now']);
+    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['now']);
   }
 
   it('writes nothing when the desk cannot be saved', async () => {
@@ -306,7 +295,7 @@ describe('a failed or refused open', () => {
 
   it('refuses when another tab changed the desk (rev conflict)', async () => {
     const rendered = await seeded();
-    const other = await loadDesk('x');
+    const other = await loadDesk();
     await enqueueDeskTask(() =>
       writeDeskNow({
         snippets: [...other.snippets, clip('theirs')],
@@ -325,7 +314,7 @@ describe('a failed or refused open', () => {
     expect(result?.ok).toBe(false);
     expect(localStorage.getItem(moduleKey)).toBe('9');
     expect(rendered.result.current.snippets.map((snippet) => snippet.id)).toEqual(['now']);
-    expect((await loadDesk('x')).snippets.map((snippet) => snippet.id)).toEqual(['now', 'theirs']);
+    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['now', 'theirs']);
   });
 
   it('refuses while the desk is loading or locked, and for a project that is gone', async () => {
@@ -416,7 +405,7 @@ describe('the page closing for a reload', () => {
     expect(localStorage.getItem(moduleKey)).toBe('5');
     expect(historyChangeCount()).toBe(before);
     // The reload reads the project's desk, not the stale one.
-    expect((await loadDesk('x')).snippets.map((snippet) => snippet.id)).toEqual(['then']);
+    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['then']);
   });
 
   it('keeps the marker on the opened project, clean, when the old page changes after the open', async () => {
@@ -520,7 +509,7 @@ describe('the database upgrade', () => {
       };
       request.onerror = () => reject(request.error);
     });
-    const loaded = await loadDesk('x');
+    const loaded = await loadDesk();
     expect(loaded.snippets.map((snippet) => snippet.id)).toEqual(['old']);
     expect(loaded.rev).toBe(3);
     expect(await listProjects()).toEqual([]);
@@ -643,7 +632,7 @@ describe('ProjectMenu', () => {
       })
     );
     await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
-    expect((await loadDesk('x')).snippets.map((snippet) => snippet.id)).toEqual(['a']);
+    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['a']);
   });
 
   it('Save first saves the current project, then opens the other one', async () => {
@@ -673,7 +662,7 @@ describe('ProjectMenu', () => {
       'b',
       'c',
     ]);
-    expect((await loadDesk('x')).snippets.map((snippet) => snippet.id)).toEqual(['a']);
+    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['a']);
   });
 
   it('shows why an open was refused and changes nothing', async () => {

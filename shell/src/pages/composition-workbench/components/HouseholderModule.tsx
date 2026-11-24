@@ -169,8 +169,7 @@ export function HouseholderModule({
   onBind,
 }: HouseholderModuleProps) {
   const { settings: compositionSettings } = useCompositionSettings();
-  const stateKey = (key: string) =>
-    compositionInstanceStateKey(key, instanceId, 'rhythm-householder');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [{ settings }, { settings: setSettings, selectedIndex: setSelectedIndex }] = useModuleState(
     householderState,
     instanceId

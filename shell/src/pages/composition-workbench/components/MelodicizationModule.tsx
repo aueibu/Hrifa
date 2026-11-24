@@ -118,7 +118,7 @@ export function MelodicizationModule({
   const { settings } = useCompositionSettings();
   const bindingRhythm = routeState.rhythm;
   const bindingPitches = routeState.pitches;
-  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'melodicization');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [
     { allocation, articulationPercent },
     { allocation: setAllocation, articulationPercent: setArticulationPercent },

@@ -21,7 +21,6 @@ export const interferenceState = defineModuleState<InterferenceState>('interfere
           typeof draft.id === 'string' &&
           typeof draft.label === 'string' &&
           typeof draft.valueText === 'string' &&
-          (draft.midiNote === undefined || typeof draft.midiNote === 'number') &&
           (draft.sound === undefined || draft.sound === null || isSoundOverride(draft.sound))
       ),
   },

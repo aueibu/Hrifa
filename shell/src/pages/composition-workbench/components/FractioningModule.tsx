@@ -31,22 +31,15 @@ interface FractioningModuleProps {
 }
 
 export function FractioningModule({ instanceId, instanceLabel }: FractioningModuleProps) {
-  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'fractioning');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [{ a, b }, { a: setA, b: setB }] = useModuleState(fractioningState, instanceId);
-  const [midiNote, setMidiNote] = usePersistentState(
-    stateKey(compositionStateKeys.fractioningMidiNote),
-    48,
-    acceptsFiniteNumber
-  );
-  // The preview's sound: the primary rhythm voice unless overridden here. A pitch saved before
-  // voices existed (anything but the old default C3) still counts as a Tone override.
+  // The preview's sound: the primary rhythm voice unless overridden here.
   const [soundSetting, setSoundSetting] = usePersistentState<SoundOverride | null>(
     stateKey(compositionStateKeys.fractioningSound),
     null,
     (value): value is SoundOverride | null => value === null || isSoundOverride(value)
   );
-  const soundOverride: SoundOverride | null =
-    soundSetting ?? (midiNote !== 48 ? { type: 'tone', midicents: midiNote * 100 } : null);
+  const soundOverride: SoundOverride | null = soundSetting;
   const [previewVolume, setPreviewVolume] = usePersistentState(
     stateKey(compositionStateKeys.fractioningVolume),
     30,
@@ -91,7 +84,6 @@ export function FractioningModule({ instanceId, instanceLabel }: FractioningModu
     preview.stop('');
     setA(3);
     setB(2);
-    setMidiNote(48);
     setSoundSetting(null);
     setPreviewVolume(30);
     preview.setStatus('Fractioning module reset.');
@@ -162,7 +154,6 @@ export function FractioningModule({ instanceId, instanceLabel }: FractioningModu
                   value={soundOverride}
                   onChange={(sound) => {
                     setSoundSetting(sound);
-                    setMidiNote(48);
                   }}
                 />
               </div>

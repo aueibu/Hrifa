@@ -2,7 +2,12 @@
 
 Every multiset of `n` essential intervals (sizes 1..`max` steps of 12-EDO), every distinct ordering, every window size
 from the largest interval up to `wmax`, under both spacing rules, built, measured and scored, in one SQLite file.
-Databases live outside the repo in `_Ideas/interval-placement-catalog/` (they are large); this folder holds the code.
+Databases live outside the repo and outside the Google Drive folder, in `C:\Data Files\ipcat-data\` (`v1/` = the first
+catalog-n3/n4 build, `v2/` = the v2 catalogs for n = 2–4 and the n = 2–4 chord index; moved 2026-11-23, SHA-256 checked:
+Drive was uploading 6.7 GB and its upload links made every publish ask for consent). The full n = 2–5 catalogs and the
+n = 2–5 chord index are on the VM (`~/ipcat/out`, `out19`, `index`). `_Ideas/interval-placement-catalog/v2/` keeps
+only the durable JSON (`findings-v2.json`, `zpairs-n3-5.json`), the built findings page and `build/core.js`. This folder
+holds the code.
 
 ## Build
 

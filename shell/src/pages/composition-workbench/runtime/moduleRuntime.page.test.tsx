@@ -2,8 +2,6 @@ import { createElement } from 'react';
 import { fireEvent, render, screen, userEvent } from '@test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import { CompositionWorkbenchPage } from '../../CompositionWorkbench.page';
-import { compositionWorkbenchStorageKey } from '../persistence';
-import { compositionStateKeys } from '../usePersistentState';
 
 // Counts how often the Interference module (a source module: it takes no outputs) renders.
 const renders = vi.hoisted(() => ({ interference: 0 }));
@@ -36,8 +34,7 @@ vi.mock('./useModuleEvaluation', async (importOriginal) => {
 describe('module runtime', () => {
   it('a publish from one module does not re-render a source module, and a routed module still gets the output', async () => {
     const user = userEvent.setup();
-    localStorage.removeItem(compositionWorkbenchStorageKey);
-    Object.values(compositionStateKeys).forEach((key) => localStorage.removeItem(key));
+    localStorage.clear();
     render(<CompositionWorkbenchPage />);
 
     // Route the rhythm from Interference into Melodicization (22 notes with the default resultant).
@@ -72,8 +69,7 @@ describe('module runtime', () => {
 
   it('a source module runner is not re-rendered by another module publishing', async () => {
     const user = userEvent.setup();
-    localStorage.removeItem(compositionWorkbenchStorageKey);
-    Object.values(compositionStateKeys).forEach((key) => localStorage.removeItem(key));
+    localStorage.clear();
     render(<CompositionWorkbenchPage />);
     await user.click(screen.getByRole('button', { name: /^Pitch List/ }));
     const interferenceBefore = evaluations.byModule['interference'];

@@ -93,3 +93,27 @@ export function paretoFront(
   }
   return front;
 }
+
+/**
+ * Pareto layers: the front (`paretoFront`) is layer 0; remove it and take the front of the rest for layer 1, and so on
+ * until nothing is left. Returns the layers as lists of indices into `points` (ascending within a layer). `senses` is as
+ * in `paretoFront` (per axis, default `'min'`); the axes are whatever columns the points carry (a candidate's two chosen
+ * scores). Points with a NaN coordinate are never in any layer.
+ */
+export function paretoLayers(
+  points: readonly (readonly number[])[],
+  senses?: readonly ('min' | 'max')[]
+): number[][] {
+  const layers: number[][] = [];
+  let rest = points.map((_, i) => i).filter((i) => points[i].every((v) => !Number.isNaN(v)));
+  while (rest.length > 0) {
+    const front = paretoFront(
+      rest.map((i) => points[i]),
+      senses
+    ).map((k) => rest[k]);
+    layers.push(front);
+    const gone = new Set(front);
+    rest = rest.filter((i) => !gone.has(i));
+  }
+  return layers;
+}

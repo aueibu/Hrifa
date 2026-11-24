@@ -132,7 +132,7 @@ export function RhythmEditModule({
   onBind,
 }: RhythmEditModuleProps) {
   const { settings } = useCompositionSettings();
-  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'rhythm-edit');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [
     { mode, program, rules, lengths, grouping, editSettings },
     {

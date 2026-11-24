@@ -1,7 +1,6 @@
 import { createElement } from 'react';
 import { act, render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { operationsForPacket } from './compatibility';
 import { SnippetPreview } from './components/SnippetPreview';
 import { renderDesk } from './deskTestUtils';
 import { melodicize, type NoteEventValue } from './melodicization';
@@ -548,31 +547,6 @@ describe('convertSnippetToPitchClass', () => {
     expect(pitchClassConversionRefusal(infinite)).not.toBeNull();
     const empty = { ...noteSnippet(), packet: { ...noteSnippet().packet, items: [] } };
     expect(pitchClassConversionRefusal(empty)).toMatch(/nothing to convert/);
-  });
-
-  it('routes a chromatic-19 result through compatibility as a pitch-class source', () => {
-    const source = withPitches(noteSnippet(), [[0], [step19], [2 * step19], [3 * step19]]);
-    const result = convertSnippetToPitchClass(source, { ...request, edo: 19 });
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(operationsForPacket(result.snippet.packet).map((operation) => operation.id)).toEqual([
-        'transpose-pitches',
-        'invert-pitches',
-        'voice-pitch-classes',
-      ]);
-    }
-  });
-
-  it('routes through compatibility as a pitch-class source, and a note snippet does not', () => {
-    const ids = (value: Snippet) =>
-      operationsForPacket(value.packet).map((operation) => operation.id);
-    const source = noteSnippet();
-    expect(ids(source)).not.toContain('voice-pitch-classes');
-    expect(ids(converted(source))).toEqual([
-      'transpose-pitches',
-      'invert-pitches',
-      'voice-pitch-classes',
-    ]);
   });
 
   it('renders in the preview without error, as text', () => {

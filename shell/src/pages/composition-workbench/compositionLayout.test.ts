@@ -87,16 +87,11 @@ describe('nextFreePosition', () => {
 });
 
 describe('migrateCompositionInstances', () => {
-  it('converts lane and row placements to canvas coordinates', () => {
-    const migrated = migrateCompositionInstances([
-      { id: 'a', moduleId: 'pitch-list', laneId: 1, row: 1 },
-      { id: 'b', moduleId: 'melodicization', laneId: 3, row: 2 },
-    ]);
-    expect(acceptsCompositionInstances(migrated)).toBe(true);
-    expect(migrated).toEqual([
-      { id: 'a', moduleId: 'pitch-list', x: 0, y: 0 },
-      { id: 'b', moduleId: 'melodicization', x: 400, y: 170 },
-    ]);
+  it('passes entries without canvas coordinates through unchanged', () => {
+    const entries = [{ id: 'a', moduleId: 'pitch-list', laneId: 1, row: 1 }];
+    const migrated = migrateCompositionInstances(entries);
+    expect(migrated).toEqual(entries);
+    expect(acceptsCompositionInstances(migrated)).toBe(false);
   });
 
   it('leaves canvas placements alone and drops stale lane fields', () => {

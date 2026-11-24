@@ -11,7 +11,7 @@ import {
 
 /**
  * One persisted field of a module's state: the base key (from `compositionStateKeys`), what it reads
- * as when nothing is saved, what a saved value must look like, and how an older shape upgrades.
+ * as when nothing is saved, what a saved value must look like, and an optional step that reshapes a stored value before it is validated.
  */
 export interface ModuleStateField<T, S> {
   key: string;
@@ -51,7 +51,7 @@ export type ModuleStateSetters<S> = {
 
 /** The store key of one field of one instance (the same key `usePersistentState` would use). */
 export function moduleStateKey<S>(spec: ModuleStateSpec<S>, field: keyof S, instanceId: string) {
-  return compositionInstanceStateKey(spec.fields[field].key, instanceId, spec.moduleId);
+  return compositionInstanceStateKey(spec.fields[field].key, instanceId);
 }
 
 function fieldConfig<S, K extends keyof S>(
@@ -131,7 +131,7 @@ export function useModuleState<S>(
   );
   const state = useSyncExternalStore(subscribe, getSnapshot);
 
-  // Mount and migration writes persist the current values and never record.
+  // The mount write persists the current values and never records.
   useEffect(() => {
     keys.forEach(persistState);
   }, [keys]);

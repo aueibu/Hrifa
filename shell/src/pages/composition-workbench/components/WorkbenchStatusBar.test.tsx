@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@test-utils';
-import { seedWorkbenchScreensets } from '../layout/workbenchScreensets';
+import { defaultWorkbenchScreensets } from '../layout/workbenchScreensets';
 import { InfoBarActiveContext, InfoTooltip } from './hoverInfo';
 import { WorkbenchStatusBar } from './WorkbenchStatusBar';
 
@@ -11,7 +11,7 @@ function Harness({
   active = 'canvas',
   onActivate = vi.fn(),
 }) {
-  const store = { ...seedWorkbenchScreensets(), active };
+  const store = { ...defaultWorkbenchScreensets(), active };
   return (
     <InfoBarActiveContext.Provider value>
       <div>

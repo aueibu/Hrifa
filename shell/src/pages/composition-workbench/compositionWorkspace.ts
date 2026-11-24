@@ -72,13 +72,9 @@ export const defaultCompositionInstances: CompositionModuleInstance[] = [
   { id: 'melodicization', moduleId: 'melodicization', x: 100, y: 170 },
 ];
 
-// Saved projects from the lane/row grid: one lane was a 200-unit column, one row a 170-unit step.
-const legacyLanePitch = 200;
-const legacyRowPitch = 170;
-
 /**
- * Upgrades saved `{ laneId, row }` placements to canvas `{ x, y }` so existing projects open with
- * the same relative arrangement. Already-migrated entries pass through unchanged.
+ * Normalizes stored instance entries to `{ id, moduleId, x, y, snippetId? }`. Entries that are not
+ * placed on the canvas (no finite `x` and `y`) pass through unchanged.
  */
 export function migrateCompositionInstances(value: unknown): unknown {
   if (!Array.isArray(value)) {
@@ -88,29 +84,14 @@ export function migrateCompositionInstances(value: unknown): unknown {
     if (!candidate || typeof candidate !== 'object') {
       return candidate;
     }
-    const legacy = candidate as Record<string, unknown>;
-    if (isFiniteNumber(legacy.x) && isFiniteNumber(legacy.y)) {
+    const stored = candidate as Record<string, unknown>;
+    if (isFiniteNumber(stored.x) && isFiniteNumber(stored.y)) {
       return {
-        id: legacy.id,
-        moduleId: legacy.moduleId,
-        x: legacy.x,
-        y: legacy.y,
-        ...(typeof legacy.snippetId === 'string' ? { snippetId: legacy.snippetId } : {}),
-      };
-    }
-    if (
-      typeof legacy.laneId === 'number' &&
-      typeof legacy.row === 'number' &&
-      Number.isInteger(legacy.laneId) &&
-      Number.isInteger(legacy.row) &&
-      legacy.laneId >= 1 &&
-      legacy.row >= 1
-    ) {
-      return {
-        id: legacy.id,
-        moduleId: legacy.moduleId,
-        x: (legacy.laneId - 1) * legacyLanePitch,
-        y: (legacy.row - 1) * legacyRowPitch,
+        id: stored.id,
+        moduleId: stored.moduleId,
+        x: stored.x,
+        y: stored.y,
+        ...(typeof stored.snippetId === 'string' ? { snippetId: stored.snippetId } : {}),
       };
     }
     return candidate;

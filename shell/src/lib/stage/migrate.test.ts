@@ -1,9 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CHORDS_MODULE,
-  ROLL_MODULE,
-  defaultEditorLayout,
-} from '../../pages/composition-workbench/editorStage';
 import { registry } from './fixtures';
 import type { Layout } from './layout';
 import { foldEditorLayout, layoutV1ToScreenset } from './migrate';
@@ -100,11 +95,6 @@ describe('layoutV1ToScreenset', () => {
     );
     expect(treeDockers(s.tree).flatMap((d) => d.tabs)).toEqual(['clip-editor', 'desk']);
     expect(Object.keys(s.lastDocker).sort()).toEqual(['clip-editor', 'desk']);
-  });
-
-  it('loads the real editor default layout without loss', () => {
-    const s = layoutV1ToScreenset(defaultEditorLayout(80), { registry: undefined });
-    expect(treeDockers(s.tree).flatMap((d) => d.tabs)).toEqual([ROLL_MODULE, CHORDS_MODULE]);
   });
 
   it('round trips through the store parser (version 1 migrated, version 2 written)', () => {
@@ -263,14 +253,5 @@ describe('foldEditorLayout (the editor key)', () => {
     const s = foldEditorLayout(editor, base(), { known: registry });
     expect(JSON.stringify(s)).not.toContain('mystery');
     expect(dockerHolding(s.tree, 'clip-editor')!.name).toBe('Detail');
-  });
-
-  it('folds the real default editor layout and a real swapped one', () => {
-    const real = defaultEditorLayout(80);
-    const s = foldEditorLayout(real, base(), { known: registry });
-    expect(bottom(s).children[1]).toMatchObject({ rem: 30 });
-    const swapped: Layout = { version: 1, columns: [real.columns[1], real.columns[0]] };
-    const t = foldEditorLayout(swapped, base(), { known: registry });
-    expect(names(t.tree)).toEqual(['Canvas', 'Tools', 'Detail']);
   });
 });

@@ -46,19 +46,8 @@ import { SoundOverrideControl } from './SoundControls';
 import { VolumeControl } from './VolumeControl';
 import classes from '../CompositionWorkbench.module.css';
 
-// The pitches generators got automatically before voices existed. A saved pitch that differs was
-// chosen by hand, so it carries over as a Tone override; a default one gives way to the voices.
-function legacyDefaultMidiNote(index: number) {
-  return [48, 55, 60][index] ?? Math.min(84, 48 + index * 5);
-}
-
-function generatorOverride(draft: GeneratorDraft, index: number): SoundOverride | null {
-  if (draft.sound !== undefined) {
-    return draft.sound;
-  }
-  return typeof draft.midiNote === 'number' && draft.midiNote !== legacyDefaultMidiNote(index)
-    ? { type: 'tone', midicents: draft.midiNote * 100 }
-    : null;
+function generatorOverride(draft: GeneratorDraft): SoundOverride | null {
+  return draft.sound ?? null;
 }
 
 function nextGeneratorId() {
@@ -75,7 +64,7 @@ interface InterferenceModuleProps {
 }
 
 export function InterferenceModule({ instanceId, instanceLabel }: InterferenceModuleProps) {
-  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId, 'interference');
+  const stateKey = (key: string) => compositionInstanceStateKey(key, instanceId);
   const [{ drafts, groupingId }, { drafts: setDrafts, groupingId: setGroupingId }] = useModuleState(
     interferenceState,
     instanceId
@@ -162,7 +151,7 @@ export function InterferenceModule({ instanceId, instanceLabel }: InterferenceMo
       sourceId: instanceId,
       patterns,
       sounds: drafts.map((draft, index) =>
-        layerSound(settings.sounds.rhythm, index, generatorOverride(draft, index))
+        layerSound(settings.sounds.rhythm, index, generatorOverride(draft))
       ),
       groupingSound: layerSound(settings.sounds.metronome, 2),
       result: generated.result,
@@ -320,8 +309,8 @@ export function InterferenceModule({ instanceId, instanceLabel }: InterferenceMo
                       label={draft.label}
                       set={settings.sounds.rhythm}
                       voiceIndex={index}
-                      value={generatorOverride(draft, index)}
-                      onChange={(sound) => updateDraft(draft.id, { sound, midiNote: undefined })}
+                      value={generatorOverride(draft)}
+                      onChange={(sound) => updateDraft(draft.id, { sound })}
                     />
                     <ActionIcon
                       variant="subtle"

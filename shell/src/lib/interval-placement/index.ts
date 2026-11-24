@@ -4,3 +4,5 @@ export * from './constraints';
 export * from './measures';
 export * from './place';
 export * from './transposition';
+export * from './spacing';
+export * from './catalog';

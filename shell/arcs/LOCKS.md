@@ -17,6 +17,7 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
+| src/pages/CompositionWorkbench.page.tsx | workbench | 2026-11-23 | B0b done; held for the B1a to B1c renames |
 | src/pages/LiveSeries.page.tsx | live-series | 2026-11-23 | M6a: the new page's entry file |
 | src/Router.tsx | live-series | 2026-11-23 | M6a: the /live-series route |
 | src/data/applets.ts | live-series | 2026-11-23 | M6a: the Home entry for Live Series |

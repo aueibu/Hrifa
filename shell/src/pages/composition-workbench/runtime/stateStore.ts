@@ -14,7 +14,7 @@ import { isRecordedStateKey } from '../stateKeys';
 export interface StateConfig<T> {
   fallback: T | (() => T);
   accepts: (value: unknown) => value is T;
-  /** Upgrades an older saved shape before it is validated. */
+  /** Reshapes or sanitizes the stored value before it is validated. */
   migrate?: (value: unknown) => unknown;
 }
 
@@ -204,7 +204,7 @@ export function subscribeState<T>(
 }
 
 /**
- * Writes the current value to storage once a hook has mounted (initial and migrated values persist).
+ * Writes the current value to storage once a hook has mounted (the initial value persists too).
  * A mounted hook means the instance is live, so a key flagged as deleted is live again: only a
  * render that never committed (a late one while the module was being deleted) stays detached.
  */

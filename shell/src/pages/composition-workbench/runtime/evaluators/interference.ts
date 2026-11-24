@@ -22,8 +22,6 @@ export interface GeneratorDraft {
    * (generator 1 → primary, 2 → secondary, …).
    */
   sound?: SoundOverride | null;
-  /** Saved before voices existed: the generator's tone pitch. Read once as a Tone override. */
-  midiNote?: number;
 }
 
 /** The persisted values the outputs depend on (sound, volume and click do not). */

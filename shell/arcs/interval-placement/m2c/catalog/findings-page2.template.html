@@ -75,16 +75,37 @@
   .filterbar button { font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
   .filterbar button.on { border-color: var(--c1); color: var(--c1); }
   .twocol { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; }
+  /* section list (human, 2026-11-23: "a wiki style sidebar to jump to a section"): a sticky column on wide screens,
+     a collapsible box above the panels on narrow ones */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; max-width: 1460px; margin: 0 auto; }
+  .panel { scroll-margin-top: 64px; }
+  .toc details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+  .toc summary { font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; color: var(--fg); }
+  .toc ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 1px; border-left: 1px solid var(--line); }
+  .toc a { display: block; padding: 4px 10px; margin-left: -1px; border-left: 2px solid transparent; font-size: 0.85rem; line-height: 1.3; color: var(--muted); text-decoration: none; }
+  .toc a:hover { color: var(--fg); }
+  .toc a:focus-visible { outline: 2px solid var(--c1); outline-offset: 1px; }
+  .toc a[aria-current="true"] { color: var(--c1); border-left-color: var(--c1); font-weight: 500; }
+  .toc .toc-h { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding-left: 11px; }
+  @media (min-width: 1000px) {
+    .layout { grid-template-columns: 220px minmax(0, 1fr); gap: 28px; }
+    .toc { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; max-height: 100vh; overflow-y: auto; padding-block: 4px 16px; }
+    .toc details { background: none; border: 0; padding: 0; }
+    .toc summary { display: none; }
+  }
 </style>
 
-<div class="wrap">
+<div class="layout">
+<nav class="toc" aria-label="Sections"><details id="toc-d" open><summary>Sections</summary><div class="toc-h">Sections</div><ul id="toc-list"></ul></details></nav>
+<div class="wrap" style="width:100%">
   <header style="display:flex;flex-direction:column;gap:10px">
     <h1>Placement Catalog Findings</h1>
     <p id="intro"></p>
     <div class="stats" id="stats"></div>
   </header>
   <div class="filterbar" id="filterbar"></div>
-  <div id="panels" class="wrap" style="gap:20px"></div>
+  <div id="panels" class="wrap" style="gap:20px;width:100%"></div>
+</div>
 </div>
 
 <script type="text/plain" id="coreSrc">/*CORE*/</script>
@@ -104,13 +125,36 @@ const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B�
 const noteName = (step) => NAMES[step % 12] + (2 + Math.floor(step / 12)); // step 0 = C2
 const nList = (ns) => ns.length > 1 ? ns.slice(0, -1).join(', ') + ' and ' + ns[ns.length - 1] : String(ns[0]);
 
-document.getElementById('intro').innerHTML = `Every set of ${nList(NS)} essential intervals with sizes 1 to ${MAXIV} steps, in every ordering, laid out in every window from the largest interval up to ${WMAX} steps, under both spacing rules: <b style="color:var(--c1)">equal centers</b> (the centers equally spaced, every chord fills its window) and <b style="color:var(--c2)">shared center range</b> (one center range set by the largest interval, the same center positions for every ordering). Roughness is measured from C2 unless a panel says otherwise. Hover any chart for exact values; each has a table. Five intervals are still being computed.`;
+// Large tables live in data files beside the page (build-findings-page.mjs) and are fetched when a panel needs them:
+// the per-set smoothest orderings by (intervals, largest interval), the Z-pair producers in chunks, the producers of
+// the most shared chords. Orderings are not shipped: the catalog lists them with this same function on the sorted set.
+const DATA_DIR = 'data/';
+const fetchJson = (() => { const memo = new Map(); return (f) => { if (!memo.has(f)) memo.set(f, fetch(DATA_DIR + f).then((r) => { if (!r.ok) throw new Error(`${f}: ${r.status}`); return r.json(); })); return memo.get(f); }; })();
+function orderingsOf(xs) {
+  if (xs.length <= 1) return [xs.slice()];
+  const out = [], seen = new Set();
+  xs.forEach((x, i) => { if (seen.has(x)) return; seen.add(x); for (const r of orderingsOf(xs.filter((_, j) => j !== i))) out.push([x, ...r]); });
+  return out;
+}
+const ordsOf = (B, i) => (B.ords[i] ||= orderingsOf(B.sets[i].split(' ').map(Number).sort((a, b) => a - b)).map((o) => o.join(' ')));
+for (const n of NS) Object.assign(D[n].best, { ords: [], equal: [], shared: [], equalOrd: [], sharedOrd: [], loaded: new Set() });
+// fills D[n].best rows for every set whose largest interval is L; resolves when they are in
+const loadBest = (n, L) => (D[n].best.loaded.has(L) ? Promise.resolve() : fetchJson(`best-n${n}-L${L}.json`).then((s) => {
+  const B = D[n].best;
+  s.idx.forEach((i, k) => { B.equal[i] = s.equal[k]; B.shared[i] = s.shared[k]; B.equalOrd[i] = s.equalOrd[k]; B.sharedOrd[i] = s.sharedOrd[k]; });
+  B.loaded.add(L);
+}));
+
+document.getElementById('intro').innerHTML = `Every set of ${nList(NS)} essential intervals with sizes 1 to ${MAXIV} steps, in every ordering, laid out in every window from the largest interval up to ${WMAX} steps, under both spacing rules: <b style="color:var(--c1)">equal centers</b> (the centers equally spaced, every chord fills its window) and <b style="color:var(--c2)">shared center range</b> (one center range set by the largest interval, the same center positions for every ordering). Roughness is measured from C2 unless a panel says otherwise. Hover any chart for exact values; each has a table. Built ${esc(D.provenance.built)} from ${D.provenance.sources.length} catalog files (the main run and the addendum for largest intervals 18 and 19).`;
 document.getElementById('stats').innerHTML = NS.map((n) =>
   `<span>${n} intervals: <b>${D[n].totals.sets.toLocaleString()}</b> sets, <b>${D[n].totals.placements.toLocaleString()}</b> placements, <b>${D[n].totals.chords.toLocaleString()}</b> distinct chords</span>`).join('');
 
+const TOC = []; // [id, title] per panel, in page order, for the section list
 function panel(title, text) {
   const el = document.createElement('section');
   el.className = 'panel';
+  el.id = 'sec-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  TOC.push([el.id, title]);
   el.innerHTML = `<h2>${title}</h2><p class="muted">${text}</p>`;
   document.getElementById('panels').appendChild(el);
   return el;
@@ -442,7 +486,10 @@ const get = (key) => perN((n) => D[n][key]);
   const zoom = el.appendChild(Object.assign(document.createElement('div'), { className: 'zoom' }));
   zoom.style.cssText = 'display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px;position:relative';
   const state = { n: NS.includes(3) ? 3 : NS[0], cell: null, show: 'smooth', pick: null };
-  const stops = [[205, 226, 251], [158, 197, 244], [109, 167, 236], [57, 135, 229], [37, 106, 191], [24, 79, 149], [16, 66, 129]];
+  // multi-hue sequential scale (yellow → green → teal → blue → navy, ColorBrewer YlGnBu 9; human, 2026-11-23: "only a
+  // few steps ... I want more granularity"): a single-blue ramp shows only ~6-8 tellable shades; changing hue as well
+  // as lightness gives many more. Light = smooth, dark = rough, as before.
+  const stops = [[255, 255, 217], [237, 248, 177], [199, 233, 180], [127, 205, 187], [65, 182, 196], [29, 145, 192], [34, 94, 168], [37, 52, 148], [8, 29, 88]];
   const ramp = (t) => {
     const p = Math.max(0, Math.min(1, t)) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(p)), f = p - i;
     const c = stops[i].map((v, k) => Math.round(v + (stops[i + 1][k] - v) * f));
@@ -452,15 +499,20 @@ const get = (key) => perN((n) => D[n][key]);
     tg.innerHTML = NS.map((n) => `<button type="button" class="${state.n === n ? 'on' : ''}" data-n="${n}">${n} intervals</button>`).join('');
     tg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { state.n = +b.dataset.n; state.cell = null; state.pick = null; draw(); }));
     const cells = D[state.n].heat.filter((c) => c.window >= WR.lo && c.window <= WR.hi);
-    const vals = cells.map((c) => c.best);
-    const lo = Math.min(...vals), hi = Math.max(...vals);
+    // color by rank, not by value (human, 2026-11-23: everything above a largest interval of about 4 was white): a few
+    // very rough cells (tiny intervals in small windows, up to ~2.6) stretched a linear scale, so most cells sat in its
+    // palest part. Each shade now covers the same number of cells; the legend gives the values at the quartiles.
+    const vals = cells.map((c) => c.best).sort((a, b) => a - b);
+    const lo = vals[0], hi = vals[vals.length - 1];
+    const rankOf = (v) => { let a = 0, b = vals.length - 1; while (a < b) { const m = (a + b) >> 1; if (vals[m] < v) a = m + 1; else b = m; } return vals.length > 1 ? a / (vals.length - 1) : 0; };
+    const atQ = (p) => vals[Math.round(p * (vals.length - 1))];
     host.innerHTML = '';
     for (const [rule, name] of RULES) {
       const NW = WR.hi - WR.lo + 1, cw = Math.max(8, Math.min(28, Math.floor(480 / NW))), chh = 12, L = 34, T = 8, W = L + NW * cw + 10, H = T + MAXIV * chh + 30;
       let s = '';
       for (const c of cells.filter((q) => q.rule === rule)) {
         const on = state.cell && state.cell.rule === rule && state.cell.L === c.largest && state.cell.W === c.window;
-        s += `<rect data-rule="${rule}" data-l="${c.largest}" data-w="${c.window}" style="cursor:pointer" x="${L + (c.window - WR.lo) * cw}" y="${T + (MAXIV - c.largest) * chh}" width="${cw - 1}" height="${chh - 1}" fill="${ramp((c.best - lo) / (hi - lo))}" ${on ? 'stroke="var(--win)" stroke-width="2"' : ''}><title>largest ${c.largest}, window ${c.window}: ${c.best.toFixed(3)} (click to zoom in)</title></rect>`;
+        s += `<rect data-rule="${rule}" data-l="${c.largest}" data-w="${c.window}" style="cursor:pointer" x="${L + (c.window - WR.lo) * cw}" y="${T + (MAXIV - c.largest) * chh}" width="${cw - 1}" height="${chh - 1}" fill="${ramp(rankOf(c.best))}" ${on ? 'stroke="var(--win)" stroke-width="2"' : ''}><title>largest ${c.largest}, window ${c.window}: ${c.best.toFixed(3)} (click to zoom in)</title></rect>`;
       }
       for (const v of [1, 6, 12, MAXIV]) s += `<text x="${L - 4}" y="${T + (MAXIV - v) * chh + 10}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
       const hs = NW <= 16 ? 1 : NW <= 30 ? 2 : NW <= 48 ? 6 : 12;
@@ -479,7 +531,9 @@ const get = (key) => perN((n) => D[n][key]);
       });
       host.appendChild(f);
     }
-    lg.innerHTML = `<span>${lo.toFixed(2)} smooth <i class="ramp" style="background:linear-gradient(90deg,${ramp(0)},${ramp(0.5)},${ramp(1)})"></i> rough ${hi.toFixed(2)}</span><span>hover a cell for its value; click it to zoom in</span>`;
+    lg.innerHTML = `<span>smooth <i class="ramp" style="background:linear-gradient(90deg,${[0, 0.25, 0.5, 0.75, 1].map(ramp).join(',')})"></i> rough</span>` +
+      `<span style="font-family:var(--font-mono)">${[0, 0.25, 0.5, 0.75, 1].map((p) => `${['lowest', '25%', 'median', '75%', 'highest'][p * 4]} ${atQ(p).toFixed(2)}`).join(' · ')}</span>` +
+      `<span>shades by rank: each covers the same number of cells; hover a cell for its value; click it to zoom in</span>`;
     drawZoom();
   };
 
@@ -487,6 +541,13 @@ const get = (key) => perN((n) => D[n][key]);
   const drawZoom = () => {
     if (!state.cell) { zoom.innerHTML = '<p class="muted" style="font-size:0.9rem">Click a heatmap cell to see the interval sets behind it.</p>'; return; }
     const { rule, L, W: Wc } = state.cell, B = D[state.n].best;
+    if (!B.loaded.has(L)) {
+      const want = `${state.n}|${L}`;
+      zoom.innerHTML = `<p class="muted" style="font-size:0.9rem">Loading the ${state.n}-interval sets whose largest interval is ${L}…</p>`;
+      loadBest(state.n, L).then(() => { if (state.cell && `${state.n}|${state.cell.L}` === want) drawZoom(); })
+        .catch((e) => { zoom.innerHTML = `<p class="muted" style="font-size:0.9rem">Could not load this cell's data (${esc(e.message)}).</p>`; });
+      return;
+    }
     const ruleName = RULES.find((r) => r[0] === rule)[1];
     const w0 = Math.max(L, Wc - 6), w1 = Math.min(WMAX, Wc + 6);
     const wins = Array.from({ length: w1 - w0 + 1 }, (_, i) => w0 + i);
@@ -494,7 +555,9 @@ const get = (key) => perN((n) => D[n][key]);
     const ids = B.sets.map((_, i) => i).filter((i) => B.w0[i] === L || (+B.sets[i].split(' ').pop() === L));
     ids.sort((a, b) => roughAt(a, Wc) - roughAt(b, Wc));
     const N = 40;
-    const shown = state.show === 'all' ? ids : state.show === 'rough' ? ids.slice(-N).reverse() : ids.slice(0, N);
+    // "all" lists the sets by their intervals, smallest first (human, 2026-11-23); the other two views stay by roughness
+    const byIntervals = (a, b) => { const x = B.sets[a].split(' ').map(Number), y = B.sets[b].split(' ').map(Number); for (let k = 0; k < x.length; k++) if (x[k] !== y[k]) return x[k] - y[k]; return 0; };
+    const shown = state.show === 'all' ? ids.slice().sort(byIntervals) : state.show === 'rough' ? ids.slice(-N).reverse() : ids.slice(0, N);
     const vals = shown.flatMap((i) => wins.map((w) => roughAt(i, w)).filter((v) => v !== null));
     const lo = Math.min(...vals), hi = Math.max(...vals);
     const cw = 30, rh = 16, T = 20, labelW = 16 + 8 * Math.max(...shown.map((i) => B.sets[i].length));
@@ -508,15 +571,16 @@ const get = (key) => perN((n) => D[n][key]);
         const v = roughAt(i, w);
         if (v === null) return;
         const sel = state.pick && state.pick.i === i && state.pick.w === w;
-        s += `<rect data-i="${i}" data-w="${w}" style="cursor:pointer" x="${labelW + j * cw + 1}" y="${y + 1}" width="${cw - 2}" height="${rh - 2}" rx="2" fill="${ramp((v - lo) / (hi - lo || 1))}" ${sel ? 'stroke="var(--fg)" stroke-width="2"' : w === Wc ? 'stroke="var(--win)" stroke-width="1"' : ''}><title>${B.sets[i]}, window ${w}: ${v.toFixed(3)}, smoothest ordering ${B.ords[i][B[rule + 'Ord'][i][w - B.w0[i]]]}</title></rect>`;
+        s += `<rect data-i="${i}" data-w="${w}" style="cursor:pointer" x="${labelW + j * cw + 1}" y="${y + 1}" width="${cw - 2}" height="${rh - 2}" rx="2" fill="${ramp((v - lo) / (hi - lo || 1))}" ${sel ? 'stroke="var(--fg)" stroke-width="2"' : w === Wc ? 'stroke="var(--win)" stroke-width="1"' : ''}><title>${B.sets[i]}, window ${w}: ${v.toFixed(3)}, smoothest ordering ${ordsOf(B, i)[B[rule + 'Ord'][i][w - B.w0[i]]]}</title></rect>`;
       });
     });
     const opts = [['smooth', `${Math.min(N, ids.length)} smoothest`], ['rough', `${Math.min(N, ids.length)} roughest`], ['all', `all ${ids.length}`]];
     zoom.innerHTML = `<h3 style="margin:0;font-size:1rem;font-family:var(--font-display)">${ruleName}: sets whose largest interval is ${L}, windows ${w0}–${w1}</h3>` +
-      `<p class="muted" style="font-size:0.85rem">Each cell is the roughness of that set's smoothest ordering in that window; rows sorted smoothest first at window ${Wc} (outlined). Colors use this zoom's own range, ${lo.toFixed(2)} to ${hi.toFixed(2)}, so small differences show. Click a cell to see its chord.</p>` +
+      `<p class="muted" style="font-size:0.85rem">Each cell is the roughness of that set's smoothest ordering in that window; ${state.show === 'all' ? `rows sorted by their intervals, smallest first; window ${Wc} outlined` : `rows sorted ${state.show === 'rough' ? 'roughest' : 'smoothest'} first at window ${Wc} (outlined)`}. Colors use this zoom's own range, ${lo.toFixed(2)} to ${hi.toFixed(2)}, so small differences show. Click a cell to see its chord.</p>` +
       `<div class="toggle">${opts.map(([k, l]) => `<button type="button" data-show="${k}" class="${state.show === k ? 'on' : ''}">${l}</button>`).join('')}</div>` +
       `<div style="overflow:auto;max-height:560px;min-width:0"><svg class="chart" viewBox="0 0 ${W} ${H}" style="max-width:${W * 1.4}px" role="img" aria-label="Zoom: sets with largest interval ${L} by window">${s}</svg></div><div id="zoom-tile" style="border-top:1px solid var(--line);padding-top:12px"></div>`;
     zoom.querySelectorAll('[data-show]').forEach((b) => b.addEventListener('click', () => { state.show = b.dataset.show; drawZoom(); }));
+    if (state.scrollTile) { state.scrollTile = false; zoom.querySelector('#zoom-tile').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     zoom.querySelector('svg').addEventListener('click', (ev) => {
       const t = ev.target;
       if (!t.dataset || t.dataset.i === undefined) return;
@@ -560,7 +624,7 @@ const get = (key) => perN((n) => D[n][key]);
       return;
     }
     const rule = state.tileRule;
-    const ords = B.ords[i];
+    const ords = ordsOf(B, i);
     const cellOrd = ords[B[rule + 'Ord'][i][w - B.w0[i]]];
     const rows = res.placements.filter((p) => p.rule === rule && p.W === w).map((p) => {
       const sc = res.scores[p.key];
@@ -617,8 +681,9 @@ const get = (key) => perN((n) => D[n][key]);
   };
 
   // ---- same chord, other sets (human, 2026-11-21: "a semi-arbitrary type of z relation") ----
-  // MIX.producers searches every set of 2..4 intervals (sizes up to the catalog's max, windows up to its max) whose
-  // placement is exactly the chord's notes; it runs in its own worker (up to ~2 s for an 8-note chord).
+  // MIX.producers searches every set of the page's cardinalities (sizes up to the catalog's max, windows up to its max)
+  // whose placement is exactly the chord's notes; it runs in its own worker (about 0.1 s per chord for 2..4 intervals,
+  // 1-2 s with 5; measured in Node 2026-11-23).
   const mixSrc = [...document.scripts].find((s) => s.textContent.includes('const MIX = (() =>')).textContent;
   const zWorker = new Worker(URL.createObjectURL(new Blob([mixSrc + '\nself.onmessage = (e) => self.postMessage({ key: e.data.key, res: MIX.producers(e.data.notes, e.data.o) });'], { type: 'text/javascript' })));
   const ZR = new Map(), zAsked = new Set(), TRAIL = [];
@@ -635,9 +700,8 @@ const get = (key) => perN((n) => D[n][key]);
       TRAIL.push({ label: `${B0.sets[state.pick.i]} · window ${state.pick.w}`, state: JSON.parse(JSON.stringify({ n: state.n, cell: state.cell, pick: state.pick, tileRule: state.tileRule, tileSel: state.tileSel, show: state.show })) });
     }
     const i = D[p.n].best.sets.indexOf(p.set);
-    Object.assign(state, { n: p.n, cell: { rule: p.rule, L: +p.set.split(' ').pop(), W: p.W }, pick: { i, w: p.W }, tileRule: p.rule, tileSel: p.order, show: 'all' });
-    draw();
-    zoom.querySelector('#zoom-tile').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    Object.assign(state, { n: p.n, cell: { rule: p.rule, L: +p.set.split(' ').pop(), W: p.W }, pick: { i, w: p.W }, tileRule: p.rule, tileSel: p.order, show: 'all', scrollTile: true });
+    draw(); // drawZoom scrolls to the tile once the cell's data is in (it may still be loading)
   };
   const paintZ = () => {
     const host = zoom.querySelector('#zoom-tile');
@@ -698,8 +762,12 @@ const get = (key) => perN((n) => D[n][key]);
 // but not a transposition or mirror of each other (homometric sets). Data: extract-zpairs.mjs.
 if (Z && Z.groups.length) {
   const el = panel('Z-related chords, register kept',
-    `Two chords are Z-related here when every distance between two of their notes, counted in steps with no octave reduction, is the same, yet neither is a transposition or mirror image of the other. Out of ${Z.classes.toLocaleString()} different chords with 6 or more notes from the ${Z.sources.length === 2 ? '3- and 4-interval' : 'scanned'} sets, ${Z.groups.length} pairs are Z-related. Fewer than 6 notes cannot be: on a line of pitches the distances pin down smaller chords.`);
-  const sizesOf = (c) => [...new Set(c.producers.map((p) => p.n))];
+    `Two chords are Z-related here when every distance between two of their notes, counted in steps with no octave reduction, is the same, yet neither is a transposition or mirror image of the other. Out of ${Z.classes.toLocaleString()} different chords with 6 or more notes from the ${nList(Z.ns)}-interval sets, ${Z.groups.length.toLocaleString()} pairs are Z-related. Fewer than 6 notes cannot be: on a line of pitches the distances pin down smaller chords.`);
+  // Z.groups carries shapes and producer counts per set size (c.made); the producers themselves load per chunk
+  const sizesOf = (c) => Object.keys(c.made).map(Number).sort((a, b) => a - b);
+  const loadZ = (gi) => fetchJson(`zpairs-${Math.floor(gi / Z.chunk)}.json`).then((ch) => {
+    ch.forEach((prods, j) => { const g = Z.groups[Math.floor(gi / Z.chunk) * Z.chunk + j]; g.chords.forEach((c, ci) => { c.producers = prods[ci]; }); });
+  });
   const k = (g) => g.chords[0].shape.split(' ').length;
   // the counting rule, as a table from the data
   const rule = document.createElement('div');
@@ -708,7 +776,8 @@ if (Z && Z.groups.length) {
   const cnt = {};
   const who = (c) => { const s = sizesOf(c); return s.length > 1 ? `${s.join(' or ')} intervals` : `only ${s[0]} intervals`; };
   for (const g of Z.groups) { const key = `${k(g)}|${g.chords.map(who).sort().join(' / ')}`; cnt[key] = (cnt[key] || 0) + 1; }
-  rule.innerHTML = `<p style="margin:0">Why one chord can come from a 3-interval set and a 4-interval set: n intervals have 2n ends, so a chord of k notes made from n intervals has exactly <b style="color:var(--fg)">2n − k merged notes</b>. A 6-note chord comes from 3 intervals with nothing merged, or from 4 intervals with two ends landing on notes already there. 7- and 8-note chords need 4 intervals (1 and 0 merged). This holds for every producer below.</p>` +
+  const mergeRows = [...new Set(Z.groups.map(k))].sort((a, b) => a - b).map((kk) => `${kk} notes: ${Z.ns.filter((n) => 2 * n >= kk).map((n) => `${n} intervals (${2 * n - kk} merged)`).join(', ')}`).join('; ');
+  rule.innerHTML = `<p style="margin:0">Why one chord can come from sets of different sizes: n intervals have 2n ends, so a chord of k notes made from n intervals has exactly <b style="color:var(--fg)">2n − k merged notes</b>. ${mergeRows}. This holds for every producer below.</p>` +
     `<div class="tablewrap"><table><tr><th>notes</th><th>sets that can make chord A / chord B</th><th>pairs</th></tr>${Object.entries(cnt).map(([key, v]) => { const [kk, w] = key.split('|'); return `<tr><td>${kk}</td><td>${w}</td><td>${v}</td></tr>`; }).join('')}</table></div>`;
   el.appendChild(rule);
   const tg = el.appendChild(Object.assign(document.createElement('div'), { className: 'toggle' }));
@@ -720,11 +789,11 @@ if (Z && Z.groups.length) {
   const st = { notes: 'all', both: false, g: 0, pick: [null, null] };
   const mono = 'font-family:var(--font-mono)';
   const names = (shape) => shape.split(' ').map(Number).map(noteName).join(' ');
-  const made = (c) => sizesOf(c).map((n) => `${n}: ${c.producers.filter((p) => p.n === n).length}`).join(' · ');
+  const made = (c) => sizesOf(c).map((n) => `${n}: ${c.made[n]}`).join(' · ');
   const drawList = () => {
     const ks = [...new Set(Z.groups.map(k))];
     tg.innerHTML = [['all', 'all pairs'], ...ks.map((x) => [String(x), `${x} notes`])].map(([v, l]) => `<button type="button" data-k="${v}" class="${st.notes === v ? 'on' : ''}">${l}</button>`).join('') +
-      `<button type="button" data-both class="${st.both ? 'on' : ''}">made by 3- and 4-interval sets</button>`;
+      `<button type="button" data-both class="${st.both ? 'on' : ''}">made by sets of different sizes</button>`;
     tg.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => { st.notes = b.dataset.k; drawList(); }));
     tg.querySelector('[data-both]').addEventListener('click', () => { st.both = !st.both; drawList(); });
     const shown = Z.groups.map((g, i) => [g, i]).filter(([g]) => (st.notes === 'all' || k(g) === +st.notes) && (!st.both || g.chords.some((c) => sizesOf(c).length > 1)));
@@ -734,6 +803,13 @@ if (Z && Z.groups.length) {
   };
   const drawDetail = () => {
     const g = Z.groups[st.g];
+    if (!g.chords[0].producers) {
+      const want = st.g;
+      detail.innerHTML = `<p class="muted" style="font-size:0.85rem">Loading the sets that make pair ${st.g + 1}…</p>`;
+      loadZ(st.g).then(() => { if (st.g === want) drawDetail(); })
+        .catch((e) => { detail.innerHTML = `<p class="muted" style="font-size:0.85rem">Could not load this pair's sets (${esc(e.message)}).</p>`; });
+      return;
+    }
     // which producer each side shows: the chosen one, else the first 3-interval one, else the first
     const shownP = g.chords.map((c, ci) => c.producers[st.pick[ci] ?? Math.max(0, c.producers.findIndex((p) => p.n === 3))]);
     const placed = shownP.map((p) => { const r = p.rules.equal ? 'equal' : 'shared'; const [ord, W, notes, mirrored, rough] = p.rules[r]; return { p, rule: r, ord, W, notes, mirrored, rough, pl: { ...MIX.place(r, ord.split(' ').map(Number), W), W } }; });
@@ -774,9 +850,10 @@ if (Z && Z.groups.length) {
 // 13. From pitches back to input sets (human, 2026-11-21: "you can start with selected intervals to place pitches or you
 // can take arbitrary placed pitches and then create an interval list"). Any collection: its exact producers, and the
 // nearest chords the placement does make (MIX.nearest, in a worker).
+const RV_NS = NS.filter((n) => n <= 4); // n = 5 makes this about 20 times slower (minutes); 2026-11-23 first slice
 {
   const el = panel('From any pitches back to input sets',
-    `Type any collection as steps (0 = the lowest note). The page lists every input set of ${nList(NS)} intervals, ordering, rule and window whose placement makes exactly that collection, transposed anywhere. Most collections have none: the placement fills its window and spaces the interval centers evenly, which hand-placed notes rarely do. So it also lists the nearest chords the placement does make, with the same number of notes, ranked by how many steps the notes have to move.`);
+    `Type any collection as steps (0 = the lowest note). The page lists every input set of ${nList(RV_NS)} intervals (5-interval sets would make this search take minutes; the tile's “+N sets” and the most-shared-chords panel include them), ordering, rule and window whose placement makes exactly that collection, transposed anywhere. Most collections have none: the placement fills its window and spaces the interval centers evenly, which hand-placed notes rarely do. So it also lists the nearest chords the placement does make, with the same number of notes, ranked by how many steps the notes have to move.`);
   const form = el.appendChild(Object.assign(document.createElement('div'), { className: 'toggle' }));
   form.innerHTML = `<label>notes <input id="rv-notes" type="text" value="0 4 7 11 14" style="font-family:var(--font-mono);width:14em;font-size:0.85rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:3px 8px" aria-label="Notes in steps"></label>
     <label>move at most <input id="rv-reach" type="number" min="0" max="8" value="3" style="width:4em;font-size:0.85rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:3px 6px" aria-label="Most steps the notes may move in total"> steps in total</label>
@@ -851,10 +928,65 @@ self.onmessage = (e) => {
     cur = { notes, reach, res: null, total: 0, t0: Date.now() };
     out.innerHTML = '';
     status.textContent = 'searching…';
-    w.postMessage({ id: job, notes, o: { ns: NS, max: MAXIV, wmax: WMAX, reach } });
+    w.postMessage({ id: job, notes, o: { ns: RV_NS, max: MAXIV, wmax: WMAX, reach } });
   };
   document.getElementById('rv-go').addEventListener('click', go);
   for (const id of ['rv-notes', 'rv-reach']) document.getElementById(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+}
+
+// 14. The chords made by the most different input sets, from the offline chord index (build-chord-index.mjs over every
+// catalog file; human, 2026-11-21: "a semi-arbitrary type of z relation"). The page carries the summary and the top
+// lists; each top chord's producers load from data/top-chords.json when it is opened.
+if (D.chordIndex) {
+  const CI = D.chordIndex, all = CI.summary.find((r) => r.scope === 'all'), shp = CI.summary.find((r) => r.scope === 'shape');
+  const cross = CI.cards.filter((r) => r.cards.includes(' ')).reduce((t, r) => t + r.chords, 0);
+  const el = panel('The chords the most input sets share',
+    `Over every set of ${nList(NS)} intervals, rule and window, the placement makes <b>${all.chords.toLocaleString()}</b> different chords (exact notes from C2). <b>${all.multi.toLocaleString()}</b> of them (${pct(all.multi / all.chords)}) are made by two or more different input sets, ${cross.toLocaleString()} of those by sets of different sizes; one chord is made by as many as <b>${all.max_sets}</b> sets. Counted as shapes (any transposition counts as the same chord): ${shp.multi.toLocaleString()} of ${shp.chords.toLocaleString()} shared, up to ${shp.max_sets} sets. Below, for each number of notes, the 50 made by the most sets. Click a chord to see every set that makes it.`);
+  const sizes = el.appendChild(Object.assign(document.createElement('div'), { className: 'tablewrap' }));
+  sizes.innerHTML = `<table><tr><th>made by sets of</th><th>shared chords</th></tr>${CI.cards.map((r) => `<tr><td>${r.cards.split(' ').join(', ')} intervals</td><td>${r.chords.toLocaleString()}</td></tr>`).join('')}</table>`;
+  const tg = el.appendChild(Object.assign(document.createElement('div'), { className: 'toggle' }));
+  const list = el.appendChild(Object.assign(document.createElement('div'), { className: 'tablewrap' }));
+  list.style.cssText = 'max-height:420px;overflow-y:auto';
+  const detail = el.appendChild(document.createElement('div'));
+  detail.style.cssText = 'border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px';
+  const mono = 'font-family:var(--font-mono)';
+  const ks = [...new Set(CI.topChords.map((c) => c.note_count))];
+  const st = { k: ks.includes(6) ? 6 : ks[0], kind: 'chords', pick: null };
+  const ruleName = (r) => RULES.find((x) => x[0] === r)[1];
+  const drawList = () => {
+    tg.innerHTML = ks.map((x) => `<button type="button" data-k="${x}" class="${st.k === x ? 'on' : ''}">${x} notes</button>`).join('') +
+      `<span style="width:12px"></span>` + [['chords', 'exact notes'], ['shapes', 'shapes (any transposition)']].map(([v, l]) => `<button type="button" data-kind="${v}" class="${st.kind === v ? 'on' : ''}">${l}</button>`).join('');
+    tg.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => { st.k = +b.dataset.k; st.pick = null; drawList(); drawDetail(); }));
+    tg.querySelectorAll('[data-kind]').forEach((b) => b.addEventListener('click', () => { st.kind = b.dataset.kind; st.pick = null; drawList(); drawDetail(); }));
+    if (st.kind === 'shapes') {
+      const rows = CI.topShapes.filter((s) => s.note_count === st.k);
+      list.innerHTML = `<table><thead><tr><th>#</th><th>shape (steps)</th><th>notes from C2</th><th>sets</th><th>made by</th><th>transpositions made</th></tr></thead><tbody>${rows.map((s, r) =>
+        `<tr><td>${r + 1}</td><td style="${mono}">${s.shape}</td><td style="${mono}">${s.shape.split(' ').map(Number).map(noteName).join(' ')}</td><td>${s.sets}</td><td>${s.cards.split(' ').join(', ')} intervals</td><td>${s.chords}</td></tr>`).join('')}</tbody></table>`;
+      return;
+    }
+    const rows = CI.topChords.map((c, i) => [c, i]).filter(([c]) => c.note_count === st.k);
+    list.innerHTML = `<table><thead><tr><th>#</th><th>notes</th><th>steps</th><th>sets</th><th>made by</th><th>placements</th><th>roughness</th></tr></thead><tbody>${rows.map(([c, i], r) =>
+      `<tr data-i="${i}" style="cursor:pointer;${i === st.pick ? 'background:var(--hi)' : ''}"><td>${r + 1}</td><td style="${mono}">${c.notes.split(' ').map(Number).map(noteName).join(' ')}</td><td style="${mono}">${c.notes}</td><td>${c.sets}</td><td>${c.cards.split(' ').join(', ')} intervals</td><td>${c.placements.toLocaleString()}</td><td style="${mono}">${c.rough.toFixed(3)}</td></tr>`).join('')}</tbody></table>`;
+    list.querySelectorAll('tr[data-i]').forEach((r) => r.addEventListener('click', () => { st.pick = +r.dataset.i; drawList(); drawDetail(); }));
+  };
+  const drawDetail = () => {
+    if (st.pick === null) { detail.innerHTML = `<p class="muted" style="font-size:0.85rem">${st.kind === 'shapes' ? 'Shapes are counted from the index without their producers; switch to exact notes to open a chord.' : 'Click a chord to see every set that makes it.'}</p>`; return; }
+    const c = CI.topChords[st.pick], want = st.pick;
+    if (!c.producers) {
+      detail.innerHTML = '<p class="muted" style="font-size:0.85rem">Loading the sets that make this chord…</p>';
+      fetchJson('top-chords.json').then((P) => { P.forEach((ps, i) => { CI.topChords[i].producers = ps; }); if (st.pick === want) drawDetail(); })
+        .catch((e) => { detail.innerHTML = `<p class="muted" style="font-size:0.85rem">Could not load the producers (${esc(e.message)}).</p>`; });
+      return;
+    }
+    const bySize = [...new Set(c.producers.map((p) => p.n))];
+    detail.innerHTML = `<h3 style="margin:0;font-size:1rem;font-family:var(--font-display)">${c.notes.split(' ').map(Number).map(noteName).join(' ')} <span class="muted" style="${mono};font-size:0.85rem">(${c.notes})</span></h3>` +
+      `<p class="muted" style="font-size:0.85rem;margin:0">${c.sets} input sets (${bySize.map((n) => `${c.producers.filter((p) => p.n === n).length} of ${n} intervals, ${2 * n - c.note_count} merged`).join('; ')}), ${c.placements.toLocaleString()} placements in all. Roughness ${c.rough.toFixed(3)}, harmonicity ${c.harm_pitch.toFixed(3)}. Each row is one set: the rules and windows where it lands on these notes, and one example to open in the heatmap tile.</p>` +
+      `<div class="tablewrap" style="max-height:380px;overflow-y:auto"><table><thead><tr><th>intervals</th><th>set</th><th>rules</th><th>windows</th><th>placements</th><th>example</th><th></th></tr></thead><tbody>${c.producers.map((p, j) =>
+        `<tr><td>${p.n}</td><td style="${mono}">${p.set}</td><td>${p.rules.map(ruleName).join(', ')}</td><td style="${mono}">${p.windows.join(' ')}</td><td>${p.placements}</td><td style="${mono}">${p.example[1]}, ${ruleName(p.example[0])}, window ${p.example[2]}</td><td><button type="button" data-open="${j}">Open in the heatmap tile</button></td></tr>`).join('')}</tbody></table></div>`;
+    detail.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => { const p = c.producers[+b.dataset.open]; window.openTile({ n: p.n, set: p.set, rule: p.example[0], order: p.example[1], W: p.example[2] }); }));
+  };
+  drawList();
+  drawDetail();
 }
 
 // the window filter bar
@@ -878,5 +1010,33 @@ self.onmessage = (e) => {
     for (const f of REDRAW) f();
   };
   render();
+}
+
+// the section list: links to every panel; the one in view is marked; on narrow screens it folds up after a jump
+{
+  const ul = document.getElementById('toc-list'), det = document.getElementById('toc-d');
+  const wide = window.matchMedia('(min-width: 1000px)');
+  const fit = () => { if (wide.matches) det.open = true; };
+  fit();
+  wide.addEventListener('change', fit);
+  ul.innerHTML = TOC.map(([id, t]) => `<li><a href="#${id}" data-id="${id}">${esc(t)}</a></li>`).join('');
+  const links = new Map([...ul.querySelectorAll('a')].map((a) => [a.dataset.id, a]));
+  ul.addEventListener('click', (ev) => {
+    const a = ev.target.closest('a');
+    if (!a) return;
+    ev.preventDefault();
+    document.getElementById(a.dataset.id).scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    if (!wide.matches) det.open = false;
+  });
+  const mark = (id) => links.forEach((a, k) => a.setAttribute('aria-current', k === id ? 'true' : 'false'));
+  if ('IntersectionObserver' in window) {
+    const seen = new Map();
+    const io = new IntersectionObserver((es) => {
+      for (const e of es) seen.set(e.target.id, e.isIntersecting);
+      const first = TOC.find(([id]) => seen.get(id));
+      if (first) mark(first[0]);
+    }, { rootMargin: '-70px 0px -55% 0px' });
+    TOC.forEach(([id]) => io.observe(document.getElementById(id)));
+  }
 }
 </script>

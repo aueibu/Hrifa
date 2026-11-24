@@ -1,6 +1,6 @@
 # ARC: Interval Placement: rigorous, register-aware scoring + panel workspace
 
-**Status: APPROVED (2026-11-13); MODEL RESET 2026-11-20 (see "Model reset").** M1, M2 done. Branch merged into `main` 2026-11-20. The M2b "play mode" (spread / lean / evenness knobs on one hand-shaped voicing, with search off to the side) replaced the app's own model and is withdrawn; the flow is input, then the exhaustive catalog, then exploration of a chosen entry. Portability work stands. Next: settle with the human how spans sit inside the spacing (from the original brief), then rewrite M2c.
+**Status: APPROVED (2026-11-13); MODEL RESET 2026-11-20 (see "Model reset").** M1, M2 done. Branch merged into `main` 2026-11-20. The M2b "play mode" (spread / lean / evenness knobs on one hand-shaped voicing, with search off to the side) replaced the app's own model and is withdrawn; the flow is input, then the exhaustive catalog, then exploration of a chosen entry. Portability work stands. M2c settled 2026-11-23 (equal centers default, window = width only); its library change is next.
 
 ## Goal
 Interval Placement keeps its idea and gets a sound scoring core and a better workspace:
@@ -186,12 +186,32 @@ Facts from the C0 redo (2026-11-20) and the rule each one gives:
 ### M2c: The catalog with the spacing (no UI)
 - Scope: owned `src/lib/interval-placement/` + tests + README. The original model with the spacing range in place of fixed octave windows and the M2 quirks fixed. (Rewritten 2026-11-20 by the model reset; the earlier play-mode M2c and `SCENARIOS.M2c.md` are withdrawn.)
 - Core rule (the human, 2026-11-20): the essential intervals are **evenly spaced within the span**, in every ordering; the catalog is sorted by a score. Extras (lean, dragging, nearby search) are optional layers for later. Before the builder: the human's examples of even spacing, and the window-as-register-region question.
-- Acceptance (to be completed once the spacing behavior is agreed):
-  - [ ] Every ordering is placed within the spacing; no note leaves it; an ordering that cannot fit is reported, never dropped silently; collisions and shared notes are reported.
-  - [ ] Catalog: deduplicated pitch sets listing their orderings, scored, with the weighted ranking and Pareto layers (`paretoLayers`); worker-ready chunked iteration with the cap.
-  - [ ] Golden test retired or rewritten for the agreed behavior (PROGRESS note); the old page keeps its own `engine.ts` until M5.
+- Acceptance (completed 2026-11-23 from the decided rule and the window decision below):
+  - [ ] **Input:** essential intervals, a base pitch (the bottom of every window, absolute Hz) and a **spacing range** of window widths (from, to; from = to is one width), in grid steps (`stepCents` = 1200 / edo) or cents. Presets `close` 6–12, `open` 13–24, `wide` 25–36, `vast` 37–48 steps in 12-EDO (in other grids: the same octave ranges, i.e. ×edo/12, rounded to whole steps), exported as data only. (As built: in other grids each top is a whole number of octaves and each preset after close starts one step above the previous top, so the presets leave no gap: 19-EDO close 10–19, open 20–38, wide 39–57, vast 58–76. The literal "×edo/12, rounded" left 19-EDO width 20 in no preset.)
+  - [ ] **Rules:** `rule: 'equal' | 'shared'`, default `'equal'`. Equal centers: D = min over i < j of (W − (dᵢ + dⱼ)/2)/(j − i), c₀ = max over k of (dₖ/2 − k·D), centers c₀ + k·D. Shared center range: centers spread evenly over [M/2, W − M/2], M = largest interval. Each interval's bottom note = nearest grid step to (center − size/2), once; a tie (exact half step, tolerance 1e-9) rounds toward the window middle (center < W/2 rounds up, otherwise down: an interval centered exactly on the middle rounds down). `tieMode: 'middle' | 'down' | 'up'` (default `'middle'`) gives the catalog's rounding twins; each placement reports its number of ties. A single interval sits at the bottom of the window (center d/2: the limit of the formula, special-cased in code because the reference gives NaN there), documented. `oddBias` and the engine params do not apply to these rules.
+  - [ ] **Tests from the human's examples** (12-EDO steps, window from the base note; written as exact note lists):
+
+    | Rule | Order | W | Centers | Notes |
+    | ---- | ----- | - | ------- | ----- |
+    | equal | 7 11 16 | 24 | 3.5, 9.75, 16 | 0 4 7 8 15 24 |
+    | equal | 7 11 16 | 20 | 3.5, 7.75, 12 | 0 2 4 7 13 20 |
+    | equal | 16 11 7 | 24 | 8, 14.25, 20.5 | 0 9 16 17 20 24 (the mirror of the first row) |
+    | equal | 11 7 16 | 24 | 5.5, 10.75, 16 | 0 7 8 11 14 24 |
+    | shared | 11 7 16 | 24 | 8, 12, 16 | 3 8 14 15 24 (2 ties; down twin 2 8 13 15 24, up twin 3 8 9 14 16 24; 8 is a shared note) |
+    | shared | 7 11 16 | 24 | 8, 12, 16 | 5 6 8 12 17 24 (2 ties) |
+    | equal | 7 16 11 | 19 | 3.5, 8.5, 13.5 | 0 1 7 8 17 19 (the 16 ties at 0.5 and rounds up toward the middle; down twin 0 7 8 16 19) |
+    | equal | 11 16 7 | 19 | 5.5, 10.5, 15.5 | 0 2 11 12 18 19 (the 16 rounds down; the exact mirror of the row above) |
+    | equal | 7 11 16 | 15 | n/a | cannot fit (16 > 15): reported, never placed (the catalog script placed it outside the window) |
+
+    Plus property tests over every ordering of `11 7 16` and `7 5 11`, windows 6–48: equal centers with 2+ intervals spans the whole window; no note leaves [0, W]; reversing an ordering gives the mirror image (W − x) under `tieMode: 'middle'`; the shared rule's centers are the same for every ordering of one set. A cross-check against the catalog: for a sample of sets the lib's notes equal `m2c/catalog/worker2.ts`'s `place` (same rule, window, tie mode).
+  - [ ] Every ordering is placed at every width in the spacing; no note leaves its window; an ordering that cannot fit is reported (counted per width), never dropped silently; collisions and shared notes are reported (as M2's `collisions`).
+  - [ ] **Catalog:** one entry per distinct pitch set (with the base pitch), listing every (width, ordering, rule) that made it, scored with `scoreVoicing`, ranked by the weighted mix (`combine` of standardised scores, weights a parameter, default `EQUAL_WEIGHTS` until the harmonicity-leaning default is set at the mock) and by Pareto layers (`paretoLayers`, new: repeated `paretoFront` peeling, any two score keys); constraints (must-have / must-not-have) apply as in M2; worker-ready chunked iteration with the ordering cap, exactly as `placementChunks`.
+  - [ ] Other grids: a 19-EDO and a 31-EDO case (same step patterns as 12-EDO, different cents); a JI case (non-whole spans: the bottom note rounds to the nearest grid step that keeps the span inside the window; the top is bottom + the exact span).
+  - [ ] The four ported engines stay in the lib unchanged as `distribution` values beside the two rules (the old page still uses its own `engine.ts` until M5), so the golden test stays as it is; README "Status" and a new "Spacing rules" section describe the rules, the examples above and the window decision. PROGRESS notes the golden test's status.
   - [ ] `check:interval-placement` green; path-scoped commit.
 - Human checkpoint after: yes (the catalog for `11 7 16` and one other interval set of the human's choosing, heard and read before the mock)
+- Checkpoint decisions (human, 2026-11-23): **equal centers is the default spacing rule** ("after exploring them both I want equal centers as the default"), chosen over the shared center range after the full n = 2–5 catalog on the findings page and the worked arithmetic of both rules. Equal centers: centers c₀ + k·D with D = min over slots i < j of (W − (dᵢ + dⱼ)/2)/(j − i) and c₀ = max over k of (dₖ/2 − k·D); every chord with 2+ intervals spans the whole window. Bottom note = nearest step to (center − size/2), ties toward the window middle (centered exactly on the middle: down). The shared center range (centers spread evenly over [M/2, W − M/2], M = largest interval, the same for every ordering) stays available as the second rule.
+- Checkpoint decisions (human, 2026-11-23, window): **the window is a width only**, not a register region. Every window starts on the base note; moving a chosen entry through the register is the exploration step after the catalog. Shown with `11 7 16`, width 24, base C2: width only = 6 chords on C2; a region C2–C5 would give 78 (13 starting notes) and its ranking would drift to the top of the region (interference falls with register, M2b). The orchestral-section idea (the reason for the old octave windows) can return as a preset of base note + width range, not a library concept.
 
 ### M3: Workspace mock
 - Scope: a mock route `/interval-placement/mock` (locked `src/Router.tsx`) on the shared dock Stage with the shared kit, static real numbers from M1/M2/M2c for the default `11 7 16` in 12-EDO on C2 (plus one 31-EDO example), no live maths. Panels written as Stage modules from the start (size-class rendering), so M4 swaps the data, not the layout.
@@ -241,7 +261,7 @@ Page `ARCHITECTURE.md` (including the portability rules and the M6 contracts) an
 - (answered at approval, 2026-11-13: three scores yes, v1/v2 dropped; workspace as a generic local copy; Bowling et al. download allowed.)
 - (answered at M2b, 2026-11-13: shared notes allowed and shown; spread is a numeric range with optional named presets.)
 - (answered at the revision, 2026-11-20: see "Revision checkpoint decisions"; then the model reset.)
-- **Next, M2c:** the core is even spacing of the essential intervals within the span, for every ordering (the human, 2026-11-20). Open: whether the window can also be a register region (the orchestral-section idea behind the octave windows), not only a width.
+- (answered at M2c, 2026-11-23: equal centers is the default rule; the window is a width only, register comes from the base note and exploration.)
 - Later (catalog ranking): the exact harmonicity-leaning default weights.
 
 ## Stop-and-ask conditions

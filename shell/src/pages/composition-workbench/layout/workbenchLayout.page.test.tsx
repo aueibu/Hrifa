@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { dockerHolding, parseScreensetStore, type ScreensetStore } from '../../../lib/stage';
 import { CompositionWorkbenchPage } from '../../CompositionWorkbench.page';
 import { canUndo, resetHistory } from '../history';
-import { compositionWorkbenchStorageKey } from '../persistence';
 import { compositionStateKeys } from '../usePersistentState';
+import { storeDefaultScreensets } from './screensetFixtures';
 import { WORKBENCH_KNOWN_IDS } from './workbenchScreensets';
 
 const footerTab = (name: string) =>
@@ -22,41 +22,11 @@ function storedStore(): ScreensetStore {
 
 function clearProject() {
   localStorage.clear();
-  localStorage.removeItem(compositionWorkbenchStorageKey);
   resetHistory();
 }
 
 describe('the workbench center on the dock Stage', () => {
   beforeEach(clearProject);
-
-  it('opens an old project (only the three old keys) in the screenset that reproduces it', async () => {
-    localStorage.setItem(compositionStateKeys.workspaceView, JSON.stringify('desk'));
-    localStorage.setItem(compositionStateKeys.canvasSplit, JSON.stringify(0.7));
-    localStorage.setItem(compositionStateKeys.detailCollapsed, JSON.stringify(true));
-    render(<CompositionWorkbenchPage />);
-
-    expect(footerTab('Desk')).toHaveAttribute('aria-selected', 'true');
-    expect(footerTab('Canvas')).toHaveAttribute('aria-selected', 'false');
-    // the desk is in front (its toolbar button is on screen), the canvas is parked
-    await waitFor(() => expect(screen.getByRole('button', { name: 'New clip' })).toBeVisible());
-    expect(screen.getByLabelText('Composition canvas').closest('[inert]')).not.toBeNull();
-
-    const store = storedStore();
-    expect(store.active).toBe('desk');
-    for (const id of store.order) {
-      const tree = store.screensets[id].tree;
-      if (tree.kind !== 'split') {
-        throw new Error('expected a split root');
-      }
-      expect(tree.children.map((c) => c.weight)).toEqual([0.7, 0.3]);
-      const detail = dockerHolding(tree, 'module-detail');
-      expect(store.screensets[id].collapsed).toEqual([detail?.id]);
-    }
-    // the old keys stay as they were, and seeding is not an undo step
-    expect(localStorage.getItem(compositionStateKeys.canvasSplit)).toBe('0.7');
-    expect(localStorage.getItem(compositionStateKeys.workspaceView)).toBe('"desk"');
-    expect(canUndo()).toBe(false);
-  }, 30_000);
 
   it('keeps the canvas and every module editor mounted when screensets flip, and outputs still reach a routed module', async () => {
     const user = userEvent.setup();
@@ -128,7 +98,7 @@ describe('the workbench center on the dock Stage', () => {
 
   it('clears the open clip target when its clip is deleted while the clip editor tab is closed', async () => {
     const user = userEvent.setup();
-    localStorage.setItem(compositionStateKeys.workspaceView, JSON.stringify('desk'));
+    storeDefaultScreensets({ active: 'desk' });
     render(<CompositionWorkbenchPage />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'New clip' })).toBeEnabled(), {
       timeout: 10_000,

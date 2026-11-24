@@ -3,7 +3,6 @@ import { MAX_VELOCITY_LANE_HEIGHT, MIN_VELOCITY_LANE_HEIGHT } from '../../compon
 import {
   GRID_OPTIONS,
   MAX_ENTRY_LENGTH,
-  MIN_CHORD_DOCK_WIDTH,
   MIN_ENTRY_LENGTH,
   NOTE_EDITOR_PREFERENCES_KEY,
   readNoteEditorPreferences,
@@ -21,8 +20,6 @@ describe('note editor preferences', () => {
       velocityLaneCollapsed: false,
       laneHeight: null,
       actionSections: ['time', 'pitch', 'values', 'clipboard'],
-      chordHost: 'dock',
-      chordDockWidth: null,
     });
   });
 
@@ -35,8 +32,6 @@ describe('note editor preferences', () => {
       velocityLaneCollapsed: false,
       laneHeight: null,
       actionSections: ['time', 'pitch', 'values', 'clipboard'],
-      chordHost: 'dock',
-      chordDockWidth: null,
     });
     expect(NOTE_EDITOR_PREFERENCES_KEY.startsWith('hrifa.composition-workbench.')).toBe(false);
     localStorage.setItem(
@@ -50,8 +45,6 @@ describe('note editor preferences', () => {
       velocityLaneCollapsed: false,
       laneHeight: null,
       actionSections: ['time', 'pitch', 'values', 'clipboard'],
-      chordHost: 'dock',
-      chordDockWidth: null,
     });
     localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, '{nope');
     expect(readNoteEditorPreferences()).toEqual({
@@ -61,28 +54,7 @@ describe('note editor preferences', () => {
       velocityLaneCollapsed: false,
       laneHeight: null,
       actionSections: ['time', 'pitch', 'values', 'clipboard'],
-      chordHost: 'dock',
-      chordDockWidth: null,
     });
-  });
-
-  it('remembers the chord dock width, clamps it on write and reads damage as the default', () => {
-    writeNoteEditorPreferences({ chordDockWidth: 400 });
-    expect(readNoteEditorPreferences().chordDockWidth).toBe(400);
-    writeNoteEditorPreferences({ chordDockWidth: 10 });
-    expect(readNoteEditorPreferences().chordDockWidth).toBe(MIN_CHORD_DOCK_WIDTH);
-    writeNoteEditorPreferences({ chordDockWidth: null });
-    expect(readNoteEditorPreferences().chordDockWidth).toBeNull();
-    localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify({ chordDockWidth: 'wide' }));
-    expect(readNoteEditorPreferences().chordDockWidth).toBeNull();
-    expect(NOTE_EDITOR_PREFERENCES_KEY.startsWith('hrifa.composition-workbench.')).toBe(false);
-  });
-
-  it('remembers the chord picker host and reads anything but takeover as the dock', () => {
-    writeNoteEditorPreferences({ chordHost: 'takeover' });
-    expect(readNoteEditorPreferences().chordHost).toBe('takeover');
-    localStorage.setItem(NOTE_EDITOR_PREFERENCES_KEY, JSON.stringify({ chordHost: 'window' }));
-    expect(readNoteEditorPreferences().chordHost).toBe('dock');
   });
 
   it('remembers a collapsed velocity lane and reads anything but true as expanded', () => {

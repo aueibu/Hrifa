@@ -148,7 +148,10 @@ const MIX = (() => {
     return order.map((v) => { const i = pool.indexOf(v - 12); if (i >= 0) { pool.splice(i, 1); return v - 12; } return v; });
   }
   const pcs = (notes) => [...new Set(notes.map((x) => ((x % 12) + 12) % 12))].sort((a, b) => a - b).join(' ');
-  const STOPS = [[226, 236, 250], [158, 197, 244], [109, 167, 236], [57, 135, 229], [37, 106, 191], [24, 79, 149], [16, 66, 129]];
+  // multi-hue sequential scale (ColorBrewer YlGnBu 9; human, 2026-11-23, as on the findings heatmap): more tellable steps
+  // than a single blue. Light = better, dark = worse, the same way as the findings heatmap (human: "I want both to read
+  // the same way"; this view used to draw better as darker).
+  const STOPS = [[255, 255, 217], [237, 248, 177], [199, 233, 180], [127, 205, 187], [65, 182, 196], [29, 145, 192], [34, 94, 168], [37, 52, 148], [8, 29, 88]];
   const ramp = (t) => {
     const p = Math.max(0, Math.min(1, t)) * (STOPS.length - 1), i = Math.min(STOPS.length - 2, Math.floor(p)), f = p - i;
     return `rgb(${STOPS[i].map((v, k) => Math.round(v + (STOPS[i + 1][k] - v) * f)).join(',')})`;
@@ -194,6 +197,17 @@ const MIX = (() => {
     V.forEach((v, vi) => rowsOf(vi).forEach((r) => model.windows.forEach((w) => { const p = idx[vi].get(`${r}|${winOf(vi, w)}`); if (p) all.push(p[o.metric]); })));
     const lo = Math.min(...all), hi = Math.max(...all);
     const good = (v) => (hi === lo ? 1 : o.dir === 1 ? (hi - v) / (hi - lo) : (v - lo) / (hi - lo));
+    // color by rank, not by value (human, 2026-11-23, as on the findings heatmap): each shade covers the same number of
+    // cells, so a few extreme cells no longer wash out the rest; the legend gives the values at the quartiles
+    const goods = all.map(good).sort((a, b) => a - b);
+    const shade = (v) => {
+      const g = good(v);
+      let a = 0, b = goods.length - 1;
+      while (a < b) { const m = (a + b) >> 1; if (goods[m] < g) a = m + 1; else b = m; }
+      return goods.length > 1 ? a / (goods.length - 1) : 1;
+    };
+    const byGood = all.slice().sort((x, y) => good(x) - good(y));
+    const atQ = (q) => byGood[Math.round(q * (byGood.length - 1))];
     const tip = document.createElement('div');
     tip.className = 'tip';
     tip.hidden = true;
@@ -218,7 +232,7 @@ const MIX = (() => {
         if (!p) return;
         const x = labelW + j * cw, y = T + i * rh;
         const isSel = o.sel && o.sel.vi === vi && o.sel.order === r && o.sel.w === w;
-        s += `<rect data-k="${vi}:${i}:${j}" x="${x + 1}" y="${y + 1}" width="${cw - 2}" height="${rh - 2}" rx="3" fill="${ramp(good(p[o.metric]))}" ${best.get(w) === p ? 'stroke="var(--win)" stroke-width="2"' : ''}/>`;
+        s += `<rect data-k="${vi}:${i}:${j}" x="${x + 1}" y="${y + 1}" width="${cw - 2}" height="${rh - 2}" rx="3" fill="${ramp(1 - shade(p[o.metric]))}" ${best.get(w) === p ? 'stroke="var(--win)" stroke-width="2"' : ''}/>`;
         if (p.merges) s += `<circle cx="${x + cw - 5}" cy="${y + 5}" r="2" fill="var(--shared)" pointer-events="none"/>`;
         if (vi) { const q = simpleOf(vi, p); if (q && pcs(q.notes) === pcs(p.notes)) s += `<circle cx="${x + 5}" cy="${y + rh - 5}" r="2.2" fill="var(--fg)" stroke="var(--surface)" stroke-width="1" pointer-events="none"/>`; }
         if (isSel) s += `<rect x="${x}" y="${y}" width="${cw}" height="${rh}" rx="4" fill="none" stroke="var(--fg)" stroke-width="2" pointer-events="none"/>`;
@@ -246,7 +260,9 @@ const MIX = (() => {
     wrap.appendChild(tip);
     const lg = document.createElement('div');
     lg.className = 'legend';
-    lg.innerHTML = `<span>${esc(o.metricName)}: ${o.fmt(o.dir === 1 ? hi : lo)} <i class="ramp" style="background:linear-gradient(90deg,${ramp(0)},${ramp(0.5)},${ramp(1)})"></i> ${o.fmt(o.dir === 1 ? lo : hi)} (one scale for every map)</span>` +
+    lg.innerHTML = `<span>${esc(o.metricName)}: better <i class="ramp" style="background:linear-gradient(90deg,${[0, 0.25, 0.5, 0.75, 1].map(ramp).join(',')})"></i> worse (one scale for every map)</span>` +
+      `<span style="font-family:var(--font-mono)">${[1, 0.75, 0.5, 0.25, 0].map((q) => `${['worst', '25%', 'median', '75%', 'best'][q * 4]} ${o.fmt(atQ(q))}`).join(' · ')}</span>` +
+      '<span>shades by rank: each covers the same number of cells</span>' +
       '<span><i style="display:inline-block;width:12px;height:12px;border:2px solid var(--win);border-radius:3px"></i> best in its window</span>' +
       '<span><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--shared)"></i> has a merged note</span>' +
       '<span><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fg)"></i> same pitch classes as the simple chord</span><span>click a cell to compare it with its simple chord</span>';
