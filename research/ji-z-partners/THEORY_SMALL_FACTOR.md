@@ -441,4 +441,8 @@ So **43 with a coefficient 2** (a doubled stacking point) and **20 with both fac
 same 20 as the hunt). Exact for these shapes only: a residue family of another shape (e.g. a larger
 small factor, or a coefficient 3) would not be found, so 63 is complete only relative to the shapes.
 
-7-limit (`res_hunt.sh`, budget on, so "none found", not proven): q <= 729, 236,222 families, residue 0.
+7-limit (`res_hunt.sh`, budget on, so "none found", not proven): q <= 729, 236,222 families, residue 0;
+q <= 1,215, 455,424 families, residue 0. At both q the 5,2 step (where the 5-limit 7 + 7 families come
+from) was cut by the script's 45-min `timeout 2700` (q 1,215: ~22 M factors done, 16,348 stopped at the
+node budget), so that shape is only partly searched. Note the 5-limit residue starts at q 2,187, above
+both 7-limit ceilings, so this zero says little about whether more primes suppress the residue.
