@@ -4,7 +4,7 @@ import type { ChordSession } from '../chordInput/chordSession';
 import { ChordSessionProvider, useChordSession } from '../chordInput/ChordSessionProvider';
 import { ChordPanelStandIn } from '../chordInput/chordTestUtils';
 import { CompositionSettingsProvider } from '../compositionSettings';
-import type { DataBlock } from '../dataBlock';
+import type { PacketBlock } from '../dataBlock';
 import { DeskProvider, useDesk } from '../desk';
 import { resetHistory } from '../history';
 import type { NoteEventValue } from '../melodicization';
@@ -52,27 +52,31 @@ function seedNote(
   };
 }
 
-function dataBlockOf(notes: DataItem<NoteEventValue>[]): DataBlock {
+function dataBlockOf(notes: DataItem<NoteEventValue>[]): PacketBlock {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id: 'seeded',
     name: 'Seeded',
     createdAt: '2026-11-11T00:00:00Z',
-    packet: {
-      ...packet('events', 'note', notes),
-      frame: {
-        topology: 'linear',
-        unit: 'quarterNote',
-        extent: 8,
-        origin: 0,
-        musicalExtent: musicalDuration(8),
-        musicalOrigin: musicalPosition(0),
+    payload: {
+      kind: 'packet',
+      packet: {
+        ...packet('events', 'note', notes),
+        frame: {
+          topology: 'linear',
+          unit: 'quarterNote',
+          extent: 8,
+          origin: 0,
+          musicalExtent: musicalDuration(8),
+          musicalOrigin: musicalPosition(0),
+        },
       },
     },
   };
 }
 
-async function open(seed: DataBlock) {
+async function open(seed: PacketBlock) {
   render(
     <CompositionSettingsProvider>
       <DeskProvider>
@@ -260,9 +264,9 @@ describe('selection mode: ghosts on every selected note', () => {
     expect(ghosts()).toHaveLength(0);
     expect(chordSession.getState().pinnedChord).toBeNull();
     // The session refuses an insert while the panel is hidden.
-    const before = desk.dataBlocks[0].packet.items.length;
+    const before = desk.dataBlocks[0].payload.packet.items.length;
     act(() => chordSession.insertChord(em!));
-    expect(desk.dataBlocks[0].packet.items).toHaveLength(before);
+    expect(desk.dataBlocks[0].payload.packet.items).toHaveLength(before);
 
     act(() => chordSession.setPanelShown(true));
     expect(ghosts()).toHaveLength(0);

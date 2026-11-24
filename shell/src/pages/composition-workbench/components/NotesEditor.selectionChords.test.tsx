@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChordSessionProvider } from '../chordInput/ChordSessionProvider';
 import { ChordPanelStandIn } from '../chordInput/chordTestUtils';
 import { CompositionSettingsProvider } from '../compositionSettings';
-import type { DataBlock } from '../dataBlock';
+import type { PacketBlock } from '../dataBlock';
 import { DeskProvider, useDesk } from '../desk';
 import { canUndo, resetHistory, undo } from '../history';
 import type { NoteEventValue } from '../melodicization';
@@ -56,27 +56,31 @@ function seedNote(
   };
 }
 
-function dataBlockOf(notes: DataItem<NoteEventValue>[]): DataBlock {
+function dataBlockOf(notes: DataItem<NoteEventValue>[]): PacketBlock {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id: 'seeded',
     name: 'Seeded',
     createdAt: '2026-11-11T00:00:00Z',
-    packet: {
-      ...packet('events', 'note', notes),
-      frame: {
-        topology: 'linear',
-        unit: 'quarterNote',
-        extent: 8,
-        origin: 0,
-        musicalExtent: musicalDuration(8),
-        musicalOrigin: musicalPosition(0),
+    payload: {
+      kind: 'packet',
+      packet: {
+        ...packet('events', 'note', notes),
+        frame: {
+          topology: 'linear',
+          unit: 'quarterNote',
+          extent: 8,
+          origin: 0,
+          musicalExtent: musicalDuration(8),
+          musicalOrigin: musicalPosition(0),
+        },
       },
     },
   };
 }
 
-async function open(seed: DataBlock) {
+async function open(seed: PacketBlock) {
   render(
     <CompositionSettingsProvider>
       <DeskProvider>
@@ -114,7 +118,7 @@ function useTool(roll: HTMLElement, key: string) {
   roll.focus();
   fireEvent.keyDown(roll, { key });
 }
-const items = () => desk.dataBlocks[0].packet.items;
+const items = () => desk.dataBlocks[0].payload.packet.items;
 const valueOf = (item: DataItem) => item.value as NoteEventValue;
 const onsetOf = (item: DataItem) => rationalToNumber(valueOf(item).onset.quarterNotes);
 const lengthOf = (item: DataItem) => rationalToNumber(valueOf(item).duration.quarterNotes);

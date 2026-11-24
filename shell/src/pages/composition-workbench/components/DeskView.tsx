@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Alert, Button, Group, Modal, Text, TextInput } from '@mantine/core';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import { useCompositionSettings } from '../compositionSettings';
-import { pitchClassConversionRefusal, type DataBlock } from '../dataBlock';
-import { auditionRefusal, makeSourceRefusal } from '../dataBlockTypes';
+import { pitchClassConversionRefusal, type PacketBlock } from '../dataBlock';
+import { auditionRefusal, makeSourceRefusal } from '../dataBlocks/registry';
 import { useDesk } from '../desk';
 import type { NoteEventValue } from '../melodicization';
 import type { DataPacket } from '../model';
@@ -13,8 +13,8 @@ import { DataBlockPreview } from './DataBlockPreview';
 import { NewDataBlockPopover } from './NewDataBlockPopover';
 import classes from './DeskView.module.css';
 
-function describe(dataBlock: DataBlock) {
-  const { packet } = dataBlock;
+function describe(dataBlock: PacketBlock) {
+  const { packet } = dataBlock.payload;
   const extent = packet.frame?.extent;
   const length =
     extent === undefined
@@ -32,9 +32,9 @@ export function DeskView({
   onMakeSource,
   onOpenDataBlock,
 }: {
-  onMakeSource?(dataBlock: DataBlock): void;
+  onMakeSource?(dataBlock: PacketBlock): void;
   /** Double-clicking a card (not its fields or buttons) opens the data-block in the bottom panel. */
-  onOpenDataBlock?(dataBlock: DataBlock): void;
+  onOpenDataBlock?(dataBlock: PacketBlock): void;
 }) {
   const {
     dataBlocks,
@@ -77,7 +77,7 @@ export function DeskView({
     }
   }
 
-  async function audition(dataBlock: DataBlock) {
+  async function audition(dataBlock: PacketBlock) {
     if (playingId === dataBlock.id) {
       preview.stop('');
       return;
@@ -85,7 +85,7 @@ export function DeskView({
     try {
       const plan = createNotePacketPerformancePlan({
         sourceId: 'desk',
-        packet: dataBlock.packet as DataPacket<NoteEventValue>,
+        packet: dataBlock.payload.packet as DataPacket<NoteEventValue>,
         timeline: transportTimeline(settings.transport),
       });
       setPlayingId(dataBlock.id);
@@ -183,7 +183,7 @@ export function DeskView({
               }}
             />
             <div className={classes.screen}>
-              <DataBlockPreview packet={dataBlock.packet} />
+              <DataBlockPreview packet={dataBlock.payload.packet} />
             </div>
             <div className={classes.meta}>{describe(dataBlock)}</div>
             <div className={classes.actions}>

@@ -1,12 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { DataBlock } from './dataBlock';
 import { runOperator, type OperatorDesk } from './dataBlockOperatorRunner';
+import { packetBlock } from './dataBlocks/types/blank';
 import type { NoteEventValue } from './melodicization';
 import { packet, type DataItem, type DataPacket } from './model';
-import { musicalDuration, musicalPosition, rationalFromNumber } from './musicalTime';
+import { musicalDuration, musicalPosition, rational, rationalFromNumber } from './musicalTime';
 import { clearNoteClipboard, readNoteClipboard } from './noteClipboard';
 import { publishNoteEditor, withdrawNoteEditor } from './noteEditorChannel';
 import { freezeNotesProperties } from './notesProperties';
+
+/** A notes block holding `packet`, as the desk would hand back. */
+const blockOf = (packet: DataPacket) =>
+  packetBlock(
+    'notes',
+    { id: 'b', createdAt: '2026-11-11T00:00:00Z', name: 'b', length: rational(8) },
+    packet
+  );
 
 const note = (id: string, start: number, midicents: number): DataItem<NoteEventValue> => ({
   id,
@@ -41,7 +49,7 @@ function fakeDesk(
   let current = initial;
   const commits: string[] = [];
   const desk: OperatorDesk = {
-    latestDataBlockById: () => ({ packet: current }) as DataBlock,
+    latestDataBlockById: () => blockOf(current),
     commitDataBlockEditById: (_id, next, operation) => {
       if (options.commitThrows) {
         throw new Error('boom');
@@ -51,7 +59,7 @@ function fakeDesk(
       }
       commits.push(operation);
       current = next;
-      return { ok: true, dataBlock: { packet: next } as DataBlock };
+      return { ok: true, dataBlock: blockOf(next) };
     },
   };
   return { desk, commits, packet: () => current };
@@ -87,7 +95,7 @@ describe('runOperator', () => {
     const { desk, commits } = fakeDesk(dataBlock([note('a', 0, 6000)]));
     const outcome = runOperator({
       dataBlockId: 'c',
-      fallback: dataBlock([]),
+      fallback: blockOf(dataBlock([])),
       actionId: 'transpose',
       params: { semitones: 12 },
       desk,
@@ -108,7 +116,12 @@ describe('runOperator', () => {
       },
     };
     const { desk, commits } = fakeDesk(broken);
-    const outcome = runOperator({ dataBlockId: 'c', fallback: broken, actionId: 'legato', desk });
+    const outcome = runOperator({
+      dataBlockId: 'c',
+      fallback: blockOf(broken),
+      actionId: 'legato',
+      desk,
+    });
     expect(outcome).toEqual({
       status: 'failed',
       message: 'That action hit an internal error, so nothing was changed.',
@@ -125,7 +138,7 @@ describe('runOperator', () => {
     const { desk, commits, packet: current } = fakeDesk(dataBlock([note('a', 0, 6000)]));
     const outcome = runOperator({
       dataBlockId: 'c',
-      fallback: dataBlock([]),
+      fallback: blockOf(dataBlock([])),
       actionId: 'transpose',
       params: { semitones: 12 },
       desk,
@@ -142,7 +155,7 @@ describe('runOperator', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const thrown = runOperator({
       dataBlockId: 'c',
-      fallback: dataBlock([]),
+      fallback: blockOf(dataBlock([])),
       actionId: 'transpose',
       params: { semitones: 1 },
       desk: fakeDesk(dataBlock([note('a', 0, 6000)]), { commitThrows: true }).desk,
@@ -150,7 +163,7 @@ describe('runOperator', () => {
     expect(thrown.status).toBe('failed');
     const refused = runOperator({
       dataBlockId: 'c',
-      fallback: dataBlock([]),
+      fallback: blockOf(dataBlock([])),
       actionId: 'transpose',
       params: { semitones: 1 },
       desk: fakeDesk(dataBlock([note('a', 0, 6000)]), { commitFails: true }).desk,
@@ -163,18 +176,18 @@ describe('runOperator', () => {
     expect(
       runOperator({
         dataBlockId: 'c',
-        fallback: dataBlock([]),
+        fallback: blockOf(dataBlock([])),
         actionId: 'transpose',
         params: { semitones: -99 },
         desk,
       }).status
     ).toBe('refused');
     expect(
-      runOperator({ dataBlockId: 'c', fallback: dataBlock([]), actionId: 'legato', desk })
+      runOperator({ dataBlockId: 'c', fallback: blockOf(dataBlock([])), actionId: 'legato', desk })
     ).toEqual({ status: 'unchanged', message: 'Nothing to change.' });
     publish(() => undefined, { ids: ['a'], range: null });
     expect(
-      runOperator({ dataBlockId: 'c', fallback: dataBlock([]), actionId: 'copy', desk })
+      runOperator({ dataBlockId: 'c', fallback: blockOf(dataBlock([])), actionId: 'copy', desk })
     ).toEqual({
       status: 'unchanged',
       message: 'Copied 1 note.',
@@ -182,7 +195,8 @@ describe('runOperator', () => {
     expect(readNoteClipboard()?.notes).toHaveLength(1);
     expect(commits).toEqual([]);
     expect(
-      runOperator({ dataBlockId: 'c', fallback: dataBlock([]), actionId: 'nope', desk }).status
+      runOperator({ dataBlockId: 'c', fallback: blockOf(dataBlock([])), actionId: 'nope', desk })
+        .status
     ).toBe('refused');
   });
 
@@ -196,7 +210,7 @@ describe('runOperator', () => {
     const { desk, commits } = fakeDesk(dataBlock([note('a', 0, 6000)]));
     const outcome = runOperator({
       dataBlockId: 'c',
-      fallback: dataBlock([]),
+      fallback: blockOf(dataBlock([])),
       actionId: 'transpose',
       params: { semitones: 1 },
       desk,
@@ -221,7 +235,7 @@ describe('a resolved overlap ends the rotation session', () => {
     const { desk, packet: current } = fakeDesk(dataBlock(items));
     const outcome = runOperator({
       dataBlockId: 'c',
-      fallback: dataBlock([]),
+      fallback: blockOf(dataBlock([])),
       actionId: 'rotate-time',
       params: { amount: '-1' },
       desk,
@@ -283,7 +297,7 @@ describe('a resolved overlap ends the rotation session', () => {
       outcomes.push(
         runOperator({
           dataBlockId: 'c',
-          fallback: dataBlock([]),
+          fallback: blockOf(dataBlock([])),
           actionId: 'rotate-time',
           params: { amount },
           desk,

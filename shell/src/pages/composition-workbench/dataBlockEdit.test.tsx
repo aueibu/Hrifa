@@ -14,7 +14,7 @@ import {
   MAX_LINEAGE_CHARS,
   MAX_DATA_BLOCK_VERSIONS,
   restoreDataBlockVersion,
-  type DataBlock,
+  type PacketBlock,
 } from './dataBlock';
 import { DeskProvider, useDesk } from './desk';
 import { renderDesk, storedDesk } from './deskTestUtils';
@@ -76,7 +76,7 @@ function SourceWithRunner({
   );
 }
 
-function noteDataBlock(id = 'data-block-1'): DataBlock {
+function noteDataBlock(id = 'data-block-1'): PacketBlock {
   const rhythm = packet(
     'list',
     'duration',
@@ -111,8 +111,8 @@ function noteDataBlock(id = 'data-block-1'): DataBlock {
 }
 
 /** A copy of the data-block packet with the first note raised an octave and one note added. */
-function editedPacket(dataBlock: DataBlock): DataPacket {
-  const copy = structuredClone(dataBlock.packet) as DataPacket<NoteEventValue>;
+function editedPacket(dataBlock: PacketBlock): DataPacket {
+  const copy = structuredClone(dataBlock.payload.packet) as DataPacket<NoteEventValue>;
   copy.items[0].value.pitches = copy.items[0].value.pitches.map((pitch) => pitch + 1200);
   const extra = structuredClone(copy.items[1]);
   extra.id = 'new-note';
@@ -138,29 +138,33 @@ describe('commitDataBlockEdit', () => {
     expect(edited.createdAt).toBe(dataBlock.createdAt);
     expect(edited.name).toBe(dataBlock.name);
     expect(edited.origin).toEqual(dataBlock.origin);
-    expect(edited.packet.items).toHaveLength(dataBlock.packet.items.length + 1);
-    expect(edited.packet.items[0].value).not.toEqual(dataBlock.packet.items[0].value);
+    expect(edited.payload.packet.items).toHaveLength(dataBlock.payload.packet.items.length + 1);
+    expect(edited.payload.packet.items[0].value).not.toEqual(
+      dataBlock.payload.packet.items[0].value
+    );
 
     const stamp = (index: number) => {
-      const steps = edited.packet.items[index].provenance;
+      const steps = edited.payload.packet.items[index].provenance;
       return steps[steps.length - 1];
     };
-    const last = edited.packet.items.length - 1;
+    const last = edited.payload.packet.items.length - 1;
     expect(stamp(0)).toMatchObject({
       transformation: 'edit',
-      sourceItemIds: [edited.packet.items[0].id],
+      sourceItemIds: [edited.payload.packet.items[0].id],
     });
     expect(stamp(0).parameters).toMatchObject({ dataBlockId: dataBlock.id, change: 'modified' });
     expect(stamp(last).parameters).toMatchObject({ change: 'added' });
     // Unchanged items get no step at all.
-    expect(edited.packet.items[1].provenance).toEqual(dataBlock.packet.items[1].provenance);
+    expect(edited.payload.packet.items[1].provenance).toEqual(
+      dataBlock.payload.packet.items[1].provenance
+    );
     const headId = edited.lineage?.head;
     expect(stamp(0).parameters?.versionId).toBe(headId);
 
     // The input data-block is untouched, and the result does not alias the new packet.
     expect(dataBlock).toEqual(before);
-    expect(edited.packet).not.toBe(next);
-    expect(edited.packet.items[0]).not.toBe(next.items[0]);
+    expect(edited.payload.packet).not.toBe(next);
+    expect(edited.payload.packet.items[0]).not.toBe(next.items[0]);
     expect(next.items[0].provenance.some((step) => step.transformation === 'edit')).toBe(false);
     expect(acceptsDataBlocks([edited])).toBe(true);
     expect(JSON.parse(JSON.stringify(edited))).toEqual(edited);
@@ -169,7 +173,7 @@ describe('commitDataBlockEdit', () => {
   it('rejects packets that are not JSON-safe or not valid, without throwing', () => {
     const dataBlock = noteDataBlock();
     const bad = (mutate: (copy: DataPacket) => void) => {
-      const copy = structuredClone(dataBlock.packet);
+      const copy = structuredClone(dataBlock.payload.packet);
       mutate(copy);
       return copy;
     };
@@ -196,7 +200,7 @@ describe('commitDataBlockEdit', () => {
     for (const invalid of cases) {
       expect(commitDataBlockEdit(dataBlock, invalid, 'edit').ok).toBe(false);
     }
-    expect(commitDataBlockEdit(dataBlock, dataBlock.packet, '  ').ok).toBe(false);
+    expect(commitDataBlockEdit(dataBlock, dataBlock.payload.packet, '  ').ok).toBe(false);
   });
 });
 
@@ -227,7 +231,7 @@ describe('commitDataBlockEditById', () => {
     expect(outcome?.ok).toBe(true);
     const after = snapshot(result.current.dataBlocks);
     expect(after.map((dataBlock) => dataBlock.id)).toEqual(['data-block-1', 'other']);
-    expect(after[0].packet).not.toEqual(before[0].packet);
+    expect(after[0].payload.packet).not.toEqual(before[0].payload.packet);
     expect(after[1]).toEqual(before[1]);
 
     act(() => undo());
@@ -255,13 +259,13 @@ describe('commitDataBlockEditById', () => {
       outcomes = [
         result.current.commitDataBlockEditById(
           'data-block-1',
-          structuredClone(current.packet),
+          structuredClone(current.payload.packet),
           'edit'
         ).ok,
         result.current.commitDataBlockEditById('missing', editedPacket(current), 'edit').ok,
         result.current.commitDataBlockEditById(
           'data-block-1',
-          { ...current.packet, items: [{ id: 'x', value: Number.NaN, provenance: [] }] },
+          { ...current.payload.packet, items: [{ id: 'x', value: Number.NaN, provenance: [] }] },
           'edit'
         ).ok,
       ];
@@ -293,13 +297,13 @@ describe('commitDataBlockEditById', () => {
     await waitFor(() => expect(desk?.loading).toBe(false));
     act(() => desk?.addDataBlock(noteDataBlock()));
     const original = snapshot(published['source-1'][0].packet);
-    expect(original).toEqual(snapshot(noteDataBlock().packet));
+    expect(original).toEqual(snapshot(noteDataBlock().payload.packet));
 
     act(() => {
       desk?.commitDataBlockEditById('data-block-1', editedPacket(desk.dataBlocks[0]), 'edit');
     });
     const updated = published['source-1'][0].packet;
-    expect(updated).toEqual(desk?.dataBlocks[0].packet);
+    expect(updated).toEqual(desk?.dataBlocks[0].payload.packet);
     expect(updated.items).toHaveLength(original.items.length + 1);
 
     act(() => undo());
@@ -308,7 +312,7 @@ describe('commitDataBlockEditById', () => {
 });
 
 // Each call is its own version here (the edit-session rule is tested in editSessions.test.tsx).
-const edit = (dataBlock: DataBlock, packet: DataPacket, operation = 'edit') => {
+const edit = (dataBlock: PacketBlock, packet: DataPacket, operation = 'edit') => {
   endEditSession(dataBlock.id);
   const result = commitDataBlockEdit(dataBlock, packet, operation);
   if (!result.ok) {
@@ -318,13 +322,13 @@ const edit = (dataBlock: DataBlock, packet: DataPacket, operation = 'edit') => {
 };
 
 /** The data-block packet with note `index` shifted by `cents`. */
-function shifted(dataBlock: DataBlock, index: number, cents: number): DataPacket {
-  const copy = structuredClone(dataBlock.packet) as DataPacket<NoteEventValue>;
+function shifted(dataBlock: PacketBlock, index: number, cents: number): DataPacket {
+  const copy = structuredClone(dataBlock.payload.packet) as DataPacket<NoteEventValue>;
   copy.items[index].value.pitches = copy.items[index].value.pitches.map((pitch) => pitch + cents);
   return copy;
 }
 
-const rootOf = (dataBlock: DataBlock) =>
+const rootOf = (dataBlock: PacketBlock) =>
   dataBlock.lineage!.versions.find((version) => version.parentId === null)!.id;
 
 describe('lineage', () => {
@@ -336,7 +340,7 @@ describe('lineage', () => {
     expect(versions).toHaveLength(2);
     const root = versions.find((version) => version.parentId === null)!;
     expect(root.operation).toBe('original');
-    expect(root.packet).toEqual(dataBlock.packet);
+    expect(root.packet).toEqual(dataBlock.payload.packet);
     const current = versions.find((version) => version.id === head)!;
     expect(current.parentId).toBe(root.id);
     // The head holds no second copy of the packet: it is the data-block packet.
@@ -344,7 +348,7 @@ describe('lineage', () => {
     const twice = edit(once, shifted(once, 1, 100));
     expect(twice.lineage?.versions).toHaveLength(3);
     expect(twice.lineage?.versions.find((v) => v.id === once.lineage?.head)?.packet).toEqual(
-      once.packet
+      once.payload.packet
     );
     expect(acceptsDataBlocks([twice])).toBe(true);
   });
@@ -356,24 +360,28 @@ describe('lineage', () => {
       { domain: 'duration' as const },
       { encoding: 'chromatic-12' as const },
     ]) {
-      const result = commitDataBlockEdit(dataBlock, { ...dataBlock.packet, ...change }, 'edit');
+      const result = commitDataBlockEdit(
+        dataBlock,
+        { ...dataBlock.payload.packet, ...change },
+        'edit'
+      );
       expect(result.ok).toBe(false);
     }
-    const cyclic = structuredClone(dataBlock.packet) as DataPacket & { self?: unknown };
+    const cyclic = structuredClone(dataBlock.payload.packet) as DataPacket & { self?: unknown };
     cyclic.self = cyclic;
     expect(commitDataBlockEdit(dataBlock, cyclic, 'edit').ok).toBe(false);
   });
 
   it('records reordering as a real change without stamping any item', () => {
     const dataBlock = noteDataBlock();
-    const reordered = structuredClone(dataBlock.packet);
+    const reordered = structuredClone(dataBlock.payload.packet);
     reordered.items.reverse();
     const result = edit(dataBlock, reordered);
     expect(result.lineage?.versions).toHaveLength(2);
-    expect(result.packet.items.map((item) => item.id)).toEqual(
+    expect(result.payload.packet.items.map((item) => item.id)).toEqual(
       reordered.items.map((item) => item.id)
     );
-    for (const item of result.packet.items) {
+    for (const item of result.payload.packet.items) {
       expect(item.provenance.some((step) => step.transformation === 'edit')).toBe(false);
     }
   });
@@ -389,7 +397,7 @@ describe('lineage', () => {
       throw new Error(restored.error);
     }
     expect(restored.dataBlock.id).toBe(base.id);
-    expect(restored.dataBlock.packet).toEqual(base.packet);
+    expect(restored.dataBlock.payload.packet).toEqual(base.payload.packet);
     expect(restored.dataBlock.lineage?.head).toBe(rootId);
     expect(restored.dataBlock.lineage?.versions).toHaveLength(3);
     expect(acceptsDataBlocks([restored.dataBlock])).toBe(true);
@@ -397,7 +405,7 @@ describe('lineage', () => {
     expect(
       restored.dataBlock.lineage?.versions.find((version) => version.id === two.lineage?.head)
         ?.packet
-    ).toEqual(two.packet);
+    ).toEqual(two.payload.packet);
 
     const branched = edit(restored.dataBlock, shifted(restored.dataBlock, 2, 300));
     expect(branched.lineage!.versions).toHaveLength(4);
@@ -425,8 +433,8 @@ describe('lineage', () => {
     expect(one).toEqual(before);
     expect(child.id).toBe('child');
     expect(child.name).toBe('Gesture (from earlier)');
-    expect(child.packet.items.map((item) => item.value)).toEqual(
-      base.packet.items.map((item) => item.value)
+    expect(child.payload.packet.items.map((item) => item.value)).toEqual(
+      base.payload.packet.items.map((item) => item.value)
     );
     expect(child.lineage?.derivedFrom).toEqual({
       dataBlockId: base.id,
@@ -520,7 +528,7 @@ describe('lineage', () => {
     const good = edit(base, shifted(base, 0, 100));
     expect(acceptsDataBlocks([base])).toBe(true);
     expect(acceptsDataBlocks([good])).toBe(true);
-    const accepts = (change: (lineage: NonNullable<DataBlock['lineage']>) => void) => {
+    const accepts = (change: (lineage: NonNullable<PacketBlock['lineage']>) => void) => {
       const copy = snapshot(good);
       change(copy.lineage!);
       return acceptsDataBlocks([copy]);
@@ -535,7 +543,9 @@ describe('lineage', () => {
     expect(accepts((l) => (l.versions[1].parentId = l.versions[1].id))).toBe(false);
     expect(accepts((l) => (l.versions = []))).toBe(false);
     expect(accepts((l) => (l.versions[0].packet = undefined))).toBe(false);
-    expect(accepts((l) => (l.versions[1].packet = structuredClone(good.packet)))).toBe(false);
+    expect(accepts((l) => (l.versions[1].packet = structuredClone(good.payload.packet)))).toBe(
+      false
+    );
     expect(accepts((l) => l.versions.push({ ...l.versions[0] }))).toBe(false);
     expect(
       accepts((l) => {
@@ -623,7 +633,7 @@ describe('lineage operations on the desk', () => {
     act(() => {
       desk?.commitDataBlockEditById('data-block-1', shifted(desk.dataBlocks[0], 0, 100), 'edit');
     });
-    expect(published['source-1'][0].packet).toEqual(desk?.dataBlocks[0].packet);
+    expect(published['source-1'][0].packet).toEqual(desk?.dataBlocks[0].payload.packet);
     expect(published['source-1'][0].packet).not.toEqual(original);
     const rootId = rootOf(desk!.dataBlocks[0]);
     act(() => {

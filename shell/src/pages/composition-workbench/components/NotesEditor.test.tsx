@@ -2,8 +2,8 @@ import { act, cleanup, fireEvent, render, screen, userEvent, waitFor, within } f
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import { CompositionSettingsProvider } from '../compositionSettings';
-import { acceptsDataBlocks, type DataBlock } from '../dataBlock';
-import { auditionRefusal, makeSourceRefusal } from '../dataBlockTypes';
+import { acceptsDataBlocks, type PacketBlock } from '../dataBlock';
+import { auditionRefusal, makeSourceRefusal } from '../dataBlocks/registry';
 import { DeskProvider, useDesk } from '../desk';
 import { canUndo, historyChangeCount, redo, resetHistory, undo } from '../history';
 import type { NoteEventValue } from '../melodicization';
@@ -35,7 +35,7 @@ function Harness() {
 
 const plain = <T,>(value: T) => JSON.parse(JSON.stringify(value)) as T;
 const noteValue = (id: string) =>
-  desk.dataBlocks[0].packet.items.find((entry) => entry.id === id)!.value as NoteEventValue;
+  desk.dataBlocks[0].payload.packet.items.find((entry) => entry.id === id)!.value as NoteEventValue;
 
 function seedNote(
   id: string,
@@ -57,7 +57,7 @@ function seedNote(
   };
 }
 
-async function open(seed?: DataBlock) {
+async function open(seed?: PacketBlock) {
   render(
     <CompositionSettingsProvider>
       <DeskProvider>
@@ -77,25 +77,29 @@ async function open(seed?: DataBlock) {
 }
 
 /** Three notes in an 8-quarter data-block: C4 at 0, E4 at 2, G4 (two long) at 4. */
-function seededDataBlock(): DataBlock {
+function seededDataBlock(): PacketBlock {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id: 'seeded',
     name: 'Seeded',
     createdAt: '2026-11-11T00:00:00Z',
-    packet: {
-      ...packet('events', 'note', [
-        seedNote('n1', 0, 1, 6000),
-        seedNote('n2', 2, 1, 6400),
-        seedNote('n3', 4, 2, 6700),
-      ]),
-      frame: {
-        topology: 'linear',
-        unit: 'quarterNote',
-        extent: 8,
-        origin: 0,
-        musicalExtent: musicalDuration(8),
-        musicalOrigin: musicalPosition(0),
+    payload: {
+      kind: 'packet',
+      packet: {
+        ...packet('events', 'note', [
+          seedNote('n1', 0, 1, 6000),
+          seedNote('n2', 2, 1, 6400),
+          seedNote('n3', 4, 2, 6700),
+        ]),
+        frame: {
+          topology: 'linear',
+          unit: 'quarterNote',
+          extent: 8,
+          origin: 0,
+          musicalExtent: musicalDuration(8),
+          musicalOrigin: musicalPosition(0),
+        },
       },
     },
   };
@@ -116,8 +120,8 @@ function drag(
   fireEvent.pointerUp(roll, { clientX: to.x, clientY: to.y, pointerId: 1 });
 }
 
-const editSteps = (id: string, dataBlock: DataBlock = desk.dataBlocks[0]) =>
-  dataBlock.packet.items
+const editSteps = (id: string, dataBlock: PacketBlock = desk.dataBlocks[0]) =>
+  dataBlock.payload.packet.items
     .find((entry) => entry.id === id)!
     .provenance.filter((step) => step.transformation === 'edit-notes')
     .map((step) => step.parameters?.change);
@@ -136,7 +140,7 @@ describe('the Notes editor', () => {
     expect(within(card).getByRole('button', { name: /Audition/ })).toBeDisabled();
     expect(auditionRefusal(desk.dataBlocks[0])).not.toBeNull();
     const blank = desk.dataBlocks[0];
-    expect(blank.packet.items).toHaveLength(0);
+    expect(blank.payload.packet.items).toHaveLength(0);
 
     // A blank data-block opens with the Pencil tool on.
     expect(screen.getByRole('radio', { name: 'Pencil' })).toBeChecked();
@@ -146,8 +150,8 @@ describe('the Notes editor', () => {
     const filled = desk.dataBlocks[0];
     expect(filled.id).toBe(blank.id);
     expect(filled.name).toBe(blank.name);
-    expect(filled.packet.items).toHaveLength(2);
-    const [first, second] = filled.packet.items;
+    expect(filled.payload.packet.items).toHaveLength(2);
+    const [first, second] = filled.payload.packet.items;
     expect(first.id).not.toBe(second.id);
     expect(first.value).toMatchObject({ pitches: [6000] });
     expect(first.value).toMatchObject({
@@ -166,7 +170,7 @@ describe('the Notes editor', () => {
     // The performance plan the desk plays reads the hand-drawn events.
     const plan = createNotePacketPerformancePlan({
       sourceId: filled.id,
-      packet: filled.packet as never,
+      packet: filled.payload.packet as never,
       timeline: defaultMusicalTimeline,
     });
     expect(plan.events).toHaveLength(2);
@@ -179,7 +183,7 @@ describe('the Notes editor', () => {
   it('draws, moves, resizes and deletes notes as edits to the data-block, keeping item ids, each undoable', async () => {
     const roll = await open(seededDataBlock());
     const states = [plain(desk.dataBlocks[0])];
-    const idsBefore = desk.dataBlocks[0].packet.items.map((entry) => entry.id);
+    const idsBefore = desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id);
 
     // Move n1 one quarter later and two semitones down.
     drag(
@@ -211,8 +215,8 @@ describe('the Notes editor', () => {
     act(() => screen.getByRole('radio', { name: 'Pencil' }).click());
     drag(roll, { x: 390, y: rowY(72) }, { x: 420, y: rowY(72) });
     states.push(plain(desk.dataBlocks[0]));
-    expect(desk.dataBlocks[0].packet.items).toHaveLength(4);
-    const fresh = desk.dataBlocks[0].packet.items[3];
+    expect(desk.dataBlocks[0].payload.packet.items).toHaveLength(4);
+    const fresh = desk.dataBlocks[0].payload.packet.items[3];
     expect(idsBefore).not.toContain(fresh.id);
 
     // Delete n3 with the Delete key after selecting it.
@@ -225,7 +229,7 @@ describe('the Notes editor', () => {
     fireEvent.pointerUp(roll, { clientX: 270, clientY: rowY(67), pointerId: 1 });
     fireEvent.keyDown(roll, { key: 'Delete' });
     states.push(plain(desk.dataBlocks[0]));
-    expect(desk.dataBlocks[0].packet.items.map((entry) => entry.id)).toEqual([
+    expect(desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id)).toEqual([
       'n1',
       'n2',
       fresh.id,
@@ -233,7 +237,7 @@ describe('the Notes editor', () => {
 
     // Every edit kept the data-block's identity and the ids of the notes it left in place.
     expect(desk.dataBlocks[0].id).toBe('seeded');
-    expect(desk.dataBlocks[0].packet.items.slice(0, 2).map((entry) => entry.id)).toEqual([
+    expect(desk.dataBlocks[0].payload.packet.items.slice(0, 2).map((entry) => entry.id)).toEqual([
       'n1',
       'n2',
     ]);
@@ -254,7 +258,7 @@ describe('the Notes editor', () => {
       pointerId: 1,
     });
     fireEvent.pointerUp(roll, { clientX: 140, clientY: rowY(64), pointerId: 1 });
-    expect(desk.dataBlocks[0].packet.items.map((entry) => entry.id)).toEqual(['n1', 'n3']);
+    expect(desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id)).toEqual(['n1', 'n3']);
   });
 
   it('makes one version of a run of hand edits, but one undo step per edit', async () => {
@@ -333,8 +337,8 @@ describe('the Notes editor', () => {
     expect(screen.getByTestId('roll-end-line').style.left).toBe('256px');
     // A note drawn past the end stays, at its full length.
     drag(roll, { x: 300, y: rowY(60) }, { x: 400, y: rowY(60) });
-    expect(desk.dataBlocks[0].packet.items).toHaveLength(1);
-    const [first] = desk.dataBlocks[0].packet.items;
+    expect(desk.dataBlocks[0].payload.packet.items).toHaveLength(1);
+    const [first] = desk.dataBlocks[0].payload.packet.items;
     expect(noteValue(first.id).onset.quarterNotes).toEqual({ numerator: 9, denominator: 2 });
     expect(noteValue(first.id).duration.quarterNotes).toEqual({ numerator: 3, denominator: 2 });
     // The marker does not move with the notes.
@@ -428,7 +432,7 @@ describe('the Notes editor', () => {
 
 describe('the Notes editor tools', () => {
   const tool = (name: string) => screen.getByRole('radio', { name });
-  const itemIds = () => desk.dataBlocks[0].packet.items.map((entry) => entry.id);
+  const itemIds = () => desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id);
   const sessionVersions = () => desk.dataBlocks[0].lineage?.versions.length;
 
   it('opens on Pointer for a data-block with notes and on Pencil for an empty one', async () => {
@@ -443,7 +447,7 @@ describe('the Notes editor tools', () => {
     fireEvent.pointerUp(roll, { pointerId: 1 });
     expect(itemIds()).toHaveLength(4);
     expect(historyChangeCount()).toBe(changes + 1);
-    expect(desk.dataBlocks[0].packet.items[3].value).toMatchObject({ pitches: [7200] });
+    expect(desk.dataBlocks[0].payload.packet.items[3].value).toMatchObject({ pitches: [7200] });
     fireEvent.doubleClick(screen.getByTitle(/^E4 · 2\.000 qn/), {
       clientX: 140,
       clientY: rowY(64),
@@ -557,14 +561,14 @@ describe('the Notes editor tools', () => {
     const roll = await open();
     // The first note takes the grid unit (half a quarter at this zoom).
     drag(roll, { x: 70, y: rowY(60) }, { x: 70, y: rowY(60) });
-    const first = desk.dataBlocks[0].packet.items[0];
+    const first = desk.dataBlocks[0].payload.packet.items[0];
     expect(noteValue(first.id).duration.quarterNotes).toEqual({ numerator: 1, denominator: 2 });
     expect(noteValue(first.id).velocity).toBe(0.8);
     expect(readNoteEditorPreferences().entryLength).toBeNull();
 
     // One drag from the press point: 130 px right sets the length to 2, 30 px up raises the velocity to the top.
     drag(roll, { x: 200, y: rowY(64) }, { x: 330, y: rowY(64) - 30 });
-    const second = desk.dataBlocks[0].packet.items[1];
+    const second = desk.dataBlocks[0].payload.packet.items[1];
     expect(noteValue(second.id).duration.quarterNotes).toEqual({ numerator: 2, denominator: 1 });
     expect(noteValue(second.id).velocity).toBe(1);
     expect(readNoteEditorPreferences().entryLength).toBe(2);
@@ -576,11 +580,11 @@ describe('the Notes editor tools', () => {
     // The next plain click uses it; the preference is not history and not in the packet.
     const changes = historyChangeCount();
     drag(roll, { x: 400, y: rowY(67) }, { x: 400, y: rowY(67) });
-    const third = desk.dataBlocks[0].packet.items[2];
+    const third = desk.dataBlocks[0].payload.packet.items[2];
     expect(noteValue(third.id).duration.quarterNotes).toEqual({ numerator: 2, denominator: 1 });
     expect(noteValue(third.id).velocity).toBe(1);
     expect(historyChangeCount()).toBe(changes + 1);
-    expect(JSON.stringify(desk.dataBlocks[0].packet)).not.toContain('entryLength');
+    expect(JSON.stringify(desk.dataBlocks[0].payload.packet)).not.toContain('entryLength');
     expect(editSteps(third.id)).toEqual(['added']);
   });
 
@@ -590,7 +594,7 @@ describe('the Notes editor tools', () => {
     const changes = historyChangeCount();
     // At half-quarter steps (32 px): x 330 to 400 covers steps 10 to 12, at E5 (76).
     drag(roll, { x: 330, y: rowY(76) }, { x: 400, y: rowY(76) });
-    const added = desk.dataBlocks[0].packet.items.slice(3);
+    const added = desk.dataBlocks[0].payload.packet.items.slice(3);
     expect(added).toHaveLength(3);
     expect(added.map((entry) => (entry.value as NoteEventValue).onset.quarterNotes)).toEqual([
       { numerator: 5, denominator: 1 },
@@ -616,7 +620,7 @@ describe('the Notes editor tools', () => {
     act(() => tool('Paint').click());
     const changes = historyChangeCount();
     drag(roll, { x: 330, y: rowY(76) }, { x: 400, y: rowY(76) });
-    const added = desk.dataBlocks[0].packet.items.slice(3);
+    const added = desk.dataBlocks[0].payload.packet.items.slice(3);
     expect(added).toHaveLength(3);
     added.forEach((entry) => expect((entry.value as NoteEventValue).velocity).toBe(0.38));
     expect(noteValue('n1').velocity).not.toBe(0.38);
@@ -642,7 +646,7 @@ describe('the Notes editor tools', () => {
     });
     expect(itemIds().slice(0, 3)).toEqual(['n1', 'n2', 'n3']);
     expect(itemIds()).toHaveLength(4);
-    const right = desk.dataBlocks[0].packet.items[3];
+    const right = desk.dataBlocks[0].payload.packet.items[3];
     expect(right.id).not.toBe('n3');
     expect(noteValue('n3').duration.quarterNotes).toEqual({ numerator: 1, denominator: 1 });
     expect(noteValue(right.id).onset.quarterNotes).toEqual({ numerator: 5, denominator: 1 });
@@ -741,7 +745,7 @@ describe('the Notes editor tools', () => {
     fireEvent.keyDown(roll, { key: '7' });
     expect(tool('Chords')).toBeChecked();
 
-    const before = plain(desk.dataBlocks[0].packet);
+    const before = plain(desk.dataBlocks[0].payload.packet);
     const selectedBefore = document.querySelectorAll('[data-selected]').length;
     expect(document.querySelector('[data-ghost-overlay]')).toBeNull();
     // x 70 is in the grid step starting at 1 quarter (64 px a quarter, half-quarter steps); y is the C4 row, off-centre.
@@ -749,7 +753,7 @@ describe('the Notes editor tools', () => {
     fireEvent.pointerUp(roll, { clientX: 70, clientY: rowY(60) + 5, pointerId: 1 });
     expect(onChordAnchor).toHaveBeenCalledTimes(1);
     expect(onChordAnchor).toHaveBeenCalledWith({ pitchMidicents: 6000, onset: 1 });
-    expect(plain(desk.dataBlocks[0].packet)).toEqual(before);
+    expect(plain(desk.dataBlocks[0].payload.packet)).toEqual(before);
     expect(document.querySelectorAll('[data-selected]').length).toBe(selectedBefore);
     const ghost = document.querySelector('[data-ghost-overlay="anchor"]');
     expect(ghost).not.toBeNull();
@@ -798,7 +802,7 @@ describe('the Notes editor tools', () => {
     await user.click(await screen.findByRole('menuitem', { name: '1/4 triplet' }));
     act(() => tool('Paint').click());
     drag(roll, { x: 430, y: rowY(76) }, { x: 430, y: rowY(76) });
-    const painted = desk.dataBlocks[0].packet.items.at(-1)!.value as NoteEventValue;
+    const painted = desk.dataBlocks[0].payload.packet.items.at(-1)!.value as NoteEventValue;
     expect(painted.duration.quarterNotes).toEqual({ numerator: 2, denominator: 3 });
   });
 });
@@ -1129,18 +1133,21 @@ describe('the note editor as one panel', () => {
 });
 
 describe('the note editor on a very long data-block', () => {
-  const longDataBlock = (): DataBlock => {
+  const longDataBlock = (): PacketBlock => {
     const base = seededDataBlock();
     const extent = 4 * 72_000;
     return {
       ...base,
       id: 'long',
-      packet: {
-        ...base.packet,
-        frame: {
-          ...base.packet.frame!,
-          extent,
-          musicalExtent: musicalDuration(extent),
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          frame: {
+            ...base.payload.packet.frame!,
+            extent,
+            musicalExtent: musicalDuration(extent),
+          },
         },
       },
     };
@@ -1203,7 +1210,7 @@ describe('gridSourceFor', () => {
 
 describe('moving the content of a time selection', () => {
   const tool = (name: string) => screen.getByRole('radio', { name });
-  const ids = () => desk.dataBlocks[0].packet.items.map((entry) => entry.id);
+  const ids = () => desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id);
   const onsetOf = (id: string) => noteValue(id).onset.quarterNotes;
   const lengthOf = (id: string) => noteValue(id).duration.quarterNotes;
   const sessionVersions = () => desk.dataBlocks[0].lineage?.versions.length;
@@ -1211,11 +1218,17 @@ describe('moving the content of a time selection', () => {
     document.querySelector(`[data-ghost="${id}"]`) as HTMLElement | null;
 
   /** A whole note C4 over 0 to 4 (w) and an E4 at 6 (z), in an 8-quarter data-block. */
-  function wholeNotesDataBlock(): DataBlock {
+  function wholeNotesDataBlock(): PacketBlock {
     const base = seededDataBlock();
     return {
       ...base,
-      packet: { ...base.packet, items: [seedNote('w', 0, 4, 6000), seedNote('z', 6, 1, 6400)] },
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          items: [seedNote('w', 0, 4, 6000), seedNote('z', 6, 1, 6400)],
+        },
+      },
     };
   }
 
@@ -1305,7 +1318,7 @@ describe('moving the content of a time selection', () => {
       const latest = desk.dataBlocks[0];
       desk.commitDataBlockEditById(
         latest.id,
-        { ...latest.packet, items: [seedNote('q', 1, 1, 6000)] },
+        { ...latest.payload.packet, items: [seedNote('q', 1, 1, 6000)] },
         'outside-edit'
       );
     });
@@ -1327,7 +1340,7 @@ describe('moving the content of a time selection', () => {
     expect(ghost('w')!.style.left).toBe('0px');
     expect(ghost('w')!.style.width).toBe(`${2.5 * 64}px`);
     fireEvent.pointerUp(roll, { clientX: 100 - 500, clientY: 5, pointerId: 3 });
-    const spans = desk.dataBlocks[0].packet.items.map((entry) => {
+    const spans = desk.dataBlocks[0].payload.packet.items.map((entry) => {
       const value = entry.value as NoteEventValue;
       const start = value.onset.quarterNotes.numerator / value.onset.quarterNotes.denominator;
       const length =
@@ -1372,7 +1385,7 @@ describe('moving the content of a time selection', () => {
     // The moved middle (0 to 2) lands on the left piece (0 to 1) of the same pitch and covers it
     // completely: the touched note overwrites it (w is gone), inside the same step.
     expect(ids()).toHaveLength(3);
-    const spans = desk.dataBlocks[0].packet.items.map((entry) => {
+    const spans = desk.dataBlocks[0].payload.packet.items.map((entry) => {
       const value = entry.value as NoteEventValue;
       const start = value.onset.quarterNotes.numerator / value.onset.quarterNotes.denominator;
       return [start, start + value.duration.quarterNotes.numerator];
@@ -1484,7 +1497,7 @@ describe('moving the content of a time selection', () => {
   });
 
   describe('Ctrl-drag copies notes', () => {
-    const noteIds = () => desk.dataBlocks[0].packet.items.map((entry) => entry.id);
+    const noteIds = () => desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id);
 
     it('a Ctrl press that becomes a drag copies the selection and selects the copies', async () => {
       const roll = await open(seededDataBlock());
@@ -1715,14 +1728,14 @@ describe('a time selection survives edits, undo and outside changes', () => {
   it('Delete inside a time selection deletes its notes and keeps the band; undo rebuilds the notes it holds', async () => {
     const roll = await timeSelected();
     fireEvent.keyDown(roll, { key: 'Delete' });
-    expect(desk.dataBlocks[0].packet.items.map((entry) => entry.id)).toEqual(['n1']);
+    expect(desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id)).toEqual(['n1']);
     expect(roll).toHaveAccessibleName(/0 selected/);
     expect(band().style.left).toBe('96px');
     expect(band().style.width).toBe(`${5 * 64 - 96}px`);
     expect(screen.getByTestId('velocity-range')).toBeInTheDocument();
     // Undo restores n2 and n3; the selection is rebuilt from the kept span (the K5 undo fix).
     act(() => undo());
-    expect(desk.dataBlocks[0].packet.items).toHaveLength(3);
+    expect(desk.dataBlocks[0].payload.packet.items).toHaveLength(3);
     expect(roll).toHaveAccessibleName(/2 selected/);
     expect(band().style.left).toBe('96px');
     expect(band().style.width).toBe(`${5 * 64 - 96}px`);
@@ -1735,7 +1748,10 @@ describe('a time selection survives edits, undo and outside changes', () => {
       const latest = desk.dataBlocks[0];
       desk.commitDataBlockEditById(
         latest.id,
-        { ...latest.packet, items: [...latest.packet.items, seedNote('n4', 3, 1, 7200)] },
+        {
+          ...latest.payload.packet,
+          items: [...latest.payload.packet.items, seedNote('n4', 3, 1, 7200)],
+        },
         'outside-edit'
       );
     });
@@ -1755,7 +1771,7 @@ describe('velocity lane tools in the editor', () => {
   const tool = (name: string) => screen.getByRole('radio', { name });
   const track = () => screen.getByRole('group', { name: 'Velocity lane' });
   const velocityOf = (id: string) => noteValue(id).velocity;
-  const ids = () => desk.dataBlocks[0].packet.items.map((entry) => entry.id);
+  const ids = () => desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id);
   const sessionVersions = () => desk.dataBlocks[0].lineage?.versions.length;
   const lanePress = (x: number, y: number, extra: object = {}) =>
     fireEvent.pointerDown(track(), { clientX: x, clientY: y, pointerId: 1, ...extra });
@@ -1970,7 +1986,10 @@ describe('velocity lane tools in the editor', () => {
       act(() =>
         desk.commitDataBlockEditById(
           desk.dataBlocks[0].id,
-          { ...desk.dataBlocks[0].packet, items: desk.dataBlocks[0].packet.items.slice(0, 2) },
+          {
+            ...desk.dataBlocks[0].payload.packet,
+            items: desk.dataBlocks[0].payload.packet.items.slice(0, 2),
+          },
           'outside-edit'
         )
       );
@@ -2064,7 +2083,7 @@ describe('velocity lane tools in the editor', () => {
 describe('editor polish: left-edge resize, cursors, the ramp-curve menu and no duplicate notes', () => {
   const tool = (name: string) => screen.getByRole('radio', { name });
   const track = () => screen.getByRole('group', { name: 'Velocity lane' });
-  const ids = () => desk.dataBlocks[0].packet.items.map((entry) => entry.id);
+  const ids = () => desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id);
   const startOf = (id: string) => {
     const onset = noteValue(id).onset.quarterNotes;
     return onset.numerator / onset.denominator;
@@ -2210,7 +2229,7 @@ describe('editor polish: left-edge resize, cursors, the ramp-curve menu and no d
       fireEvent.pointerMove(roll, { clientX: 160 - 128, clientY: rowY(64) + 88, ...flags });
       fireEvent.pointerUp(roll, { clientX: 160 - 128, clientY: rowY(64) + 88, ...flags });
       expect(ids()).toEqual(['n1', 'n2', 'n3']);
-      expect(desk.dataBlocks[0].packet.items).toEqual(before.packet.items);
+      expect(desk.dataBlocks[0].payload.packet.items).toEqual(before.payload.packet.items);
       expect(historyChangeCount()).toBe(changes);
     });
   });
@@ -2261,7 +2280,7 @@ describe('editor polish: left-edge resize, cursors, the ramp-curve menu and no d
 });
 
 describe('same-pitch overlaps through the editor', () => {
-  const ids = () => desk.dataBlocks[0].packet.items.map((entry) => entry.id);
+  const ids = () => desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id);
   const spanOf = (id: string) => {
     const value = noteValue(id);
     const start = value.onset.quarterNotes.numerator / value.onset.quarterNotes.denominator;
@@ -2272,9 +2291,12 @@ describe('same-pitch overlaps through the editor', () => {
     const base = seededDataBlock();
     const roll = await open({
       ...base,
-      packet: {
-        ...base.packet,
-        items: [seedNote('w', 0, 4, 6000), seedNote('d', 6, 1, 6000)],
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          items: [seedNote('w', 0, 4, 6000), seedNote('d', 6, 1, 6000)],
+        },
       },
     });
     const changes = historyChangeCount();
@@ -2305,7 +2327,7 @@ describe('same-pitch overlaps through the editor', () => {
 });
 
 describe('keyboard note editing', () => {
-  const ids = () => desk.dataBlocks[0].packet.items.map((entry) => entry.id);
+  const ids = () => desk.dataBlocks[0].payload.packet.items.map((entry) => entry.id);
   const startOf = (id: string) => {
     const onset = noteValue(id).onset.quarterNotes;
     return onset.numerator / onset.denominator;
@@ -2368,9 +2390,12 @@ describe('keyboard note editing', () => {
     const base = seededDataBlock();
     const roll = await open({
       ...base,
-      packet: {
-        ...base.packet,
-        items: [seedNote('lo', 0, 1, 500), seedNote('hi', 1, 1, 6000)],
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          items: [seedNote('lo', 0, 1, 500), seedNote('hi', 1, 1, 6000)],
+        },
       },
     });
     // A marquee over both notes.
@@ -2416,14 +2441,17 @@ describe('keyboard note editing', () => {
     const base = seededDataBlock();
     const roll = await open({
       ...base,
-      packet: {
-        ...base.packet,
-        items: [
-          seedNote('c', 0, 1, 6000),
-          seedNote('e', 0, 1, 6400),
-          seedNote('g', 0, 1, 6700),
-          seedNote('next', 2, 1, 6000),
-        ],
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          items: [
+            seedNote('c', 0, 1, 6000),
+            seedNote('e', 0, 1, 6400),
+            seedNote('g', 0, 1, 6700),
+            seedNote('next', 2, 1, 6000),
+          ],
+        },
       },
     });
     const changes = historyChangeCount();
@@ -2459,14 +2487,17 @@ describe('keyboard note editing', () => {
     const base = seededDataBlock();
     const roll = await open({
       ...base,
-      packet: {
-        ...base.packet,
-        items: [
-          seedNote('c', 0, 1, 6000),
-          seedNote('e', 0, 1, 6400),
-          seedNote('g', 0, 1, 6700),
-          seedNote('next', 2, 1, 6000),
-        ],
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          items: [
+            seedNote('c', 0, 1, 6000),
+            seedNote('e', 0, 1, 6400),
+            seedNote('g', 0, 1, 6700),
+            seedNote('next', 2, 1, 6000),
+          ],
+        },
       },
     });
     // A marquee over the whole chord (x 0 to 60 px, all pitches).
@@ -2491,9 +2522,12 @@ describe('keyboard note editing', () => {
     const base = seededDataBlock();
     const roll = await open({
       ...base,
-      packet: {
-        ...base.packet,
-        items: [seedNote('w', 0, 4, 6000), seedNote('d', 4, 1, 6000)],
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          items: [seedNote('w', 0, 4, 6000), seedNote('d', 4, 1, 6000)],
+        },
       },
     });
     select(roll, /^C4 · 4.000 qn/, 4 * 64 + 20, rowY(60));
@@ -2513,9 +2547,12 @@ describe('keyboard note editing', () => {
     const base = seededDataBlock();
     const roll = await open({
       ...base,
-      packet: {
-        ...base.packet,
-        items: [seedNote('w', 0, 4, 6000), seedNote('d', 2, 1, 6000)],
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          items: [seedNote('w', 0, 4, 6000), seedNote('d', 2, 1, 6000)],
+        },
       },
     });
     select(roll, /^C4 · 2.000 qn/, 2 * 64 + 20, rowY(60));
@@ -2529,14 +2566,17 @@ describe('keyboard note editing', () => {
     const base = seededDataBlock();
     const roll = await open({
       ...base,
-      packet: {
-        ...base.packet,
-        items: [
-          seedNote('c', 0, 1, 6000),
-          seedNote('e', 0, 1, 6400),
-          seedNote('g', 0, 1, 6700),
-          seedNote('next', 2, 1, 6000),
-        ],
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          items: [
+            seedNote('c', 0, 1, 6000),
+            seedNote('e', 0, 1, 6400),
+            seedNote('g', 0, 1, 6700),
+            seedNote('next', 2, 1, 6000),
+          ],
+        },
       },
     });
     act(() => {
@@ -2551,9 +2591,12 @@ describe('keyboard note editing', () => {
     const base = seededDataBlock();
     const roll = await open({
       ...base,
-      packet: {
-        ...base.packet,
-        items: [seedNote('a', 0, 1, 6000), seedNote('b', 0, 1, 6100)],
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          items: [seedNote('a', 0, 1, 6000), seedNote('b', 0, 1, 6100)],
+        },
       },
     });
     select(roll, /^C♯4 · 0\.000 qn/, 20, rowY(61));
@@ -2573,9 +2616,16 @@ describe('keyboard note editing', () => {
     const base = seededDataBlock();
     const roll = await open({
       ...base,
-      packet: {
-        ...base.packet,
-        items: [seedNote('c', 0, 1, 6000), seedNote('g', 0, 1, 6700), seedNote('next', 5, 1, 6000)],
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          items: [
+            seedNote('c', 0, 1, 6000),
+            seedNote('g', 0, 1, 6700),
+            seedNote('next', 5, 1, 6000),
+          ],
+        },
       },
     });
     const status = screen.getByTestId('note-announcement');

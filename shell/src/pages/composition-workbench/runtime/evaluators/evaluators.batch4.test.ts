@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { PublishedCompositionOutput } from '../../compositionRouting';
 import { createDefaultNodeRouteState } from '../../compositionWorkspace';
-import { captureDataBlock, type DataBlock } from '../../dataBlock';
+import { captureDataBlock, type PacketBlock } from '../../dataBlock';
+import '../../dataBlocks/types';
 import { melodicize } from '../../melodicization';
 import { packet } from '../../model';
 import { signalTypeRegistry } from '../../signalTypes';
@@ -199,7 +200,7 @@ describe('evaluateDataBlockSource', () => {
     portId: 'notes',
     itemIds: notes.items.slice(0, 2).map((item) => item.id),
   });
-  const dataBlock: DataBlock = captured.ok ? captured.dataBlock : (undefined as never);
+  const dataBlock: PacketBlock = captured.ok ? captured.dataBlock : (undefined as never);
 
   it('publishes the data-block packet unchanged under its name', () => {
     expect(captured.ok).toBe(true);
@@ -208,17 +209,21 @@ describe('evaluateDataBlockSource', () => {
       {
         ref: { instanceId: ctx.instanceId, port: 'data-block' },
         label: `Data-block 1 · ${dataBlock.name}`,
-        packet: dataBlock.packet,
+        packet: dataBlock.payload.packet,
       },
     ]);
-    expect(evaluation.outputs[0].packet).toBe(dataBlock.packet);
+    expect(evaluation.outputs[0].packet).toBe(dataBlock.payload.packet);
   });
 
   it('an edited data-block (new name and packet) publishes the new one', () => {
-    const edited: DataBlock = { ...dataBlock, name: 'Edited', packet: { ...dataBlock.packet } };
+    const edited: PacketBlock = {
+      ...dataBlock,
+      name: 'Edited',
+      payload: { kind: 'packet', packet: { ...dataBlock.payload.packet } },
+    };
     const evaluation = evaluateDataBlockSource({}, { dataBlock: edited }, ctx);
     expect(evaluation.outputs[0].label).toBe('Data-block 1 · Edited');
-    expect(evaluation.outputs[0].packet).toBe(edited.packet);
+    expect(evaluation.outputs[0].packet).toBe(edited.payload.packet);
   });
 
   it('publishes nothing when the data-block is gone', () => {

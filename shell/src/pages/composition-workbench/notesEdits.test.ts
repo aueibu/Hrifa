@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_ENTRY_VELOCITY } from '../../components/PianoRoll';
-import { commitDataBlockEdit, type DataBlock } from './dataBlock';
+import { commitDataBlockEdit, type PacketBlock } from './dataBlock';
 import type { NoteEventValue } from './melodicization';
 import { packet, type DataItem, type DataPacket } from './model';
 import { musicalDuration, musicalPosition, rationalToNumber } from './musicalTime';
@@ -181,16 +181,17 @@ describe('notes data-block edits', () => {
   });
 
   it('only added and modified notes get the edit step when committed (K2 provenance)', () => {
-    const dataBlock: DataBlock = {
-      schemaVersion: 1,
+    const dataBlock: PacketBlock = {
+      schemaVersion: 2,
+      typeId: 'notes',
       id: 'block-1',
       name: 'Notes',
       createdAt: '2026-11-11T00:00:00Z',
-      packet: base(),
+      payload: { kind: 'packet', packet: base() },
     };
     const edited = deleteNotes(
       addNote(
-        moveNotes(dataBlock.packet, ['a'], { start: 1, pitchMidicents: 0 }),
+        moveNotes(dataBlock.payload.packet, ['a'], { start: 1, pitchMidicents: 0 }),
         {
           start: 6,
           duration: 1,
@@ -205,14 +206,18 @@ describe('notes data-block edits', () => {
       throw new Error(result.error);
     }
     const steps = (id: string) =>
-      result.dataBlock.packet.items
+      result.dataBlock.payload.packet.items
         .find((entry) => entry.id === id)!
         .provenance.filter((step) => step.transformation === 'edit-notes')
         .map((step) => step.parameters?.change);
     expect(steps('a')).toEqual(['modified']);
     expect(steps('fresh')).toEqual(['added']);
     expect(steps('c')).toEqual([]);
-    expect(result.dataBlock.packet.items.map((entry) => entry.id)).toEqual(['a', 'c', 'fresh']);
+    expect(result.dataBlock.payload.packet.items.map((entry) => entry.id)).toEqual([
+      'a',
+      'c',
+      'fresh',
+    ]);
   });
 
   it('describes the data-block: extent, one roll rectangle per pitch, and the time events occupy', () => {

@@ -1,20 +1,21 @@
 import { packet, type DataPacket } from '../model';
 import { rational } from '../musicalTime';
-import type {
-  BlankRequest,
-  DataBlockTypeDef,
-  PacketBlock,
-  RecordBlock,
-  Ref,
-  SlotRef,
-  StoredDataBlock,
+import {
+  DATA_BLOCK_SCHEMA_VERSION,
+  type BlankRequest,
+  type DataBlockTypeDef,
+  type PacketBlock,
+  type RecordBlock,
+  type Ref,
+  type SlotRef,
+  type StoredDataBlock,
 } from './registry';
 
-/** Types used only by tests. Real registrations arrive in R1. */
+/** Types used only by tests. The real registrations are in ./types. */
 
 function packetBlock(request: BlankRequest, typeId: string, p: DataPacket): PacketBlock {
   return {
-    schemaVersion: 1,
+    schemaVersion: DATA_BLOCK_SCHEMA_VERSION,
     id: request.id,
     typeId,
     name: request.name,
@@ -98,7 +99,7 @@ export function collectionBlock(
     })),
   };
   return {
-    schemaVersion: 1,
+    schemaVersion: DATA_BLOCK_SCHEMA_VERSION,
     id,
     typeId: 'collection-test',
     name,

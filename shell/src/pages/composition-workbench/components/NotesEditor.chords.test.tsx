@@ -4,7 +4,7 @@ import { chordsOnRoot, chordsWithCommonTone } from '../chordInput/chords';
 import { ChordSessionProvider } from '../chordInput/ChordSessionProvider';
 import { ChordPanelStandIn } from '../chordInput/chordTestUtils';
 import { CompositionSettingsProvider, useCompositionSettings } from '../compositionSettings';
-import type { DataBlock } from '../dataBlock';
+import type { PacketBlock } from '../dataBlock';
 import { DeskProvider, useDesk } from '../desk';
 import { DEVELOPER_OPTIONS_KEY } from '../developerOptions';
 import { canUndo, resetHistory, undo } from '../history';
@@ -59,27 +59,31 @@ function seedNote(
 }
 
 /** One C4, a quarter long, at the start. */
-function seededDataBlock(): DataBlock {
+function seededDataBlock(): PacketBlock {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id: 'seeded',
     name: 'Seeded',
     createdAt: '2026-11-11T00:00:00Z',
-    packet: {
-      ...packet('events', 'note', [seedNote('n1', 0, 1, 6000)]),
-      frame: {
-        topology: 'linear',
-        unit: 'quarterNote',
-        extent: 8,
-        origin: 0,
-        musicalExtent: musicalDuration(8),
-        musicalOrigin: musicalPosition(0),
+    payload: {
+      kind: 'packet',
+      packet: {
+        ...packet('events', 'note', [seedNote('n1', 0, 1, 6000)]),
+        frame: {
+          topology: 'linear',
+          unit: 'quarterNote',
+          extent: 8,
+          origin: 0,
+          musicalExtent: musicalDuration(8),
+          musicalOrigin: musicalPosition(0),
+        },
       },
     },
   };
 }
 
-async function open(options: { seed?: DataBlock } = {}) {
+async function open(options: { seed?: PacketBlock } = {}) {
   render(
     <CompositionSettingsProvider>
       <DeskProvider>
@@ -111,11 +115,11 @@ function clickAnchor(roll: HTMLElement, midi: number, x = 70) {
 }
 
 const pitches = () =>
-  desk.dataBlocks[0].packet.items
+  desk.dataBlocks[0].payload.packet.items
     .map((item) => item.value as NoteEventValue)
     .flatMap((value) => value.pitches.map((pitch) => ({ pitch, onset: value.onset })))
     .sort((a, b) => a.pitch - b.pitch);
-const noteCount = () => desk.dataBlocks[0].packet.items.length;
+const noteCount = () => desk.dataBlocks[0].payload.packet.items.length;
 const ghosts = (variant: string) =>
   document.querySelectorAll(`[data-ghost-overlay="${variant}"]`) as NodeListOf<HTMLElement>;
 const chord = (name: string) => screen.getByRole('button', { name });

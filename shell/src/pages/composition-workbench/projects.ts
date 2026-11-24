@@ -1,5 +1,5 @@
 import { STORAGE_KEY as settingsStorageKey } from './compositionSettings';
-import { acceptsDataBlocks, type DataBlock } from './dataBlock';
+import { acceptsDataBlocks, type PacketBlock } from './dataBlock';
 import type { ReplaceDeskOptions } from './desk';
 import {
   describeStorageError,
@@ -81,7 +81,7 @@ export function newProjectId(now = new Date()) {
 export const defaultProjectName = (now: Date) => `Project ${now.toLocaleString()}`;
 
 /** The desk as the project holds it: null when the desk was not readable, so open leaves it alone. */
-export type ProjectDesk = DataBlock[] | null;
+export type ProjectDesk = PacketBlock[] | null;
 
 export function createProject(
   name: string,
@@ -170,11 +170,11 @@ export async function saveProject({
 }
 
 export interface OpenableDesk {
-  dataBlocks: DataBlock[];
+  dataBlocks: PacketBlock[];
   loading: boolean;
   locked: boolean;
   replaceDesk(
-    dataBlocks: DataBlock[],
+    dataBlocks: PacketBlock[],
     options?: ReplaceDeskOptions
   ): Promise<{ ok: true } | { ok: false; error: string }>;
 }

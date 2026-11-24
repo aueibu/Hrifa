@@ -58,11 +58,11 @@ function clickAnchor(roll: HTMLElement, midi: number, x = 70) {
 }
 
 const pitches = () =>
-  desk.dataBlocks[0].packet.items
+  desk.dataBlocks[0].payload.packet.items
     .map((item) => item.value as NoteEventValue)
     .flatMap((value) => value.pitches.map((pitch) => ({ pitch, onset: value.onset })))
     .sort((a, b) => a.pitch - b.pitch);
-const noteCount = () => desk.dataBlocks[0].packet.items.length;
+const noteCount = () => desk.dataBlocks[0].payload.packet.items.length;
 const ghosts = (variant: string) =>
   document.querySelectorAll(`[data-ghost-overlay="${variant}"]`) as NodeListOf<HTMLElement>;
 const chord = (name: string) => screen.getByRole('button', { name });

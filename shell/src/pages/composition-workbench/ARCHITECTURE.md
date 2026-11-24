@@ -525,24 +525,25 @@ The desk is where material is set aside to be reused, and where it is authored. 
 
 ### Data-blocks and their types
 
-A data-block (`dataBlock.ts`) is a named `DataPacket` with an id:
+A data-block is the registry's stored envelope (`dataBlocks/registry.ts`; `dataBlock.ts` holds the packet-block functions):
 
 ```ts
-interface DataBlock {
-  schemaVersion: 1;
+interface PacketBlock {
+  schemaVersion: 2;
   id: string;
+  typeId: string;               // the registered type, stored (never inferred from the packet)
   name: string;
   note?: string;
   createdAt: string;
-  packet: DataPacket;          // any kind and domain
+  payload: { kind: 'packet'; packet: DataPacket };  // the head packet, any kind and domain
   origin?: { nodeInstance: string; portId?: string; itemIds?: string[] };  // itemIds absent = whole packet
   lineage?: DataBlockLineage;    // see Edit contract and versions
 }
 ```
 
-The packet already carries its own kind, domain, role and frame, so routing compatibility works on a data-block unchanged and nothing about the desk is specific to notes. `origin` records where a capture came from and is information only: nothing follows it afterwards, and capture is a copy. Items keep their original ids, and each gains a `capture` provenance step. `schemaVersion` is 1 (the baseline: nothing older exists or is read) and a later addition such as `lineage` or `metadata.notes` is read with defaults; `acceptsDataBlocks` rejects a corrupt or newer desk so the page falls back to an empty one instead of crashing.
+The packet already carries its own kind, domain, role and frame, so routing compatibility works on a data-block unchanged and nothing about the desk is specific to notes. `origin` records where a capture came from and is information only: nothing follows it afterwards, and capture is a copy. Items keep their original ids, and each gains a `capture` provenance step. The desk holds packet blocks only until the Collection record type (R4). **Baseline reset (R1, W-60):** the envelope `schemaVersion` is 2 (1 was the earlier shape with the packet at the top level and no `typeId`); nothing migrates it. On load a stored block with `schemaVersion` 1 is dropped (the desk says so and the next save deletes the record), a saved project's earlier-shape desk opens empty, and a block that is a newer version, has an unregistered `typeId`, or fails `validateBlock` (its packet is not accepted by its type) leaves the whole stored desk untouched and locked, as a corrupt desk always did. `acceptsDataBlocks` is that check.
 
-**Data-block types (`dataBlockTypes.ts`).** The only place a data-block type is described. A `DataBlockType` has an id, label, `kind`, `domain` (and `encoding` when it tells types apart), an optional `editorId`, a `playable` flag (the note performance plan applies to its packets, so audition works), optional `actions`, and a `createBlank` factory. `dataBlockTypeOf(packet)` picks the most specific match. `registerDataBlockType` and `registerDataBlockEditor` (binds the editor component for an `editorId`) return removers. The desk, persistence and capture never branch on type, so a new type is one registration plus, when it has one, an editor. Today only Notes is registered (`events | note`, editor `note-roll`, the transforms below). A blank note data-block is an empty `events | note` packet with a linear quarter-note frame, origin 0 and the project's time signature. "New data-block" on the desk creates one at once from per-viewer defaults (type, length in bars; `dataBlockPreferences.ts`, `hrifa.data-block-defaults.v1`, outside history and projects) and opens it. Audition and Make source are disabled on an empty data-block, with the reason shown.
+**Data-block types (`dataBlocks/types/`, registry in `dataBlocks/registry.ts`).** The only place a data-block type is described; see "Data-block registry". Registered, with non-overlapping `accepts` (`dataBlocks/types/types.test.ts` proves every sample packet is accepted by exactly one): Notes (`notes`: `events | note`; editor `note-roll`, operators, audition through the note performance plan, refusing when empty), Pitch set (`pitch-set`: `list | pitch`), Pitch classes (`pitch-classes`: `list` or `events` with domain `pitchClass`; the desk's To pitch classes makes the events form), Rhythm (`rhythm`: `list | duration` or domain `rhythmPattern`), Values (`values`: `list` or `value` of `integer` or `rational`). Only Notes has an audition; the others report "<Label> has no audition yet." (Values: "Values have no sound of their own.") until R2/R3. `dataBlockTypes.ts` keeps only what is not registry: `registerDataBlockEditor` and `dataBlockEditorOf` (the component bound to a type's `editorId`), `operatorsOf`/`operatorById`, `barsLength`, `nextDataBlockName`, and the import that registers the built-in types. The New data-block control offers the types that have an editor (Notes today). A packet no registered type accepts cannot be sent to the desk (capture refuses with a reason).
 
 **Frame and extent as data-block length.** For a plain notes data-block the packet frame's extent (`frame.extent` and `musicalExtent`, quarter notes) is the data-block's total length, which the editor shows as the end marker. Notes may run past it and are kept, never clamped. Other frames (cyclic, pulse, abstract: rhythm outputs, Interference and Fractioning results, pitch classes, Melodicization's cyclic notes) keep the frame contract that extent is the sum of durations, which a quarter-note total length would break, so notes properties do not apply to them.
 
@@ -597,7 +598,7 @@ interface DataBlockVersion { id: string; parentId: string | null; at: string; op
 interface DataBlockDerivation { dataBlockId: string; versionId: string | null; operation: string }
 ```
 
-- The head is the data-block's current packet: `DataBlock.packet` is the head's content and the head version stores no `packet`; every other version carries its snapshot. `acceptsDataBlocks` enforces this, plus one root (`parentId: null`), every `parentId` a kept version, no cycles, plain JSON.
+- The head is the data-block's current packet: `payload.packet` is the head's content and the head version stores no `packet`; every other version carries its snapshot. `acceptsDataBlocks` enforces this, plus one root (`parentId: null`), every `parentId` a kept version, no cycles, plain JSON.
 - Never-edited data-blocks store no lineage. The first edit creates the root version (`original`, at `createdAt`) from the pre-edit packet, then a child that becomes the head.
 - Derived data-blocks (Duplicate, Convert to pitch classes, Create from version) are born with a one-version lineage whose `derivedFrom` names the source data-block and its head version; `versionId: null` means the source's original state, which becomes its root if it is ever edited. A new data-block never copies the source's tree.
 - `restoreDataBlockVersion` moves the head to a version (the version left keeps its snapshot; a later edit branches from the restored one). `createDataBlockFromVersion` makes `<name> (from earlier)` with `derivedFrom`.
@@ -644,14 +645,15 @@ Stopgaps to treat as stopgaps, working and tested but not to be deepened: `Playb
 
 An arrangement also needs what streaming alone does not give: a timeline model (data-blocks, positions, tracks, a tempo and meter map), editing, and committed multi-stream packets. What a committed multi-stream packet is (the `layers` kind) is deliberately undecided; see the Mixer section, which publishes none.
 
-## Data-block registry (rebuild, R0)
+## Data-block registry (rebuild, R0 and R1)
 
-`dataBlocks/` holds the ground-up registry (W-58, W-59). Nothing registers in it yet except tests; R1 registers the real types and moves callers (and the stored `DataBlock`) to the envelope. `dataBlockTypes.ts` stays until then.
+`dataBlocks/` holds the ground-up registry (W-58, W-59). R1 (W-60) registered the real packet types in `dataBlocks/types/` and moved the desk, Make source and capture onto it; the old `dataBlockTypes.ts` registry and the `DataBlock` type are gone.
 
 - Envelope (`registry.ts`): `{ schemaVersion, id, typeId, name, note?, createdAt, origin?, lineage?, payload }`, `payload` one of `{ kind: 'packet', packet }` or `{ kind: 'record', data }`. The type is stored; records have no version tree.
 - `registerDataBlockType(def)` (a duplicate id throws), `dataBlockTypes()`, `getDataBlockType(id)`, `dataBlockTypeOf(block)` (by stored `typeId`), `chooseTypeId(packet)`, `validateBlock`, `duplicateBlock`, `isBlockEmpty`, `auditionSupport(def)`, `auditionRefusal(block)`. A def: `{ id, label, payload, createBlank, preview?, editorId?, audition?, noAuditionReason?, duplicate?, isEmpty? }`, plus `accepts(packet)` on packet types (choose and validate only) and `validate`, `refs`, `mapRefs` on record types. No React: `preview` is an id or `{ id, options }`.
 - `acceptance.ts`: `registerConversion({ id, from, to, label, describe, convert })` per type pair; an `InputSpec` is `{ accepts, conversions? }`; `typesAccepting`, `reinterpretOptions`, `pickerFor` (exact, then reinterpret) and `applyConversion`. Nothing converts unless one is chosen and applied.
 - `dataBlockRefs.ts` (moved here): see "References and users" in "The desk".
+- `types/`: the built-in packet types (R1), one small file each plus `blank.ts` (blank packet helpers, `refuseWhenEmpty`) and `index.ts` (registers them once when first imported). A def may also carry `operators` (the inspector's edit actions). `isPacketBlock`, `makeSourceRefusal` and `DATA_BLOCK_SCHEMA_VERSION` live in `registry.ts`.
 - `testTypes.ts`: test-only types (pitch-set-like, rhythm-like, notes-like, collection record).
 
 ## Rules for extending the vocabulary

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Stack, Text, TextInput } from '@mantine/core';
-import type { DataBlock } from '../dataBlock';
+import type { PacketBlock } from '../dataBlock';
 import { useDesk } from '../desk';
 import {
   formatLength,
@@ -87,11 +87,11 @@ function PropertyField({ label, value, description, disabled, onCommit, ariaLabe
  * loop and time signature. Each edit goes through the desk's edit path as its own version and one
  * undo step. The inputs never touch the editor's selection (it lives in the editor).
  */
-export function NotesPropertiesPanel({ dataBlock }: { dataBlock: DataBlock }) {
+export function NotesPropertiesPanel({ dataBlock }: { dataBlock: PacketBlock }) {
   const { commitDataBlockEditById, latestDataBlockById, loading, locked } = useDesk();
   const [notice, setNotice] = useState<string | null>(null);
-  const applies = hasNotesProperties(dataBlock.packet);
-  const properties = readNotesProperties(dataBlock.packet);
+  const applies = hasNotesProperties(dataBlock.payload.packet);
+  const properties = readNotesProperties(dataBlock.payload.packet);
   const meter = properties.timeSignature;
   const disabled = loading || locked;
 
@@ -99,7 +99,7 @@ export function NotesPropertiesPanel({ dataBlock }: { dataBlock: DataBlock }) {
   function apply(change: Partial<NotesProperties>): string | null {
     // Built from the desk's packet as it is now, so a commit that landed since the last render
     // (the editor's, or another tab's) is not reverted.
-    const latest = latestDataBlockById(dataBlock.id)?.packet ?? dataBlock.packet;
+    const latest = latestDataBlockById(dataBlock.id)?.payload.packet ?? dataBlock.payload.packet;
     const edit = editNotesProperties(latest, change);
     if (!edit.ok) {
       return edit.error;
@@ -113,7 +113,9 @@ export function NotesPropertiesPanel({ dataBlock }: { dataBlock: DataBlock }) {
 
   /** The data-block's properties as the desk has them now, not as this render saw them. */
   function latestProperties() {
-    return readNotesProperties(latestDataBlockById(dataBlock.id)?.packet ?? dataBlock.packet);
+    return readNotesProperties(
+      latestDataBlockById(dataBlock.id)?.payload.packet ?? dataBlock.payload.packet
+    );
   }
 
   const positionField = (key: 'start' | 'loopStart', label: string, description: string) => (

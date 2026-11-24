@@ -78,6 +78,9 @@ function dataBlock(items: DataItem<NoteEventValue>[], extent = 8): DataPacket {
 const base = () =>
   dataBlock([item('a', 0, 1, [6000]), item('b', 2, 1, [6400]), item('c', 4, 2, [6000, 6400])]);
 
+/** Any block of the Notes type: operators come from the stored type, not the packet. */
+const notesBlock = { typeId: 'notes' };
+
 const none: Selection = { ids: [], range: null };
 const notes = (selection: Selection['ids'], range: Selection['range'] = null): Selection => ({
   ids: selection,
@@ -937,7 +940,7 @@ describe('unique ids for bulk copies', () => {
 describe('the data-block type registry actions', () => {
   it('registers the note actions on the Notes type with params and applicability', () => {
     const blank = base();
-    expect(operatorsOf(blank).map((action) => action.id)).toEqual([
+    expect(operatorsOf(notesBlock).map((action) => action.id)).toEqual([
       'scale',
       'reverse-time',
       'reverse-order',
@@ -955,12 +958,12 @@ describe('the data-block type registry actions', () => {
       'copy',
       'paste',
     ]);
-    expect(operatorsOf(blank)).toBe(notesOperators);
-    expect(operatorById(blank, 'scale')?.params.map((param) => param.id)).toEqual([
+    expect(operatorsOf(notesBlock)).toBe(notesOperators);
+    expect(operatorById(notesBlock, 'scale')?.params.map((param) => param.id)).toEqual([
       'factor',
       'mode',
     ]);
-    expect(operatorById(blank, 'nope')).toBeUndefined();
+    expect(operatorById(notesBlock, 'nope')).toBeUndefined();
     for (const action of notesOperators) {
       expect(action.applies(blank)).toBe(true);
       expect(action.label).toBeTruthy();
@@ -969,28 +972,28 @@ describe('the data-block type registry actions', () => {
   });
 
   it('only notes data-blocks implement them: other packets have none and cyclic note packets do not apply', () => {
-    expect(operatorsOf(packet('list', 'pitch', []))).toEqual([]);
-    expect(operatorsOf(packet('events', 'pitchClass', []))).toEqual([]);
+    expect(operatorsOf({ typeId: 'pitch-set' })).toEqual([]);
+    expect(operatorsOf({ typeId: 'pitch-classes' })).toEqual([]);
     const cyclic: DataPacket = {
       ...base(),
       frame: { ...base().frame!, topology: 'cyclic' },
     };
-    expect(operatorById(cyclic, 'scale')?.applies(cyclic)).toBe(false);
+    expect(operatorById(notesBlock, 'scale')?.applies(cyclic)).toBe(false);
   });
 
   it('runs from a context with typed (string) params, and refuses bad params with a message', () => {
     const context = { selection: none, gridUnit: 1, newId: () => 'n' };
-    const scale = operatorById(base(), 'scale')!;
+    const scale = operatorById(notesBlock, 'scale')!;
     expect(ok(scale.run(base(), context, { factor: '2', mode: 'individual' })).items).toHaveLength(
       3
     );
     expect(refused(scale.run(base(), context, { factor: 'nope', mode: 'whole' }))).toMatch(
       /factor/
     );
-    const rotate = operatorById(base(), 'rotate-time')!;
+    const rotate = operatorById(notesBlock, 'rotate-time')!;
     expect(refused(rotate.run(base(), context, { amount: '1.5' }))).toMatch(/whole number/);
     expect(onset(ok(rotate.run(base(), context, { amount: '-1' })), 'a')).toBe(7);
-    const transpose = operatorById(base(), 'transpose')!;
+    const transpose = operatorById(notesBlock, 'transpose')!;
     expect(refused(transpose.run(base(), context, { semitones: '' }))).toMatch(/number/);
     expect(pitches(ok(transpose.run(base(), context, { semitones: '12' })), 'a')).toEqual([7200]);
   });
@@ -1389,7 +1392,7 @@ describe('the second-pass registry actions', () => {
   });
 
   it('registers invert, the three make-equal actions, copy and paste with their param kinds', () => {
-    const ids = operatorsOf(base()).map((action) => action.id);
+    const ids = operatorsOf(notesBlock).map((action) => action.id);
     expect(ids.slice(-6)).toEqual([
       'invert',
       'equal-duration',
@@ -1398,19 +1401,21 @@ describe('the second-pass registry actions', () => {
       'copy',
       'paste',
     ]);
-    expect(operatorById(base(), 'invert')?.params).toEqual([
+    expect(operatorById(notesBlock, 'invert')?.params).toEqual([
       { id: 'axis', label: 'Axis', type: 'pick-pitch', optional: true },
     ]);
-    expect(operatorById(base(), 'equal-duration')?.params).toEqual([
+    expect(operatorById(notesBlock, 'equal-duration')?.params).toEqual([
       { id: 'duration', label: 'Length', type: 'duration', optional: true },
     ]);
-    expect(operatorById(base(), 'equal-velocity')?.params[0]).toMatchObject({ type: 'number' });
-    expect(operatorById(base(), 'equal-pitch')?.params[0]).toMatchObject({ type: 'pick-pitch' });
-    expect(operatorById(base(), 'equal-pitch')?.params[0].optional).toBeUndefined();
+    expect(operatorById(notesBlock, 'equal-velocity')?.params[0]).toMatchObject({ type: 'number' });
+    expect(operatorById(notesBlock, 'equal-pitch')?.params[0]).toMatchObject({
+      type: 'pick-pitch',
+    });
+    expect(operatorById(notesBlock, 'equal-pitch')?.params[0].optional).toBeUndefined();
   });
 
   it('invert: no axis is the default, a picked pitch (midicents) is the axis', () => {
-    const invert = operatorById(base(), 'invert')!;
+    const invert = operatorById(notesBlock, 'invert')!;
     expect(pitches(ok(invert.run(base(), context(), {})), 'a')).toEqual([6400]);
     expect(pitches(ok(invert.run(base(), context(), { axis: 6000 })), 'b')).toEqual([5600]);
     expect(pitches(ok(invert.run(base(), context(), { axis: '6000' })), 'b')).toEqual([5600]);
@@ -1419,20 +1424,20 @@ describe('the second-pass registry actions', () => {
   });
 
   it('make equal: typed duration (grid fraction) and velocity, defaults when empty, required pitch', () => {
-    const duration = operatorById(base(), 'equal-duration')!;
+    const duration = operatorById(notesBlock, 'equal-duration')!;
     expect(length(ok(duration.run(base(), context(), { duration: '1/8' })), 'c')).toBe(0.5);
     expect(length(ok(duration.run(base(), context(), {})), 'c')).toBe(1);
     expect(refused(duration.run(base(), context(), { duration: 'abc' }))).toMatch(/quarter notes/);
-    const velocity = operatorById(base(), 'equal-velocity')!;
+    const velocity = operatorById(notesBlock, 'equal-velocity')!;
     expect(value(ok(velocity.run(base(), context(), { velocity: '40%' })), 'b').velocity).toBe(0.4);
     expect(refused(velocity.run(base(), context(), { velocity: '300' }))).toMatch(/1 to 100/);
-    const pitch = operatorById(base(), 'equal-pitch')!;
+    const pitch = operatorById(notesBlock, 'equal-pitch')!;
     expect(pitches(ok(pitch.run(base(), context(), { pitch: 7200 })), 'c')).toEqual([7200]);
     expect(refused(pitch.run(base(), context(), {}))).toMatch(/Pick a pitch/);
   });
 
   it('copy returns the clipboard and the same packet; paste reads it from the context', () => {
-    const copy = operatorById(base(), 'copy')!;
+    const copy = operatorById(notesBlock, 'copy')!;
     const source = base();
     const copied = copy.run(source, context(notes(['a', 'b'])), {});
     if (!copied.ok) {
@@ -1442,7 +1447,7 @@ describe('the second-pass registry actions', () => {
     expect(copied.clipboard?.notes).toHaveLength(2);
     expect(copied.message).toBe('Copied 2 notes.');
     expect(refused(copy.run(source, context(), {}))).toMatch(/Select the notes/);
-    const paste = operatorById(base(), 'paste')!;
+    const paste = operatorById(notesBlock, 'paste')!;
     expect(refused(paste.run(source, context(), {}))).toMatch(/clipboard is empty/);
     const pasted = paste.run(source, { ...context(), clipboard: copied.clipboard }, {});
     if (!pasted.ok) {

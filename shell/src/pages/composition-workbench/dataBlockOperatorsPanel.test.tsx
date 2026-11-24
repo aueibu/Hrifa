@@ -5,7 +5,7 @@ import { CompositionInspector } from './components/CompositionInspector';
 import { DataBlockOperatorsPanel } from './components/DataBlockOperatorsPanel';
 import { NotesEditor } from './components/NotesEditor';
 import { CompositionSettingsProvider } from './compositionSettings';
-import type { DataBlock } from './dataBlock';
+import type { PacketBlock } from './dataBlock';
 import { DeskProvider, useDesk } from './desk';
 import { historyChangeCount, redo, resetHistory, undo } from './history';
 import type { NoteEventValue } from './melodicization';
@@ -88,25 +88,29 @@ function oldDataBlock(
   notes = [seedNote('n1', 0, 6000), seedNote('n2', 2, 6400), seedNote('n3', 4, 6700)]
 ) {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id: 'old',
     name: 'old',
     createdAt: '2026-11-11T00:00:00Z',
-    packet: {
-      ...packet('events', 'note', notes),
-      frame: {
-        topology: 'linear',
-        unit: 'quarterNote',
-        extent: 8,
-        origin: 0,
-        musicalExtent: musicalDuration(8),
-        musicalOrigin: musicalPosition(0),
+    payload: {
+      kind: 'packet',
+      packet: {
+        ...packet('events', 'note', notes),
+        frame: {
+          topology: 'linear',
+          unit: 'quarterNote',
+          extent: 8,
+          origin: 0,
+          musicalExtent: musicalDuration(8),
+          musicalOrigin: musicalPosition(0),
+        },
       },
     },
-  } as DataBlock;
+  } as PacketBlock;
 }
 
-async function open(seed: DataBlock) {
+async function open(seed: PacketBlock) {
   render(
     <CompositionSettingsProvider>
       <DeskProvider>
@@ -123,7 +127,7 @@ async function open(seed: DataBlock) {
 
 const rowY = (midi: number) => (127 - midi) * 22 + 11;
 const button = (name: string) => screen.getByRole('button', { name });
-const items = () => desk.dataBlocks[0].packet.items;
+const items = () => desk.dataBlocks[0].payload.packet.items;
 const noteValue = (id: string) => items().find((item) => item.id === id)!.value as NoteEventValue;
 const pitchOf = (id: string) => noteValue(id).pitches;
 const versions = () => desk.dataBlocks[0].lineage?.versions ?? [];
@@ -173,7 +177,10 @@ describe('the operators panel', () => {
   });
 
   it('is disabled for a data-block that is not a notes data-block', async () => {
-    const other: DataBlock = { ...oldDataBlock(), packet: packet('list', 'pitch', []) };
+    const other: PacketBlock = {
+      ...oldDataBlock(),
+      payload: { kind: 'packet', packet: packet('list', 'pitch', []) },
+    };
     render(
       <CompositionSettingsProvider>
         <DeskProvider>
@@ -199,9 +206,15 @@ describe('the operators panel', () => {
 
   it('is disabled for a cyclic note packet', async () => {
     const seed = oldDataBlock();
-    const cyclic: DataBlock = {
+    const cyclic: PacketBlock = {
       ...seed,
-      packet: { ...seed.packet, frame: { ...seed.packet.frame!, topology: 'cyclic' } },
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...seed.payload.packet,
+          frame: { ...seed.payload.packet.frame!, topology: 'cyclic' },
+        },
+      },
     };
     render(
       <CompositionSettingsProvider>
@@ -245,9 +258,9 @@ describe('the operators panel', () => {
       'original',
       'transform-transpose',
     ]);
-    expect(desk.dataBlocks[0].packet.metadata?.notes).toBeDefined();
+    expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toBeDefined();
     act(() => undo());
-    expect(desk.dataBlocks[0].packet).toEqual(oldDataBlock().packet);
+    expect(desk.dataBlocks[0].payload.packet).toEqual(oldDataBlock().payload.packet);
     expect(pitchOf('n2')).toEqual([6400]);
   });
 
@@ -454,7 +467,7 @@ describe('the operators panel', () => {
     await userEvent.click(button('Legato'));
     expect(screen.getByText('Nothing to change.')).toBeInTheDocument();
     expect(desk.dataBlocks[0].lineage).toBeUndefined();
-    expect(desk.dataBlocks[0].packet.metadata?.notes).toBeUndefined();
+    expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toBeUndefined();
   });
 
   it('shows the desk error when the commit itself fails, and changes nothing', async () => {
@@ -829,30 +842,29 @@ describe('the end-to-end path of every existing action button (real editor, real
       shiftKey: true,
     });
     fireEvent.pointerUp(roll, { clientX: 20, clientY: rowY(60), pointerId: 1 });
-    const before = desk.dataBlocks[0].packet;
+    const before = desk.dataBlocks[0].payload.packet;
     await userEvent.click(button(name));
     if (name === 'Invert') {
       fireEvent.keyDown(roll, { key: 'Enter' });
     }
-    const after = desk.dataBlocks[0].packet;
+    const after = desk.dataBlocks[0].payload.packet;
     expect(after.items).not.toEqual(before.items);
     expect(versions().map((version) => version.operation)).toEqual(['original', operation]);
     act(() => undo());
-    expect(desk.dataBlocks[0].packet).toEqual(before);
+    expect(desk.dataBlocks[0].payload.packet).toEqual(before);
   });
 });
 
 describe('the rotation session through the real editor and panel', () => {
   const frozenAqhae = () => {
     const seed = oldDataBlock();
-    const held = freezeNotesProperties(seed.packet);
-    return {
-      ...seed,
-      packet: {
-        ...held,
-        items: [seedNote('q', 0, 6900, 1), seedNote('h', 1, 6900, 2), seedNote('e', 3, 6900, 0.5)],
-      },
-    } as DataBlock;
+    const held = freezeNotesProperties(seed.payload.packet);
+    const items = [
+      seedNote('q', 0, 6900, 1),
+      seedNote('h', 1, 6900, 2),
+      seedNote('e', 3, 6900, 0.5),
+    ];
+    return { ...seed, payload: { kind: 'packet', packet: { ...held, items } } } as PacketBlock;
   };
   const sound = () =>
     items().reduce((sum, item) => {
@@ -994,9 +1006,9 @@ function TwoDataBlocks() {
 
 describe('copy and paste across data-blocks', () => {
   const second = () =>
-    ({ ...oldDataBlock([seedNote('m1', 1, 7200, 1, 0.3)]), id: 'two', name: 'two' }) as DataBlock;
+    ({ ...oldDataBlock([seedNote('m1', 1, 7200, 1, 0.3)]), id: 'two', name: 'two' }) as PacketBlock;
   const dataBlockOf = (id: string) => desk.dataBlocks.find((entry) => entry.id === id)!;
-  const itemsOf = (id: string) => dataBlockOf(id).packet.items;
+  const itemsOf = (id: string) => dataBlockOf(id).payload.packet.items;
 
   async function openTwo() {
     render(
@@ -1131,11 +1143,11 @@ describe('copy and paste across data-blocks', () => {
     // A click on empty space clears the selection.
     fireEvent.pointerDown(roll2, { clientX: 400, clientY: rowY(100), pointerId: 1 });
     fireEvent.pointerUp(roll2, { clientX: 400, clientY: rowY(100), pointerId: 1 });
-    const before = dataBlockOf('two').packet;
+    const before = dataBlockOf('two').payload.packet;
     fireEvent.keyDown(roll2, { key: 'v', ctrlKey: true });
     const added = itemsOf('two')[1].value as NoteEventValue;
     expect(added.onset.quarterNotes).toEqual({ numerator: 0, denominator: 1 });
-    expect(dataBlockOf('two').packet.frame).toEqual(before.frame);
+    expect(dataBlockOf('two').payload.packet.frame).toEqual(before.frame);
   });
 
   it('switching data-blocks cancels a waiting pick', async () => {

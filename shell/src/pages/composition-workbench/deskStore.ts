@@ -1,10 +1,13 @@
-import { acceptsDataBlocks, type DataBlock } from './dataBlock';
+import { acceptsDataBlocks, isLegacyDataBlock, type PacketBlock } from './dataBlock';
+// Registers the built-in data-block types before any stored block is checked against them.
+import './dataBlocks/types';
 
 /**
  * The desk's storage: IndexedDB, by a small hand-written wrapper. Each data-block is its own record (so a
  * write touches only data-blocks that changed), plus one `order` record naming them in desk order and a
- * `rev` counter that is bumped on every write. The stored data-block is the v1 `DataBlock`, lineage
- * included. Every operation opens and closes its own connection, and all of them run through one
+ * `rev` counter that is bumped on every write. The stored data-block is the registry's `PacketBlock`
+ * (envelope `schemaVersion` 2, with its `typeId`), lineage included. Blocks of the earlier envelope
+ * (`schemaVersion` 1) are dropped on load, not migrated (baseline reset, W-60). Every operation opens and closes its own connection, and all of them run through one
  * queue, so reads and writes never interleave within a tab. Across tabs, `rev` is compared inside
  * the write transaction, so a tab never writes over a desk it has not seen.
  *
@@ -127,9 +130,9 @@ async function withDb<T>(use: (db: IDBDatabase) => Promise<T>) {
 
 export interface DeskWrite {
   /** The whole desk in order. */
-  dataBlocks: DataBlock[];
+  dataBlocks: PacketBlock[];
   /** Data-blocks (by reference) already stored, so only changed or new ones are written. */
-  stored: ReadonlyMap<string, DataBlock>;
+  stored: ReadonlyMap<string, unknown>;
   /** The `rev` this tab last read or wrote; the write is refused if the store has moved on. */
   expectedRev: number;
 }
@@ -218,9 +221,9 @@ export function resetPersistRequest() {
 }
 
 export interface LoadedDesk {
-  dataBlocks: DataBlock[];
+  dataBlocks: PacketBlock[];
   /** The data-blocks known to be in IndexedDB (by reference), for the next incremental write. */
-  stored: Map<string, DataBlock>;
+  stored: Map<string, unknown>;
   /** The stored `rev` this was read at; the next write must expect it. */
   rev: number;
   /** False when the stored desk could not be read: nothing may be written over it. */
@@ -229,8 +232,8 @@ export interface LoadedDesk {
   error?: string;
 }
 
-const storedOf = (dataBlocks: DataBlock[]) =>
-  new Map(dataBlocks.map((dataBlock) => [dataBlock.id, dataBlock] as const));
+const storedOf = (records: { id?: unknown }[]) =>
+  new Map(records.map((record) => [String(record.id), record as unknown] as const));
 
 interface RawDesk {
   order: unknown[] | null;
@@ -275,7 +278,7 @@ export function loadDesk(): Promise<LoadedDesk> {
     const { rev } = raw;
     if (raw.order) {
       const byId = new Map(raw.dataBlocks.map((dataBlock) => [dataBlock.id, dataBlock]));
-      const records: unknown[] = [];
+      const records: { id?: unknown }[] = [];
       let missing = 0;
       raw.order.forEach((id) => {
         const record = byId.get(id);
@@ -288,8 +291,15 @@ export function loadDesk(): Promise<LoadedDesk> {
       });
       const orphans = byId.size;
       records.push(...byId.values());
-      if (acceptsDataBlocks(records)) {
+      // The earlier envelope is dropped, not migrated (W-60). The dropped records stay in `stored`,
+      // so the next write deletes them from the database instead of leaving orphans behind.
+      const dropped = records.filter(isLegacyDataBlock);
+      const current = records.filter((record) => !isLegacyDataBlock(record));
+      if (acceptsDataBlocks(current)) {
         const warnings = [
+          dropped.length > 0
+            ? `${dropped.length} ${plural(dropped.length, 'data-block', 'data-blocks')} from an earlier version dropped`
+            : '',
           missing > 0
             ? `${missing} missing ${plural(missing, 'data-block', 'data-blocks')} skipped`
             : '',
@@ -298,8 +308,8 @@ export function loadDesk(): Promise<LoadedDesk> {
             : '',
         ].filter(Boolean);
         return {
-          dataBlocks: records,
-          stored: storedOf(records),
+          dataBlocks: current,
+          stored: storedOf([...dropped, ...current]),
           rev,
           writable: true,
           ...(warnings.length
@@ -333,7 +343,7 @@ export interface StoredProject {
 
 /** A saved project with its whole desk, lineage included (null: the desk is left as it is on open). */
 export interface ProjectRecord extends Omit<StoredProject, 'hasDesk'> {
-  desk: DataBlock[] | null;
+  desk: PacketBlock[] | null;
 }
 
 /** Projects, newest first. Reads no desks. */
@@ -402,10 +412,14 @@ export function getProject(id: string): Promise<ProjectRecord | null> {
       if (!hasDesk) {
         return { ...rest, desk: null };
       }
-      if (!desks || !acceptsDataBlocks(desks.desk)) {
+      // A desk saved before the registry rebuild (earlier envelope) opens empty: nothing migrates (W-60).
+      const desk = Array.isArray(desks?.desk)
+        ? (desks.desk as unknown[]).filter((entry) => !isLegacyDataBlock(entry))
+        : undefined;
+      if (!desk || !acceptsDataBlocks(desk)) {
         throw new Error('The saved desk in this project is damaged or from a newer version.');
       }
-      return { ...rest, desk: desks.desk };
+      return { ...rest, desk };
     })
   );
 }

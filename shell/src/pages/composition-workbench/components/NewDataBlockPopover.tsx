@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Button, NumberInput, Popover, Select, Stack, Text } from '@mantine/core';
 import { useCompositionSettings } from '../compositionSettings';
-import type { DataBlock } from '../dataBlock';
+import type { PacketBlock } from '../dataBlock';
 import {
   MAX_DATA_BLOCK_BARS,
   MIN_DATA_BLOCK_BARS,
   useDataBlockDefaults,
   writeDataBlockDefaults,
 } from '../dataBlockPreferences';
-import { barsLength, dataBlockTypeById, listDataBlockTypes } from '../dataBlockTypes';
+import { dataBlockTypes } from '../dataBlocks/registry';
+import { barsLength } from '../dataBlockTypes';
 import { useDesk } from '../desk';
 
 /**
@@ -16,13 +17,16 @@ import { useDesk } from '../desk';
  * length at once (one undo step) and hands it to `onCreated` so it can be opened; the chevron beside
  * it sets those defaults. The defaults are a per-viewer preference (see dataBlockPreferences.ts).
  */
-export function NewDataBlockPopover({ onCreated }: { onCreated?(dataBlock: DataBlock): void }) {
+export function NewDataBlockPopover({ onCreated }: { onCreated?(dataBlock: PacketBlock): void }) {
   const { addBlankDataBlock, loading, locked } = useDesk();
   const { settings } = useCompositionSettings();
   const [defaults] = useDataBlockDefaults();
   const [opened, setOpened] = useState(false);
-  const types = listDataBlockTypes();
-  const typeId = dataBlockTypeById(defaults.typeId) ? defaults.typeId : (types[0]?.id ?? '');
+  // Only types with an editor can be started blank from here: a data-block nobody can edit is not a start.
+  const types = dataBlockTypes().filter((type) => type.editorId !== undefined);
+  const typeId = types.some((type) => type.id === defaults.typeId)
+    ? defaults.typeId
+    : (types[0]?.id ?? '');
   const refusal = loading
     ? 'The desk is still loading, so a data-block cannot be added yet.'
     : locked

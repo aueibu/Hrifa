@@ -1,6 +1,6 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { Accordion, Button, Group, SegmentedControl, Stack, Text, TextInput } from '@mantine/core';
-import type { DataBlock } from '../dataBlock';
+import type { PacketBlock } from '../dataBlock';
 import { runOperator } from '../dataBlockOperatorRunner';
 import type { OperatorParams } from '../dataBlockOperators';
 import { operatorById } from '../dataBlockTypes';
@@ -30,7 +30,7 @@ function stepRotation(text: string, delta: number): number {
  * selection lives in the editor, the panel only reads it. The controls sit in four collapsible
  * sections (Time, Pitch, Values, Clipboard), several open at once.
  */
-export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: DataBlock }) {
+export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock }) {
   const { commitDataBlockEditById, latestDataBlockById, loading, locked } = useDesk();
   const editor = useNoteEditorState(dataBlock.id);
   const [notice, setNotice] = useState<{ text: string; refused: boolean } | null>(null);
@@ -55,8 +55,8 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: DataBlock })
 
   /** Whether this data-block's type implements the action and it applies to the packet. */
   function available(id: string) {
-    const action = operatorById(dataBlock.packet, id);
-    return action !== undefined && action.applies(dataBlock.packet);
+    const action = operatorById(dataBlock, id);
+    return action !== undefined && action.applies(dataBlock.payload.packet);
   }
 
   /** Runs an action through the shared runner and shows what happened. Never throws. */
@@ -65,7 +65,7 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: DataBlock })
     readNoteEditor(dataBlock.id)?.cancelPick?.();
     const outcome = runOperator({
       dataBlockId: dataBlock.id,
-      fallback: dataBlock.packet,
+      fallback: dataBlock,
       actionId: id,
       params,
       desk: { commitDataBlockEditById, latestDataBlockById },

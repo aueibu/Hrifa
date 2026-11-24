@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotesEditor } from './components/NotesEditor';
 import { CompositionSettingsProvider } from './compositionSettings';
-import type { DataBlock } from './dataBlock';
+import type { PacketBlock } from './dataBlock';
 import { DeskProvider, useDesk } from './desk';
 import { resetHistory } from './history';
 import type { NoteEventValue } from './melodicization';
@@ -36,25 +36,29 @@ function seedNote(id: string, start: number, midicents: number): DataItem<NoteEv
   };
 }
 
-function seededDataBlock(): DataBlock {
+function seededDataBlock(): PacketBlock {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id: 'seeded',
     name: 'Seeded',
     createdAt: '2026-11-11T00:00:00Z',
-    packet: {
-      ...packet('events', 'note', [
-        seedNote('n1', 0, 6000),
-        seedNote('n2', 2, 6400),
-        seedNote('n3', 4, 6700),
-      ]),
-      frame: {
-        topology: 'linear',
-        unit: 'quarterNote',
-        extent: 8,
-        origin: 0,
-        musicalExtent: musicalDuration(8),
-        musicalOrigin: musicalPosition(0),
+    payload: {
+      kind: 'packet',
+      packet: {
+        ...packet('events', 'note', [
+          seedNote('n1', 0, 6000),
+          seedNote('n2', 2, 6400),
+          seedNote('n3', 4, 6700),
+        ]),
+        frame: {
+          topology: 'linear',
+          unit: 'quarterNote',
+          extent: 8,
+          origin: 0,
+          musicalExtent: musicalDuration(8),
+          musicalOrigin: musicalPosition(0),
+        },
       },
     },
   };

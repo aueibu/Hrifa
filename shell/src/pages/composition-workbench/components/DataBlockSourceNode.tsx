@@ -35,9 +35,9 @@ export function DataBlockSourceNode({
         dataBlock && (
           <>
             <Badge variant="outline">
-              {dataBlock.packet.kind} | {dataBlock.packet.domain}
+              {dataBlock.payload.packet.kind} | {dataBlock.payload.packet.domain}
             </Badge>
-            <Badge variant="outline">{dataBlock.packet.items.length} items</Badge>
+            <Badge variant="outline">{dataBlock.payload.packet.items.length} items</Badge>
           </>
         )
       }
@@ -54,7 +54,7 @@ export function DataBlockSourceNode({
     >
       {dataBlock ? (
         <div className={classes.screen}>
-          <DataBlockPreview packet={dataBlock.packet} />
+          <DataBlockPreview packet={dataBlock.payload.packet} />
         </div>
       ) : (
         <Alert color="yellow" title="This data-block is no longer on the desk">

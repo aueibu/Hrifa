@@ -192,7 +192,7 @@ function Toggle() {
 
 const rowY = (midi: number) => (127 - midi) * 22 + 11;
 const pitches = () =>
-  desk.dataBlocks[0].packet.items
+  desk.dataBlocks[0].payload.packet.items
     .flatMap((item) => (item.value as NoteEventValue).pitches)
     .sort((a, b) => a - b);
 

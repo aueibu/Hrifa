@@ -4,7 +4,7 @@ import { dockerHolding, parseWorkspaceStore, type WorkspaceStore } from '../../l
 import { CompositionWorkbenchPage } from '../CompositionWorkbench.page';
 import type { ChordSession } from './chordInput/chordSession';
 import { defaultProjectPitchSet } from './compositionSettings';
-import type { DataBlock } from './dataBlock';
+import type { PacketBlock } from './dataBlock';
 import { seedDesk } from './deskTestUtils';
 import { resetHistory } from './history';
 import { WORKBENCH_KNOWN_IDS } from './layout/workbenchWorkspaces';
@@ -61,7 +61,7 @@ vi.mock('./WorkbenchSessions', async (importOriginal) => {
 });
 const chordSession = () => seen.chord as ChordSession;
 
-function notesDataBlock(id: string, name: string): DataBlock {
+function notesDataBlock(id: string, name: string): PacketBlock {
   const value: NoteEventValue = {
     onset: musicalPosition(0),
     interOnset: musicalDuration(1),
@@ -70,19 +70,23 @@ function notesDataBlock(id: string, name: string): DataBlock {
     velocity: 1,
   };
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id,
     name,
     createdAt: '2026-11-11T00:00:00Z',
-    packet: {
-      ...packet('events', 'note', [{ id: `${id}:n`, value, label: 'n', provenance: [] }]),
-      frame: {
-        topology: 'linear',
-        unit: 'quarterNote',
-        extent: 8,
-        origin: 0,
-        musicalExtent: musicalDuration(8),
-        musicalOrigin: musicalPosition(0),
+    payload: {
+      kind: 'packet',
+      packet: {
+        ...packet('events', 'note', [{ id: `${id}:n`, value, label: 'n', provenance: [] }]),
+        frame: {
+          topology: 'linear',
+          unit: 'quarterNote',
+          extent: 8,
+          origin: 0,
+          musicalExtent: musicalDuration(8),
+          musicalOrigin: musicalPosition(0),
+        },
       },
     },
   };

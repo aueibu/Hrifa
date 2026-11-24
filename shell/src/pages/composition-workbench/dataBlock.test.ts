@@ -13,8 +13,9 @@ import {
   pitchClassConversionRefusal,
   type PitchClassConversionResult,
   type PitchClassEventValue,
-  type DataBlock,
+  type PacketBlock,
 } from './dataBlock';
+import './dataBlocks/types';
 import { renderDesk } from './deskTestUtils';
 import { melodicize, type NoteEventValue } from './melodicization';
 import { packet, type DataItem, type DataPacket } from './model';
@@ -68,7 +69,7 @@ describe('captureDataBlock', () => {
     if (!result.ok) {
       throw new Error(result.error);
     }
-    const items = result.dataBlock.packet.items as DataItem<NoteEventValue>[];
+    const items = result.dataBlock.payload.packet.items as DataItem<NoteEventValue>[];
     expect(items.map((item) => item.id)).toEqual(ids);
     expect(rationalToNumber(items[0].value.onset.quarterNotes)).toBe(0);
     const original = source.items[2].value.onset.quarterNotes;
@@ -77,7 +78,7 @@ describe('captureDataBlock', () => {
       rationalToNumber(original) - rationalToNumber(first),
       12
     );
-    expect(result.dataBlock.packet.frame).toMatchObject({
+    expect(result.dataBlock.payload.packet.frame).toMatchObject({
       topology: 'linear',
       origin: 0,
       unit: 'quarterNote',
@@ -90,11 +91,11 @@ describe('captureDataBlock', () => {
     if (!result.ok) {
       throw new Error(result.error);
     }
-    const [item] = result.dataBlock.packet.items as DataItem<NoteEventValue>[];
+    const [item] = result.dataBlock.payload.packet.items as DataItem<NoteEventValue>[];
     expect(item.value.pitches).toEqual(source.items[2].value.pitches);
     expect(item.value.velocity).toBe(source.items[2].value.velocity);
-    expect(result.dataBlock.packet.kind).toBe('events');
-    expect(result.dataBlock.packet.domain).toBe('note');
+    expect(result.dataBlock.payload.packet.kind).toBe('events');
+    expect(result.dataBlock.payload.packet.domain).toBe('note');
   });
 
   it('appends capture provenance after the inherited chain, without touching the source', () => {
@@ -104,7 +105,7 @@ describe('captureDataBlock', () => {
     if (!result.ok) {
       throw new Error(result.error);
     }
-    const [item] = result.dataBlock.packet.items;
+    const [item] = result.dataBlock.payload.packet.items;
     const last = item.provenance[item.provenance.length - 1];
     expect(last).toMatchObject({
       sourceNodeInstance: 'mel-1',
@@ -125,7 +126,7 @@ describe('captureDataBlock', () => {
     if (!result.ok) {
       throw new Error(result.error);
     }
-    expect(result.dataBlock.packet.items.map((item) => item.id)).toEqual([
+    expect(result.dataBlock.payload.packet.items.map((item) => item.id)).toEqual([
       source.items[0].id,
       source.items[3].id,
     ]);
@@ -143,8 +144,8 @@ describe('captureDataBlock', () => {
       throw new Error(result.error);
     }
     expect(result.warnings).toHaveLength(1);
-    expect(result.dataBlock.packet.frame?.grouping).toBeUndefined();
-    expect(result.dataBlock.packet.frame?.topology).toBe('linear');
+    expect(result.dataBlock.payload.packet.frame?.grouping).toBeUndefined();
+    expect(result.dataBlock.payload.packet.frame?.topology).toBe('linear');
   });
 
   it('rejects an empty selection and ids that are not in the source', () => {
@@ -160,9 +161,9 @@ describe('captureDataBlock', () => {
     if (!result.ok) {
       throw new Error(result.error);
     }
-    expect(result.dataBlock.packet.kind).toBe('list');
-    expect(result.dataBlock.packet.frame).toEqual(source.frame);
-    expect(result.dataBlock.packet.items.map((item) => item.value)).toEqual([2, 1, 1, 2]);
+    expect(result.dataBlock.payload.packet.kind).toBe('list');
+    expect(result.dataBlock.payload.packet.frame).toEqual(source.frame);
+    expect(result.dataBlock.payload.packet.items.map((item) => item.value)).toEqual([2, 1, 1, 2]);
     expect(result.dataBlock.origin?.nodeInstance).toBe('mel-1');
     expect(result.dataBlock.origin).not.toHaveProperty('itemIds');
   });
@@ -176,17 +177,21 @@ describe('captureDataBlock', () => {
     }
     const { dataBlock } = result;
     expect(dataBlock.origin).toEqual({ nodeInstance: 'mel-1', portId: 'notes' });
-    expect(dataBlock.packet.items.map((item) => item.id)).toEqual(source.items.map((i) => i.id));
-    expect(dataBlock.packet.items.at(-1)?.provenance.at(-1)?.transformation).toBe('capture');
-    expect(dataBlock.packet).not.toBe(source);
-    expect(dataBlock.packet.frame).not.toBe(source.frame);
+    expect(dataBlock.payload.packet.items.map((item) => item.id)).toEqual(
+      source.items.map((i) => i.id)
+    );
+    expect(dataBlock.payload.packet.items.at(-1)?.provenance.at(-1)?.transformation).toBe(
+      'capture'
+    );
+    expect(dataBlock.payload.packet).not.toBe(source);
+    expect(dataBlock.payload.packet.frame).not.toBe(source.frame);
     expect(() => JSON.stringify(dataBlock)).not.toThrow();
     expect(JSON.stringify(source)).toBe(before);
     // Mutating the source afterwards does not reach the snapshot.
     source.items[0].value.velocity = 0.123;
-    expect((dataBlock.packet.items as DataItem<NoteEventValue>[])[0].value.velocity).not.toBe(
-      0.123
-    );
+    expect(
+      (dataBlock.payload.packet.items as DataItem<NoteEventValue>[])[0].value.velocity
+    ).not.toBe(0.123);
   });
 
   it('refuses a partial capture of a kind it cannot select from, instead of guessing', () => {
@@ -212,13 +217,13 @@ describe('captureDataBlock', () => {
     const restored: unknown = JSON.parse(JSON.stringify([result.dataBlock]));
     expect(acceptsDataBlocks(restored)).toBe(true);
     expect(restored).toEqual([result.dataBlock]);
-    expect(acceptsDataBlocks([{ ...result.dataBlock, schemaVersion: 2 }])).toBe(false);
+    expect(acceptsDataBlocks([{ ...result.dataBlock, schemaVersion: 3 }])).toBe(false);
     expect(acceptsDataBlocks('nope')).toBe(false);
   });
 });
 
 describe('editDataBlockNote', () => {
-  function dataBlockOf(): DataBlock {
+  function dataBlockOf(): PacketBlock {
     const source = notes();
     const result = captureDataBlock({
       ...base,
@@ -237,7 +242,7 @@ describe('editDataBlockNote', () => {
     const before = JSON.stringify(original);
     const edited = editDataBlockNote(original, 'second');
     expect(edited.note).toBe('second');
-    expect(edited.packet).toBe(original.packet);
+    expect(edited.payload.packet).toBe(original.payload.packet);
     expect(edited.id).toBe(original.id);
     expect(edited.createdAt).toBe(original.createdAt);
     expect({ ...edited, note: undefined }).toEqual({ ...original, note: undefined });
@@ -251,19 +256,19 @@ describe('editDataBlockNote', () => {
       JSON.stringify([editDataBlockNote(dataBlockOf(), 'kept')])
     );
     expect(acceptsDataBlocks(restored)).toBe(true);
-    expect((restored as DataBlock[])[0].note).toBe('kept');
+    expect((restored as PacketBlock[])[0].note).toBe('kept');
   });
 
   it('still loads a saved v1 desk that has no note, and can add one', () => {
     const { note: _note, ...noNote } = dataBlockOf();
     const restored: unknown = JSON.parse(JSON.stringify([noNote]));
     expect(acceptsDataBlocks(restored)).toBe(true);
-    expect(editDataBlockNote((restored as DataBlock[])[0], 'added').note).toBe('added');
+    expect(editDataBlockNote((restored as PacketBlock[])[0], 'added').note).toBe('added');
   });
 });
 
 describe('duplicateDataBlock', () => {
-  function dataBlockOf(): DataBlock {
+  function dataBlockOf(): PacketBlock {
     const source = notes();
     const result = captureDataBlock({
       ...base,
@@ -286,23 +291,23 @@ describe('duplicateDataBlock', () => {
     expect(copy.name).toBe('Gesture (variation)');
     expect(copy.createdAt).toBe(request.createdAt);
     expect(copy.note).toBe('first');
-    expect(copy.packet.items.map((item) => item.id)).toEqual(
-      original.packet.items.map((item) => item.id)
+    expect(copy.payload.packet.items.map((item) => item.id)).toEqual(
+      original.payload.packet.items.map((item) => item.id)
     );
-    expect(copy.packet.items.map((item) => item.value)).toEqual(
-      original.packet.items.map((item) => item.value)
+    expect(copy.payload.packet.items.map((item) => item.value)).toEqual(
+      original.payload.packet.items.map((item) => item.value)
     );
-    expect(copy.packet.frame).toEqual(original.packet.frame);
-    expect(copy.packet).not.toBe(original.packet);
-    expect(copy.packet.items[0].value).not.toBe(original.packet.items[0].value);
+    expect(copy.payload.packet.frame).toEqual(original.payload.packet.frame);
+    expect(copy.payload.packet).not.toBe(original.payload.packet);
+    expect(copy.payload.packet.items[0].value).not.toBe(original.payload.packet.items[0].value);
   });
 
   it('appends a duplicate provenance step to every item and leaves the original unchanged', () => {
     const original = dataBlockOf();
     const before = JSON.stringify(original);
     const copy = duplicateDataBlock(original, request);
-    copy.packet.items.forEach((item, index) => {
-      const source = original.packet.items[index];
+    copy.payload.packet.items.forEach((item, index) => {
+      const source = original.payload.packet.items[index];
       expect(item.provenance.length).toBe(source.provenance.length + 1);
       expect(item.provenance.slice(0, -1)).toEqual(source.provenance);
       expect(item.provenance[item.provenance.length - 1]).toMatchObject({
@@ -329,7 +334,7 @@ describe('duplicateDataBlock', () => {
     const [kept, variation] = reloaded.result.current.dataBlocks;
     expect(kept).toEqual(original);
     expect(variation.id).not.toBe(original.id);
-    expect(variation.packet.items[0].provenance.at(-1)?.transformation).toBe('duplicate');
+    expect(variation.payload.packet.items[0].provenance.at(-1)?.transformation).toBe('duplicate');
     expect(acceptsDataBlocks(reloaded.result.current.dataBlocks)).toBe(true);
     reloaded.unmount();
   });
@@ -338,7 +343,7 @@ describe('duplicateDataBlock', () => {
 describe('convertDataBlockToPitchClass', () => {
   const request = { id: 'data-block-pc', createdAt: '2026-11-12T00:00:00Z' };
 
-  function noteDataBlock(text = '60, 64, 67, 72', allocation: 'cycle' = 'cycle'): DataBlock {
+  function noteDataBlock(text = '60, 64, 67, 72', allocation: 'cycle' = 'cycle'): PacketBlock {
     const result = melodicize({
       instanceId: 'melodicization',
       rhythm: rhythm([1, 1, 2, 1]),
@@ -359,7 +364,7 @@ describe('convertDataBlockToPitchClass', () => {
     return captured.dataBlock;
   }
 
-  function converted(source: DataBlock): DataBlock {
+  function converted(source: PacketBlock): PacketBlock {
     const result = convertDataBlockToPitchClass(source, request);
     if (!result.ok) {
       throw new Error(result.needsSnap ? result.message : result.error);
@@ -370,13 +375,13 @@ describe('convertDataBlockToPitchClass', () => {
   it('turns MIDI 60, 64, 67, 72 into 0, 4, 7, 0 and keeps timing, frame and velocity', () => {
     const source = noteDataBlock();
     const copy = converted(source);
-    const items = copy.packet.items as DataItem<PitchClassEventValue>[];
+    const items = copy.payload.packet.items as DataItem<PitchClassEventValue>[];
     expect(items.map((item) => item.value.pitchClasses)).toEqual([[0], [4], [7], [0]]);
-    expect(copy.packet.kind).toBe('events');
-    expect(copy.packet.domain).toBe('pitchClass');
-    expect(copy.packet.encoding).toBe('chromatic-12');
-    expect(copy.packet.frame).toEqual(source.packet.frame);
-    (source.packet.items as DataItem<NoteEventValue>[]).forEach((item, index) => {
+    expect(copy.payload.packet.kind).toBe('events');
+    expect(copy.payload.packet.domain).toBe('pitchClass');
+    expect(copy.payload.packet.encoding).toBe('chromatic-12');
+    expect(copy.payload.packet.frame).toEqual(source.payload.packet.frame);
+    (source.payload.packet.items as DataItem<NoteEventValue>[]).forEach((item, index) => {
       expect(items[index].id).toBe(item.id);
       expect(items[index].value.onset).toEqual(item.value.onset);
       expect(items[index].value.duration).toEqual(item.value.duration);
@@ -392,9 +397,9 @@ describe('convertDataBlockToPitchClass', () => {
     const copy = converted(source);
     expect(copy.id).toBe('data-block-pc');
     expect(copy.name).toBe('Gesture (pitch classes)');
-    expect(copy.schemaVersion).toBe(1);
-    copy.packet.items.forEach((item, index) => {
-      const original = source.packet.items[index];
+    expect(copy.schemaVersion).toBe(2);
+    copy.payload.packet.items.forEach((item, index) => {
+      const original = source.payload.packet.items[index];
       expect(item.provenance.slice(0, -1)).toEqual(original.provenance);
       expect(item.provenance.at(-1)).toMatchObject({
         sourceItemIds: [original.id],
@@ -403,12 +408,12 @@ describe('convertDataBlockToPitchClass', () => {
       });
     });
     expect(JSON.stringify(source)).toBe(before);
-    expect(source.packet.domain).toBe('note');
+    expect(source.payload.packet.domain).toBe('note');
   });
 
   it('reduces chords and upper-octave pitches mod 12, keeping each group', () => {
     const copy = converted(noteDataBlock('[60 64 67] 71 61 [59 73]'));
-    const items = copy.packet.items as DataItem<PitchClassEventValue>[];
+    const items = copy.payload.packet.items as DataItem<PitchClassEventValue>[];
     expect(items.map((item) => item.value.pitchClasses)).toEqual([[0, 4, 7], [11], [1], [11, 1]]);
   });
 
@@ -424,12 +429,17 @@ describe('convertDataBlockToPitchClass', () => {
   });
 
   /** The same data-block with each event's pitches replaced by the given midicent groups. */
-  function withPitches(source: DataBlock, groups: number[][]): DataBlock {
-    const items = (source.packet.items as DataItem<NoteEventValue>[]).map((item, index) => ({
-      ...item,
-      value: { ...item.value, pitches: groups[index] },
-    }));
-    return { ...source, packet: { ...source.packet, items } as DataPacket };
+  function withPitches(source: PacketBlock, groups: number[][]): PacketBlock {
+    const items = (source.payload.packet.items as DataItem<NoteEventValue>[]).map(
+      (item, index) => ({
+        ...item,
+        value: { ...item.value, pitches: groups[index] },
+      })
+    );
+    return {
+      ...source,
+      payload: { kind: 'packet', packet: { ...source.payload.packet, items } as DataPacket },
+    };
   }
 
   const step19 = 1200 / 19;
@@ -447,9 +457,9 @@ describe('convertDataBlockToPitchClass', () => {
     if (!result.ok) {
       return;
     }
-    const items = result.dataBlock.packet.items as DataItem<PitchClassEventValue>[];
-    expect(result.dataBlock.packet.encoding).toBe('chromatic-19');
-    expect(result.dataBlock.packet.domain).toBe('pitchClass');
+    const items = result.dataBlock.payload.packet.items as DataItem<PitchClassEventValue>[];
+    expect(result.dataBlock.payload.packet.encoding).toBe('chromatic-19');
+    expect(result.dataBlock.payload.packet.domain).toBe('pitchClass');
     // 6000 midicents is step 95 of 19-EDO (five octaves), so it is pitch class 0.
     expect(items.map((item) => item.value.pitchClasses)).toEqual([[0], [5], [11], [0]]);
     expect(items[0].provenance.at(-1)?.parameters).toMatchObject({ edo: 19, snappedCount: 0 });
@@ -502,17 +512,17 @@ describe('convertDataBlockToPitchClass', () => {
     if (!result.ok) {
       return;
     }
-    const items = result.dataBlock.packet.items as DataItem<PitchClassEventValue>[];
+    const items = result.dataBlock.payload.packet.items as DataItem<PitchClassEventValue>[];
     const expected = [6000, 6400, 6700, 7200].map(
       (midicents) => Math.round(midicents / step19) % 19
     );
     expect(items.map((item) => item.value.pitchClasses)).toEqual(expected.map((pc) => [pc]));
-    expect(result.dataBlock.packet.encoding).toBe('chromatic-19');
+    expect(result.dataBlock.payload.packet.encoding).toBe('chromatic-19');
     expect(items[0].provenance.at(-1)).toMatchObject({
       transformation: 'to-pitch-class',
       parameters: { edo: 19, snappedCount: 2 },
     });
-    expect(source.packet.domain).toBe('note');
+    expect(source.payload.packet.domain).toBe('note');
   });
 
   it('keeps pitch classes in 0..edo-1 for negative and out-of-range midicents, never -0', () => {
@@ -522,7 +532,7 @@ describe('convertDataBlockToPitchClass', () => {
     if (!result.ok) {
       return;
     }
-    const items = result.dataBlock.packet.items as DataItem<PitchClassEventValue>[];
+    const items = result.dataBlock.payload.packet.items as DataItem<PitchClassEventValue>[];
     const classes = items.map((item) => item.value.pitchClasses[0]);
     expect(classes).toEqual([11, 0, 0, 1]);
     classes.forEach((value) => expect(Object.is(value, -0)).toBe(false));
@@ -536,7 +546,7 @@ describe('convertDataBlockToPitchClass', () => {
     );
     expect(
       small.ok &&
-        small.dataBlock.packet.items.map(
+        small.dataBlock.payload.packet.items.map(
           (item) => (item.value as PitchClassEventValue).pitchClasses[0]
         )
     ).toEqual([23, 0, 0, 0]);
@@ -551,13 +561,21 @@ describe('convertDataBlockToPitchClass', () => {
     });
     const infinite = withPitches(noteDataBlock(), [[Infinity], [0], [0], [0]]);
     expect(pitchClassConversionRefusal(infinite)).not.toBeNull();
-    const empty = { ...noteDataBlock(), packet: { ...noteDataBlock().packet, items: [] } };
+    const empty = {
+      ...noteDataBlock(),
+      payload: {
+        kind: 'packet' as const,
+        packet: { ...noteDataBlock().payload.packet, items: [] },
+      },
+    };
     expect(pitchClassConversionRefusal(empty)).toMatch(/nothing to convert/);
   });
 
   it('renders in the preview without error, as text', () => {
     const copy = converted(noteDataBlock('[60 64 67] 62 65 69'));
-    const { container, unmount } = render(createElement(DataBlockPreview, { packet: copy.packet }));
+    const { container, unmount } = render(
+      createElement(DataBlockPreview, { packet: copy.payload.packet })
+    );
     expect(container.textContent).toContain('[0 4 7]');
     expect(container.textContent).toContain('2  5  9');
     unmount();
@@ -575,7 +593,7 @@ describe('convertDataBlockToPitchClass', () => {
     expect(outcome?.ok).toBe(true);
     const [original, result] = first.result.current.dataBlocks;
     expect(original).toEqual(source);
-    expect(result.packet.domain).toBe('pitchClass');
+    expect(result.payload.packet.domain).toBe('pitchClass');
     expect(result.id).not.toBe(source.id);
     // Refused kinds add nothing and report why.
     act(() => {

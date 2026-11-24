@@ -6,7 +6,7 @@ import {
   STORAGE_KEY as settingsKey,
   useCompositionSettings,
 } from './compositionSettings';
-import { acceptsDataBlocks, endEditSession, type DataBlock } from './dataBlock';
+import { acceptsDataBlocks, endEditSession, type PacketBlock } from './dataBlock';
 import { DeskProvider, useDesk } from './desk';
 import {
   enqueueDeskTask,
@@ -58,18 +58,19 @@ function notes(count: number, shift = 0): DataItem[] {
   }));
 }
 
-function dataBlock(id: string, count = 4): DataBlock {
+function dataBlock(id: string, count = 4): PacketBlock {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id,
     name: id,
     createdAt: '2026-11-11T00:00:00Z',
-    packet: packet('events', 'note', notes(count)),
+    payload: { kind: 'packet', packet: packet('events', 'note', notes(count)) },
   };
 }
 
-const withShift = (dataBlock: DataBlock, shift: number): DataPacket =>
-  packet('events', 'note', notes(dataBlock.packet.items.length, shift));
+const withShift = (dataBlock: PacketBlock, shift: number): DataPacket =>
+  packet('events', 'note', notes(dataBlock.payload.packet.items.length, shift));
 
 const plain = <T,>(value: T) => JSON.parse(JSON.stringify(value)) as T;
 

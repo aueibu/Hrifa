@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { render, screen, userEvent, waitFor } from '@test-utils';
 import { CompositionSettingsProvider, useCompositionSettings } from '../compositionSettings';
-import { captureDataBlock, type DataBlock } from '../dataBlock';
+import { captureDataBlock, type PacketBlock } from '../dataBlock';
 import { DeskProvider, useDesk } from '../desk';
 import { melodicize } from '../melodicization';
 import { packet } from '../model';
@@ -14,7 +14,7 @@ vi.mock('../audio/AudioEngineProvider', () => ({
   useAudioEngine: () => ({ play: async () => undefined, subscribe: () => () => undefined }),
 }));
 
-function noteDataBlock(text: string): DataBlock {
+function noteDataBlock(text: string): PacketBlock {
   const rhythm = packet(
     'list',
     'duration',
@@ -46,7 +46,7 @@ function noteDataBlock(text: string): DataBlock {
 }
 
 /** Puts a data-block on the desk and sets the project EDO once, then shows the desk. */
-function Harness({ dataBlock, edo }: { dataBlock: DataBlock; edo: number }) {
+function Harness({ dataBlock, edo }: { dataBlock: PacketBlock; edo: number }) {
   const { addDataBlock, dataBlocks, loading } = useDesk();
   const { updateSettings } = useCompositionSettings();
   useEffect(() => {
@@ -60,14 +60,14 @@ function Harness({ dataBlock, edo }: { dataBlock: DataBlock; edo: number }) {
     <>
       <div data-testid="count">{dataBlocks.length}</div>
       <div data-testid="encodings">
-        {dataBlocks.map((entry) => entry.packet.encoding ?? '-').join(',')}
+        {dataBlocks.map((entry) => entry.payload.packet.encoding ?? '-').join(',')}
       </div>
       {dataBlocks.length > 0 && <DeskView />}
     </>
   );
 }
 
-function renderDesk(dataBlock: DataBlock, edo: number) {
+function renderDesk(dataBlock: PacketBlock, edo: number) {
   localStorage.clear();
   return render(
     <CompositionSettingsProvider>

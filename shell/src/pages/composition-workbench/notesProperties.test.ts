@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { acceptsDataBlocks, commitDataBlockEdit, type DataBlock } from './dataBlock';
-import { blankDataBlock } from './dataBlockTypes';
+import { acceptsDataBlocks, commitDataBlockEdit, type PacketBlock } from './dataBlock';
+import { getDataBlockType, type BlankRequest } from './dataBlocks/registry';
+import { barsLength } from './dataBlockTypes';
 import { packet, type DataItem, type DataPacket } from './model';
 import { musicalDuration, musicalPosition, rational } from './musicalTime';
 import {
@@ -140,35 +141,37 @@ describe('reading notes properties', () => {
   });
 });
 
+const blankNotes = (request: BlankRequest) =>
+  getDataBlockType('notes')!.createBlank(request) as PacketBlock;
+
 describe('new data-blocks', () => {
   it('carry every property, with the meter they were made in', () => {
-    const dataBlock = blankDataBlock(
-      {
-        id: 'c',
-        createdAt: '2026-11-12T00:00:00Z',
-        name: 'c',
-        length: rational(7, 2),
-        timeSignature: '7/8',
-      },
-      { kind: 'events', domain: 'note' }
-    );
-    expect(dataBlock.packet.metadata?.notes).toEqual({
+    const dataBlock = blankNotes({
+      id: 'c',
+      createdAt: '2026-11-12T00:00:00Z',
+      name: 'c',
+      length: rational(7, 2),
+      timeSignature: '7/8',
+    });
+    expect(dataBlock.payload.packet.metadata?.notes).toEqual({
       start: rational(0),
       loopOn: true,
       loopStart: rational(0),
       loopEnd: rational(7, 2),
       timeSignature: '7/8',
     });
-    expect(readNotesProperties(dataBlock.packet)).toMatchObject({
+    expect(readNotesProperties(dataBlock.payload.packet)).toMatchObject({
       length: rational(7, 2),
       timeSignature: '7/8',
     });
     expect(acceptsDataBlocks([dataBlock])).toBe(true);
-    const plainBlank = blankDataBlock(
-      { id: 'd', createdAt: 'x', name: 'd', length: rational(4) },
-      { kind: 'events', domain: 'note' }
-    );
-    expect(readNotesProperties(plainBlank.packet).timeSignature).toBe('4/4');
+    const plainBlank = blankNotes({
+      id: 'd',
+      createdAt: 'x',
+      name: 'd',
+      length: barsLength('4/4', 1),
+    });
+    expect(readNotesProperties(plainBlank.payload.packet).timeSignature).toBe('4/4');
   });
 });
 
@@ -209,12 +212,13 @@ describe('editing notes properties', () => {
   });
 
   it('is a version of its own and stamps no provenance on the notes', () => {
-    const dataBlock: DataBlock = {
-      schemaVersion: 1,
+    const dataBlock: PacketBlock = {
+      schemaVersion: 2,
+      typeId: 'notes',
       id: 's',
       name: 's',
       createdAt: '2026-11-12T00:00:00Z',
-      packet: base,
+      payload: { kind: 'packet', packet: base },
     };
     const edit = editNotesProperties(base, { loopOn: false });
     expect(edit.ok).toBe(true);
@@ -222,10 +226,10 @@ describe('editing notes properties', () => {
       dataBlock,
       (edit as { packet: DataPacket }).packet,
       'edit-properties'
-    ) as { dataBlock: DataBlock };
+    ) as { dataBlock: PacketBlock };
     expect(result.dataBlock.lineage?.versions).toHaveLength(2);
     expect(result.dataBlock.lineage?.versions.at(-1)?.operation).toBe('edit-properties');
-    expect(result.dataBlock.packet.items[0].provenance).toEqual([]);
+    expect(result.dataBlock.payload.packet.items[0].provenance).toEqual([]);
   });
 });
 

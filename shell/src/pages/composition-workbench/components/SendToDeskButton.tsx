@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, Text } from '@mantine/core';
 import type { PublishedCompositionOutput } from '../compositionRouting';
 import { captureDataBlock } from '../dataBlock';
+import { chooseTypeId } from '../dataBlocks/registry';
+// Registers the built-in data-block types, so `chooseTypeId` knows them here.
+import '../dataBlocks/types';
 import { newDataBlockId, useDesk } from '../desk';
 
 /**
@@ -32,6 +35,11 @@ export function SendToDeskButton({ output }: { output: PublishedCompositionOutpu
     timer.current = setTimeout(() => setMessage(null), 2500);
   }
 
+  const unsupported =
+    chooseTypeId(output.packet) === undefined
+      ? `No data-block type holds this output yet (${output.packet.kind} of ${output.packet.domain}).`
+      : undefined;
+
   function send() {
     const captured = captureDataBlock({
       id: newDataBlockId(),
@@ -55,6 +63,8 @@ export function SendToDeskButton({ output }: { output: PublishedCompositionOutpu
         size="compact-xs"
         variant="default"
         data-info="Copy this output to the desk, where it can be heard, renamed and placed back on the canvas as a source."
+        disabled={unsupported !== undefined}
+        title={unsupported}
         onClick={send}
       >
         Send to desk

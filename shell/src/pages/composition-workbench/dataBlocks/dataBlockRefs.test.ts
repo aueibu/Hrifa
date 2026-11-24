@@ -29,7 +29,7 @@ function rhythmBlock(id: string, name: string, values: number[]): PacketBlock {
     provenance: [],
   }));
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id,
     typeId: 'rhythm-test',
     name,
@@ -48,7 +48,7 @@ function pitchBlock(id: string, name: string): PacketBlock {
     provenance: [],
   }));
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id,
     typeId: 'pitch-set-test',
     name,

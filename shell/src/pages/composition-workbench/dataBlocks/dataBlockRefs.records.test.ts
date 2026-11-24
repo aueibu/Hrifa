@@ -21,7 +21,7 @@ import {
 } from './testTypes';
 
 const rhythm = (id: string, name: string): PacketBlock => ({
-  schemaVersion: 1,
+  schemaVersion: 2,
   id,
   typeId: 'rhythm-test',
   name,

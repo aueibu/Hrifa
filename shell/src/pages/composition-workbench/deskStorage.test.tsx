@@ -8,7 +8,7 @@ import {
   endEditSession,
   MAX_LINEAGE_CHARS,
   pruneLineage,
-  type DataBlock,
+  type PacketBlock,
 } from './dataBlock';
 import { DESK_WRITE_DEBOUNCE_MS, DeskProvider, useDesk } from './desk';
 import {
@@ -50,18 +50,19 @@ function notes(count: number, shift = 0): DataItem[] {
   }));
 }
 
-function dataBlock(id: string, count = 4): DataBlock {
+function dataBlock(id: string, count = 4): PacketBlock {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id,
     name: id,
     createdAt: '2026-11-11T00:00:00Z',
-    packet: packet('events', 'note', notes(count)),
+    payload: { kind: 'packet', packet: packet('events', 'note', notes(count)) },
   };
 }
 
-const withShift = (dataBlock: DataBlock, shift: number): DataPacket =>
-  packet('events', 'note', notes(dataBlock.packet.items.length, shift));
+const withShift = (dataBlock: PacketBlock, shift: number): DataPacket =>
+  packet('events', 'note', notes(dataBlock.payload.packet.items.length, shift));
 
 const snapshotOf = <T,>(value: T) => JSON.parse(JSON.stringify(value)) as T;
 
@@ -199,7 +200,7 @@ describe('loading', () => {
       open.onsuccess = () => {
         const db = open.result;
         const tx = db.transaction('desk-data-blocks', 'readwrite');
-        tx.objectStore('desk-data-blocks').put({ ...dataBlock('precious'), schemaVersion: 2 });
+        tx.objectStore('desk-data-blocks').put({ ...dataBlock('precious'), schemaVersion: 3 });
         tx.oncomplete = () => {
           db.close();
           resolve();
@@ -219,6 +220,42 @@ describe('loading', () => {
       await result.current.flushDesk();
     });
     expect(put).not.toHaveBeenCalled();
+  });
+
+  it('drops a desk saved in the earlier envelope (baseline reset), stays writable and deletes it on the next save', async () => {
+    const { schemaVersion: _version, typeId: _type, payload, ...rest } = dataBlock('old');
+    await new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open('hrifa-workbench');
+      open.onupgradeneeded = () => {
+        open.result.createObjectStore('desk-data-blocks', { keyPath: 'id' });
+        open.result.createObjectStore('desk-meta');
+        open.result.createObjectStore('projects', { keyPath: 'id' });
+        open.result.createObjectStore('project-desks', { keyPath: 'id' });
+      };
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction(['desk-data-blocks', 'desk-meta'], 'readwrite');
+        tx.objectStore('desk-data-blocks').put({
+          ...rest,
+          schemaVersion: 1,
+          packet: payload.kind === 'packet' ? payload.packet : null,
+        });
+        tx.objectStore('desk-meta').put(['old'], 'order');
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+    });
+    const { result } = await renderDesk();
+    expect(result.current.dataBlocks).toEqual([]);
+    expect(result.current.locked).toBe(false);
+    expect(result.current.persistError).toMatch(/earlier version dropped/);
+    act(() => result.current.addDataBlock(dataBlock('new')));
+    expect((await storedDesk(result.current)).map((block) => block.id)).toEqual(['new']);
+    const reloaded = await loadDesk();
+    expect(reloaded.error).toBeUndefined();
   });
 });
 
@@ -334,7 +371,7 @@ describe('big data-blocks and caps', () => {
     act(() => edit(result.current, 'big', 1));
     act(() => edit(result.current, 'big', 2));
     const live = result.current.dataBlocks[0];
-    expect(live.packet.items).toHaveLength(4096);
+    expect(live.payload.packet.items).toHaveLength(4096);
     expect(live.lineage!.versions).toHaveLength(3);
     expect(await storedDesk(result.current)).toEqual([live]);
     expect(result.current.persistError).toBeNull();
@@ -363,13 +400,13 @@ describe('big data-blocks and caps', () => {
     }
     const lineage = current.lineage!;
     expect(lineage.versions).toHaveLength(6);
-    const headSize = JSON.stringify(current.packet).length;
+    const headSize = JSON.stringify(current.payload.packet).length;
     const oneSnapshot = JSON.stringify(lineage.versions[1]).length;
     // Room for the head and about two snapshots: the rest must go.
     const pruned = pruneLineage(
       lineage,
       { maxVersions: 500, maxChars: headSize + oneSnapshot * 3 },
-      current.packet
+      current.payload.packet
     );
     expect(pruned.versions.length).toBeLessThan(6);
     expect(pruned.versions.length).toBeGreaterThanOrEqual(2);

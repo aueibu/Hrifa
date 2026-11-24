@@ -180,9 +180,9 @@ function NodePart({
           {dataBlock.name}
         </Title>
         <Text size="xs">
-          {dataBlock.packet.kind} | {dataBlock.packet.domain}
+          {dataBlock.payload.packet.kind} | {dataBlock.payload.packet.domain}
         </Text>
-        {hasNotesProperties(dataBlock.packet) && (
+        {hasNotesProperties(dataBlock.payload.packet) && (
           <NotesPropertiesPanel key={dataBlock.id} dataBlock={dataBlock} />
         )}
         <DataBlockOperatorsPanel key={`actions:${dataBlock.id}`} dataBlock={dataBlock} />

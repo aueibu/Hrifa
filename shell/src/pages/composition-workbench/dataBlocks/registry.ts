@@ -1,9 +1,5 @@
-import {
-  duplicateDataBlock,
-  type DataBlock,
-  type DataBlockLineage,
-  type DataBlockOrigin,
-} from '../dataBlock';
+import { duplicateDataBlock, type DataBlockLineage, type DataBlockOrigin } from '../dataBlock';
+import type { Operator } from '../dataBlockOperators';
 import type { DataPacket } from '../model';
 import type { Rational } from '../musicalTime';
 
@@ -26,9 +22,15 @@ export interface SlotRef {
   ref: Ref;
 }
 
+/**
+ * The stored envelope version. Bumped from 1 to 2 by the registry rebuild (R1, W-60): version 1 was
+ * the legacy shape (no `typeId`, packet at the top level), and nothing migrates it (baseline reset).
+ */
+export const DATA_BLOCK_SCHEMA_VERSION = 2;
+
 /** The stored fields every block has, whatever its type. */
 interface BlockBase {
-  schemaVersion: 1;
+  schemaVersion: typeof DATA_BLOCK_SCHEMA_VERSION;
   id: string;
   /** The registered type this block is. Stored: registering another type later never changes it. */
   typeId: string;
@@ -89,6 +91,11 @@ interface DataBlockTypeBase {
   createBlank(request: BlankRequest): StoredDataBlock;
   preview?: PreviewRef;
   editorId?: string;
+  /**
+   * The edit actions the inspector offers for this type (pure `(packet, context, params)` functions,
+   * dataBlockOperators.ts). Types without any leave it absent and the inspector shows them disabled.
+   */
+  operators?: readonly Operator[];
   /** Absent means "no audition": `auditionSupport` reports `noAuditionReason` or a default. */
   audition?: AuditionHooks;
   noAuditionReason?: string;
@@ -215,18 +222,19 @@ export function isBlockEmpty(block: StoredDataBlock): boolean {
   return block.payload.kind === 'packet' ? block.payload.packet.items.length === 0 : false;
 }
 
-/** The legacy `DataBlock` shape of a packet block, so the existing duplicate step can be called. */
-function toLegacy(block: PacketBlock): DataBlock {
-  return {
-    schemaVersion: 1,
-    id: block.id,
-    name: block.name,
-    ...(block.note === undefined ? {} : { note: block.note }),
-    createdAt: block.createdAt,
-    packet: block.payload.packet,
-    ...(block.origin === undefined ? {} : { origin: block.origin }),
-    ...(block.lineage === undefined ? {} : { lineage: block.lineage }),
-  };
+/** Whether a stored block holds a packet (a narrowing guard). */
+export function isPacketBlock(block: StoredDataBlock): block is PacketBlock {
+  return block.payload.kind === 'packet';
+}
+
+/**
+ * Why the block cannot be placed on the canvas as a source, or null when it can. An empty block
+ * publishes nothing for a downstream node to read, so it waits until it has content.
+ */
+export function makeSourceRefusal(block: StoredDataBlock): string | null {
+  return isBlockEmpty(block)
+    ? 'This data-block is empty, so a source made from it would publish nothing yet.'
+    : null;
 }
 
 /** A copy of the block as "<name> (variation)": the type's `duplicate`, or the default for its payload. */
@@ -235,23 +243,12 @@ export function duplicateBlock(block: StoredDataBlock, request: DuplicateRequest
   if (custom) {
     return custom(block, request);
   }
-  if (block.payload.kind === 'packet') {
-    const copy = duplicateDataBlock(toLegacy(block as PacketBlock), request);
-    return {
-      schemaVersion: 1,
-      id: copy.id,
-      typeId: block.typeId,
-      name: copy.name,
-      ...(copy.note === undefined ? {} : { note: copy.note }),
-      createdAt: copy.createdAt,
-      ...(copy.origin === undefined ? {} : { origin: copy.origin }),
-      ...(copy.lineage === undefined ? {} : { lineage: copy.lineage }),
-      payload: { kind: 'packet', packet: copy.packet },
-    };
+  if (isPacketBlock(block)) {
+    return duplicateDataBlock(block, request);
   }
   const { origin, note } = block;
   return {
-    schemaVersion: 1,
+    schemaVersion: DATA_BLOCK_SCHEMA_VERSION,
     id: request.id,
     typeId: block.typeId,
     name: `${block.name} (variation)`,
@@ -281,11 +278,11 @@ export function repointBlockRef(
   toId: string | null
 ): StoredDataBlock {
   const def = dataBlockTypeOf(block);
-  if (def?.payload !== 'record' || !def.mapRefs || block.payload.kind !== 'record') {
+  if (def?.payload !== 'record' || !def.mapRefs || isPacketBlock(block)) {
     return block;
   }
   const data = def.mapRefs(block.payload.data, (slot, ref) =>
     slot === from.slot && ref.id === from.ref.id ? (toId === null ? null : { id: toId }) : ref
   );
-  return { ...(block as RecordBlock), payload: { kind: 'record', data } };
+  return { ...block, payload: { kind: 'record', data } };
 }

@@ -1,4 +1,4 @@
-import { jsonEqual, type DataBlock } from './dataBlock';
+import { jsonEqual, type PacketBlock } from './dataBlock';
 import { operatorOperation, type OperatorParams } from './dataBlockOperators';
 import { operatorById } from './dataBlockTypes';
 import type { DataPacket } from './model';
@@ -29,12 +29,12 @@ export type OperatorOutcome =
   | { status: 'failed'; message: string };
 
 export interface OperatorDesk {
-  latestDataBlockById(id: string): DataBlock | undefined;
+  latestDataBlockById(id: string): PacketBlock | undefined;
   commitDataBlockEditById(
     id: string,
     packet: DataPacket,
     operation: string
-  ): { ok: true; dataBlock: DataBlock } | { ok: false; error: string };
+  ): { ok: true; dataBlock: PacketBlock } | { ok: false; error: string };
 }
 
 /**
@@ -68,16 +68,17 @@ function overlapReference(
 
 export function runOperator(options: {
   dataBlockId: string;
-  /** The packet to fall back on when the desk does not hold the data-block (the caller's own copy). */
-  fallback: DataPacket;
+  /** The block to fall back on when the desk does not hold the data-block (the caller's own copy). */
+  fallback: PacketBlock;
   actionId: string;
   params?: OperatorParams;
   desk: OperatorDesk;
 }): OperatorOutcome {
   const { dataBlockId, fallback, actionId, desk } = options;
   const params = options.params ?? {};
-  const live = desk.latestDataBlockById(dataBlockId)?.packet ?? fallback;
-  const action = operatorById(live, actionId);
+  const liveBlock = desk.latestDataBlockById(dataBlockId) ?? fallback;
+  const live = liveBlock.payload.packet;
+  const action = operatorById(liveBlock, actionId);
   if (!action || !action.applies(live)) {
     return { status: 'refused', message: 'This data-block does not support that action.' };
   }
@@ -151,7 +152,7 @@ export function runOperator(options: {
   try {
     channel?.adopt(
       result,
-      committed.dataBlock.packet,
+      committed.dataBlock.payload.packet,
       survivorOf.size > 0 ? survivorOf : undefined
     );
   } catch (error) {

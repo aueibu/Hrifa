@@ -6,7 +6,7 @@ import {
   EDIT_SESSION_IDLE_MS,
   endEditSession,
   restoreDataBlockVersion,
-  type DataBlock,
+  type PacketBlock,
 } from './dataBlock';
 import { renderDesk } from './deskTestUtils';
 import { canUndo, resetHistory, undo } from './history';
@@ -27,13 +27,14 @@ function notes(count: number, shift = 0): DataItem[] {
   }));
 }
 
-function dataBlock(id: string): DataBlock {
+function dataBlock(id: string): PacketBlock {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id,
     name: id,
     createdAt: '2026-11-11T00:00:00Z',
-    packet: packet('events', 'note', notes(4)),
+    payload: { kind: 'packet', packet: packet('events', 'note', notes(4)) },
   };
 }
 
@@ -43,7 +44,7 @@ const T0 = Date.parse('2026-11-11T01:00:00Z');
 const at = (ms: number) => new Date(T0 + ms).toISOString();
 
 function commit(
-  dataBlock: DataBlock,
+  dataBlock: PacketBlock,
   shift: number,
   operation: string,
   ms: number,
@@ -71,12 +72,12 @@ describe('edit sessions', () => {
     }
     const { lineage } = current;
     expect(lineage!.versions).toHaveLength(2);
-    expect(current.packet.items[0].value).toMatchObject({ pitches: [6600] });
+    expect(current.payload.packet.items[0].value).toMatchObject({ pitches: [6600] });
     expect(
-      current.packet.items[0].provenance.filter((step) => step.transformation === 'edit')
+      current.payload.packet.items[0].provenance.filter((step) => step.transformation === 'edit')
     ).toHaveLength(1);
     expect(lineage!.versions.find((version) => version.parentId === null)!.packet).toEqual(
-      dataBlock('s1').packet
+      dataBlock('s1').payload.packet
     );
     expect(acceptsDataBlocks([current])).toBe(true);
   });

@@ -2,7 +2,7 @@ import { act, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CompositionWorkbenchPage } from '../CompositionWorkbench.page';
 import type { ChordSession } from './chordInput/chordSession';
-import type { DataBlock } from './dataBlock';
+import type { PacketBlock } from './dataBlock';
 import { DATA_BLOCK_SLOT, type DataBlockEditorSession } from './dataBlockEditorSession';
 import { seedDesk } from './deskTestUtils';
 import { resetHistory } from './history';
@@ -60,7 +60,7 @@ vi.mock('./WorkbenchSessions', async (importOriginal) => {
   };
 });
 
-function notesDataBlock(id: string, name: string): DataBlock {
+function notesDataBlock(id: string, name: string): PacketBlock {
   const value: NoteEventValue = {
     onset: musicalPosition(0),
     interOnset: musicalDuration(1),
@@ -69,19 +69,23 @@ function notesDataBlock(id: string, name: string): DataBlock {
     velocity: 1,
   };
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id,
     name,
     createdAt: '2026-11-11T00:00:00Z',
-    packet: {
-      ...packet('events', 'note', [{ id: `${id}:n`, value, label: 'n', provenance: [] }]),
-      frame: {
-        topology: 'linear',
-        unit: 'quarterNote',
-        extent: 8,
-        origin: 0,
-        musicalExtent: musicalDuration(8),
-        musicalOrigin: musicalPosition(0),
+    payload: {
+      kind: 'packet',
+      packet: {
+        ...packet('events', 'note', [{ id: `${id}:n`, value, label: 'n', provenance: [] }]),
+        frame: {
+          topology: 'linear',
+          unit: 'quarterNote',
+          extent: 8,
+          origin: 0,
+          musicalExtent: musicalDuration(8),
+          musicalOrigin: musicalPosition(0),
+        },
       },
     },
   };

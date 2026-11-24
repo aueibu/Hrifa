@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 // Importing an editor node registers it (`registerDataBlockEditor`), so every built-in editor is
 // imported here, where the slot looks editors up.
 import './components/NotesEditor';
-import type { DataBlock } from './dataBlock';
+import type { PacketBlock } from './dataBlock';
 import { dataBlockEditorOf, type DataBlockEditorProps } from './dataBlockTypes';
 
 export type { DataBlockEditorProps };
@@ -12,7 +12,7 @@ export type { DataBlockEditorProps };
  * registry (`dataBlockTypes.ts`): a type names an `editorId`, and `registerDataBlockEditor` binds it.
  */
 export function dataBlockEditorFor(
-  dataBlock: DataBlock
+  dataBlock: PacketBlock
 ): ComponentType<DataBlockEditorProps> | undefined {
   return dataBlockEditorOf(dataBlock);
 }

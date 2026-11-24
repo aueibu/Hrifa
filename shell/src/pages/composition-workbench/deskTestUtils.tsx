@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@test-utils';
-import type { DataBlock } from './dataBlock';
+import type { PacketBlock } from './dataBlock';
 import { DeskProvider, useDesk } from './desk';
 import { deskStoreIdle, loadDesk, writeDeskNow } from './deskStore';
 
@@ -11,7 +11,7 @@ export async function renderDesk() {
 }
 
 /** Flushes the desk's pending write, then reads back what IndexedDB holds. */
-export async function storedDesk(desk: ReturnType<typeof useDesk>): Promise<DataBlock[]> {
+export async function storedDesk(desk: ReturnType<typeof useDesk>): Promise<PacketBlock[]> {
   await act(async () => {
     await desk.flushDesk();
   });
@@ -20,6 +20,6 @@ export async function storedDesk(desk: ReturnType<typeof useDesk>): Promise<Data
 }
 
 /** Puts a desk into the (fresh, per-test) IndexedDB, as if an earlier session had saved it. */
-export async function seedDesk(dataBlocks: DataBlock[]) {
+export async function seedDesk(dataBlocks: PacketBlock[]) {
   await writeDeskNow({ dataBlocks, stored: new Map(), expectedRev: 0 });
 }

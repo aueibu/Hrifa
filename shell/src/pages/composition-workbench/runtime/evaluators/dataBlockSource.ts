@@ -1,5 +1,5 @@
 import type { PublishedCompositionOutput } from '../../compositionRouting';
-import type { DataBlock } from '../../dataBlock';
+import type { PacketBlock } from '../../dataBlock';
 
 export type DataBlockSourceState = Record<string, never>;
 
@@ -8,7 +8,7 @@ export type DataBlockSourceState = Record<string, never>;
  * object, so it keeps its identity until the data-block is edited.
  */
 export interface DataBlockSourceInputs {
-  dataBlock: DataBlock | undefined;
+  dataBlock: PacketBlock | undefined;
 }
 
 export interface DataBlockSourceContext {
@@ -17,7 +17,7 @@ export interface DataBlockSourceContext {
 }
 
 export interface DataBlockSourceCore {
-  dataBlock: DataBlock | undefined;
+  dataBlock: PacketBlock | undefined;
 }
 
 export type DataBlockSourceEvaluation = DataBlockSourceCore & {
@@ -44,7 +44,7 @@ export function dataBlockSourceOutputs(
         {
           ref: { instanceId: ctx.instanceId, port: 'data-block' },
           label: `${ctx.instanceLabel} · ${dataBlock.name}`,
-          packet: dataBlock.packet,
+          packet: dataBlock.payload.packet,
         },
       ]
     : [];

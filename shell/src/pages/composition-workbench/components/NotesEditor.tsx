@@ -359,7 +359,7 @@ export function noteAtCell(
 function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
   const { commitDataBlockEditById, latestDataBlockById, loading, locked } = useDesk();
   const { settings } = useCompositionSettings();
-  const { packet } = dataBlock;
+  const { packet } = dataBlock.payload;
   // Transient view state: tool, selection (events and the time they occupy), zoom and scroll live in
   // this component only. They are never recorded in the history and never written to the packet.
   const dataBlockSession = useDataBlockEditorSession();
@@ -680,7 +680,7 @@ function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
     // same packet, so one version and one undo step, and its length never drifts as notes move.
     // Built from the desk's packet as it is now (not the last render), so an edit that landed
     // since, such as a property change from the inspector, is never reverted.
-    const current = latestDataBlockById(dataBlock.id)?.packet ?? packet;
+    const current = latestDataBlockById(dataBlock.id)?.payload.packet ?? packet;
     const base = freezeNotesProperties(current);
     const edited = edit(base);
     if (edited === base) {
@@ -715,10 +715,10 @@ function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
     selectionRef.current = nextSelection;
     setSelectionState((state) => ({
       selection: nextSelection,
-      basis: result.dataBlock.packet,
+      basis: result.dataBlock.payload.packet,
       moves: state.moves,
     }));
-    return { base, committed: result.dataBlock.packet, selection: nextSelection };
+    return { base, committed: result.dataBlock.payload.packet, selection: nextSelection };
   }
 
   function draw(note: PianoRollNewNote) {
@@ -760,7 +760,7 @@ function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
       return;
     }
     const moved = { start: range.start + shift, end: range.end + shift };
-    const current = latestDataBlockById(dataBlock.id)?.packet ?? packet;
+    const current = latestDataBlockById(dataBlock.id)?.payload.packet ?? packet;
     if (timeMoveResult(current, range, delta, () => '', undefined, options).packet === current) {
       setSelection(() => ({ ids: notesOverlapping(current, moved), range: moved, kind: 'time' }));
       return;
@@ -829,7 +829,7 @@ function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
    * secondary selection on the notes it wrote.
    */
   function applyRamp(ramp: VelocityRamp, values: Record<string, number>) {
-    const latest = latestDataBlockById(dataBlock.id)?.packet ?? packet;
+    const latest = latestDataBlockById(dataBlock.id)?.payload.packet ?? packet;
     // Painting values the notes already hold writes nothing but is still a ramp worth keeping.
     const unchanged = setVelocities(latest, values) === latest;
     const done = commit((current) => setVelocities(current, values));
@@ -868,7 +868,7 @@ function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
   function runKeyAction(actionId: 'copy' | 'paste') {
     const outcome = runOperator({
       dataBlockId: dataBlock.id,
-      fallback: packet,
+      fallback: dataBlock,
       actionId,
       desk: { commitDataBlockEditById, latestDataBlockById },
     });
@@ -897,7 +897,7 @@ function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
     }
     const ids = held.ids;
     if (edit.kind === 'navigate') {
-      const latest = latestDataBlockById(dataBlock.id)?.packet ?? packet;
+      const latest = latestDataBlockById(dataBlock.id)?.payload.packet ?? packet;
       const chosen = navigateSelection(latest, ids, edit.direction);
       if (chosen !== null) {
         setSelection(() => selectIds(latest, [chosen]));

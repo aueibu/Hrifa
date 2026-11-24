@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createNotePacketPerformancePlan } from './audio/performancePlans';
 import type { MusicalPerformancePlan } from './audio/types';
 import { captureDataBlock } from './dataBlock';
+import './dataBlocks/types';
 import { melodicize, type NoteEventValue } from './melodicization';
 import { packet, type DataPacket } from './model';
 import { musicalDuration } from './musicalTime';
@@ -54,7 +55,7 @@ describe('auditioning a captured data-block on the transport', () => {
     }
     return createNotePacketPerformancePlan({
       sourceId: 'mel',
-      packet: captured.dataBlock.packet as DataPacket<NoteEventValue>,
+      packet: captured.dataBlock.payload.packet as DataPacket<NoteEventValue>,
       timeline: transportTimeline(settings),
     });
   }

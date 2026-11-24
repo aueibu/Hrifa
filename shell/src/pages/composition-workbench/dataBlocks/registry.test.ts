@@ -66,7 +66,7 @@ describe('R1: a new type is one registration', () => {
       payload: 'packet',
       accepts: (p) => p.kind === 'curve',
       createBlank: (request) => ({
-        schemaVersion: 1,
+        schemaVersion: 2,
         id: request.id,
         typeId: 'curve-test',
         name: request.name,

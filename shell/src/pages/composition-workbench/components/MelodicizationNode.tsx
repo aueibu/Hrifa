@@ -317,7 +317,7 @@ export function MelodicizationNode({
         try {
           const plan = createNotePacketPerformancePlan({
             sourceId: instanceId,
-            packet: captured.dataBlock.packet as typeof result.packet,
+            packet: captured.dataBlock.payload.packet as typeof result.packet,
             timeline,
           });
           const started = await preview.play(plan, `Auditioning ${selectedIds.length} selected.`);
@@ -328,7 +328,11 @@ export function MelodicizationNode({
                 .filter((item) => chosen.has(item.id))
                 .map((item) => rationalToNumber(item.value.onset.quarterNotes))
             );
-            startPlayhead(Number(tempo), from, captured.dataBlock.packet.frame?.extent ?? 1);
+            startPlayhead(
+              Number(tempo),
+              from,
+              captured.dataBlock.payload.packet.frame?.extent ?? 1
+            );
           }
         } catch (error) {
           preview.setStatus(error instanceof Error ? error.message : 'Audition could not start.');

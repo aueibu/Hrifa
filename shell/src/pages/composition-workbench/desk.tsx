@@ -17,10 +17,11 @@ import {
   endEditSession as endDataBlockEditSession,
   restoreDataBlockVersion,
   type PitchClassConversionResult,
-  type DataBlock,
+  type PacketBlock,
   type DataBlockEditResult,
 } from './dataBlock';
-import { dataBlockTypeById, nextDataBlockName } from './dataBlockTypes';
+import { getDataBlockType, isPacketBlock } from './dataBlocks/registry';
+import { nextDataBlockName } from './dataBlockTypes';
 import {
   describeStorageError,
   enqueueDeskTask,
@@ -44,7 +45,7 @@ export const DESK_GESTURE_WRITE_DEBOUNCE_MS = 1000;
  * every node sends to, and every view reads from, the same list.
  */
 interface DeskContextValue {
-  dataBlocks: DataBlock[];
+  dataBlocks: PacketBlock[];
   /** True until the saved desk has been read; changes are refused until then. */
   loading: boolean;
   /**
@@ -69,7 +70,7 @@ interface DeskContextValue {
    * nothing is stored and the desk on screen is unchanged, and the reason comes back.
    */
   replaceDesk(
-    dataBlocks: DataBlock[],
+    dataBlocks: PacketBlock[],
     options?: ReplaceDeskOptions
   ): Promise<{ ok: true } | { ok: false; error: string }>;
   /**
@@ -78,7 +79,7 @@ interface DeskContextValue {
    * session too.
    */
   endEditSession(dataBlockId: string): void;
-  addDataBlock(dataBlock: DataBlock): void;
+  addDataBlock(dataBlock: PacketBlock): void;
   /**
    * Adds a new empty data-block of a registered type (see dataBlockTypes.ts) at the end of the desk, named
    * "New data-block", "New data-block 2", and so on. One undo step. Returns the data-block, or null when the desk
@@ -88,7 +89,7 @@ interface DeskContextValue {
     typeId: string,
     length: Rational,
     options?: { timeSignature?: string }
-  ): DataBlock | null;
+  ): PacketBlock | null;
   removeDataBlock(id: string): void;
   renameDataBlock(id: string, name: string): void;
   setDataBlockNote(id: string, note: string): void;
@@ -120,7 +121,7 @@ interface DeskContextValue {
    * The data-block as it is on the desk right now (not as last rendered), for an edit that must start
    * from the latest packet at the moment it commits.
    */
-  latestDataBlockById(id: string): DataBlock | undefined;
+  latestDataBlockById(id: string): PacketBlock | undefined;
   /** Moves the data-block back (or forward) to a kept version; same data-block, one undo step. */
   restoreDataBlockVersionById(id: string, versionId: string): DataBlockEditResult;
   /** Adds a new data-block made from a version, directly after the original. Returns it. */
@@ -148,12 +149,12 @@ const DeskContext = createContext<DeskContextValue | undefined>(undefined);
  */
 interface DeskSide {
   order: string[];
-  dataBlocks: Record<string, DataBlock | null>;
+  dataBlocks: Record<string, PacketBlock | null>;
 }
 
 let deskStepCount = 0;
 
-function deskStep(before: DataBlock[], after: DataBlock[]): HistoryChange {
+function deskStep(before: PacketBlock[], after: PacketBlock[]): HistoryChange {
   const was = new Map(before.map((dataBlock) => [dataBlock.id, dataBlock]));
   const now = new Map(after.map((dataBlock) => [dataBlock.id, dataBlock]));
   const previous: DeskSide = { order: before.map((dataBlock) => dataBlock.id), dataBlocks: {} };
@@ -193,7 +194,7 @@ function deskStep(before: DataBlock[], after: DataBlock[]): HistoryChange {
 }
 
 export function DeskProvider({ children }: { children: ReactNode }) {
-  const [dataBlocks, setDataBlocks] = useState<DataBlock[]>([]);
+  const [dataBlocks, setDataBlocks] = useState<PacketBlock[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [persistError, setPersistError] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
@@ -204,8 +205,8 @@ export function DeskProvider({ children }: { children: ReactNode }) {
   // False when the stored desk could not be read: it is left alone, nothing is ever written over it.
   const writableRef = useRef(false);
   // The data-blocks as last written (by reference), and the list that was current then.
-  const storedRef = useRef<Map<string, DataBlock>>(new Map());
-  const settledRef = useRef<DataBlock[] | null>(null);
+  const storedRef = useRef<Map<string, unknown>>(new Map());
+  const settledRef = useRef<PacketBlock[] | null>(null);
   // The store's rev as this tab last read or wrote it; a write is refused if another tab moved it.
   const revRef = useRef(0);
   const timerRef = useRef<number | undefined>(undefined);
@@ -299,7 +300,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
           return false;
         }
         const live = new Map(dataBlocksRef.current.map((dataBlock) => [dataBlock.id, dataBlock]));
-        const next: DataBlock[] = [];
+        const next: PacketBlock[] = [];
         for (const id of side.order) {
           const dataBlock = id in side.dataBlocks ? side.dataBlocks[id] : live.get(id);
           if (!dataBlock) {
@@ -321,7 +322,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
    */
   const applyChange = useCallback(
     (
-      updater: (current: DataBlock[]) => DataBlock[],
+      updater: (current: PacketBlock[]) => PacketBlock[],
       options: { coalesce?: boolean; coalesceKey?: string } = {}
     ): boolean => {
       // A locked desk (unreadable saved desk) or one frozen for a project open never saves, so an
@@ -361,14 +362,18 @@ export function DeskProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addDataBlock = useCallback(
-    (dataBlock: DataBlock) => {
+    (dataBlock: PacketBlock) => {
       applyChange((current) => [...current, dataBlock]);
     },
     [applyChange]
   );
   const addBlankDataBlock = useCallback(
-    (typeId: string, length: Rational, options?: { timeSignature?: string }): DataBlock | null => {
-      const type = dataBlockTypeById(typeId);
+    (
+      typeId: string,
+      length: Rational,
+      options?: { timeSignature?: string }
+    ): PacketBlock | null => {
+      const type = getDataBlockType(typeId);
       if (!type) {
         return null;
       }
@@ -379,6 +384,10 @@ export function DeskProvider({ children }: { children: ReactNode }) {
         length,
         timeSignature: options?.timeSignature,
       });
+      // The desk holds packet blocks until the record type arrives (R4).
+      if (!isPacketBlock(dataBlock)) {
+        return null;
+      }
       return applyChange((current) => [...current, dataBlock]) ? dataBlock : null;
     },
     [applyChange]
@@ -551,7 +560,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
   );
   const replaceDesk = useCallback(
     (
-      next: DataBlock[],
+      next: PacketBlock[],
       options: ReplaceDeskOptions = {}
     ): Promise<{ ok: true } | { ok: false; error: string }> => {
       if (!loadedRef.current) {

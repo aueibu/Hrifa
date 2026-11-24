@@ -5,7 +5,7 @@ import { DeskView } from './components/DeskView';
 import { NotesEditor } from './components/NotesEditor';
 import { NotesPropertiesPanel } from './components/NotesPropertiesPanel';
 import { CompositionSettingsProvider, useCompositionSettings } from './compositionSettings';
-import type { DataBlock } from './dataBlock';
+import type { PacketBlock } from './dataBlock';
 import { DeskProvider, useDesk } from './desk';
 import { getProject, listProjects } from './deskStore';
 import { renderDesk, seedDesk, storedDesk } from './deskTestUtils';
@@ -76,27 +76,31 @@ function seedNote(id: string, start: number, midicents: number): DataItem {
 }
 
 /** A data-block as an earlier version of the app stored it: frame only, no notes properties. */
-function legacyDataBlock(id = 'old', extent = 8): DataBlock {
+function legacyDataBlock(id = 'old', extent = 8): PacketBlock {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    typeId: 'notes',
     id,
     name: id,
     createdAt: '2026-11-11T00:00:00Z',
-    packet: {
-      ...packet('events', 'note', [seedNote('n1', 0, 6000), seedNote('n2', 2, 6400)]),
-      frame: {
-        topology: 'linear',
-        unit: 'quarterNote',
-        extent,
-        origin: 0,
-        musicalExtent: musicalDuration(extent),
-        musicalOrigin: musicalPosition(0),
+    payload: {
+      kind: 'packet',
+      packet: {
+        ...packet('events', 'note', [seedNote('n1', 0, 6000), seedNote('n2', 2, 6400)]),
+        frame: {
+          topology: 'linear',
+          unit: 'quarterNote',
+          extent,
+          origin: 0,
+          musicalExtent: musicalDuration(extent),
+          musicalOrigin: musicalPosition(0),
+        },
       },
     },
   };
 }
 
-async function open(seed?: DataBlock) {
+async function open(seed?: PacketBlock) {
   render(
     <CompositionSettingsProvider>
       <DeskProvider>
@@ -137,7 +141,7 @@ async function enterLoop(name: 'Start' | 'Length', text: string) {
   await userEvent.type(input, `${text}{Enter}`);
 }
 
-const current = () => readNotesProperties(desk.dataBlocks[0].packet);
+const current = () => readNotesProperties(desk.dataBlocks[0].payload.packet);
 
 beforeEach(() => {
   localStorage.clear();
@@ -153,7 +157,7 @@ describe('the notes properties panel', () => {
     expect(loopField('Length')).toHaveValue('1.0.0');
     expect(field(/^Time signature/)).toHaveValue('4/4');
     expect(looping()).toHaveAttribute('aria-pressed', 'true');
-    expect(desk.dataBlocks[0].packet.metadata?.notes).toBeDefined();
+    expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toBeDefined();
   });
 
   it('a new data-block takes the project time signature and is one bar of it long', async () => {
@@ -161,7 +165,7 @@ describe('the notes properties panel', () => {
     act(() => settings.updateTransport({ meter: '7/8' }));
     await userEvent.click(screen.getByRole('button', { name: 'New data-block' }));
     await waitFor(() => expect(desk.dataBlocks).toHaveLength(2));
-    const made = readNotesProperties(desk.dataBlocks[1].packet);
+    const made = readNotesProperties(desk.dataBlocks[1].payload.packet);
     expect(made.timeSignature).toBe('7/8');
     expect(made.length).toEqual(rational(7, 2));
     expect(made.loopEnd).toEqual(rational(7, 2));
@@ -176,7 +180,7 @@ describe('the notes properties panel', () => {
 
     await enter(/^Length/, '3.0.0');
     expect(current().length).toEqual(rational(12));
-    expect(desk.dataBlocks[0].packet.frame).toMatchObject({ extent: 12 });
+    expect(desk.dataBlocks[0].payload.packet.frame).toMatchObject({ extent: 12 });
     expect(desk.dataBlocks[0].lineage!.versions).toHaveLength(2);
 
     await enter(/^Playback start/, '1.2.480');
@@ -259,7 +263,7 @@ describe('the notes properties panel', () => {
     await enter(/^Length/, '0.2.0');
     expect(screen.getByTestId('roll-end-bracket').style.left).toBe('128px');
     // The note at 2..3 stays, past the marker.
-    expect(desk.dataBlocks[0].packet.items).toHaveLength(2);
+    expect(desk.dataBlocks[0].payload.packet.items).toHaveLength(2);
     expect(within(roll).getByTitle(/^E4/)).toBeInTheDocument();
   });
 
@@ -321,10 +325,10 @@ describe('notes properties robustness', () => {
     // In ONE act the editor's commit lands in the desk and the panel's Enter fires before React
     // re-renders the panel: the panel still holds the old data-block and its old apply.
     act(() => {
-      const items = stale.packet.items.filter((item) => item.id !== 'n1');
+      const items = stale.payload.packet.items.filter((item) => item.id !== 'n1');
       const landed = desk.commitDataBlockEditById(
         stale.id,
-        { ...stale.packet, items },
+        { ...stale.payload.packet, items },
         'edit-notes',
         {
           handEdit: true,
@@ -332,20 +336,23 @@ describe('notes properties robustness', () => {
       );
       expect(landed.ok).toBe(true);
       // Not re-rendered yet: the desk has the new packet, the panel's props are the old data-block.
-      expect(desk.latestDataBlockById(stale.id)!.packet.items).toHaveLength(1);
-      expect(stale.packet.items).toHaveLength(2);
+      expect(desk.latestDataBlockById(stale.id)!.payload.packet.items).toHaveLength(1);
+      expect(stale.payload.packet.items).toHaveLength(2);
       fireEvent.keyDown(input, { key: 'Enter' });
     });
     expect(current().length).toEqual(rational(12));
-    expect(desk.dataBlocks[0].packet.items.map((item) => item.id)).toEqual(['n2']);
+    expect(desk.dataBlocks[0].payload.packet.items.map((item) => item.id)).toEqual(['n2']);
   });
 
   it('shows no panel for a data-block that is not in quarter notes and leaves it untouched', async () => {
-    const pulse: DataBlock = {
+    const pulse: PacketBlock = {
       ...legacyDataBlock('pulse', 7),
-      packet: {
-        ...packet('events', 'rhythmPattern', []),
-        frame: { topology: 'cyclic', unit: 'pulse', extent: 7, origin: 0 },
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...packet('events', 'rhythmPattern', []),
+          frame: { topology: 'cyclic', unit: 'pulse', extent: 7, origin: 0 },
+        },
       },
     };
     render(
@@ -359,17 +366,17 @@ describe('notes properties robustness', () => {
     act(() => desk.addDataBlock(pulse));
     await screen.findByText('pulse');
     expect(screen.queryByRole('group', { name: 'Notes properties' })).toBeNull();
-    const before = JSON.stringify(desk.dataBlocks[0].packet);
+    const before = JSON.stringify(desk.dataBlocks[0].payload.packet);
     const result = desk.commitDataBlockEditById(
       'pulse',
       withNotesProperties(
-        desk.dataBlocks[0].packet,
-        readNotesProperties(desk.dataBlocks[0].packet)
+        desk.dataBlocks[0].payload.packet,
+        readNotesProperties(desk.dataBlocks[0].payload.packet)
       ),
       'edit-properties'
     );
     expect(result.ok).toBe(true);
-    expect(JSON.stringify(desk.dataBlocks[0].packet)).toBe(before);
+    expect(JSON.stringify(desk.dataBlocks[0].payload.packet)).toBe(before);
   });
 });
 
@@ -380,8 +387,8 @@ describe('notes properties in storage', () => {
     const { result } = await renderDesk();
     expect(result.current.dataBlocks).toHaveLength(2);
     // Nothing was written into the stored data-blocks by loading.
-    expect(result.current.dataBlocks[0].packet.metadata?.notes).toBeUndefined();
-    expect(readNotesProperties(result.current.dataBlocks[0].packet)).toMatchObject({
+    expect(result.current.dataBlocks[0].payload.packet.metadata?.notes).toBeUndefined();
+    expect(readNotesProperties(result.current.dataBlocks[0].payload.packet)).toMatchObject({
       length: rational(8),
       start: rational(0),
       loopOn: true,
@@ -398,12 +405,12 @@ describe('notes properties in storage', () => {
     await userEvent.click(looping());
     await enter(/^Time signature/, '6/8');
     const edited = desk.dataBlocks;
-    const expected = readNotesProperties(edited[0].packet);
+    const expected = readNotesProperties(edited[0].payload.packet);
     expect(expected).toMatchObject({ loopOn: false, timeSignature: '6/8' });
 
     const stored = await storedDesk(desk);
     expect(stored).toEqual(edited);
-    expect(readNotesProperties(stored[0].packet)).toEqual(expected);
+    expect(readNotesProperties(stored[0].payload.packet)).toEqual(expected);
 
     const saved = await saveProject({ name: 'Props', existing: null, desk: edited });
     expect(saved.ok).toBe(true);
@@ -416,18 +423,18 @@ describe('notes properties in storage', () => {
     });
     expect(opened?.ok).toBe(true);
     const reopened = await storedDesk(desk);
-    expect(readNotesProperties(reopened[0].packet)).toEqual(expected);
+    expect(readNotesProperties(reopened[0].payload.packet)).toEqual(expected);
     expect(reopened[0].lineage).toEqual(edited[0].lineage);
   });
 });
 
 describe('freezing an old data-block at its first edit', () => {
   const rowY = (midi: number) => (127 - midi) * 22 + 11;
-  const lengthOf = () => readNotesProperties(desk.dataBlocks[0].packet).length;
+  const lengthOf = () => readNotesProperties(desk.dataBlocks[0].payload.packet).length;
 
   it('reading an untouched old data-block writes nothing', async () => {
     await open(legacyDataBlock());
-    expect(desk.dataBlocks[0].packet.metadata?.notes).toBeUndefined();
+    expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toBeUndefined();
     expect(desk.dataBlocks[0].lineage).toBeUndefined();
   });
 
@@ -443,19 +450,21 @@ describe('freezing an old data-block at its first edit', () => {
     });
     fireEvent.pointerMove(roll, { clientX: 140 + 6 * 64, clientY: rowY(64), pointerId: 1 });
     fireEvent.pointerUp(roll, { clientX: 140 + 6 * 64, clientY: rowY(64), pointerId: 1 });
-    const moved = desk.dataBlocks[0].packet.items.find((item) => item.id === 'n2')!;
+    const moved = desk.dataBlocks[0].payload.packet.items.find((item) => item.id === 'n2')!;
     expect((moved.value as { onset: { quarterNotes: unknown } }).onset.quarterNotes).toEqual(
       rational(8)
     );
     expect(lengthOf()).toEqual(rational(8));
     expect(field(/^Length/)).toHaveValue('2.0.0');
-    expect(desk.dataBlocks[0].packet.frame).toMatchObject({ extent: 8 });
-    expect(desk.dataBlocks[0].packet.metadata?.notes).toMatchObject({ loopEnd: rational(8) });
+    expect(desk.dataBlocks[0].payload.packet.frame).toMatchObject({ extent: 8 });
+    expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toMatchObject({
+      loopEnd: rational(8),
+    });
     // The freeze rode in the same version as the edit.
     expect(desk.dataBlocks[0].lineage!.versions).toHaveLength(2);
 
     // A second edit (a delete) writes no extra properties.
-    const frozen = desk.dataBlocks[0].packet.metadata?.notes;
+    const frozen = desk.dataBlocks[0].payload.packet.metadata?.notes;
     fireEvent.pointerDown(screen.getByTitle(/^C4 · 0\.000 qn/), {
       clientX: 20,
       clientY: rowY(60),
@@ -463,14 +472,14 @@ describe('freezing an old data-block at its first edit', () => {
     });
     fireEvent.pointerUp(roll, { clientX: 20, clientY: rowY(60), pointerId: 1 });
     fireEvent.keyDown(roll, { key: 'Delete' });
-    expect(desk.dataBlocks[0].packet.items.map((item) => item.id)).toEqual(['n2']);
-    expect(desk.dataBlocks[0].packet.metadata?.notes).toEqual(frozen);
+    expect(desk.dataBlocks[0].payload.packet.items.map((item) => item.id)).toEqual(['n2']);
+    expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toEqual(frozen);
     expect(lengthOf()).toEqual(rational(8));
 
     // One undo step per edit: undo the delete, then the move, back to the exact old data-block.
     act(() => undo());
-    expect(desk.dataBlocks[0].packet.items).toHaveLength(2);
-    expect(desk.dataBlocks[0].packet.metadata?.notes).toEqual(frozen);
+    expect(desk.dataBlocks[0].payload.packet.items).toHaveLength(2);
+    expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toEqual(frozen);
     act(() => undo());
     expect(JSON.stringify(desk.dataBlocks[0])).toBe(original);
   });
@@ -478,7 +487,7 @@ describe('freezing an old data-block at its first edit', () => {
   it('a property edit on an old data-block writes the full set in its own single version', async () => {
     await open(legacyDataBlock());
     await enterLoop('Length', '0.2.0');
-    const dataBlock = desk.dataBlocks[0].packet.metadata?.notes as Record<string, unknown>;
+    const dataBlock = desk.dataBlocks[0].payload.packet.metadata?.notes as Record<string, unknown>;
     expect(Object.keys(dataBlock).sort()).toEqual(
       ['loopEnd', 'loopOn', 'loopStart', 'start', 'timeSignature'].sort()
     );
@@ -499,11 +508,14 @@ describe('the data-block inspector', () => {
 
   it('shows no properties panel for a notes data-block with a pulse frame', async () => {
     const base = legacyDataBlock('pulsed', 7);
-    const pulseNotes: DataBlock = {
+    const pulseNotes: PacketBlock = {
       ...base,
-      packet: {
-        ...base.packet,
-        frame: { topology: 'cyclic', unit: 'pulse', extent: 7, origin: 0 },
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          frame: { topology: 'cyclic', unit: 'pulse', extent: 7, origin: 0 },
+        },
       },
     };
     mountInspector();
@@ -517,9 +529,15 @@ describe('the data-block inspector', () => {
 
   it('shows no panel for a cyclic quarter-note note packet (melodicization)', async () => {
     const base = legacyDataBlock('cyclic', 4);
-    const cyclic: DataBlock = {
+    const cyclic: PacketBlock = {
       ...base,
-      packet: { ...base.packet, frame: { ...base.packet.frame!, topology: 'cyclic' } },
+      payload: {
+        kind: 'packet',
+        packet: {
+          ...base.payload.packet,
+          frame: { ...base.payload.packet.frame!, topology: 'cyclic' },
+        },
+      },
     };
     mountInspector();
     await waitFor(() => expect(desk.loading).toBe(false));
@@ -552,7 +570,7 @@ describe('the note editor commit path', () => {
     fireEvent.pointerMove(roll, { clientX: 150, clientY: rowY(64), pointerId: 1 });
     fireEvent.pointerUp(roll, { clientX: 150, clientY: rowY(64), pointerId: 1 });
     expect(desk.dataBlocks[0]).toBe(before);
-    expect(desk.dataBlocks[0].packet.metadata?.notes).toBeUndefined();
+    expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toBeUndefined();
     expect(historyChangeCount()).toBe(changes);
   });
 
@@ -569,15 +587,15 @@ describe('the note editor commit path', () => {
     // re-renders the editor: it still holds the old packet, which it must not build on.
     act(() => {
       const stale = desk.latestDataBlockById('old')!;
-      const edit = editNotesProperties(stale.packet, { length: rational(12) });
+      const edit = editNotesProperties(stale.payload.packet, { length: rational(12) });
       expect(edit.ok).toBe(true);
       if (edit.ok) {
         expect(desk.commitDataBlockEditById('old', edit.packet, 'edit-properties').ok).toBe(true);
       }
-      expect(desk.latestDataBlockById('old')!.packet).not.toBe(stale.packet);
+      expect(desk.latestDataBlockById('old')!.payload.packet).not.toBe(stale.payload.packet);
       fireEvent.keyDown(roll, { key: 'Delete' });
     });
-    expect(desk.dataBlocks[0].packet.items.map((item) => item.id)).toEqual(['n1']);
+    expect(desk.dataBlocks[0].payload.packet.items.map((item) => item.id)).toEqual(['n1']);
     expect(current().length).toEqual(rational(12));
   });
 });
@@ -642,7 +660,7 @@ describe('the loop controls', () => {
     // The loop start lands behind the panel's back (as the editor or another tab could commit).
     act(() => {
       const latest = desk.dataBlocks[0];
-      const edit = editNotesProperties(latest.packet, {
+      const edit = editNotesProperties(latest.payload.packet, {
         loopStart: rational(4),
         loopEnd: rational(8),
       });
@@ -661,7 +679,7 @@ describe('the loop controls', () => {
     expect(current().loopOn).toBe(true);
     act(() => {
       const latest = desk.dataBlocks[0];
-      const edit = editNotesProperties(latest.packet, { loopOn: false });
+      const edit = editNotesProperties(latest.payload.packet, { loopOn: false });
       if (!edit.ok) {
         throw new Error(edit.error);
       }

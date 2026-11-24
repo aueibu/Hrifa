@@ -2,7 +2,7 @@ import { act, render, screen, userEvent, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransportBar } from './components/TransportBar';
 import { CompositionSettingsProvider } from './compositionSettings';
-import { acceptsDataBlocks, captureDataBlock, type DataBlock } from './dataBlock';
+import { acceptsDataBlocks, captureDataBlock, type PacketBlock } from './dataBlock';
 import { DeskProvider, useDesk } from './desk';
 import { renderDesk, storedDesk } from './deskTestUtils';
 import { canRedo, canUndo, HISTORY_DEPTH, redo, resetHistory, undo } from './history';
@@ -21,7 +21,7 @@ vi.mock('./audio/AudioEngineProvider', () => ({
   }),
 }));
 
-function noteDataBlock(id = 'data-block-1', name = 'Gesture'): DataBlock {
+function noteDataBlock(id = 'data-block-1', name = 'Gesture'): PacketBlock {
   const rhythm = packet(
     'list',
     'duration',
@@ -62,7 +62,8 @@ async function setup() {
 }
 
 /** Deep snapshot so a later mutation of shared objects could not hide a bad restore. */
-const snapshot = (dataBlocks: DataBlock[]) => JSON.parse(JSON.stringify(dataBlocks)) as DataBlock[];
+const snapshot = (dataBlocks: PacketBlock[]) =>
+  JSON.parse(JSON.stringify(dataBlocks)) as PacketBlock[];
 
 describe('desk history', () => {
   beforeEach(() => {
@@ -117,7 +118,7 @@ describe('desk history', () => {
 
   it('steps back through several changes in order', async () => {
     const { result } = await setup();
-    const states: DataBlock[][] = [[]];
+    const states: PacketBlock[][] = [[]];
     const run = (mutate: (desk: Desk) => void) => {
       act(() => mutate(result.current));
       states.push(snapshot(result.current.dataBlocks));

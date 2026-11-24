@@ -1,3 +1,10 @@
+import {
+  DATA_BLOCK_SCHEMA_VERSION,
+  chooseTypeId,
+  validateBlock,
+  type PacketBlock,
+  type StoredDataBlock,
+} from './dataBlocks/registry';
 import type { NoteEventValue } from './melodicization';
 import type { DataItem, DataKind, DataPacket } from './model';
 import {
@@ -10,33 +17,22 @@ import {
 } from './musicalTime';
 
 /**
- * A data-block is a named, frozen packet kept on the desk. It holds any `DataPacket`: the packet already
- * carries its own kind, domain, role and frame, so routing compatibility works on it unchanged.
+ * A data-block is a named, frozen packet kept on the desk, stored as the registry's `PacketBlock`
+ * (dataBlocks/registry.ts): the envelope names its registered type (`typeId`) and holds the head
+ * packet at `payload.packet`. The packet carries its own kind, domain, role and frame, so routing
+ * compatibility works on it unchanged. The functions here work on packet blocks (a version tree
+ * belongs to packets; records have none).
  *
  * Only *capture* knows about specific kinds. `captureHandlers` maps a packet kind to the function
  * that selects part of it and makes the part self-contained; supporting a new kind (a drawn curve, a
  * painted gesture) means adding one handler there, and the desk, persistence and source-node code
- * stay as they are. A kind with no handler can still be captured whole.
+ * stay as they are. A kind with no handler can still be captured whole, provided a registered type
+ * accepts the packet (`chooseTypeId`).
  *
  * Capture is a copy. Items keep their original ids, so a captured event is still recognisable as the
  * event it came from, and each gains a `capture` provenance step.
  */
-export interface DataBlock {
-  /** Bumped when the stored shape changes, so older desks keep loading. */
-  schemaVersion: 1;
-  id: string;
-  name: string;
-  note?: string;
-  createdAt: string;
-  packet: DataPacket;
-  origin?: DataBlockOrigin;
-  /**
-   * The data-block's stored version tree. Absent until the data-block is first edited (or born derived), so
-   * older desks load unchanged. The head version's packet is `DataBlock.packet` itself and is not
-   * stored again; every other version carries its own snapshot.
-   */
-  lineage?: DataBlockLineage;
-}
+export type { PacketBlock };
 
 /** One kept state of a data-block, a node in its derivation tree. */
 export interface DataBlockVersion {
@@ -46,7 +42,7 @@ export interface DataBlockVersion {
   at: string;
   /** What produced it: `original`, an edit operator such as `edit`, or a derivation name. */
   operation: string;
-  /** The snapshot. Absent on the head version only (see `DataBlock.lineage`). */
+  /** The snapshot. Absent on the head version only (the head packet is `payload.packet`). */
   packet?: DataPacket;
 }
 
@@ -86,7 +82,7 @@ export interface CaptureRequest {
 }
 
 export type CaptureResult =
-  | { ok: true; dataBlock: DataBlock; warnings: string[] }
+  | { ok: true; dataBlock: PacketBlock; warnings: string[] }
   | { ok: false; error: string };
 
 interface Selection {
@@ -200,6 +196,13 @@ export function captureDataBlock(request: CaptureRequest): CaptureResult {
     selection = result;
   }
 
+  const typeId = chooseTypeId(selection.packet);
+  if (typeId === undefined) {
+    return {
+      ok: false,
+      error: `A ${selection.packet.kind} | ${selection.packet.domain} packet has no data-block type yet, so it cannot be sent to the desk.`,
+    };
+  }
   const items = selection.packet.items.map((item) => ({
     ...item,
     provenance: [
@@ -217,12 +220,13 @@ export function captureDataBlock(request: CaptureRequest): CaptureResult {
     ok: true,
     warnings: selection.warnings,
     dataBlock: {
-      schemaVersion: 1,
+      schemaVersion: DATA_BLOCK_SCHEMA_VERSION,
       id: request.id,
+      typeId,
       name: request.name,
       note: request.note,
       createdAt: request.createdAt,
-      packet: { ...selection.packet, items },
+      payload: { kind: 'packet', packet: { ...selection.packet, items } },
       origin: {
         nodeInstance: request.nodeInstance,
         portId: request.portId,
@@ -238,7 +242,7 @@ export function captureDataBlock(request: CaptureRequest): CaptureResult {
  * Edit a data-block's note. Returns a new data-block: only `note` differs, and `packet`, `id` and
  * `createdAt` are the same references. Blank text clears the note (the key is removed).
  */
-export function editDataBlockNote(dataBlock: DataBlock, note: string): DataBlock {
+export function editDataBlockNote(dataBlock: PacketBlock, note: string): PacketBlock {
   const { note: _previous, ...rest } = dataBlock;
   const trimmed = note.trim();
   return trimmed ? { ...rest, note: trimmed } : rest;
@@ -251,10 +255,10 @@ export function editDataBlockNote(dataBlock: DataBlock, note: string): DataBlock
  * Id and time are caller-supplied so this stays pure.
  */
 export function duplicateDataBlock(
-  dataBlock: DataBlock,
+  dataBlock: PacketBlock,
   request: { id: string; createdAt: string }
-): DataBlock {
-  const copy = structuredClone(dataBlock.packet);
+): PacketBlock {
+  const copy = structuredClone(dataBlock.payload.packet);
   const items = copy.items.map((item) => ({
     ...item,
     provenance: [
@@ -273,7 +277,7 @@ export function duplicateDataBlock(
     id: request.id,
     name: `${dataBlock.name} (variation)`,
     createdAt: request.createdAt,
-    packet: { ...copy, items },
+    payload: { kind: 'packet', packet: { ...copy, items } },
     origin: dataBlock.origin && structuredClone(dataBlock.origin),
     lineage: derivedLineage(
       request.id,
@@ -284,7 +288,9 @@ export function duplicateDataBlock(
   };
 }
 
-export type DataBlockEditResult = { ok: true; dataBlock: DataBlock } | { ok: false; error: string };
+export type DataBlockEditResult =
+  | { ok: true; dataBlock: PacketBlock }
+  | { ok: false; error: string };
 
 /**
  * Per-data-block bounds on the stored version tree (see `pruneLineage`). Sized for IndexedDB, which holds
@@ -404,7 +410,7 @@ const clonePacket = (value: DataPacket) => JSON.parse(JSON.stringify(value)) as 
  * first, then the oldest tip; the children of a dropped version are re-parented to its parent, so
  * every remaining version still reaches the root. Oldest means earliest in `versions` (creation
  * order). Pruning loses those snapshots for good. The budget counts the head packet too (pass it as
- * `headPacket`: the head version stores none, it is `DataBlock.packet`), so a huge head forces older
+ * `headPacket`: the head version stores none, it is `payload.packet`), so a huge head forces older
  * snapshots out rather than the save failing.
  */
 export function pruneLineage(
@@ -453,7 +459,7 @@ function derivedLineage(
 }
 
 /** Where a new data-block was derived from: the source head version, or null when the source had no lineage. */
-function derivation(source: DataBlock, operation: string): DataBlockDerivation {
+function derivation(source: PacketBlock, operation: string): DataBlockDerivation {
   return { dataBlockId: source.id, versionId: source.lineage?.head ?? null, operation };
 }
 
@@ -496,7 +502,7 @@ export interface CommitOptions {
  * packet, or whose `kind`, `domain` or `encoding` differs (that is a new data-block, not an edit).
  */
 export function commitDataBlockEdit(
-  dataBlock: DataBlock,
+  dataBlock: PacketBlock,
   newPacket: DataPacket,
   operation: string,
   options: CommitOptions = {}
@@ -524,7 +530,7 @@ export function commitDataBlockEdit(
       error: 'The edited packet is not a valid packet (items need unique ids and provenance).',
     };
   }
-  const current = dataBlock.packet;
+  const current = dataBlock.payload.packet;
   if (
     copy.kind !== current.kind ||
     copy.domain !== current.domain ||
@@ -603,7 +609,7 @@ export function commitDataBlockEdit(
     };
   });
 
-  // The head version stores no packet (it is `dataBlock.packet`); the outgoing head gets its snapshot.
+  // The head version stores no packet (it is `dataBlock.payload.packet`); the outgoing head gets its snapshot.
   const editedPacket: DataPacket = { ...copy, items };
   let grown: DataBlockLineage;
   if (amending && dataBlock.lineage) {
@@ -636,9 +642,9 @@ export function commitDataBlockEdit(
   }
   const lineage = pruneLineage(grown, options.limits, editedPacket);
 
-  const edited: DataBlock = {
+  const edited: PacketBlock = {
     ...dataBlock,
-    packet: editedPacket,
+    payload: { kind: 'packet', packet: editedPacket },
     origin: dataBlock.origin && structuredClone(dataBlock.origin),
     lineage,
   };
@@ -667,7 +673,7 @@ export function commitDataBlockEdit(
  * an unknown version.
  */
 export function restoreDataBlockVersion(
-  dataBlock: DataBlock,
+  dataBlock: PacketBlock,
   versionId: string
 ): DataBlockEditResult {
   const { lineage } = dataBlock;
@@ -688,13 +694,13 @@ export function restoreDataBlockVersion(
     ok: true,
     dataBlock: {
       ...dataBlock,
-      packet: restored,
+      payload: { kind: 'packet', packet: restored },
       lineage: {
         ...lineage,
         head: target.id,
         versions: lineage.versions.map((version) => {
           if (version.id === lineage.head) {
-            return { ...version, packet: clonePacket(dataBlock.packet) };
+            return { ...version, packet: clonePacket(dataBlock.payload.packet) };
           }
           if (version.id === target.id) {
             const { packet: _moved, ...rest } = version;
@@ -714,7 +720,7 @@ export function restoreDataBlockVersion(
  * source is not touched; the new data-block does not copy its version tree.
  */
 export function createDataBlockFromVersion(
-  dataBlock: DataBlock,
+  dataBlock: PacketBlock,
   versionId: string,
   request: { id: string; createdAt: string }
 ): DataBlockEditResult {
@@ -723,7 +729,7 @@ export function createDataBlockFromVersion(
   if (!lineage || !version) {
     return { ok: false, error: 'That version is no longer kept for this data-block.' };
   }
-  const source = version.id === lineage.head ? dataBlock.packet : version.packet;
+  const source = version.id === lineage.head ? dataBlock.payload.packet : version.packet;
   if (!source) {
     return { ok: false, error: 'That version is no longer kept for this data-block.' };
   }
@@ -749,7 +755,7 @@ export function createDataBlockFromVersion(
       id: request.id,
       name: `${dataBlock.name} (from earlier)`,
       createdAt: request.createdAt,
-      packet: { ...copy, items },
+      payload: { kind: 'packet', packet: { ...copy, items } },
       origin: dataBlock.origin && structuredClone(dataBlock.origin),
       lineage: derivedLineage(request.id, request.createdAt, operation, {
         dataBlockId: dataBlock.id,
@@ -776,7 +782,7 @@ export interface PitchClassEventValue {
 export const PITCH_GRID_TOLERANCE_MIDICENTS = 0.5;
 
 export type PitchClassConversionResult =
-  | { ok: true; dataBlock: DataBlock }
+  | { ok: true; dataBlock: PacketBlock }
   /** A hard refusal: the data-block cannot be converted at all. */
   | { ok: false; needsSnap?: false; error: string }
   /** Some pitches are off the project EDO grid; converting needs `snap: true` (the user's say-so). */
@@ -787,8 +793,8 @@ export type PitchClassConversionResult =
  * snapping). Only `events | note` with at least one note and finite pitches converts: anything else
  * is refused, never guessed at. Off-grid pitches are not a refusal; see `convertDataBlockToPitchClass`.
  */
-export function pitchClassConversionRefusal(dataBlock: DataBlock): string | null {
-  const { packet } = dataBlock;
+export function pitchClassConversionRefusal(dataBlock: PacketBlock): string | null {
+  const { packet } = dataBlock.payload;
   if (packet.kind !== 'events' || packet.domain !== 'note') {
     return `Only note data-blocks (events | note) can be converted to pitch classes, not ${packet.kind} | ${packet.domain}.`;
   }
@@ -817,7 +823,7 @@ export function pitchClassConversionRefusal(dataBlock: DataBlock): string | null
  * provenance parameters record the edo and how many pitches were snapped.
  */
 export function convertDataBlockToPitchClass(
-  dataBlock: DataBlock,
+  dataBlock: PacketBlock,
   request: { id: string; createdAt: string; edo?: number; snap?: boolean }
 ): PitchClassConversionResult {
   const refusal = pitchClassConversionRefusal(dataBlock);
@@ -829,7 +835,7 @@ export function convertDataBlockToPitchClass(
     return { ok: false, error: `${edo} is not a valid EDO, so nothing was converted.` };
   }
   const step = 1200 / edo;
-  const source = dataBlock.packet as DataPacket<NoteEventValue>;
+  const source = dataBlock.payload.packet as DataPacket<NoteEventValue>;
   const isOffGrid = (midicents: number) =>
     Math.abs(midicents - Math.round(midicents / step) * step) > PITCH_GRID_TOLERANCE_MIDICENTS;
   const offGridCount = source.items.reduce(
@@ -873,15 +879,29 @@ export function convertDataBlockToPitchClass(
       ],
     };
   });
+  const converted = {
+    ...copy,
+    domain: 'pitchClass',
+    encoding: `chromatic-${edo}`,
+    items,
+  } as DataPacket;
+  const typeId = chooseTypeId(converted);
+  if (typeId === undefined) {
+    return {
+      ok: false,
+      error: 'No data-block type holds pitch classes, so nothing was converted.',
+    };
+  }
   const { lineage: _lineage, ...rest } = dataBlock;
   return {
     ok: true,
     dataBlock: {
       ...rest,
       id: request.id,
+      typeId,
       name: `${dataBlock.name} (pitch classes)`,
       createdAt: request.createdAt,
-      packet: { ...copy, domain: 'pitchClass', encoding: `chromatic-${edo}`, items } as DataPacket,
+      payload: { kind: 'packet', packet: converted },
       origin: dataBlock.origin && structuredClone(dataBlock.origin),
       lineage: derivedLineage(
         request.id,
@@ -894,9 +914,9 @@ export function convertDataBlockToPitchClass(
 }
 
 /** The cheap check after a commit: a packet-shaped head, and a head version that is in the tree. */
-function acceptsEditedHead(dataBlock: DataBlock) {
+function acceptsEditedHead(dataBlock: PacketBlock) {
   const { lineage } = dataBlock;
-  if (!isPacketShape(dataBlock.packet) || !lineage) {
+  if (!isPacketShape(dataBlock.payload.packet) || !lineage) {
     return false;
   }
   const head = lineage.versions.find((version) => version.id === lineage.head);
@@ -907,31 +927,52 @@ function acceptsEditedHead(dataBlock: DataBlock) {
   );
 }
 
-/** For `usePersistentState`: a shape check, so a corrupt or newer desk falls back instead of crashing. */
-export function acceptsDataBlocks(value: unknown): value is DataBlock[] {
+/**
+ * Whether one stored value is a sound data-block for the desk: the current envelope (`schemaVersion`
+ * 2), a packet payload, a well-formed lineage, and the registry's `validateBlock` (its type is
+ * registered and accepts its packet). A record payload is not a desk block yet (R4).
+ */
+export function acceptsDataBlock(entry: unknown): entry is PacketBlock {
+  if (typeof entry !== 'object' || entry === null) {
+    return false;
+  }
+  const dataBlock = entry as Partial<PacketBlock>;
+  const payload = dataBlock.payload as Partial<PacketBlock['payload']> | undefined;
   return (
-    Array.isArray(value) &&
-    value.every((entry) => {
-      if (typeof entry !== 'object' || entry === null) {
-        return false;
-      }
-      const dataBlock = entry as Partial<DataBlock>;
-      const packet = dataBlock.packet as Partial<DataPacket> | undefined;
-      return (
-        dataBlock.schemaVersion === 1 &&
-        typeof dataBlock.id === 'string' &&
-        typeof dataBlock.name === 'string' &&
-        typeof dataBlock.createdAt === 'string' &&
-        (dataBlock.note === undefined || typeof dataBlock.note === 'string') &&
-        (dataBlock.lineage === undefined || acceptsLineage(dataBlock.lineage)) &&
-        typeof packet === 'object' &&
-        packet !== null &&
-        typeof packet.kind === 'string' &&
-        typeof packet.domain === 'string' &&
-        Array.isArray(packet.items)
-      );
-    })
+    dataBlock.schemaVersion === DATA_BLOCK_SCHEMA_VERSION &&
+    typeof dataBlock.id === 'string' &&
+    typeof dataBlock.typeId === 'string' &&
+    typeof dataBlock.name === 'string' &&
+    typeof dataBlock.createdAt === 'string' &&
+    (dataBlock.note === undefined || typeof dataBlock.note === 'string') &&
+    (dataBlock.lineage === undefined || acceptsLineage(dataBlock.lineage)) &&
+    typeof payload === 'object' &&
+    payload !== null &&
+    payload.kind === 'packet' &&
+    isPacketShape(payload.packet) &&
+    validateBlock(dataBlock as StoredDataBlock) === null
   );
+}
+
+/**
+ * A stored block of the earlier envelope (`schemaVersion` 1: no `typeId`, the packet at the top
+ * level). The registry rebuild resets the baseline (W-60): nothing migrates these, storage drops them.
+ */
+export function isLegacyDataBlock(entry: unknown): boolean {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    (entry as { schemaVersion?: unknown }).schemaVersion === 1
+  );
+}
+
+/**
+ * For storage: a shape check, so a corrupt or newer desk falls back instead of crashing. One block
+ * that fails `acceptsDataBlock` makes the whole value unaccepted, so the stored desk is left
+ * untouched rather than loaded with a hole (the desk shows it locked).
+ */
+export function acceptsDataBlocks(value: unknown): value is PacketBlock[] {
+  return Array.isArray(value) && value.every(acceptsDataBlock);
 }
 
 const isPacketShape = (value: unknown): value is DataPacket => {
