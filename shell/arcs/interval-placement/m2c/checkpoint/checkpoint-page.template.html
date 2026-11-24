@@ -1,0 +1,420 @@
+<title>Placement Catalog Checkpoint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+  /* Layout: controls, then the catalog as a score-like row of chord columns on one shared vertical pitch axis
+     (sorted left to right), then a detail area for the selected chord. */
+  :root {
+    --bg: #f6f6f3; --surface: #ffffff; --line: #d9d9d2; --grid: #ecece6; --fg: #1d1f22; --muted: #5d6168;
+    --accent: #2f5fb3; --accent-soft: #e3eaf7; --band: #eef1f7; --cband: #d6deee; --shared: #b4562a;
+    --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300;
+    --s-a: #2f5fb3; --s-b: #2b7a4b; --s-c: #8a4fb0; --s-d: #b07a12;
+    --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #262a2f; --fg: #e8e9eb; --muted: #a2a7ae;
+      --accent: #8fb0ee; --accent-soft: #243149; --band: #222a37; --cband: #33405a; --shared: #f0996b; --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #0ca30c;
+      --s-a: #8fb0ee; --s-b: #79c79a; --s-c: #c79ae6; --s-d: #e3b85a; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a; --surface: #1d2024; --line: #363b42; --grid: #262a2f; --fg: #e8e9eb; --muted: #a2a7ae;
+    --accent: #8fb0ee; --accent-soft: #243149; --band: #222a37; --cband: #33405a; --shared: #f0996b; --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #0ca30c;
+    --s-a: #8fb0ee; --s-b: #79c79a; --s-c: #c79ae6; --s-d: #e3b85a; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 72px;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; margin: 0; text-wrap: balance; }
+  p { margin: 0; max-width: 76ch; }
+  .muted { color: var(--muted); }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .lbl { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); min-width: 7.5em; }
+  button, input {
+    font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 4px 10px;
+  }
+  button { cursor: pointer; font-weight: 500; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.on, button.playing { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  input[type=number] { width: 5em; font-family: var(--font-mono); }
+  .summary { font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .score { display: flex; min-width: 0; }
+  .axis { flex: none; }
+  .cols { display: flex; gap: 2px; overflow-x: auto; min-width: 0; padding-bottom: 6px; }
+  .col { flex: none; width: 58px; display: flex; flex-direction: column; align-items: center; gap: 2px; border-radius: 6px; padding: 4px 0; cursor: pointer; border: 1px solid transparent; background: none; color: inherit; font: inherit; }
+  .col:hover { border-color: var(--line); }
+  .col.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .col:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .col .rk { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+  .col .val { font-family: var(--font-mono); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+  .col .ord { font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted); line-height: 1.2; text-align: center; }
+  .detail { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; align-items: start; }
+  .detail .notes { font-family: var(--font-mono); font-size: 1rem; }
+  .facts { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .facts b { color: var(--fg); font-weight: 600; }
+  .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.85rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 4px; height: 16px; border-radius: 2px; display: inline-block; }
+  .ring { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--shared); display: inline-block; }
+  .bandsw { width: 14px; height: 14px; border-radius: 3px; background: var(--band); border: 1px solid var(--line); display: inline-block; }
+  .chartwrap { position: relative; min-width: 0; }
+  .chart { width: 100%; height: auto; display: block; touch-action: none; }
+  .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; font-variant-numeric: tabular-nums; box-shadow: 0 2px 8px rgba(0,0,0,0.12); white-space: nowrap; }
+  .tip .k { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+  th, td { padding: 3px 10px 3px 0; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; }
+  summary { cursor: pointer; font-size: 0.85rem; }
+  .stop-all { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 2px 10px rgba(0,0,0,0.15); padding: 8px 14px; }
+  @media (max-width: 560px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>Placement Catalog Checkpoint</h1>
+    <p>Built with the new library code. The essential intervals are placed by their centers in <b>every ordering</b>, and every window starts on <b>C2</b> (the window is a width only). <b>Equal centers</b> (the default): the centers are equally spaced, as far apart as the window allows, so every chord reaches both the bottom and the top of its window. <b>Shared center range</b> (the second rule): the centers are equally spaced across one range set by the largest interval. Each interval's bottom note is rounded once to the nearest step; an exact half step rounds toward the middle of the window. With a range of window sizes, each size gives one chord per ordering, and all of them are listed together, the same chord once. <b>Default ranking</b>: smooth (low roughness) and harmonic (high pitch-space harmonicity), weighted equally against the other chords in view. Chords stand as columns on one pitch axis, best first from the left. Click a chord for its details and to hear it.</p>
+  </header>
+
+  <div class="panel">
+    <div class="row"><span class="lbl">Spacing</span><span id="engines" class="row"></span></div>
+    <div class="row"><span class="lbl">Intervals</span><span id="sets" class="row"></span></div>
+    <div class="row"><span class="lbl">Window sizes</span><span id="presets" class="row"></span>
+      <label class="muted" for="wmin">from</label><input id="wmin" type="number" min="6" max="48" step="1">
+      <label class="muted" for="wmax">to</label><input id="wmax" type="number" min="6" max="48" step="1"><span class="muted">steps (set both the same for one window)</span></div>
+    <div class="row"><span class="lbl">Sort by</span><span id="sorts" class="row"></span></div>
+    <div class="summary" id="summary"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="panel">
+    <div class="score"><div class="axis" id="axis"></div><div class="cols" id="cols" role="listbox" aria-label="Catalog"></div></div>
+  </div>
+
+  <div class="panel" id="detail"></div>
+
+  <div class="panel">
+    <div class="lbl" style="min-width:0">How the center band grows with the window</div>
+    <p class="muted" id="bandNote"></p>
+    <div class="chartwrap"><svg id="bandChart" class="chart" role="img" aria-label="Center band size against window size, one line per ordering"></svg>
+      <div class="tip" id="bandTip" hidden></div></div>
+    <div class="legend" id="bandLegend"></div>
+    <details><summary class="muted">Table</summary><div class="tablewrap"><table id="bandTable"></table></div></details>
+  </div>
+</div>
+<button class="stop-all" id="stopAll" type="button">Stop sound</button>
+
+<script>
+/*RANK*/
+const ALL = /*DATA*/null;
+const DATA = ALL.filter((e) => !e.summary);
+const SUMMARY = ALL.filter((e) => e.summary);
+const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+const noteName = (m) => NAMES[m % 12] + (Math.floor(m / 12) - 1);
+const SETS = ['11 7 16', '5 11 15'];
+const WEIGHTS = { rough: -1, harmP: 1 };
+const PRESETS = [['Close', 6, 12], ['Open', 13, 24], ['Wide', 25, 36], ['Vast', 37, 48]];
+const SORTS = [
+  ['mix', 'Default ranking', (a, b) => b.mix - a.mix, (e) => e.mix.toFixed(2)],
+  ['rough', 'Roughness (smoothest first)', (a, b) => a.rough - b.rough, (e) => e.rough.toFixed(3)],
+  ['harmP', 'Harmonicity, pitch-space (highest first)', (a, b) => b.harmP - a.harmP, (e) => e.harmP.toFixed(3)],
+  ['harmPc', 'Harmonicity, pitch-class (highest first)', (a, b) => b.harmPc - a.harmPc, (e) => e.harmPc.toFixed(3)],
+  ['per', 'Periodicity (simplest first)', (a, b) => a.per - b.per, (e) => e.per.toFixed(2)],
+  ['width', 'Window size, then roughness', (a, b) => a.width - b.width || a.rough - b.rough, (e) => String(e.width)],
+];
+const SIZE_COLORS = ['--s-a', '--s-b', '--s-c', '--s-d'];
+const ENGINES = [['equal', 'Equal centers'], ['shared', 'Shared center range']];
+const state = { engine: 'equal', set: SETS[0], wmin: 13, wmax: 24, sort: 'mix', sel: 0 };
+
+// ---------- audio ----------
+let ctx = null, master = null, live = [];
+function audio() {
+  if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination); }
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+function stopAll() {
+  for (const n of live) { try { n.stop(); } catch (e) {} }
+  live = [];
+  document.querySelectorAll('button.playing').forEach((b) => b.classList.remove('playing'));
+}
+function tone(midi, start, dur, level) {
+  const c = audio(), f = 440 * Math.pow(2, (midi - 69) / 12), g = c.createGain();
+  g.gain.setValueAtTime(0, start);
+  g.gain.linearRampToValueAtTime(level, start + 0.02);
+  g.gain.setTargetAtTime(level * 0.6, start + 0.05, 0.4);
+  g.gain.setTargetAtTime(0, start + dur, 0.12);
+  g.connect(master);
+  for (let k = 1; k <= 6; k++) {
+    if (f * k > 12000) break;
+    const o = c.createOscillator(), pg = c.createGain();
+    pg.gain.value = 1 / k; o.frequency.value = f * k;
+    o.connect(pg); pg.connect(g); o.start(start); o.stop(start + dur + 0.8);
+    live.push(o);
+  }
+}
+function play(midis, mode, btn) {
+  stopAll();
+  const c = audio(), t0 = c.currentTime + 0.05, level = 0.18 / Math.sqrt(midis.length);
+  if (mode === 'chord') midis.forEach((m) => tone(m, t0, 2.2, level));
+  else midis.forEach((m, i) => tone(m, t0 + i * 0.32, 2.8 - i * 0.2, level));
+  btn.classList.add('playing');
+  setTimeout(() => btn.classList.remove('playing'), mode === 'chord' ? 2600 : midis.length * 320 + 2000);
+}
+document.getElementById('stopAll').addEventListener('click', stopAll);
+
+// ---------- geometry (shared by axis and columns) ----------
+function geom() {
+  const LO = 36, HI = 36 + Math.max(state.wmax, 24);
+  const step = Math.max(6, Math.min(11, 380 / (HI - LO)));
+  const top = 10, H = top + (HI - LO) * step + 10;
+  return { LO, HI, step, top, H, y: (m) => top + (HI - m) * step };
+}
+function axisSvg(g) {
+  let s = `<svg width="40" height="${g.H}" aria-hidden="true">`;
+  for (let m = g.LO; m <= g.HI; m++) {
+    if (m % 12 === 0) s += `<text x="34" y="${g.y(m) + 4}" text-anchor="end" font-size="11" font-family="var(--font-mono)" fill="var(--muted)">C${m / 12 - 1}</text>`;
+  }
+  return s + '</svg>';
+}
+const fmtStep = (x) => (Math.abs(x - Math.round(x)) < 1e-9 ? String(Math.round(x)) : x.toFixed(2));
+function centreBand(e) {
+  const sizes = e.spans.map((s) => s.size);
+  if (e.rule === 'shared') {
+    const h = Math.max(...sizes) / 2;
+    return { min: h, max: e.width - h };
+  }
+  const cs = e.spans.map((s) => s.center);
+  return { min: Math.min(...cs), max: Math.max(...cs) };
+}
+function colSvg(e, g, sizes) {
+  const W = 56;
+  let s = `<svg width="${W}" height="${g.H}" aria-hidden="true">`;
+  // octave grid lines
+  for (let m = g.LO; m <= g.HI; m++) if (m % 12 === 0) s += `<line x1="0" x2="${W}" y1="${g.y(m)}" y2="${g.y(m)}" stroke="var(--grid)" stroke-width="1"/>`;
+  // the span (window) as a band
+  s += `<rect x="4" y="${g.y(36 + e.width)}" width="${W - 8}" height="${g.y(36) - g.y(36 + e.width)}" rx="3" fill="var(--band)"/>`;
+  // the center band: shared = the allowed center range; equal = lowest to highest center
+  const cb = centreBand(e);
+  s += `<rect x="4" y="${g.y(36 + cb.max)}" width="${W - 8}" height="${Math.max(1.5, g.y(36 + cb.min) - g.y(36 + cb.max))}" rx="2" fill="var(--cband)"/>`;
+  // interval brackets as vertical lines, side by side in placement order
+  const n = e.spans.length, gap = (W - 16) / Math.max(1, n);
+  e.spans.forEach((sp, i) => {
+    const x = 8 + gap * (i + 0.5);
+    const col = `var(${SIZE_COLORS[sizes.indexOf(sp.size)] || '--muted'})`;
+    const y1 = g.y(36 + sp.low), y2 = g.y(36 + sp.low + sp.size);
+    s += `<line x1="${x}" x2="${x}" y1="${y1}" y2="${y2}" stroke="${col}" stroke-width="2.5" stroke-linecap="round"/>`;
+    s += `<circle cx="${x}" cy="${y1}" r="3" fill="${col}"/><circle cx="${x}" cy="${y2}" r="3" fill="${col}"/>`;
+    // centre tick: the engine's exact centre of this interval
+    const yc = g.y(36 + sp.center);
+    s += `<line x1="${x - 6}" x2="${x + 6}" y1="${yc}" y2="${yc}" stroke="var(--fg)" stroke-width="2" stroke-linecap="round"/>`;
+  });
+  // shared notes: a ring across the column at that pitch
+  for (const m of e.sharedMidi) s += `<rect x="3" y="${g.y(m) - 3}" width="${W - 6}" height="6" rx="3" fill="none" stroke="var(--shared)" stroke-width="1.5"/>`;
+  return s + '</svg>';
+}
+
+// ---------- controls ----------
+function buttons(el, items, isOn, onClick) {
+  el.innerHTML = '';
+  for (const it of items) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = it.label; if (isOn(it)) b.classList.add('on');
+    b.addEventListener('click', () => onClick(it));
+    el.appendChild(b);
+  }
+}
+function renderControls() {
+  buttons(document.getElementById('engines'), ENGINES.map(([v, l]) => ({ label: l, v })), (it) => it.v === state.engine, (it) => { state.engine = it.v; state.sel = 0; render(); });
+  buttons(document.getElementById('sets'), SETS.map((s) => ({ label: s, v: s })), (it) => it.v === state.set, (it) => { state.set = it.v; state.sel = 0; render(); });
+  buttons(document.getElementById('presets'), PRESETS.map(([n, a, b]) => ({ label: `${n} ${a}–${b}`, a, b })),
+    (it) => it.a === state.wmin && it.b === state.wmax, (it) => { state.wmin = it.a; state.wmax = it.b; state.sel = 0; render(); });
+  buttons(document.getElementById('sorts'), SORTS.map(([k, l]) => ({ label: l, v: k })), (it) => it.v === state.sort, (it) => { state.sort = it.v; state.sel = 0; render(); });
+  document.getElementById('wmin').value = state.wmin;
+  document.getElementById('wmax').value = state.wmax;
+  const sizes = state.set.split(' ').map(Number);
+  document.getElementById('legend').innerHTML = sizes.map((sz, i) => `<span><i class="sw" style="background:var(${SIZE_COLORS[i]})"></i>${sz}</span>`).join('') +
+    '<span><i class="bandsw"></i>the chord\'s window</span>' +
+    `<span><i class="bandsw" style="background:var(--cband)"></i>${state.engine === 'equal' ? 'center band (lowest to highest center)' : 'center band (where centers may go)'}</span><span><i style="width:12px;height:2px;background:var(--fg);display:inline-block"></i>center of each interval</span><span><i class="ring"></i>shared note (two intervals meet on it)</span>`;
+}
+for (const id of ['wmin', 'wmax']) {
+  document.getElementById(id).addEventListener('change', (ev) => {
+    const v = Math.max(6, Math.min(48, Math.round(+ev.target.value || 6)));
+    state[id] = v;
+    if (state.wmin > state.wmax) { if (id === 'wmin') state.wmax = v; else state.wmin = v; }
+    state.sel = 0; render();
+  });
+}
+
+let current = [];
+let rankOf = new Map();
+const occText = (e) => {
+  const one = state.wmin === state.wmax;
+  return e.occ.map((o) => (one ? o.order : `${o.order} in ${o.w}`)).join(' / ') + (one ? `, window ${e.width} steps` : '');
+};
+const tieText = (e) => {
+  const t = Math.max(...e.occ.map((o) => o.ties));
+  return t ? `<span>${t} bottom note${t > 1 ? 's' : ''} at an exact half step, rounded toward the middle</span>` : '';
+};
+function renderDetail() {
+  const el = document.getElementById('detail');
+  const e = current[state.sel];
+  if (!e) { el.innerHTML = '<p class="muted">No chord fits this span range. Try a wider span.</p>'; return; }
+  const shared = e.sharedMidi.length ? `<span>shared note: <b>${e.sharedMidi.map(noteName).join(', ')}</b></span>` : '<span>no shared notes</span>';
+  el.innerHTML = `<div class="detail"><div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+      <div class="lbl">Chord ${state.sel + 1} of ${current.length}</div>
+      <div class="notes">${e.midi.map(noteName).join(' ')}</div>
+      <div class="facts"><span>made by <b>${occText(e)}</b></span><span>center band <b>${fmtStep(centreBand(e).min)}–${fmtStep(centreBand(e).max)}</b></span><span>${e.midi.length} notes</span>${shared}</div>
+      <div class="facts">${e.spans.map((sp) => `<span>${sp.size}: ${noteName(36 + sp.low)}–${noteName(36 + sp.low + sp.size)}, center <b>${fmtStep(sp.center)}</b></span>`).join('')}${e.spans.length && e.occ.length > 1 ? '<span>(spans of the first)</span>' : ''}${tieText(e)}</div>
+      <div class="facts"><span>ranking <b>#${rankOf.get(e.id)}</b> of ${current.length} (mix ${e.mix.toFixed(2)})</span><span>Pareto layer <b>${e.layer + 1}</b> (roughness × pitch-space harmonicity; 1 = nothing beats it on both)</span></div>
+      <div class="facts"><span>roughness <b>${e.rough.toFixed(3)}</b></span><span>harmonicity, pitch-space <b>${e.harmP.toFixed(3)}</b></span><span>harmonicity, pitch-class <b>${e.harmPc.toFixed(3)}</b></span><span>periodicity <b>${e.per.toFixed(2)}</b></span></div>
+    </div><div class="btns"><button type="button" data-mode="chord">Chord</button><button type="button" data-mode="arp">Arpeggio</button></div></div>`;
+  el.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => play(e.midi, b.dataset.mode, b)));
+}
+
+function render() {
+  renderControls();
+  const sizes = state.set.split(' ').map(Number);
+  const sort = SORTS.find((s) => s[0] === state.sort);
+  const inView = (e) => e.rule === state.engine && e.set === state.set && e.width >= state.wmin && e.width <= state.wmax;
+  const ranked = rankEntries(mergeRange(DATA.filter((e) => e.rule === state.engine && e.set === state.set), state.wmin, state.wmax), WEIGHTS);
+  const layers = paretoLayerOf(ranked, 'rough', 'min', 'harmP', 'max');
+  ranked.forEach((e, i) => { e.layer = layers[i]; });
+  rankOf = new Map(ranked.map((e, i) => [e.id, i + 1]));
+  current = state.sort === 'mix' ? ranked : ranked.slice().sort(sort[2]);
+  const sums = SUMMARY.filter(inView);
+  const n = state.wmax - state.wmin + 1;
+  const tooSmall = sums.filter((e) => e.cannotFit === e.orderings).map((e) => e.width);
+  let sum = n === 1
+    ? `One window of ${state.wmin} steps: each ordering of ${state.set} laid out to fill it, ${current.length} distinct chords.`
+    : `${n} window sizes (${state.wmin} to ${state.wmax} steps): for each size, each ordering of ${state.set} is laid out to fill that window, giving one chord per ordering per size; all of them are listed together, ${current.length} distinct chords. Each column's shaded band is its own window size.`;
+  sum += ' Identical chords from different orderings are listed once.';
+  if (tooSmall.length) sum += ` Sizes ${tooSmall[0]}–${tooSmall[tooSmall.length - 1]} are too small for the largest interval and give nothing.`;
+  document.getElementById('summary').textContent = sum;
+  const g = geom();
+  document.getElementById('axis').innerHTML = axisSvg(g);
+  const cols = document.getElementById('cols');
+  cols.innerHTML = '';
+  current.forEach((e, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'col' + (i === state.sel ? ' sel' : '');
+    b.setAttribute('role', 'option');
+    b.setAttribute('aria-selected', String(i === state.sel));
+    b.setAttribute('aria-label', `${i + 1}: ${e.midi.map(noteName).join(' ')}`);
+    b.innerHTML = colSvg(e, g, sizes) + `<span class="rk">${i + 1}</span><span class="val">${sort[3](e)}</span><span class="ord">${e.occ.map((o) => o.order).join('<br>')}<br>window ${e.occ.map((o) => o.w).filter((w, i, a) => a.indexOf(w) === i).join(', ')}</span>`;
+    b.addEventListener('click', () => { state.sel = i; cols.querySelectorAll('.col').forEach((c, j) => { c.classList.toggle('sel', j === i); c.setAttribute('aria-selected', String(j === i)); }); renderDetail(); });
+    cols.appendChild(b);
+  });
+  renderDetail();
+  renderBandChart();
+}
+
+// ---------- center band size against window size ----------
+function permutations(xs) {
+  if (xs.length <= 1) return [xs.slice()];
+  const out = [], seen = new Set();
+  xs.forEach((x, i) => {
+    if (seen.has(x)) return;
+    seen.add(x);
+    for (const rest of permutations(xs.filter((_, j) => j !== i))) out.push([x, ...rest]);
+  });
+  return out;
+}
+/** Band size (steps) for one ordering in a window of W steps, or null when the largest interval does not fit. */
+function bandSize(engine, order, W) {
+  const n = order.length, M = Math.max(...order);
+  if (W < M) return null;
+  if (engine === 'shared') return W - M;
+  if (n === 1) return 0;
+  let D = Infinity;
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) D = Math.min(D, (W - (order[i] + order[j]) / 2) / (j - i));
+  return (n - 1) * D;
+}
+const WMIN = 6, WMAX = 48;
+function bandSeries() {
+  const sizes = state.set.split(' ').map(Number);
+  const groups = new Map();
+  for (const order of permutations(sizes)) {
+    const vals = [];
+    for (let W = WMIN; W <= WMAX; W++) vals.push(bandSize(state.engine, order, W));
+    const key = vals.map((v) => (v === null ? 'x' : v.toFixed(6))).join(',');
+    if (groups.has(key)) groups.get(key).orders.push(order.join(' '));
+    else groups.set(key, { orders: [order.join(' ')], vals });
+  }
+  return [...groups.values()].map((g, i) => ({ ...g, color: `var(--c${(i % 6) + 1})`, name: g.orders.length === permutations(sizes).length ? 'all orderings' : g.orders.join(' / ') }));
+}
+function renderBandChart() {
+  const series = bandSeries();
+  const sizes = state.set.split(' ').map(Number);
+  const M = Math.max(...sizes);
+  const note = document.getElementById('bandNote');
+  note.textContent = state.engine === 'equal'
+    ? `Equal centers: the band is the tightest pair limit times ${sizes.length - 1}; once the window is large enough it becomes window − (first + last)/2, so orderings with smaller outer intervals sit higher. A steeper start means an inner interval is the limit.`
+    : `Shared center range: the band is window − ${M} (the largest interval) for every ordering, so all orderings share one line.`;
+  const W = 640, H = 240, L = 40, R = 150, T = 12, B = 34;
+  const maxY = Math.max(1, ...series.flatMap((s) => s.vals.filter((v) => v !== null)));
+  const x = (w) => L + ((w - WMIN) / (WMAX - WMIN)) * (W - L - R);
+  const y = (v) => T + (1 - v / maxY) * (H - T - B);
+  let s = `<rect x="${x(state.wmin)}" y="${T}" width="${Math.max(2, x(state.wmax) - x(state.wmin))}" height="${H - T - B}" fill="var(--band)"/>`;
+  const yStep = maxY > 30 ? 10 : 5;
+  for (let v = 0; v <= maxY; v += yStep) {
+    s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/>`;
+    s += `<text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
+  }
+  for (const w of [12, 24, 36, 48]) s += `<text x="${x(w)}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${w}</text>`;
+  s += `<text x="${(L + W - R) / 2}" y="${H - 4}" text-anchor="middle" font-size="11" fill="var(--muted)">window size (steps); shaded = your window range</text>`;
+  s += `<text x="${L - 30}" y="${T + 4}" font-size="11" fill="var(--muted)">band</text>`;
+  const ends = [];
+  series.forEach((sr) => {
+    let d = '';
+    sr.vals.forEach((v, i) => { if (v === null) return; d += (d ? 'L' : 'M') + x(WMIN + i) + ' ' + y(v) + ' '; });
+    s += `<path d="${d}" fill="none" stroke="${sr.color}" stroke-width="2" stroke-linejoin="round"/>`;
+    ends.push({ y: y(sr.vals[sr.vals.length - 1]), sr });
+  });
+  // direct labels at the line ends, nudged apart so they never overlap
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
+  for (const e of ends) s += `<text x="${x(WMAX) + 8}" y="${e.y + 4}" font-size="11" fill="var(--fg)" font-family="var(--font-mono)">${e.sr.name.length > 22 ? e.sr.orders[0] + ' +' + (e.sr.orders.length - 1) : e.sr.name}</text>`;
+  s += `<line id="bandCross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>`;
+  const svg = document.getElementById('bandChart');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = s;
+  document.getElementById('bandLegend').innerHTML = series.map((sr) => `<span><i class="sw" style="background:${sr.color};width:16px;height:3px"></i>${sr.name}</span>`).join('');
+  // hover: nearest whole window size
+  const tip = document.getElementById('bandTip');
+  const cross = document.getElementById('bandCross');
+  svg.onpointermove = (ev) => {
+    const r = svg.getBoundingClientRect();
+    const px = ((ev.clientX - r.left) / r.width) * W;
+    const w = Math.round(WMIN + ((px - L) / (W - L - R)) * (WMAX - WMIN));
+    if (w < WMIN || w > WMAX) { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); return; }
+    cross.setAttribute('x1', x(w)); cross.setAttribute('x2', x(w)); cross.setAttribute('visibility', 'visible');
+    const rows = series.map((sr) => { const v = sr.vals[w - WMIN]; return `<div><i class="k" style="background:${sr.color}"></i>${sr.name}: <b>${v === null ? 'does not fit' : fmtStep(v)}</b></div>`; }).join('');
+    tip.innerHTML = `<div><b>window ${w}</b></div>${rows}`;
+    tip.hidden = false;
+    const left = (x(w) / W) * r.width;
+    tip.style.left = Math.min(left + 12, r.width - tip.offsetWidth - 4) + 'px';
+    tip.style.top = '8px';
+  };
+  svg.onpointerleave = () => { tip.hidden = true; cross.setAttribute('visibility', 'hidden'); };
+  // table: the window range edges plus the octaves
+  const cols = [...new Set([state.wmin, state.wmax, 12, 24, 36, 48])].sort((a, b) => a - b);
+  document.getElementById('bandTable').innerHTML =
+    `<tr><th>ordering</th>${cols.map((w) => `<th>window ${w}</th>`).join('')}</tr>` +
+    series.map((sr) => `<tr><td>${sr.name}</td>${cols.map((w) => { const v = sr.vals[w - WMIN]; return `<td>${v === null ? '—' : fmtStep(v)}</td>`; }).join('')}</tr>`).join('');
+}
+render();
+</script>
