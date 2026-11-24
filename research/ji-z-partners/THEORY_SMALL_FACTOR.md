@@ -412,5 +412,33 @@ doubled note must meet the subtracted copy (2 − 1 = 1 or 2 − 1 − 1 = 0), s
 Generator: each row is one factor-search shape (2,1 with second-factor coefficients 0..2; 3,1, 5,1,
 5,2 with signed second factor; 3,0 with second factor −1..2). With no node budget the search is
 exhaustive for those shapes (`data/vm/res_gen.sh`, check against the 9 proven residue families).
-Gap: family 15/19292's small factor has a coefficient −2 ({45/32, 3/2, 25/16, −2·15/8}); the Rust
-factor generation builds ±1 coefficients only, so it cannot be reached without extending gen_V.
+Gap (closed in 6.9): family 15/19292's small factor has a coefficient −2 ({45/32, 3/2, 25/16,
+−2·15/8}); the Rust factor generation built ±1 coefficients only.
+
+### 6.9 Exact residue generator (`data/vm/res_gen2.sh`, zprod-rs `--vminus2`, 2026-11-23)
+
+`--vminus2` lets the small factor have one minus point at −2 (binary bin13; without the flag identical
+to bin12). `res_gen2.sh` runs the residue shapes of 6.8 with **no node budget** (exhaustive for those
+shapes), then `resclass.py`. At q <= 3,645 it rebuilds exactly the 9 proven residue families
+(`res_match.py`). **At 5-limit q <= 6,561 it finds 63 residue families** (`tables/chordsum/residue_gen_q6561.jsonl`,
+factors `residue_gen_q6561_factors.txt`; 151,992 distinct families in the six runs; the 7+7 step took
+12 min). It contains all 59 hunt families; the 4 extra are 15-note: the two proven families the hunt
+missed (q 3,125: 19292 and one plain-chord × doubled-note family) and two more at q 6,561.
+
+By size and q: 13 notes 15 (q 3,645 1, 6,075 2, 6,561 12), 14 notes 14 (q 2,187 1, 6,561 13),
+15 notes 12 (q 3,125 5, 5,625 2, 6,561 5), 16 notes 22 (q 3,125 2, 6,075 1, 6,561 19); 49 at q = 6,561.
+
+| small factor | weight | other factor | families |
+|---|---|---|---|
+| 2 plus, 1 minus | 1 | plain, 12-15 terms, one coefficient 2 | 38 |
+| 3 plus, 1 minus | 2 | 9-12 terms, 1-2 minus | 13 |
+| 5 plus, 2 minus | 3 | 6 plus, 1 minus | 5 |
+| plain 3-note chord | 3 | 10 or 12 terms, 3-4 minus, one coefficient 2 | 4 |
+| 5 plus, 1 minus | 4 | 5 plus, 1 minus | 2 |
+| 3 plus, one −2 | 1 | plain, 12 terms, three coefficient 2 | 1 |
+
+So **43 with a coefficient 2** (a doubled stacking point) and **20 with both factors signed** (the
+same 20 as the hunt). Exact for these shapes only: a residue family of another shape (e.g. a larger
+small factor, or a coefficient 3) would not be found, so 63 is complete only relative to the shapes.
+
+7-limit (`res_hunt.sh`, budget on, so "none found", not proven): q <= 729, 236,222 families, residue 0.
