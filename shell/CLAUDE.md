@@ -5,6 +5,7 @@
 ## Layout
 
 - `ARCHITECTURE.md`: shell-level map (layers, shared components, shared contracts, who consumes what). Each page keeps its own `ARCHITECTURE.md`; where a rule says `shell/ARCHITECTURE.md` it means this shell-level one, never a page's.
+- `UI-RULES.md`: the human's standing UI rules (smooth and no flicker, page fits the window, reuse the reference component, theme roles, plain words, thin slice then stop). Read it before ANY UI work, and tell builders to read it in the brief instead of restating rules.
 - `DECISIONS.md`: cross-project decisions log.
 - `BACKLOG.md`: shared backlog; each item is tagged with its workstream folder name (`[workbench]`, `[tunings]`, ...) or `[shared]`.
 - `ARC.template.md`, `PROGRESS.template.md`: copy into `arcs/<name>/` to start an arc.
