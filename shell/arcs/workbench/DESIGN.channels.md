@@ -1,4 +1,4 @@
-# Design: channels, shapes and operators (2026-11-24, DRAFT for the human)
+# Design: channels, shapes and operators (2026-11-24, human answered in section 6; M3 and the audio-capabilities side discussion open)
 
 Why: the registry's types should follow what music varies along and what a composer does to it. The human, 2026-11-24: pitch is frequency; rhythm is onsets in time; amplitude is volume; articulation blends onset, sounding duration and tone color; timbre is the tone color of a sound. Ideas to support: a **lattice** applied to a melody (drag segments like a photo editor's warp mesh over time and pitch) and a **mask** (one stream silences or accents another; accent "spills" from the rhythm domain into amplitude). No tonal-theory terms are used here.
 
@@ -51,3 +51,16 @@ Cast: **Melody** = C4 D4 E4 G4, quarters on beats 0, 1, 2, 3, velocity 0.7. **Ma
 - List and Bank generic types follow the Blender Text precedent, as agreed in discussion; they hold domain-tagged lists with no special editor.
 - New data-block types are added only when a kept thing needs its own editor or audition: warp grid (shape: grid of control points), mask is not a type (a Rhythm or Notes block used by the mask operator).
 - Nothing here changes `DataPacket`, exact time, midicent pitch or the evaluators.
+
+## 6. Human answers (2026-11-24)
+- **M1** agreed: gate by silencing by default, removing as an explicit option.
+- **M2** revised: the mask operator gets **reach controls**, a width for each item of the mask (a "hitbox" before and after each mask onset, in beats), not only exact onset. Width 0 is the exact-onset case. **Touch** is a toggle: any note whose sounding span overlaps a mask item's span at any point is affected (the old option c). The user also chooses what the mask is (a Rhythm, or Notes used for their onsets and durations).
+- **M3** open: the human needs clearer musical examples before deciding whether a mask reads the mask stream's pitches (see the examples in the session reply; to be added here once settled).
+- **M4** agreed: Multiply and Set to are both options.
+- **M5** yes: Invert toggle.
+- **M6** agreed: piecewise-linear now; smooth later. Pitch results will need a choice between free pitch and snap to the project or section tuning (EDO or scale); the warp's pitch output is a good first test of how that snap works.
+- **M7** yes: one warp operator over a chosen channel pair; the grid is a data-block.
+- **M8, M9** ok.
+- **Q1**: not yet: timbre stays on the voice or bus. The human raised a larger question: filters and other sound parameters, and the app's total audio playback capability versus MIDI out. Side discussion, not in this arc's scope.
+- **Q2**: yes, amplitude is a channel of every Notes block, and the DAW **0 to 127** scale replaces today's 0 to 1 for ease of cross use. Default: 64 or a project setting. This changes a stored contract (see the session reply for the migration question); decide the storage rule before implementing.
+- **Q3**: "warp grid" is fine for now.
