@@ -9,7 +9,8 @@ lists is kept once), and writes a columnar JSON file:
   gmin   smallest neighboring step of either member, cents, octave wrap included (as data/vm/minstep.py)
   gmax   largest neighboring step of either member, cents, octave wrap included
   lb     0 = in a proven list, 1 = found only by a ladder rung (a lower bound; only with --ladder)
-  m      the two members of each proven family, each a space-separated list of ratios (only with --members)
+  m      the two members of every family (proven and ladder), each a space-separated list of ratios, in row order
+         (only with --members)
 plus "coverage": the proven rectangles (highest prime <= P, q <= Q, note counts) from data/manifest.json, and
 "ladderCoverage": the ladder rungs read (with --ladder).
 
@@ -175,7 +176,7 @@ def main():
             if in_proven(d[0], d[1], d[2]):
                 misses.append((name, d[:3]))
                 continue
-            fams[key] = d + (1, None)
+            fams[key] = d + (1, members)
             added += 1
         if misses:
             sys.exit(f"identity check FAILED: {len(misses)} ladder families inside a proven range are not in the "
@@ -198,7 +199,7 @@ def main():
         "gmin": [v[3] for v in rows], "gmax": [v[4] for v in rows], "lb": [v[5] for v in rows],
     }
     if want_members:
-        data["m"] = [[" ".join(m) for m in v[6]] for v in rows if v[5] == 0]
+        data["m"] = [[" ".join(m) for m in v[6]] for v in rows]
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(data, fh, separators=(",", ":"))
     print(f"wrote {out}: {len(rows)} families ({n_proven} proven), {os.path.getsize(out):,} bytes; "
