@@ -54,7 +54,7 @@ function localSoundfonts() {
 const DOM_TESTS = [
   'src/pages/composition-workbench/compositionSettings.test.ts',
   'src/pages/composition-workbench/noteEditorPreferences.test.ts',
-  'src/pages/composition-workbench/snippet.test.ts',
+  'src/pages/composition-workbench/dataBlock.test.ts',
   'src/pages/composition-workbench/transport.test.ts',
   'src/pages/harmonic-field-lab/audio/plan.test.ts',
   'src/pages/harmonic-field-lab/components/webgl.test.ts',

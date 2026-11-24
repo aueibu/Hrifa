@@ -1,14 +1,14 @@
 import type { DataPacket } from './model';
-import { itemsSpan } from './noteClipEdits';
+import { itemsSpan } from './notesEdits';
 
-/** A span of clip time, in quarter notes. */
+/** A span of data-block time, in quarter notes. */
 export interface TimeRange {
   start: number;
   end: number;
 }
 
 /**
- * What is selected in a note clip: the events, and the stretch of time they occupy. The range
+ * What is selected in a notes data-block: the events, and the stretch of time they occupy. The range
  * covers the selected events but can reach further, over empty space (select a quarter note and two
  * quarters of silence after it, and a later duplicate copies all three beats). Transforms that work
  * on a selection (duplicate, scale, reverse; K5b) read the range, not just the ids; K5 itself only
@@ -93,7 +93,7 @@ export function itemsBand(selection: NoteSelection): TimeRange | null {
 }
 
 /**
- * A time selection's span held to the clip: from 0 to `limit` (the furthest the roll shows), or null
+ * A time selection's span held to the data-block: from 0 to `limit` (the furthest the roll shows), or null
  * when nothing of it is left.
  */
 export function pruneTimeRange(
@@ -113,7 +113,7 @@ export function pruneTimeRange(
  * range falls back to what the rest occupy (a range reaching over empty space that no event backs
  * is kept only while every selected event is still there). A TIME selection keeps its kind and its
  * range whatever happens to the notes (deletes, undo, outside changes): only the dropped ids go, and
- * the span is held to the clip (0 to `limit`).
+ * the span is held to the data-block (0 to `limit`).
  */
 export function pruneSelection(
   selection: NoteSelection,

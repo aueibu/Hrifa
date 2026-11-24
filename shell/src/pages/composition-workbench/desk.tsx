@@ -8,7 +8,19 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { clipTypeById, nextClipName } from './clipTypes';
+import {
+  commitDataBlockEdit,
+  createDataBlockFromVersion,
+  convertDataBlockToPitchClass,
+  duplicateDataBlock,
+  editDataBlockNote,
+  endEditSession as endDataBlockEditSession,
+  restoreDataBlockVersion,
+  type PitchClassConversionResult,
+  type DataBlock,
+  type DataBlockEditResult,
+} from './dataBlock';
+import { dataBlockTypeById, nextDataBlockName } from './dataBlockTypes';
 import {
   describeStorageError,
   enqueueDeskTask,
@@ -19,18 +31,6 @@ import {
 import { recordChange, registerHistoryApplier, type HistoryChange } from './history';
 import type { DataPacket } from './model';
 import type { Rational } from './musicalTime';
-import {
-  commitSnippetEdit,
-  createClipFromVersion,
-  convertSnippetToPitchClass,
-  duplicateSnippet,
-  editSnippetNote,
-  endEditSession as endSnippetEditSession,
-  restoreSnippetVersion,
-  type PitchClassConversionResult,
-  type Snippet,
-  type SnippetEditResult,
-} from './snippet';
 import { compositionStateKeys } from './usePersistentState';
 
 /** Desk writes closer together than this are one write. */
@@ -40,11 +40,11 @@ export const DESK_WRITE_DEBOUNCE_MS = 150;
 export const DESK_GESTURE_WRITE_DEBOUNCE_MS = 1000;
 
 /**
- * The desk: snippets set aside for reuse, kept per browser. One provider at the workbench root so
+ * The desk: data-blocks set aside for reuse, kept per browser. One provider at the workbench root so
  * every module sends to, and every view reads from, the same list.
  */
 interface DeskContextValue {
-  snippets: Snippet[];
+  dataBlocks: DataBlock[];
   /** True until the saved desk has been read; changes are refused until then. */
   loading: boolean;
   /**
@@ -63,37 +63,37 @@ interface DeskContextValue {
    */
   flushDesk(): Promise<boolean>;
   /**
-   * Replaces the whole desk (opening a saved project): every clip and its lineage, written to
+   * Replaces the whole desk (opening a saved project): every data-block and its lineage, written to
    * IndexedDB in one transaction. Not an undo step (opening a project reloads the page). Refused
    * while the desk is loading or locked; on any failure (write error, another tab changed the desk)
    * nothing is stored and the desk on screen is unchanged, and the reason comes back.
    */
   replaceDesk(
-    snippets: Snippet[],
+    dataBlocks: DataBlock[],
     options?: ReplaceDeskOptions
   ): Promise<{ ok: true } | { ok: false; error: string }>;
   /**
-   * Ends the clip's hand-edit session so its next edit starts a new version (an editor calls this
-   * when it closes or another clip becomes its target). Idle time and a different operation end a
+   * Ends the data-block's hand-edit session so its next edit starts a new version (an editor calls this
+   * when it closes or another data-block becomes its target). Idle time and a different operation end a
    * session too.
    */
-  endEditSession(snippetId: string): void;
-  addSnippet(snippet: Snippet): void;
+  endEditSession(dataBlockId: string): void;
+  addDataBlock(dataBlock: DataBlock): void;
   /**
-   * Adds a new empty clip of a registered type (see clipTypes.ts) at the end of the desk, named
-   * "New clip", "New clip 2", and so on. One undo step. Returns the clip, or null when the desk
+   * Adds a new empty data-block of a registered type (see dataBlockTypes.ts) at the end of the desk, named
+   * "New data-block", "New data-block 2", and so on. One undo step. Returns the data-block, or null when the desk
    * refused it (loading or locked) or the type is unknown.
    */
-  addBlankClip(
+  addBlankDataBlock(
     typeId: string,
     length: Rational,
     options?: { timeSignature?: string }
-  ): Snippet | null;
-  removeSnippet(id: string): void;
-  renameSnippet(id: string, name: string): void;
-  setSnippetNote(id: string, note: string): void;
+  ): DataBlock | null;
+  removeDataBlock(id: string): void;
+  renameDataBlock(id: string, name: string): void;
+  setDataBlockNote(id: string, note: string): void;
   /** Adds a copy named `<name> (variation)` directly after the original. */
-  duplicateSnippetById(id: string): void;
+  duplicateDataBlockById(id: string): void;
   /**
    * Adds a pitch-class copy (in the given EDO) directly after the original. Returns the conversion
    * result: `ok` when the copy was added, a refusal, or `needsSnap` when pitches are off the EDO
@@ -104,27 +104,27 @@ interface DeskContextValue {
     options: { edo: number; snap?: boolean }
   ): PitchClassConversionResult;
   /**
-   * The edit contract: replace the snippet's packet in place (same id, name and position), adding an
+   * The edit contract: replace the data-block's packet in place (same id, name and position), adding an
    * `operation` provenance step to each added or modified item. One global undo step per gesture. A packet
    * deeply equal to the current one changes nothing (`ok`, no history entry); an invalid packet or
    * an unknown id is refused and the desk is untouched. A `coalesceKey` makes a gesture's edits one
-   * undo step (undo is per gesture; versions are per edit session, see `commitSnippetEdit`).
+   * undo step (undo is per gesture; versions are per edit session, see `commitDataBlockEdit`).
    */
-  commitSnippetEditById(
+  commitDataBlockEditById(
     id: string,
     newPacket: DataPacket,
     operation: string,
     options?: { coalesceKey?: string; handEdit?: boolean }
-  ): SnippetEditResult;
+  ): DataBlockEditResult;
   /**
-   * The clip as it is on the desk right now (not as last rendered), for an edit that must start
+   * The data-block as it is on the desk right now (not as last rendered), for an edit that must start
    * from the latest packet at the moment it commits.
    */
-  latestSnippetById(id: string): Snippet | undefined;
-  /** Moves the clip back (or forward) to a kept version; same clip, one undo step. */
-  restoreSnippetVersionById(id: string, versionId: string): SnippetEditResult;
-  /** Adds a new clip made from a version, directly after the original. Returns it. */
-  createClipFromVersionById(id: string, versionId: string): SnippetEditResult;
+  latestDataBlockById(id: string): DataBlock | undefined;
+  /** Moves the data-block back (or forward) to a kept version; same data-block, one undo step. */
+  restoreDataBlockVersionById(id: string, versionId: string): DataBlockEditResult;
+  /** Adds a new data-block made from a version, directly after the original. Returns it. */
+  createDataBlockFromVersionById(id: string, versionId: string): DataBlockEditResult;
 }
 
 export interface ReplaceDeskOptions {
@@ -143,25 +143,25 @@ export interface ReplaceDeskOptions {
 const DeskContext = createContext<DeskContextValue | undefined>(undefined);
 
 /**
- * One undo step's worth of desk change: the clips that changed (by id, null when absent on that
- * side) and the order. Unchanged clips are not copied, so a step costs what it changed.
+ * One undo step's worth of desk change: the data-blocks that changed (by id, null when absent on that
+ * side) and the order. Unchanged data-blocks are not copied, so a step costs what it changed.
  */
 interface DeskSide {
   order: string[];
-  snippets: Record<string, Snippet | null>;
+  dataBlocks: Record<string, DataBlock | null>;
 }
 
 let deskStepCount = 0;
 
-function deskStep(before: Snippet[], after: Snippet[]): HistoryChange {
-  const was = new Map(before.map((snippet) => [snippet.id, snippet]));
-  const now = new Map(after.map((snippet) => [snippet.id, snippet]));
-  const previous: DeskSide = { order: before.map((snippet) => snippet.id), snippets: {} };
-  const next: DeskSide = { order: after.map((snippet) => snippet.id), snippets: {} };
+function deskStep(before: DataBlock[], after: DataBlock[]): HistoryChange {
+  const was = new Map(before.map((dataBlock) => [dataBlock.id, dataBlock]));
+  const now = new Map(after.map((dataBlock) => [dataBlock.id, dataBlock]));
+  const previous: DeskSide = { order: before.map((dataBlock) => dataBlock.id), dataBlocks: {} };
+  const next: DeskSide = { order: after.map((dataBlock) => dataBlock.id), dataBlocks: {} };
   new Set([...was.keys(), ...now.keys()]).forEach((id) => {
     if (was.get(id) !== now.get(id)) {
-      previous.snippets[id] = was.get(id) ?? null;
-      next.snippets[id] = now.get(id) ?? null;
+      previous.dataBlocks[id] = was.get(id) ?? null;
+      next.dataBlocks[id] = now.get(id) ?? null;
     }
   });
   deskStepCount += 1;
@@ -176,36 +176,36 @@ function deskStep(before: Snippet[], after: Snippet[]): HistoryChange {
     mergeValues(existing, incoming) {
       const earlier = existing.previousValue as DeskSide;
       const later = incoming.previousValue as DeskSide;
-      // What each clip was before the whole burst: the earliest side wins.
-      Object.entries(later.snippets).forEach(([id, snippet]) => {
-        if (!(id in earlier.snippets)) {
-          earlier.snippets[id] = snippet;
+      // What each data-block was before the whole burst: the earliest side wins.
+      Object.entries(later.dataBlocks).forEach(([id, dataBlock]) => {
+        if (!(id in earlier.dataBlocks)) {
+          earlier.dataBlocks[id] = dataBlock;
         }
       });
       const final = incoming.nextValue as DeskSide;
       const merged = existing.nextValue as DeskSide;
       existing.nextValue = {
         order: final.order,
-        snippets: { ...merged.snippets, ...final.snippets },
+        dataBlocks: { ...merged.dataBlocks, ...final.dataBlocks },
       };
     },
   };
 }
 
 export function DeskProvider({ children }: { children: ReactNode }) {
-  const [snippets, setSnippets] = useState<Snippet[]>([]);
+  const [dataBlocks, setDataBlocks] = useState<DataBlock[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [persistError, setPersistError] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
   // Undo and redo are workbench-wide (history.ts); the desk only records through it. The refs let
   // several changes in one event see each other.
-  const snippetsRef = useRef(snippets);
+  const dataBlocksRef = useRef(dataBlocks);
   const loadedRef = useRef(false);
   // False when the stored desk could not be read: it is left alone, nothing is ever written over it.
   const writableRef = useRef(false);
-  // The clips as last written (by reference), and the list that was current then.
-  const storedRef = useRef<Map<string, Snippet>>(new Map());
-  const settledRef = useRef<Snippet[] | null>(null);
+  // The data-blocks as last written (by reference), and the list that was current then.
+  const storedRef = useRef<Map<string, DataBlock>>(new Map());
+  const settledRef = useRef<DataBlock[] | null>(null);
   // The store's rev as this tab last read or wrote it; a write is refused if another tab moved it.
   const revRef = useRef(0);
   const timerRef = useRef<number | undefined>(undefined);
@@ -218,13 +218,13 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       if (cancelled) {
         return;
       }
-      snippetsRef.current = result.snippets;
+      dataBlocksRef.current = result.dataBlocks;
       storedRef.current = result.stored;
       revRef.current = result.rev;
-      settledRef.current = result.snippets;
+      settledRef.current = result.dataBlocks;
       writableRef.current = result.writable;
       loadedRef.current = true;
-      setSnippets(result.snippets);
+      setDataBlocks(result.dataBlocks);
       setLocked(!result.writable);
       setPersistError(result.error ?? null);
       setLoaded(true);
@@ -243,7 +243,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       return Promise.resolve(false);
     }
     return enqueueDeskTask(async () => {
-      const target = snippetsRef.current;
+      const target = dataBlocksRef.current;
       if (!writableRef.current) {
         return false;
       }
@@ -252,11 +252,11 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       }
       try {
         revRef.current = await writeDeskNow({
-          snippets: target,
+          dataBlocks: target,
           stored: storedRef.current,
           expectedRev: revRef.current,
         });
-        storedRef.current = new Map(target.map((snippet) => [snippet.id, snippet]));
+        storedRef.current = new Map(target.map((dataBlock) => [dataBlock.id, dataBlock]));
         settledRef.current = target;
         setPersistError(null);
         return true;
@@ -270,7 +270,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
   // Any change after load is written, lightly debounced. The first effect run after load finds the
   // list already settled, so loading never writes.
   useEffect(() => {
-    if (!loaded || snippets === settledRef.current) {
+    if (!loaded || dataBlocks === settledRef.current) {
       return;
     }
     window.clearTimeout(timerRef.current);
@@ -278,7 +278,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       () => void flushNow(),
       gestureRef.current ? DESK_GESTURE_WRITE_DEBOUNCE_MS : DESK_WRITE_DEBOUNCE_MS
     );
-  }, [loaded, snippets, flushNow]);
+  }, [loaded, dataBlocks, flushNow]);
 
   // Leaving (unmount or closing the page) writes what is pending.
   useEffect(() => {
@@ -298,17 +298,17 @@ export function DeskProvider({ children }: { children: ReactNode }) {
         if (!side || !loadedRef.current || !writableRef.current) {
           return false;
         }
-        const live = new Map(snippetsRef.current.map((snippet) => [snippet.id, snippet]));
-        const next: Snippet[] = [];
+        const live = new Map(dataBlocksRef.current.map((dataBlock) => [dataBlock.id, dataBlock]));
+        const next: DataBlock[] = [];
         for (const id of side.order) {
-          const snippet = id in side.snippets ? side.snippets[id] : live.get(id);
-          if (!snippet) {
+          const dataBlock = id in side.dataBlocks ? side.dataBlocks[id] : live.get(id);
+          if (!dataBlock) {
             return false;
           }
-          next.push(snippet);
+          next.push(dataBlock);
         }
-        snippetsRef.current = next;
-        setSnippets(next);
+        dataBlocksRef.current = next;
+        setDataBlocks(next);
         return true;
       }),
     []
@@ -316,12 +316,12 @@ export function DeskProvider({ children }: { children: ReactNode }) {
 
   /**
    * The single path for every desk change. `updater` returns the next list, or the same array to
-   * change nothing (no history entry). A real change records a snippet-level step in the shared
+   * change nothing (no history entry). A real change records a data-block-level step in the shared
    * history. Refused while the saved desk is still loading, so it can never be overwritten.
    */
   const applyChange = useCallback(
     (
-      updater: (current: Snippet[]) => Snippet[],
+      updater: (current: DataBlock[]) => DataBlock[],
       options: { coalesce?: boolean; coalesceKey?: string } = {}
     ): boolean => {
       // A locked desk (unreadable saved desk) or one frozen for a project open never saves, so an
@@ -329,14 +329,14 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       if (!loadedRef.current || !writableRef.current) {
         return false;
       }
-      const current = snippetsRef.current;
+      const current = dataBlocksRef.current;
       const next = updater(current);
       if (next === current) {
         return false;
       }
-      snippetsRef.current = next;
+      dataBlocksRef.current = next;
       gestureRef.current = options.coalesce ?? false;
-      setSnippets(next);
+      setDataBlocks(next);
       recordChange(deskStep(current, next), {
         coalesce: options.coalesce ?? false,
         coalesceKey: options.coalesceKey,
@@ -347,9 +347,12 @@ export function DeskProvider({ children }: { children: ReactNode }) {
   );
 
   /** The refusal for an edit that cannot land, checked before anything records an edit session. */
-  const refusal = useCallback((): SnippetEditResult | null => {
+  const refusal = useCallback((): DataBlockEditResult | null => {
     if (!loadedRef.current) {
-      return { ok: false, error: 'The desk is still loading, so the clip cannot be edited yet.' };
+      return {
+        ok: false,
+        error: 'The desk is still loading, so the data-block cannot be edited yet.',
+      };
     }
     if (!writableRef.current) {
       return { ok: false, error: 'The desk is not accepting changes right now.' };
@@ -357,70 +360,70 @@ export function DeskProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
 
-  const addSnippet = useCallback(
-    (snippet: Snippet) => {
-      applyChange((current) => [...current, snippet]);
+  const addDataBlock = useCallback(
+    (dataBlock: DataBlock) => {
+      applyChange((current) => [...current, dataBlock]);
     },
     [applyChange]
   );
-  const addBlankClip = useCallback(
-    (typeId: string, length: Rational, options?: { timeSignature?: string }): Snippet | null => {
-      const type = clipTypeById(typeId);
+  const addBlankDataBlock = useCallback(
+    (typeId: string, length: Rational, options?: { timeSignature?: string }): DataBlock | null => {
+      const type = dataBlockTypeById(typeId);
       if (!type) {
         return null;
       }
-      const clip = type.createBlank({
-        id: newSnippetId(),
+      const dataBlock = type.createBlank({
+        id: newDataBlockId(),
         createdAt: new Date().toISOString(),
-        name: nextClipName(snippetsRef.current),
+        name: nextDataBlockName(dataBlocksRef.current),
         length,
         timeSignature: options?.timeSignature,
       });
-      return applyChange((current) => [...current, clip]) ? clip : null;
+      return applyChange((current) => [...current, dataBlock]) ? dataBlock : null;
     },
     [applyChange]
   );
-  const removeSnippet = useCallback(
+  const removeDataBlock = useCallback(
     (id: string) =>
       applyChange((current) => {
-        const next = current.filter((snippet) => snippet.id !== id);
+        const next = current.filter((dataBlock) => dataBlock.id !== id);
         return next.length === current.length ? current : next;
       }),
     [applyChange]
   );
-  const renameSnippet = useCallback(
+  const renameDataBlock = useCallback(
     (id: string, name: string) =>
       applyChange((current) =>
-        current.some((snippet) => snippet.id === id && snippet.name !== name)
-          ? current.map((snippet) => (snippet.id === id ? { ...snippet, name } : snippet))
+        current.some((dataBlock) => dataBlock.id === id && dataBlock.name !== name)
+          ? current.map((dataBlock) => (dataBlock.id === id ? { ...dataBlock, name } : dataBlock))
           : current
       ),
     [applyChange]
   );
-  const setSnippetNote = useCallback(
+  const setDataBlockNote = useCallback(
     (id: string, note: string) =>
       applyChange((current) => {
-        const target = current.find((snippet) => snippet.id === id);
+        const target = current.find((dataBlock) => dataBlock.id === id);
         if (!target) {
           return current;
         }
-        const edited = editSnippetNote(target, note);
+        const edited = editDataBlockNote(target, note);
         return edited.note === target.note
           ? current
-          : current.map((snippet) => (snippet.id === id ? edited : snippet));
+          : current.map((dataBlock) => (dataBlock.id === id ? edited : dataBlock));
       }),
     [applyChange]
   );
-  const duplicateSnippetById = useCallback(
+  const duplicateDataBlockById = useCallback(
     (id: string) => {
-      const request = { id: newSnippetId(), createdAt: new Date().toISOString() };
+      const request = { id: newDataBlockId(), createdAt: new Date().toISOString() };
       applyChange((current) => {
-        const index = current.findIndex((snippet) => snippet.id === id);
+        const index = current.findIndex((dataBlock) => dataBlock.id === id);
         if (index < 0) {
           return current;
         }
         const next = [...current];
-        next.splice(index + 1, 0, duplicateSnippet(current[index], request));
+        next.splice(index + 1, 0, duplicateDataBlock(current[index], request));
         return next;
       });
     },
@@ -428,12 +431,12 @@ export function DeskProvider({ children }: { children: ReactNode }) {
   );
   const convertToPitchClassById = useCallback(
     (id: string, options: { edo: number; snap?: boolean }): PitchClassConversionResult => {
-      const source = snippetsRef.current.find((snippet) => snippet.id === id);
+      const source = dataBlocksRef.current.find((dataBlock) => dataBlock.id === id);
       if (!source) {
-        return { ok: false, error: 'That snippet is no longer on the desk.' };
+        return { ok: false, error: 'That data-block is no longer on the desk.' };
       }
-      const result = convertSnippetToPitchClass(source, {
-        id: newSnippetId(),
+      const result = convertDataBlockToPitchClass(source, {
+        id: newDataBlockId(),
         createdAt: new Date().toISOString(),
         ...options,
       });
@@ -441,51 +444,51 @@ export function DeskProvider({ children }: { children: ReactNode }) {
         return result;
       }
       applyChange((current) => {
-        const index = current.findIndex((snippet) => snippet.id === id);
+        const index = current.findIndex((dataBlock) => dataBlock.id === id);
         if (index < 0) {
           return current;
         }
         const next = [...current];
-        next.splice(index + 1, 0, result.snippet);
+        next.splice(index + 1, 0, result.dataBlock);
         return next;
       });
       return result;
     },
     [applyChange]
   );
-  const latestSnippetById = useCallback(
-    (id: string) => snippetsRef.current.find((snippet) => snippet.id === id),
+  const latestDataBlockById = useCallback(
+    (id: string) => dataBlocksRef.current.find((dataBlock) => dataBlock.id === id),
     []
   );
 
-  const commitSnippetEditById = useCallback(
+  const commitDataBlockEditById = useCallback(
     (
       id: string,
       newPacket: DataPacket,
       operation: string,
       options?: { coalesceKey?: string; handEdit?: boolean }
-    ): SnippetEditResult => {
-      const target = snippetsRef.current.find((snippet) => snippet.id === id);
+    ): DataBlockEditResult => {
+      const target = dataBlocksRef.current.find((dataBlock) => dataBlock.id === id);
       if (!target) {
-        return { ok: false, error: 'That snippet is no longer on the desk.' };
+        return { ok: false, error: 'That data-block is no longer on the desk.' };
       }
       const refused = refusal();
       if (refused) {
         return refused;
       }
-      const result = commitSnippetEdit(target, newPacket, operation, {
+      const result = commitDataBlockEdit(target, newPacket, operation, {
         handEdit: options?.handEdit,
       });
       if (!result.ok) {
         return result;
       }
-      if (result.snippet === target) {
+      if (result.dataBlock === target) {
         return result;
       }
       applyChange(
         (current) =>
-          current.some((snippet) => snippet.id === id)
-            ? current.map((snippet) => (snippet.id === id ? result.snippet : snippet))
+          current.some((dataBlock) => dataBlock.id === id)
+            ? current.map((dataBlock) => (dataBlock.id === id ? result.dataBlock : dataBlock))
             : current,
         { coalesce: options?.coalesceKey !== undefined, coalesceKey: options?.coalesceKey }
       );
@@ -493,53 +496,53 @@ export function DeskProvider({ children }: { children: ReactNode }) {
     },
     [applyChange, refusal]
   );
-  const restoreSnippetVersionById = useCallback(
-    (id: string, versionId: string): SnippetEditResult => {
-      const target = snippetsRef.current.find((snippet) => snippet.id === id);
+  const restoreDataBlockVersionById = useCallback(
+    (id: string, versionId: string): DataBlockEditResult => {
+      const target = dataBlocksRef.current.find((dataBlock) => dataBlock.id === id);
       if (!target) {
-        return { ok: false, error: 'That snippet is no longer on the desk.' };
+        return { ok: false, error: 'That data-block is no longer on the desk.' };
       }
       const refused = refusal();
       if (refused) {
         return refused;
       }
-      const result = restoreSnippetVersion(target, versionId);
-      if (!result.ok || result.snippet === target) {
+      const result = restoreDataBlockVersion(target, versionId);
+      if (!result.ok || result.dataBlock === target) {
         return result;
       }
       applyChange((current) =>
-        current.some((snippet) => snippet.id === id)
-          ? current.map((snippet) => (snippet.id === id ? result.snippet : snippet))
+        current.some((dataBlock) => dataBlock.id === id)
+          ? current.map((dataBlock) => (dataBlock.id === id ? result.dataBlock : dataBlock))
           : current
       );
       return result;
     },
     [applyChange, refusal]
   );
-  const createClipFromVersionById = useCallback(
-    (id: string, versionId: string): SnippetEditResult => {
-      const source = snippetsRef.current.find((snippet) => snippet.id === id);
+  const createDataBlockFromVersionById = useCallback(
+    (id: string, versionId: string): DataBlockEditResult => {
+      const source = dataBlocksRef.current.find((dataBlock) => dataBlock.id === id);
       if (!source) {
-        return { ok: false, error: 'That snippet is no longer on the desk.' };
+        return { ok: false, error: 'That data-block is no longer on the desk.' };
       }
       const refused = refusal();
       if (refused) {
         return refused;
       }
-      const result = createClipFromVersion(source, versionId, {
-        id: newSnippetId(),
+      const result = createDataBlockFromVersion(source, versionId, {
+        id: newDataBlockId(),
         createdAt: new Date().toISOString(),
       });
       if (!result.ok) {
         return result;
       }
       applyChange((current) => {
-        const index = current.findIndex((snippet) => snippet.id === id);
+        const index = current.findIndex((dataBlock) => dataBlock.id === id);
         if (index < 0) {
           return current;
         }
         const next = [...current];
-        next.splice(index + 1, 0, result.snippet);
+        next.splice(index + 1, 0, result.dataBlock);
         return next;
       });
       return result;
@@ -548,7 +551,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
   );
   const replaceDesk = useCallback(
     (
-      next: Snippet[],
+      next: DataBlock[],
       options: ReplaceDeskOptions = {}
     ): Promise<{ ok: true } | { ok: false; error: string }> => {
       if (!loadedRef.current) {
@@ -563,7 +566,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
       return enqueueDeskTask(async () => {
         try {
           revRef.current = await writeDeskNow({
-            snippets: next,
+            dataBlocks: next,
             stored: storedRef.current,
             expectedRev: revRef.current,
           });
@@ -576,7 +579,7 @@ export function DeskProvider({ children }: { children: ReactNode }) {
           }
           return { ok: false as const, error: describeStorageError(error) };
         }
-        storedRef.current = new Map(next.map((snippet) => [snippet.id, snippet]));
+        storedRef.current = new Map(next.map((dataBlock) => [dataBlock.id, dataBlock]));
         settledRef.current = next;
         if (options.reloading) {
           // The page is about to reload from storage: leave what is on screen alone (replacing it
@@ -588,8 +591,8 @@ export function DeskProvider({ children }: { children: ReactNode }) {
           // Storage is back to the desk that is on screen, and the page keeps running.
           writableRef.current = true;
         } else {
-          snippetsRef.current = next;
-          setSnippets(next);
+          dataBlocksRef.current = next;
+          setDataBlocks(next);
         }
         setPersistError(null);
         return { ok: true as const };
@@ -597,47 +600,50 @@ export function DeskProvider({ children }: { children: ReactNode }) {
     },
     []
   );
-  const endEditSession = useCallback((snippetId: string) => endSnippetEditSession(snippetId), []);
+  const endEditSession = useCallback(
+    (dataBlockId: string) => endDataBlockEditSession(dataBlockId),
+    []
+  );
   const value = useMemo(
     () => ({
-      snippets,
+      dataBlocks,
       loading: !loaded,
       locked,
       persistError,
       flushDesk: flushNow,
       replaceDesk,
       endEditSession,
-      addSnippet,
-      addBlankClip,
-      removeSnippet,
-      renameSnippet,
-      setSnippetNote,
-      duplicateSnippetById,
+      addDataBlock,
+      addBlankDataBlock,
+      removeDataBlock,
+      renameDataBlock,
+      setDataBlockNote,
+      duplicateDataBlockById,
       convertToPitchClassById,
-      commitSnippetEditById,
-      latestSnippetById,
-      restoreSnippetVersionById,
-      createClipFromVersionById,
+      commitDataBlockEditById,
+      latestDataBlockById,
+      restoreDataBlockVersionById,
+      createDataBlockFromVersionById,
     }),
     [
-      snippets,
+      dataBlocks,
       loaded,
       locked,
       persistError,
       flushNow,
       replaceDesk,
       endEditSession,
-      addSnippet,
-      addBlankClip,
-      removeSnippet,
-      renameSnippet,
-      setSnippetNote,
-      duplicateSnippetById,
+      addDataBlock,
+      addBlankDataBlock,
+      removeDataBlock,
+      renameDataBlock,
+      setDataBlockNote,
+      duplicateDataBlockById,
       convertToPitchClassById,
-      commitSnippetEditById,
-      latestSnippetById,
-      restoreSnippetVersionById,
-      createClipFromVersionById,
+      commitDataBlockEditById,
+      latestDataBlockById,
+      restoreDataBlockVersionById,
+      createDataBlockFromVersionById,
     ]
   );
   return <DeskContext.Provider value={value}>{children}</DeskContext.Provider>;
@@ -656,6 +662,6 @@ export function useOptionalDesk() {
   return useContext(DeskContext);
 }
 
-export function newSnippetId() {
-  return `snippet-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+export function newDataBlockId() {
+  return `data-block-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }

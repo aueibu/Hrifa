@@ -14,7 +14,7 @@ export type CompositionModuleId =
   | 'rhythm-householder'
   | 'rhythm-edit'
   | 'swirling-mists'
-  | 'snippet'
+  | 'data-block-source'
   | 'mixer';
 
 /**
@@ -26,13 +26,13 @@ export interface CompositionModuleInstance {
   moduleId: CompositionModuleId;
   x: number;
   y: number;
-  /** A `snippet` module only: the desk snippet it publishes. It is not added from the Add menu. */
-  snippetId?: string;
+  /** A `data-block-source` module only: the desk data-block it publishes. It is not added from the Add menu. */
+  dataBlockId?: string;
 }
 
-/** Modules the Add module menu offers. A snippet module is made from a desk card instead. */
+/** Modules the Add module menu offers. A data-block module is made from a desk card instead. */
 export function isAddableModule(moduleId: CompositionModuleId) {
-  return moduleId !== 'snippet';
+  return moduleId !== 'data-block-source';
 }
 
 export interface ModuleRouteBinding {
@@ -62,7 +62,7 @@ export const compositionModuleLabels: Record<CompositionModuleId, string> = {
   'rhythm-householder': 'Rhythm Householder',
   'rhythm-edit': 'Rhythm Edit',
   'swirling-mists': 'Swirling Mists',
-  snippet: 'Snippet',
+  'data-block-source': 'Data-block',
   mixer: 'Mixer',
 };
 
@@ -73,7 +73,7 @@ export const defaultCompositionInstances: CompositionModuleInstance[] = [
 ];
 
 /**
- * Normalizes stored instance entries to `{ id, moduleId, x, y, snippetId? }`. Entries that are not
+ * Normalizes stored instance entries to `{ id, moduleId, x, y, dataBlockId? }`. Entries that are not
  * placed on the canvas (no finite `x` and `y`) pass through unchanged.
  */
 export function migrateCompositionInstances(value: unknown): unknown {
@@ -91,7 +91,7 @@ export function migrateCompositionInstances(value: unknown): unknown {
         moduleId: stored.moduleId,
         x: stored.x,
         y: stored.y,
-        ...(typeof stored.snippetId === 'string' ? { snippetId: stored.snippetId } : {}),
+        ...(typeof stored.dataBlockId === 'string' ? { dataBlockId: stored.dataBlockId } : {}),
       };
     }
     return candidate;
@@ -159,7 +159,7 @@ function isModuleId(value: unknown): value is CompositionModuleId {
     value === 'rhythm-householder' ||
     value === 'rhythm-edit' ||
     value === 'swirling-mists' ||
-    value === 'snippet' ||
+    value === 'data-block-source' ||
     value === 'mixer'
   );
 }
@@ -193,7 +193,7 @@ export function acceptsCompositionInstances(value: unknown): value is Compositio
       !isModuleId(instance.moduleId) ||
       !isFiniteNumber(instance.x) ||
       !isFiniteNumber(instance.y) ||
-      (instance.snippetId !== undefined && typeof instance.snippetId !== 'string')
+      (instance.dataBlockId !== undefined && typeof instance.dataBlockId !== 'string')
     ) {
       return false;
     }

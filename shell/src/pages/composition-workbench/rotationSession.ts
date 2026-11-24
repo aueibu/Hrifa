@@ -1,5 +1,5 @@
 import type { Rational } from './musicalTime';
-import type { NoteItem } from './noteClipEdits';
+import type { NoteItem } from './notesEdits';
 
 /**
  * A rotation session (K5b-2b): what lets "rotate in time" behave circularly across repeated presses

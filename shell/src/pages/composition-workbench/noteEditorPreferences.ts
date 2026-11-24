@@ -2,10 +2,10 @@ import { useCallback, useSyncExternalStore } from 'react';
 import { MAX_VELOCITY_LANE_HEIGHT, MIN_VELOCITY_LANE_HEIGHT } from '../../components/PianoRoll';
 
 /**
- * Per-viewer settings of the note clip editor: the length and velocity a newly entered note gets
+ * Per-viewer settings of the Notes editor: the length and velocity a newly entered note gets
  * (set by dragging sideways and up or down while entering one) and the grid subdivision. Like the
- * New clip defaults they live under a key outside the workbench prefix, so a saved project never captures them, and they are never
- * recorded in history or written to a clip.
+ * New data-block defaults they live under a key outside the workbench prefix, so a saved project never captures them, and they are never
+ * recorded in history or written to a data-block.
  */
 export const NOTE_EDITOR_PREFERENCES_KEY = 'hrifa.note-editor.v1';
 

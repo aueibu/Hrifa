@@ -1,10 +1,10 @@
 /**
  * The input scope of the workbench (design one-stage 7.2): one window-level pointer tracker and the
- * "is the pointer or the focus in an editing panel" test, shared by the clip editor session, the
- * chord session and the roll. It was inside `NoteClipEditor` until M4b.
+ * "is the pointer or the focus in an editing panel" test, shared by the data-block editor session, the
+ * chord session and the roll. It was inside `NotesEditor` until M4b.
  *
- * Scope attributes: `data-note-editor-scope` (the clip editor panel, the actions panel, the picker
- * host) and `data-chord-scope` (the chord picker frame and any non-clip host that wants the keyboard
+ * Scope attributes: `data-note-editor-scope` (the data-block editor panel, the actions panel, the picker
+ * host) and `data-chord-scope` (the chord picker frame and any non-Notes host that wants the keyboard
  * workflow). The helper treats the two as one scope.
  */
 export const NOTE_EDITOR_SCOPE = '[data-note-editor-scope]';

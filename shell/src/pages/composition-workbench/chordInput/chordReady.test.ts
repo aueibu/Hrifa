@@ -3,7 +3,7 @@ import { chordReady, insertBlockedReason, type ChordReadyInput } from './chordRe
 
 const base: ChordReadyInput = {
   hasTarget: true,
-  targetName: 'clip-a',
+  targetName: 'block-a',
   mode: 'anchor',
   rollHost: true,
   anchor: null,
@@ -14,7 +14,7 @@ describe('chordReady: the Chords panel ready line value', () => {
   it('no claim: No target, whatever else is set', () => {
     expect(chordReady({ ...base, hasTarget: false })).toEqual({
       state: 'no-target',
-      text: 'No target: open a clip to insert',
+      text: 'No target: open a data-block to insert',
     });
     expect(
       chordReady({ ...base, hasTarget: false, mode: 'selection', selectedNotes: 3 }).state
@@ -32,7 +32,7 @@ describe('chordReady: the Chords panel ready line value', () => {
     );
   });
 
-  it('the position is "bar X beat Y" in the clip meter, like the editor', () => {
+  it('the position is "bar X beat Y" in the data-block meter, like the editor', () => {
     const at = (start: number, meter?: string) =>
       chordReady({ ...base, meter, anchor: { pitchMidicents: 6000, start } }).text;
     expect(at(4)).toBe('Anchor: Insert places the chord at C4, bar 2 beat 1');
@@ -100,7 +100,7 @@ describe('chordReady: the Chords panel ready line value', () => {
       'Select a note, or use the Chords tool'
     );
     expect(insertBlockedReason(chordReady({ ...base, hasTarget: false }))).toBe(
-      'No target: open a clip to insert'
+      'No target: open a data-block to insert'
     );
   });
 });

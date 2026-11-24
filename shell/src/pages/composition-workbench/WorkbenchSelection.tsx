@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from 'react';
-import { CLIP_SLOT } from './clipEditorSession';
-import { useOptionalClipEditorSession } from './ClipEditorSessionProvider';
 import type { CompositionInspectorTarget } from './compositionWorkspace';
+import { DATA_BLOCK_SLOT } from './dataBlockEditorSession';
+import { useOptionalDataBlockEditorSession } from './DataBlockEditorSessionProvider';
 import type { NoteSelection } from './noteSelection';
 import {
   buildSelectionChain,
@@ -12,7 +12,7 @@ import {
 
 export interface WorkbenchSelectionValue {
   chain: WorkbenchSelectionChain;
-  /** The next node up from `node` (note to clip to module-or-canvas to canvas), or null. */
+  /** The next node up from `node` (note to data-block to module-or-canvas to canvas), or null. */
   parent(node: WorkbenchSelectionNode): WorkbenchSelectionNode | null;
 }
 
@@ -20,33 +20,33 @@ const WorkbenchSelectionContext = createContext<WorkbenchSelectionValue | null>(
 
 /**
  * Provides the read-only selection chain. The page passes its stored shapes (inspector target and
- * `editorClipTarget`); the open clip's note selection is the one the editor publishes to the clip
- * editor session after pruning and deriving it (`CLIP_SLOT.shownSelection`), so the chain matches
+ * `editorTarget`); the open data-block's note selection is the one the editor publishes to the data-block
+ * editor session after pruning and deriving it (`DATA_BLOCK_SLOT.shownSelection`), so the chain matches
  * what the editor and inspector show even after an undo. Nothing here writes any of them.
  */
 export function WorkbenchSelectionProvider({
   inspectorTarget = null,
-  clipId = null,
+  dataBlockId = null,
   children,
 }: {
   inspectorTarget?: CompositionInspectorTarget | null;
-  clipId?: string | null;
+  dataBlockId?: string | null;
   children: ReactNode;
 }) {
-  const session = useOptionalClipEditorSession();
+  const session = useOptionalDataBlockEditorSession();
   const held = useSyncExternalStore(
     session ? session.subscribe : noSubscribe,
     () =>
-      session && clipId !== null
-        ? session.get<NoteSelection>(clipId, CLIP_SLOT.shownSelection)
+      session && dataBlockId !== null
+        ? session.get<NoteSelection>(dataBlockId, DATA_BLOCK_SLOT.shownSelection)
         : undefined,
     () => undefined
   );
   const noteSelection = held ?? null;
   const value = useMemo<WorkbenchSelectionValue>(() => {
-    const chain = buildSelectionChain({ inspectorTarget, clipId, noteSelection });
+    const chain = buildSelectionChain({ inspectorTarget, dataBlockId, noteSelection });
     return { chain, parent: (node) => parentSelection(chain, node) };
-  }, [inspectorTarget, clipId, noteSelection]);
+  }, [inspectorTarget, dataBlockId, noteSelection]);
   return (
     <WorkbenchSelectionContext.Provider value={value}>
       {children}

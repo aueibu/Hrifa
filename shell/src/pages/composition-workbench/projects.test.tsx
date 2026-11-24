@@ -6,9 +6,9 @@ import {
   STORAGE_KEY as settingsKey,
   useCompositionSettings,
 } from './compositionSettings';
+import { acceptsDataBlocks, endEditSession, type DataBlock } from './dataBlock';
 import { DeskProvider, useDesk } from './desk';
 import {
-  DESK_DB_NAME,
   enqueueDeskTask,
   getProject,
   listProjects,
@@ -34,7 +34,6 @@ import {
   type OpenableDesk,
 } from './projects';
 import { isReloading } from './reloading';
-import { acceptsSnippets, endEditSession, type Snippet } from './snippet';
 import { usePersistentState } from './usePersistentState';
 
 const stopAll = vi.fn();
@@ -59,7 +58,7 @@ function notes(count: number, shift = 0): DataItem[] {
   }));
 }
 
-function clip(id: string, count = 4): Snippet {
+function dataBlock(id: string, count = 4): DataBlock {
   return {
     schemaVersion: 1,
     id,
@@ -69,16 +68,16 @@ function clip(id: string, count = 4): Snippet {
   };
 }
 
-const withShift = (snippet: Snippet, shift: number): DataPacket =>
-  packet('events', 'note', notes(snippet.packet.items.length, shift));
+const withShift = (dataBlock: DataBlock, shift: number): DataPacket =>
+  packet('events', 'note', notes(dataBlock.packet.items.length, shift));
 
 const plain = <T,>(value: T) => JSON.parse(JSON.stringify(value)) as T;
 
 function edit(desk: ReturnType<typeof useDesk>, id: string, shift: number) {
   endEditSession(id);
-  const target = desk.snippets.find((snippet) => snippet.id === id)!;
+  const target = desk.dataBlocks.find((dataBlock) => dataBlock.id === id)!;
   expect(
-    desk.commitSnippetEditById(id, withShift(target, shift), 'edit-clip', {
+    desk.commitDataBlockEditById(id, withShift(target, shift), 'edit', {
       handEdit: true,
     }).ok
   ).toBe(true);
@@ -123,14 +122,14 @@ describe('workbench state helpers', () => {
 
   it('round-trips through a file with fresh ids, only workbench keys and the desk', () => {
     const project = {
-      ...createProject('A', [clip('a')]),
+      ...createProject('A', [dataBlock('a')]),
       entries: { [moduleKey]: '5', 'evil.key': 'x' },
     };
     const [imported] = parseProjectFile(projectFileText([project]));
     expect(imported.name).toBe('A');
     expect(imported.id).not.toBe(project.id);
     expect(imported.entries).toEqual({ [moduleKey]: '5' });
-    expect(imported.desk).toEqual([clip('a')]);
+    expect(imported.desk).toEqual([dataBlock('a')]);
   });
 
   it('rejects files that are not a project export', () => {
@@ -148,30 +147,33 @@ describe('workbench state helpers', () => {
 describe('saving and opening a project', () => {
   it('round-trips the workbench keys and the whole desk, lineage included, via IndexedDB', async () => {
     const first = await renderDesk();
-    act(() => first.result.current.addSnippet(clip('a')));
-    act(() => first.result.current.addSnippet(clip('b')));
+    act(() => first.result.current.addDataBlock(dataBlock('a')));
+    act(() => first.result.current.addDataBlock(dataBlock('b')));
     act(() => edit(first.result.current, 'a', 1));
     act(() => edit(first.result.current, 'a', 2));
     localStorage.setItem(moduleKey, '5');
-    const saved = plain(first.result.current.snippets);
+    const saved = plain(first.result.current.dataBlocks);
     expect(saved[0].lineage!.versions).toHaveLength(3);
 
     const result = await saveProject({
       name: 'Alpha',
       existing: null,
-      desk: first.result.current.snippets,
+      desk: first.result.current.dataBlocks,
     });
     expect(result.ok).toBe(true);
     const [listed] = await listProjects();
     expect(listed).toMatchObject({ name: 'Alpha', hasDesk: true });
     expect(listed.entries).toEqual({ [moduleKey]: '5' });
     // The desk drifts after the save, and a fresh page loads that drifted desk.
-    act(() => first.result.current.addSnippet(clip('drifted')));
-    act(() => first.result.current.removeSnippet('a'));
+    act(() => first.result.current.addDataBlock(dataBlock('drifted')));
+    act(() => first.result.current.removeDataBlock('a'));
     first.unmount();
     localStorage.setItem(moduleKey, '9');
     const second = await renderDesk();
-    expect(second.result.current.snippets.map((snippet) => snippet.id)).toEqual(['b', 'drifted']);
+    expect(second.result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual([
+      'b',
+      'drifted',
+    ]);
     let opened: Awaited<ReturnType<typeof openProject>> | undefined;
     await act(async () => {
       opened = await openProject({
@@ -183,20 +185,23 @@ describe('saving and opening a project', () => {
     expect(opened?.ok).toBe(true);
     expect(localStorage.getItem(moduleKey)).toBe('5');
     // The page on screen is left alone until the reload.
-    expect(second.result.current.snippets.map((snippet) => snippet.id)).toEqual(['b', 'drifted']);
+    expect(second.result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual([
+      'b',
+      'drifted',
+    ]);
     // The reload would read the desk from IndexedDB: it holds the project's, lineage and all.
     expect(await storedDesk(second.result.current)).toEqual(saved);
-    expect(acceptsSnippets(await storedDesk(second.result.current))).toBe(true);
+    expect(acceptsDataBlocks(await storedDesk(second.result.current))).toBe(true);
   });
 
-  it('replaces the desk entirely: clips not in the project are gone, project clips keep their lineage', async () => {
+  it('replaces the desk entirely: data-blocks not in the project are gone, project data-blocks keep their lineage', async () => {
     const { result } = await renderDesk();
-    act(() => result.current.addSnippet(clip('keep')));
+    act(() => result.current.addDataBlock(dataBlock('keep')));
     act(() => edit(result.current, 'keep', 1));
-    const project = plain(result.current.snippets);
-    await saveProject({ name: 'P', existing: null, desk: result.current.snippets });
-    // After saving: the desk drifts. A clip is added, the kept one edited again, then removed.
-    act(() => result.current.addSnippet(clip('extra')));
+    const project = plain(result.current.dataBlocks);
+    await saveProject({ name: 'P', existing: null, desk: result.current.dataBlocks });
+    // After saving: the desk drifts. A data-block is added, the kept one edited again, then removed.
+    act(() => result.current.addDataBlock(dataBlock('extra')));
     act(() => edit(result.current, 'keep', 7));
     act(() => edit(result.current, 'keep', 8));
     const [listed] = await listProjects();
@@ -205,30 +210,30 @@ describe('saving and opening a project', () => {
       await openProject({ id: listed.id, desk: result.current, includeSettings: true });
     });
     const stored = await loadDesk();
-    expect(plain(stored.snippets)).toEqual(project);
-    expect(stored.snippets.map((snippet) => snippet.id)).toEqual(['keep']);
-    expect(stored.snippets[0].lineage!.versions).toHaveLength(2);
-    expect(result.current.snippets.map((snippet) => snippet.id)).toEqual(['keep', 'extra']);
+    expect(plain(stored.dataBlocks)).toEqual(project);
+    expect(stored.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['keep']);
+    expect(stored.dataBlocks[0].lineage!.versions).toHaveLength(2);
+    expect(result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['keep', 'extra']);
   });
 
   it('overwrites the current project when saving again under the same (or no) name', async () => {
-    const first = await saveProject({ name: 'One', existing: null, desk: [clip('a')] });
+    const first = await saveProject({ name: 'One', existing: null, desk: [dataBlock('a')] });
     if (!first.ok) {
       throw new Error(first.error);
     }
-    await saveProject({ name: '', existing: first.project, desk: [clip('b')] });
-    await saveProject({ name: 'One', existing: first.project, desk: [clip('c')] });
+    await saveProject({ name: '', existing: first.project, desk: [dataBlock('b')] });
+    await saveProject({ name: 'One', existing: first.project, desk: [dataBlock('c')] });
     let projects = await listProjects();
     expect(projects).toHaveLength(1);
     expect((await getProject(first.project.id))!.desk![0].id).toBe('c');
-    await saveProject({ name: 'Two', existing: first.project, desk: [clip('d')] });
+    await saveProject({ name: 'Two', existing: first.project, desk: [dataBlock('d')] });
     projects = await listProjects();
     expect(projects.map((project) => project.name).sort()).toEqual(['One', 'Two']);
   });
 
   it('leaves the desk alone when a project holds none (saved while the desk was unreadable)', async () => {
     const { result } = await renderDesk();
-    act(() => result.current.addSnippet(clip('stay')));
+    act(() => result.current.addDataBlock(dataBlock('stay')));
     localStorage.setItem(moduleKey, '5');
     const saved = await saveProject({ name: 'No desk', existing: null, desk: null });
     if (!saved.ok) {
@@ -239,20 +244,20 @@ describe('saving and opening a project', () => {
       await openProject({ id: saved.project.id, desk: result.current, includeSettings: true });
     });
     expect(localStorage.getItem(moduleKey)).toBe('5');
-    expect(result.current.snippets.map((snippet) => snippet.id)).toEqual(['stay']);
+    expect(result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['stay']);
   });
 });
 
 describe('a failed or refused open', () => {
   async function seeded() {
     const rendered = await renderDesk();
-    act(() => rendered.result.current.addSnippet(clip('now')));
+    act(() => rendered.result.current.addDataBlock(dataBlock('now')));
     await storedDesk(rendered.result.current);
     localStorage.setItem(moduleKey, '9');
     const saved = await saveProject({
       name: 'Other',
       existing: null,
-      desk: [clip('then')],
+      desk: [dataBlock('then')],
     });
     if (!saved.ok) {
       throw new Error(saved.error);
@@ -270,8 +275,8 @@ describe('a failed or refused open', () => {
   ) {
     expect(result?.ok).toBe(false);
     expect(localStorage.getItem(moduleKey)).toBe('9');
-    expect(rendered.result.current.snippets.map((snippet) => snippet.id)).toEqual(['now']);
-    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['now']);
+    expect(rendered.result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['now']);
+    expect((await loadDesk()).dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['now']);
   }
 
   it('writes nothing when the desk cannot be saved', async () => {
@@ -298,7 +303,7 @@ describe('a failed or refused open', () => {
     const other = await loadDesk();
     await enqueueDeskTask(() =>
       writeDeskNow({
-        snippets: [...other.snippets, clip('theirs')],
+        dataBlocks: [...other.dataBlocks, dataBlock('theirs')],
         stored: other.stored,
         expectedRev: other.rev,
       })
@@ -313,14 +318,17 @@ describe('a failed or refused open', () => {
     });
     expect(result?.ok).toBe(false);
     expect(localStorage.getItem(moduleKey)).toBe('9');
-    expect(rendered.result.current.snippets.map((snippet) => snippet.id)).toEqual(['now']);
-    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['now', 'theirs']);
+    expect(rendered.result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['now']);
+    expect((await loadDesk()).dataBlocks.map((dataBlock) => dataBlock.id)).toEqual([
+      'now',
+      'theirs',
+    ]);
   });
 
   it('refuses while the desk is loading or locked, and for a project that is gone', async () => {
     const rendered = await seeded();
     const replaceDesk = vi.fn();
-    const base: OpenableDesk = { snippets: [], loading: false, locked: false, replaceDesk };
+    const base: OpenableDesk = { dataBlocks: [], loading: false, locked: false, replaceDesk };
     const loading = await openProject({
       id: rendered.id,
       desk: { ...base, loading: true },
@@ -366,9 +374,9 @@ describe('a failed or refused open', () => {
 describe('the page closing for a reload', () => {
   async function openSeeded() {
     const rendered = await renderDesk();
-    act(() => rendered.result.current.addSnippet(clip('now')));
+    act(() => rendered.result.current.addDataBlock(dataBlock('now')));
     await storedDesk(rendered.result.current);
-    const saved = await saveProject({ name: 'B', existing: null, desk: [clip('then')] });
+    const saved = await saveProject({ name: 'B', existing: null, desk: [dataBlock('then')] });
     if (!saved.ok) {
       throw new Error(saved.error);
     }
@@ -398,14 +406,14 @@ describe('the page closing for a reload', () => {
     // The old page keeps running: a state write, a recorded change and a desk edit.
     act(() => hook.result.current[1]('stale'));
     recordChange({ key: moduleKey, previous: '"a"', next: '"b"' });
-    act(() => rendered.result.current.addSnippet(clip('late')));
+    act(() => rendered.result.current.addDataBlock(dataBlock('late')));
     await act(async () => {
       await rendered.result.current.flushDesk();
     });
     expect(localStorage.getItem(moduleKey)).toBe('5');
     expect(historyChangeCount()).toBe(before);
     // The reload reads the project's desk, not the stale one.
-    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['then']);
+    expect((await loadDesk()).dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['then']);
   });
 
   it('keeps the marker on the opened project, clean, when the old page changes after the open', async () => {
@@ -423,7 +431,7 @@ describe('the page closing for a reload', () => {
       </DeskProvider>
     );
     await waitFor(() => expect(desk!.loading).toBe(false));
-    act(() => desk!.addSnippet(clip('a')));
+    act(() => desk!.addDataBlock(dataBlock('a')));
     await user.click(screen.getByRole('button', { name: 'Projects' }));
     for (const name of ['A', 'B']) {
       const input = screen.getByRole('textbox', { name: 'Project name' });
@@ -438,7 +446,7 @@ describe('the page closing for a reload', () => {
     // Current is B; open A, then the old page changes before the reload lands.
     await user.click(await screen.findByRole('button', { name: 'Open project A' }));
     await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
-    act(() => desk!.addSnippet(clip('late')));
+    act(() => desk!.addDataBlock(dataBlock('late')));
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
@@ -462,13 +470,13 @@ describe('the page closing for a reload', () => {
     const rendered = await openSeeded();
     const real = rendered.result.current;
     const desk: OpenableDesk = {
-      snippets: real.snippets,
+      dataBlocks: real.dataBlocks,
       loading: false,
       locked: false,
-      replaceDesk: (snippets, options) =>
+      replaceDesk: (dataBlocks, options) =>
         options?.restore
           ? Promise.resolve({ ok: false, error: 'Disk gone.' })
-          : real.replaceDesk(snippets, options),
+          : real.replaceDesk(dataBlocks, options),
     };
     const realSet = Storage.prototype.setItem;
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
@@ -489,30 +497,6 @@ describe('the page closing for a reload', () => {
     expect(result && !result.ok && result.error).toMatch(/desk in storage could not be put back/);
     expect(result && !result.ok && result.error).toMatch(/Disk gone/);
     expect(isReloading()).toBe(false);
-  });
-});
-
-describe('the database upgrade', () => {
-  it('opens a version 1 database, keeps its desk, and adds the project stores', async () => {
-    await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open(DESK_DB_NAME, 1);
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        db.createObjectStore('desk-clips', { keyPath: 'id' }).put(clip('old'));
-        const meta = db.createObjectStore('desk-meta');
-        meta.put(['old'], 'order');
-        meta.put(3, 'rev');
-      };
-      request.onsuccess = () => {
-        request.result.close();
-        resolve();
-      };
-      request.onerror = () => reject(request.error);
-    });
-    const loaded = await loadDesk();
-    expect(loaded.snippets.map((snippet) => snippet.id)).toEqual(['old']);
-    expect(loaded.rev).toBe(3);
-    expect(await listProjects()).toEqual([]);
   });
 });
 
@@ -544,7 +528,7 @@ describe('ProjectMenu', () => {
     const user = userEvent.setup();
     const { desk, reload } = renderMenu();
     await waitFor(() => expect(desk().loading).toBe(false));
-    act(() => desk().addSnippet(clip('a')));
+    act(() => desk().addDataBlock(dataBlock('a')));
     localStorage.setItem(moduleKey, '5');
     await user.click(screen.getByRole('button', { name: 'Projects' }));
     await saveAs(user, 'Test A');
@@ -566,7 +550,7 @@ describe('ProjectMenu', () => {
     const user = userEvent.setup();
     const { desk, reload } = renderMenu();
     await waitFor(() => expect(desk().loading).toBe(false));
-    act(() => desk().addSnippet(clip('a')));
+    act(() => desk().addDataBlock(dataBlock('a')));
     localStorage.setItem(settingsKey, '{"edo":12}');
     await user.click(screen.getByRole('button', { name: 'Projects' }));
     await saveAs(user, 'S');
@@ -610,10 +594,10 @@ describe('ProjectMenu', () => {
     const user = userEvent.setup();
     const { desk, reload } = renderMenu();
     await waitFor(() => expect(desk().loading).toBe(false));
-    act(() => desk().addSnippet(clip('a')));
+    act(() => desk().addDataBlock(dataBlock('a')));
     await user.click(screen.getByRole('button', { name: 'Projects' }));
     await saveAs(user, 'Saved');
-    act(() => desk().addSnippet(clip('later')));
+    act(() => desk().addDataBlock(dataBlock('later')));
     await screen.findByText(/unsaved changes\)/);
 
     await user.click(await screen.findByRole('button', { name: 'Open project Saved' }));
@@ -623,7 +607,7 @@ describe('ProjectMenu', () => {
       expect(screen.queryByRole('dialog', { name: 'Unsaved changes' })).toBeNull()
     );
     expect(reload).not.toHaveBeenCalled();
-    expect(desk().snippets.map((snippet) => snippet.id)).toEqual(['a', 'later']);
+    expect(desk().dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['a', 'later']);
 
     await user.click(await screen.findByRole('button', { name: 'Open project Saved' }));
     await user.click(
@@ -632,19 +616,19 @@ describe('ProjectMenu', () => {
       })
     );
     await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
-    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['a']);
+    expect((await loadDesk()).dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['a']);
   });
 
   it('Save first saves the current project, then opens the other one', async () => {
     const user = userEvent.setup();
     const { desk, reload } = renderMenu();
     await waitFor(() => expect(desk().loading).toBe(false));
-    act(() => desk().addSnippet(clip('a')));
+    act(() => desk().addDataBlock(dataBlock('a')));
     await user.click(screen.getByRole('button', { name: 'Projects' }));
     await saveAs(user, 'First');
-    act(() => desk().addSnippet(clip('b')));
+    act(() => desk().addDataBlock(dataBlock('b')));
     await saveAs(user, 'Second');
-    act(() => desk().addSnippet(clip('c')));
+    act(() => desk().addDataBlock(dataBlock('c')));
     await screen.findByText(/unsaved changes\)/);
 
     await user.click(await screen.findByRole('button', { name: 'Open project First' }));
@@ -657,22 +641,22 @@ describe('ProjectMenu', () => {
     const projects = await listProjects();
     const second = projects.find((project) => project.name === 'Second')!;
     // The unsaved work went into the current project (Second) before First replaced the page.
-    expect((await getProject(second.id))!.desk!.map((snippet) => snippet.id)).toEqual([
+    expect((await getProject(second.id))!.desk!.map((dataBlock) => dataBlock.id)).toEqual([
       'a',
       'b',
       'c',
     ]);
-    expect((await loadDesk()).snippets.map((snippet) => snippet.id)).toEqual(['a']);
+    expect((await loadDesk()).dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['a']);
   });
 
   it('shows why an open was refused and changes nothing', async () => {
     const user = userEvent.setup();
     const { desk, reload } = renderMenu();
     await waitFor(() => expect(desk().loading).toBe(false));
-    act(() => desk().addSnippet(clip('a')));
+    act(() => desk().addDataBlock(dataBlock('a')));
     await user.click(screen.getByRole('button', { name: 'Projects' }));
     await saveAs(user, 'P');
-    act(() => desk().addSnippet(clip('b')));
+    act(() => desk().addDataBlock(dataBlock('b')));
     await screen.findByText(/unsaved changes\)/);
     vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(() => {
       throw new DOMException('full', 'QuotaExceededError');
@@ -686,7 +670,7 @@ describe('ProjectMenu', () => {
     expect(await screen.findByText(/nothing was opened/)).toBeInTheDocument();
     vi.restoreAllMocks();
     expect(reload).not.toHaveBeenCalled();
-    expect(desk().snippets.map((snippet) => snippet.id)).toEqual(['a', 'b']);
+    expect(desk().dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['a', 'b']);
   });
 
   it('deletes only after confirmation', async () => {

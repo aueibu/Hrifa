@@ -1,4 +1,5 @@
 import { STORAGE_KEY as settingsStorageKey } from './compositionSettings';
+import { acceptsDataBlocks, type DataBlock } from './dataBlock';
 import type { ReplaceDeskOptions } from './desk';
 import {
   describeStorageError,
@@ -8,12 +9,11 @@ import {
   type StoredProject,
 } from './deskStore';
 import { setReloading } from './reloading';
-import { acceptsSnippets, type Snippet } from './snippet';
 
 /**
  * Saved projects. Everything the workbench remembers (modules, their settings, routes, the
  * construction patch, transport, voices, UI state) lives in localStorage under one prefix, and the
- * desk, with every clip's version history, lives in IndexedDB. A project is a copy of both, kept in
+ * desk, with every data-block's version history, lives in IndexedDB. A project is a copy of both, kept in
  * IndexedDB (`deskStore.ts`). Opening one replaces the whole workbench like opening a file: the raw
  * keys are written back and the desk is replaced (nothing merges), then the page reloads.
  */
@@ -81,7 +81,7 @@ export function newProjectId(now = new Date()) {
 export const defaultProjectName = (now: Date) => `Project ${now.toLocaleString()}`;
 
 /** The desk as the project holds it: null when the desk was not readable, so open leaves it alone. */
-export type ProjectDesk = Snippet[] | null;
+export type ProjectDesk = DataBlock[] | null;
 
 export function createProject(
   name: string,
@@ -170,11 +170,11 @@ export async function saveProject({
 }
 
 export interface OpenableDesk {
-  snippets: Snippet[];
+  dataBlocks: DataBlock[];
   loading: boolean;
   locked: boolean;
   replaceDesk(
-    snippets: Snippet[],
+    dataBlocks: DataBlock[],
     options?: ReplaceDeskOptions
   ): Promise<{ ok: true } | { ok: false; error: string }>;
 }
@@ -216,7 +216,7 @@ export async function openProject({
       error: 'The saved desk could not be read, so nothing was opened and the desk is untouched.',
     };
   }
-  const previousDesk = desk?.snippets;
+  const previousDesk = desk?.dataBlocks;
   const previousEntries = captureWorkbenchState(storage);
   // From here the old page must not write anything (see reloading.ts); undone on every failure.
   setReloading(true);
@@ -312,7 +312,7 @@ export function parseProjectFile(text: string): ProjectRecord[] {
     entries: Object.fromEntries(
       Object.entries(project.entries).filter(([key]) => key.startsWith(workbenchStoragePrefix))
     ),
-    desk: acceptsSnippets(project.desk) ? project.desk : null,
+    desk: acceptsDataBlocks(project.desk) ? project.desk : null,
   }));
 }
 

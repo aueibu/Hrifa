@@ -293,6 +293,7 @@ describe('moduleEvaluators table', () => {
   it('registers every ported module', () => {
     expect(Object.keys(moduleEvaluators).sort()).toEqual([
       'arithmetic',
+      'data-block-source',
       'fractioning',
       'interference',
       'melodicization',
@@ -303,7 +304,6 @@ describe('moduleEvaluators table', () => {
       'rhythm-list',
       'scale-construction',
       'scale-evolution',
-      'snippet',
       'swirling-mists',
     ]);
   });

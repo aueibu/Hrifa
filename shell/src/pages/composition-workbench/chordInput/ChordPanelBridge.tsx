@@ -15,7 +15,7 @@ import { useChordSelector, useChordSession } from './ChordSessionProvider';
  *   hold it yet, and otherwise left alone: the tab order is as the person left it (A6).
  * - **Leaving the tool does not close the panel** (1b): nothing here closes it.
  * - **Closed by the person** (the tab's x or menu Close, or Remove docker) while the claim wants the picker: the session
- *   tells the claim's host (`reportPickerClosed`: the clip editor goes back to the tool it had before). A close under
+ *   tells the claim's host (`reportPickerClosed`: the Notes editor goes back to the tool it had before). A close under
  *   another tool just closes. A change of screenset is not a close, so only the same screenset's open to closed counts.
  */
 export function ChordPanelBridge({

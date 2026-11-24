@@ -98,7 +98,7 @@ describe('free loops', () => {
     expect(onsets(result.plan, 'a')).toEqual([0, 3]);
   });
 
-  it('clips events at the end of the pass so the plan stays valid', () => {
+  it('data-blocks events at the end of the pass so the plan stays valid', () => {
     const result = compile([channel('a', 2, [1], { length: 4 })]);
     const last = result.plan!.events.at(-1)!;
     expect(

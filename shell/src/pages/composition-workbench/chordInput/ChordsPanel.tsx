@@ -10,7 +10,7 @@ import classes from './ChordsPanel.module.css';
  * fill its docker. The frame carries `data-chord-scope` (the W-20 keys and Esc work with focus here), a header with a
  * Close button that clears the anchor and the ghosts while a target has an anchor (the tab's own close removes the
  * panel), and directly under it the ready line (always present, fixed height). The panel knows nothing of the roll or of
- * any host: it reads the session, so a progression-list host or the clip editor drives it the same way. Without a
+ * any host: it reads the session, so a progression-list host or the Notes editor drives it the same way. Without a
  * target it still auditions; with another tool than Chords it acts on the roll's selection (selection mode).
  */
 export function ChordsPanel() {

@@ -62,7 +62,7 @@ export function WorkbenchStatusBar({
         </ActionIcon>
         <div
           className={classes.screensets}
-          data-info="Screensets: arrangements of the canvas, desk, modules and clip editor. Switch, add, rename or duplicate them."
+          data-info="Screensets: arrangements of the canvas, desk, modules and data-block editor. Switch, add, rename or duplicate them."
         >
           <ScreensetTabs {...screensets} />
         </div>

@@ -1,11 +1,10 @@
 import { MIN_NOTE_QUARTERS } from '../../components/PianoRoll';
 import type {
-  ClipAction,
-  ClipActionContext,
-  ClipActionParams,
-  ClipActionResult,
-} from './clipActions';
-import { hasClipProperties, readClipProperties } from './clipProperties';
+  Operator,
+  OperatorContext,
+  OperatorParams,
+  OperatorResult,
+} from './dataBlockOperators';
 import type { DataPacket } from './model';
 import {
   addRational,
@@ -28,12 +27,13 @@ import {
   noteLabel,
   timeMoveResult,
   type NoteItem,
-} from './noteClipEdits';
+} from './notesEdits';
+import { hasNotesProperties, readNotesProperties } from './notesProperties';
 import type { RotationSessionCore } from './rotationSession';
 
 /**
- * The note-clip transforms (K5b-2a), each a pure function of the packet and the editor's selection.
- * Every one is also a registry action (`noteClipActions`), so the inspector buttons and a later
+ * The notes data-block transforms (K5b-2a), each a pure function of the packet and the editor's selection.
+ * Every one is also a registry action (`notesOperators`), so the inspector buttons and a later
  * right-click menu call the same code.
  *
  * Target set: the selected notes; with nothing selected, every note; with a time selection, the
@@ -41,8 +41,8 @@ import type { RotationSessionCore } from './rotationSession';
  * target). A note partly inside a time selection is a whole target: no transform cuts notes, except
  * duplicate (it copies only the part inside, like a time-selection copy) and rotate in time (it cuts
  * at the span's edges and rotates only the inside parts).
- * "The span" is the selection's range, or with nothing selected the clip from 0 to the clip's length
- * (reverse grows it to the furthest note end when notes run past it; rotate keeps the clip length
+ * "The span" is the selection's range, or with nothing selected the data-block from 0 to the data-block's length
+ * (reverse grows it to the furthest note end when notes run past it; rotate keeps the data-block length
  * so repeated presses wrap in the same span).
  *
  * Refusals return `{ ok: false, error }` and change nothing. A transform that would change nothing
@@ -57,17 +57,17 @@ const MAX_MIDICENTS = 12700;
 /** What the grid means when it is on Auto: a sixteenth note. */
 export const AUTO_GRID_QUARTERS = 0.25;
 
-type Selection = ClipActionContext['selection'];
+type Selection = OperatorContext['selection'];
 
-const refuse = (error: string): ClipActionResult => ({ ok: false, error });
-const done = (packet: DataPacket): ClipActionResult => ({ ok: true, packet });
+const refuse = (error: string): OperatorResult => ({ ok: false, error });
+const done = (packet: DataPacket): OperatorResult => ({ ok: true, packet });
 
 interface Targets {
   /** Target notes, in packet order. */
   items: NoteItem[];
   /** The selection's span, or null when nothing is selected. */
   span: { from: Rational; to: Rational } | null;
-  /** Whether a selection (rather than the whole clip) was targeted. */
+  /** Whether a selection (rather than the whole data-block) was targeted. */
   scoped: boolean;
 }
 
@@ -93,7 +93,7 @@ function targetsOf(packet: DataPacket, selection: Selection): Targets | string {
     const chosen = new Set(selection.ids);
     const items = notes.filter((item) => chosen.has(item.id));
     if (!items.length) {
-      return 'The selected notes are not in the clip any more.';
+      return 'The selected notes are not in the data-block any more.';
     }
     const range = selection.range ?? itemsSpan(packet, selection.ids);
     return {
@@ -106,13 +106,13 @@ function targetsOf(packet: DataPacket, selection: Selection): Targets | string {
   }
   return notes.length
     ? { items: notes, span: null, scoped: false }
-    : 'The clip has no notes to change.';
+    : 'The data-block has no notes to change.';
 }
 
 /**
- * The span a positional transform works in: the selection's, or the clip (0 to its length). With
- * `coverContent` (reverse) a clip span grows to the furthest note end when notes run past the
- * length; rotate keeps the span at the clip length so it is the same on every press.
+ * The span a positional transform works in: the selection's, or the data-block (0 to its length). With
+ * `coverContent` (reverse) a data-block span grows to the furthest note end when notes run past the
+ * length; rotate keeps the span at the data-block length so it is the same on every press.
  */
 function workingSpan(
   packet: DataPacket,
@@ -122,7 +122,7 @@ function workingSpan(
   if (targets.span) {
     return targets.span;
   }
-  const length = readClipProperties(packet).length;
+  const length = readNotesProperties(packet).length;
   if (!coverContent) {
     return { from: rational(0), to: length };
   }
@@ -184,7 +184,7 @@ function isMusicalTimeOverflow(error: unknown): boolean {
  * musical-time overflow errors are taken for "too fine"; any other exception is a bug and is
  * rethrown for the caller to log and report as an internal error (never mislabelled as a refusal).
  */
-function guarded(run: () => ClipActionResult): ClipActionResult {
+function guarded(run: () => OperatorResult): OperatorResult {
   try {
     return run();
   } catch (error) {
@@ -248,10 +248,10 @@ export function parseScaleFactor(
 
 /**
  * Scales the target notes' times by `factor`. WHOLE: onsets and durations scale about the span's
- * start (the selection's start, or the clip start with no selection), so the pattern stretches
+ * start (the selection's start, or the data-block start with no selection), so the pattern stretches
  * and the gaps with it. INDIVIDUAL: each duration scales about the note's own onset; onsets stay.
- * The clip's length never changes (notes pushed past the end are kept). Refuses when any duration
- * would fall under the minimum note length, or any onset before the clip start (a note that starts
+ * The data-block's length never changes (notes pushed past the end are kept). Refuses when any duration
+ * would fall under the minimum note length, or any onset before the data-block start (a note that starts
  * before a time selection's start can).
  */
 export function scaleNotes(
@@ -259,7 +259,7 @@ export function scaleNotes(
   selection: Selection,
   factor: Rational,
   mode: ScaleMode
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -284,7 +284,7 @@ export function scaleNotes(
         );
         if (compareRational(onset, rational(0)) < 0) {
           return refuse(
-            `Scaling by ${rationalToNumber(factor)} would move ${noteName(item)} before the start of the clip. Nothing was changed.`
+            `Scaling by ${rationalToNumber(factor)} would move ${noteName(item)} before the start of the data-block. Nothing was changed.`
           );
         }
         next.set(
@@ -313,11 +313,11 @@ export function scaleNotes(
 
 /**
  * Reverse in time: mirrors positions inside the span (a note over [s, e] moves to [S + E - e, S + E - s],
- * lengths kept). With nothing selected the span is the clip. Notes are mirrored whole, so a note
+ * lengths kept). With nothing selected the span is the data-block. Notes are mirrored whole, so a note
  * partly outside a time selection ends up partly outside its other side. Refuses when a note would
- * start before the clip start.
+ * start before the data-block start.
  */
-export function reverseInTime(packet: DataPacket, selection: Selection): ClipActionResult {
+export function reverseInTime(packet: DataPacket, selection: Selection): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -330,7 +330,7 @@ export function reverseInTime(packet: DataPacket, selection: Selection): ClipAct
       const onset = subtractRational(sum, endOf(item));
       if (compareRational(onset, rational(0)) < 0) {
         return refuse(
-          `Reversing would move ${noteName(item)} before the start of the clip. Nothing was changed.`
+          `Reversing would move ${noteName(item)} before the start of the data-block. Nothing was changed.`
         );
       }
       next.set(item.id, withValue(item, { onset: { quarterNotes: onset } }));
@@ -413,7 +413,7 @@ function permutePayload(
   newId: () => string,
   selection: Selection,
   scoped: boolean
-): ClipActionResult {
+): OperatorResult {
   const next = new Map<string, NoteItem>();
   const removed = new Set<string>();
   const added: NoteItem[] = [];
@@ -510,7 +510,7 @@ export function reverseOrder(
   packet: DataPacket,
   selection: Selection,
   newId: () => string = () => newNoteItemId('slot')
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -552,7 +552,7 @@ export function rotateValues(
   selection: Selection,
   amount: number,
   newId: () => string = () => newNoteItemId('slot')
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -580,7 +580,7 @@ export function rotateDurations(
   packet: DataPacket,
   selection: Selection,
   amount: number
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -652,7 +652,7 @@ function piecesAt(a: Rational, duration: Rational, length: Rational): RotationPi
 
 /**
  * Rotate in time, BOUNDED and circular: the pattern shifts `amount` grid steps (negative allowed)
- * around the span (the selection's range, or 0 to the clip length with nothing selected) and nothing
+ * around the span (the selection's range, or 0 to the data-block length with nothing selected) and nothing
  * ever lands outside it. A note crossing the span's left or right edge is CUT at the edge first (the
  * same rule as the knife and the time-selection move): only the part inside rotates, the parts
  * outside stay exactly where they are (a note wholly outside the span is not touched). The first
@@ -665,7 +665,7 @@ function piecesAt(a: Rational, duration: Rational, length: Rational): RotationPi
  * pieces (and its first span) so the next press rotates the same notes in the same span. Zero steps
  * change nothing.
  *
- * With a valid `session` (rotationSession.ts: same span and grid, the originals still in the clip)
+ * With a valid `session` (rotationSession.ts: same span and grid, the originals still in the data-block)
  * the rotation is applied to the ORIGINAL uncut notes with the cumulative shift, replacing all their
  * parts, so when the inside part is back in place (the cumulative shift is a whole number of spans)
  * the original note is rebuilt exactly, outside parts re-merged, and rotating back restores the
@@ -677,7 +677,7 @@ export function rotateInTime(
   amount: number,
   gridQuarters: number | undefined,
   session?: RotationSessionCore | null
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -746,7 +746,7 @@ export function rotateInTime(
         compareRational(pieces[0].end, subtractRational(insideEnd, from)) === 0;
       if (insideBack) {
         // Back where it began: the very original note again, outside parts re-merged (their ids stay in
-        // `removed`, so they leave the clip).
+        // `removed`, so they leave the data-block).
         next.set(original.id, original);
         continue;
       }
@@ -838,7 +838,7 @@ export function rotateInTime(
  * notes at the last onset are unchanged. Refuses when the next onset is closer than the minimum
  * note length.
  */
-export function legato(packet: DataPacket, selection: Selection): ClipActionResult {
+export function legato(packet: DataPacket, selection: Selection): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -882,7 +882,7 @@ export function transposeNotes(
   packet: DataPacket,
   selection: Selection,
   semitones: number
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -911,7 +911,7 @@ export function quantizeNotes(
   packet: DataPacket,
   selection: Selection,
   gridQuarters: number | undefined
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -940,14 +940,14 @@ export function quantizeNotes(
  * the span's length): the selection's range, or with nothing selected 0 to the content's end. Copies
  * are new items (fresh ids, same pitches, velocity and inherited provenance). A note selection
  * copies the selected notes whole; a time selection copies only the part of each note inside the
- * span (cut at its edges, like a time-selection copy). The result selects the copies; the clip's
+ * span (cut at its edges, like a time-selection copy). The result selects the copies; the data-block's
  * length does not change.
  */
 export function duplicateNotes(
   packet: DataPacket,
   selection: Selection,
   newId: () => string
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -1015,7 +1015,7 @@ export function invertNotes(
   packet: DataPacket,
   selection: Selection,
   axisMidicents?: number
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -1111,7 +1111,7 @@ export function makeEqualDuration(
   packet: DataPacket,
   selection: Selection,
   duration?: Rational
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -1152,7 +1152,7 @@ export function makeEqualVelocity(
   packet: DataPacket,
   selection: Selection,
   velocity?: number
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -1177,7 +1177,7 @@ export function makeEqualPitch(
   packet: DataPacket,
   selection: Selection,
   pitchMidicents: number
-): ClipActionResult {
+): OperatorResult {
   const targets = targetsOf(packet, selection);
   if (typeof targets === 'string') {
     return refuse(targets);
@@ -1207,7 +1207,7 @@ const earliest = (a: Rational, b: Rational) => (compareRational(a, b) <= 0 ? a :
  * copies every note overlapping its span (a note that only touches an edge is not included),
  * whole, not cut at the span's edges (origin: the span's start, or the earliest note's onset when a
  * note began before the span, so no offset is negative). With nothing selected there is nothing to
- * copy: a message, never the whole clip. The packet is not changed.
+ * copy: a message, never the whole data-block. The packet is not changed.
  */
 export function copyToClipboard(
   packet: DataPacket,
@@ -1254,7 +1254,7 @@ export function copyToClipboard(
 
 /**
  * Where a paste lands: the time selection's start; else the earliest selected note's onset; else the
- * clip start (0; the editor has no playhead of its own to paste at).
+ * data-block start (0; the editor has no playhead of its own to paste at).
  */
 export function pasteStart(packet: DataPacket, selection: Selection): Rational {
   if (selection.kind === 'time' && selection.range) {
@@ -1276,14 +1276,14 @@ export function pasteStart(packet: DataPacket, selection: Selection): Rational {
 /**
  * Paste: the clipboard's notes land at `pasteStart`, each a new item (a collision-safe fresh id, the
  * copied pitches, velocity, lengths and provenance). The pasted notes become the selection. The
- * clip's total length never grows: notes past the end are kept, shown past the end marker.
+ * data-block's total length never grows: notes past the end are kept, shown past the end marker.
  */
 export function pasteNotes(
   packet: DataPacket,
   selection: Selection,
   clipboard: NoteClipboard | null | undefined,
   newId: () => string
-): ClipActionResult {
+): OperatorResult {
   if (!clipboard || clipboard.notes.length === 0) {
     return refuse('The clipboard is empty. Copy some notes first.');
   }
@@ -1321,14 +1321,14 @@ export function pasteNotes(
 
 const GROUP = 'Transform';
 
-function typedNumber(params: ClipActionParams, key: string, label: string): number | string {
+function typedNumber(params: OperatorParams, key: string, label: string): number | string {
   const text = String(params[key] ?? '').trim();
   const value = Number(text);
   return text !== '' && Number.isFinite(value) ? value : `Enter a number for ${label}.`;
 }
 
-/** The note clip's actions, registered on the `notes` clip type (clipTypes.ts). */
-export const noteClipActions: readonly ClipAction[] = [
+/** The notes data-block's actions, registered on the `notes` data-block type (dataBlockTypes.ts). */
+export const notesOperators: readonly Operator[] = [
   {
     id: 'scale',
     label: 'Scale',
@@ -1346,7 +1346,7 @@ export const noteClipActions: readonly ClipAction[] = [
         ],
       },
     ],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context, params) => {
       const factor = parseScaleFactor(params.factor);
       if (!factor.ok) {
@@ -1365,7 +1365,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Reverse in time',
     group: GROUP,
     params: [],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context) => reverseInTime(packet, context.selection),
   },
   {
@@ -1373,7 +1373,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Reverse order',
     group: GROUP,
     params: [],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context) => reverseOrder(packet, context.selection, context.newId),
   },
   {
@@ -1381,7 +1381,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Rotate values',
     group: GROUP,
     params: [{ id: 'amount', label: 'Slots', type: 'integer', default: 1 }],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context, params) => {
       const amount = parseInteger(params.amount, 'the rotation');
       return typeof amount === 'string'
@@ -1394,7 +1394,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Rotate durations',
     group: GROUP,
     params: [{ id: 'amount', label: 'Slots', type: 'integer', default: 1 }],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context, params) => {
       const amount = parseInteger(params.amount, 'the rotation');
       return typeof amount === 'string'
@@ -1407,7 +1407,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Rotate in time',
     group: GROUP,
     params: [{ id: 'amount', label: 'Grid steps', type: 'integer', default: 1 }],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context, params) => {
       const amount = parseInteger(params.amount, 'the rotation');
       return typeof amount === 'string'
@@ -1420,7 +1420,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Legato',
     group: GROUP,
     params: [],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context) => legato(packet, context.selection),
   },
   {
@@ -1428,7 +1428,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Transpose',
     group: GROUP,
     params: [{ id: 'semitones', label: 'Semitones', type: 'number', default: 0 }],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context, params) => {
       const semitones = typedNumber(params, 'semitones', 'the semitones');
       return typeof semitones === 'string'
@@ -1441,7 +1441,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Quantize',
     group: GROUP,
     params: [],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context) => quantizeNotes(packet, context.selection, context.gridUnit),
   },
   {
@@ -1449,7 +1449,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Duplicate',
     group: GROUP,
     params: [],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context) => duplicateNotes(packet, context.selection, context.newId),
   },
   {
@@ -1457,7 +1457,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Invert',
     group: GROUP,
     params: [{ id: 'axis', label: 'Axis', type: 'pick-pitch', optional: true }],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context, params) => {
       const text = String(params.axis ?? '').trim();
       if (text === '') {
@@ -1474,7 +1474,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Make all durations equal',
     group: GROUP,
     params: [{ id: 'duration', label: 'Length', type: 'duration', optional: true }],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context, params) => {
       if (String(params.duration ?? '').trim() === '') {
         return makeEqualDuration(packet, context.selection);
@@ -1490,7 +1490,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Make all velocities equal',
     group: GROUP,
     params: [{ id: 'velocity', label: 'Velocity (percent)', type: 'number', optional: true }],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context, params) => {
       if (String(params.velocity ?? '').trim() === '') {
         return makeEqualVelocity(packet, context.selection);
@@ -1506,7 +1506,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Make all pitches equal',
     group: GROUP,
     params: [{ id: 'pitch', label: 'Pitch', type: 'pick-pitch' }],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context, params) => {
       const text = String(params.pitch ?? '').trim();
       const pitch = Number(text);
@@ -1520,7 +1520,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Copy',
     group: 'Clipboard',
     params: [],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context) => {
       const copied = copyToClipboard(packet, context.selection);
       if (!copied.ok) {
@@ -1540,7 +1540,7 @@ export const noteClipActions: readonly ClipAction[] = [
     label: 'Paste',
     group: 'Clipboard',
     params: [],
-    applies: hasClipProperties,
+    applies: hasNotesProperties,
     run: (packet, context) =>
       pasteNotes(packet, context.selection, context.clipboard, context.newId),
   },

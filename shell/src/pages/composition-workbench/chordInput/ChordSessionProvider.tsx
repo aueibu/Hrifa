@@ -19,7 +19,7 @@ const ChordSessionContext = createContext<ChordSession | null>(null);
  * move. The provider subscribes only to the values it needs (anchor, target, picker wanted), so a
  * hover update never re-renders it or its children.
  *
- * `WorkbenchSessions` mounts one for the page; a `NoteClipEditor` with none above it mounts a
+ * `WorkbenchSessions` mounts one for the page; a `NotesEditor` with none above it mounts a
  * private one.
  */
 export function ChordSessionProvider({

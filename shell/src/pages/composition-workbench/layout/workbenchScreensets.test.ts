@@ -10,7 +10,7 @@ import {
   acceptsScreensetStore,
   bringPanelForward,
   CANVAS_PANEL,
-  CLIP_EDITOR_PANEL,
+  DATA_BLOCK_EDITOR_PANEL,
   defaultWorkbenchScreensets,
   DESK_PANEL,
   isPanelShown,
@@ -41,7 +41,7 @@ describe('the default screensets', () => {
     const canvas = store.screensets.canvas;
     expect(treeDockers(canvas.tree).map((d) => [d.name, d.tabs])).toEqual([
       ['Canvas', [CANVAS_PANEL]],
-      ['Detail', [MODULE_DETAIL_PANEL, CLIP_EDITOR_PANEL]],
+      ['Detail', [MODULE_DETAIL_PANEL, DATA_BLOCK_EDITOR_PANEL]],
       ['Tools', []],
     ]);
     const desk = store.screensets.desk;
@@ -89,18 +89,20 @@ describe('page helpers', () => {
     const canvas = store.screensets.canvas;
     expect(isPanelShown(canvas, CANVAS_PANEL)).toBe(true);
     expect(isPanelShown(canvas, MODULE_DETAIL_PANEL)).toBe(true);
-    expect(isPanelShown(canvas, CLIP_EDITOR_PANEL)).toBe(false);
+    expect(isPanelShown(canvas, DATA_BLOCK_EDITOR_PANEL)).toBe(false);
     expect(isPanelShown(canvas, DESK_PANEL)).toBe(false);
     const detail = dockerByName(canvas.tree, 'Detail')!;
     expect(isPanelShown({ ...canvas, collapsed: [detail.id] }, MODULE_DETAIL_PANEL)).toBe(false);
   });
 
   it('brings a panel forward in every screenset, and returns the same store when nothing changes', () => {
-    const next = bringPanelForward(store, CLIP_EDITOR_PANEL);
+    const next = bringPanelForward(store, DATA_BLOCK_EDITOR_PANEL);
     for (const id of next.order) {
-      expect(dockerByName(next.screensets[id].tree, 'Detail')?.active).toBe(CLIP_EDITOR_PANEL);
+      expect(dockerByName(next.screensets[id].tree, 'Detail')?.active).toBe(
+        DATA_BLOCK_EDITOR_PANEL
+      );
     }
-    expect(bringPanelForward(next, CLIP_EDITOR_PANEL)).toBe(next);
+    expect(bringPanelForward(next, DATA_BLOCK_EDITOR_PANEL)).toBe(next);
     expect(bringPanelForward(store, 'nothing-here')).toBe(store);
   });
 

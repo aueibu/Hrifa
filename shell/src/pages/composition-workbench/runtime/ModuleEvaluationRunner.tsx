@@ -37,7 +37,7 @@ import { useOutputs } from './useOutputs';
 interface RunnerParams {
   instanceId: string;
   instanceLabel: string;
-  snippetId: string | undefined;
+  dataBlockId: string | undefined;
   routeState: ModuleRouteState;
   /** Every published output; empty for a module that takes none. */
   outputs: PublishedCompositionOutput[];
@@ -62,7 +62,7 @@ function useEdo() {
 /**
  * Where each evaluated module's inputs come from, in one place. The same values the module view
  * used to gather before it called `useModuleEvaluation`: the module's own state spec, the picked
- * routed outputs (routed modules), the desk clip (Snippet) and the settings (`edo`, the pulse).
+ * routed outputs (routed modules), the desk data-block (Data-block) and the settings (`edo`, the pulse).
  */
 const runnerBindings: Record<EvaluatedModuleId, RunnerBinding> = {
   'pitch-list': bind(pitchListState, ({ instanceId, instanceLabel }) => ({
@@ -130,13 +130,13 @@ const runnerBindings: Record<EvaluatedModuleId, RunnerBinding> = {
       };
     }
   ),
-  // A snippet module keeps nothing of its own: the desk owns the material.
-  snippet: bind(
-    defineModuleState<object>('snippet', {}),
-    ({ instanceId, instanceLabel, snippetId }) => {
-      const { snippets } = useDesk();
+  // A data-block-source module keeps nothing of its own: the desk owns the material.
+  'data-block-source': bind(
+    defineModuleState<object>('data-block-source', {}),
+    ({ instanceId, instanceLabel, dataBlockId }) => {
+      const { dataBlocks } = useDesk();
       return {
-        inputs: { snippet: snippets.find((candidate) => candidate.id === snippetId) },
+        inputs: { dataBlock: dataBlocks.find((candidate) => candidate.id === dataBlockId) },
         ctx: { instanceId, instanceLabel },
       };
     }
@@ -149,7 +149,7 @@ export interface ModuleEvaluationRunnerProps {
   instanceId: string;
   moduleId: EvaluatedModuleId & CompositionModuleId;
   instanceLabel: string;
-  snippetId?: string;
+  dataBlockId?: string;
   routeState: ModuleRouteState | undefined;
 }
 
@@ -166,7 +166,7 @@ export const ModuleEvaluationRunner = memo(function ModuleEvaluationRunner({
   instanceId,
   moduleId,
   instanceLabel,
-  snippetId,
+  dataBlockId,
   routeState,
 }: ModuleEvaluationRunnerProps) {
   const entry = moduleRegistry[moduleId];
@@ -180,7 +180,7 @@ export const ModuleEvaluationRunner = memo(function ModuleEvaluationRunner({
   const { inputs, ctx } = binding.useRun({
     instanceId,
     instanceLabel,
-    snippetId,
+    dataBlockId,
     routeState: resolvedRouteState,
     outputs,
   });

@@ -1,5 +1,5 @@
 /**
- * The workbench's panel kinds for the dock Stage (one-Stage M5, M6a): `canvas`, `desk`, `module-detail`, `clip-editor`
+ * The workbench's panel kinds for the dock Stage (one-Stage M5, M6a): `canvas`, `desk`, `module-detail`, `data-block-editor`
  * and `chords` (the chord picker; it reads the page chord session, so it needs nothing from the page's panel nodes).
  * The kinds are static (module-level), so the registry is built once. The page owns what each panel shows and hands the
  * four elements down through `WorkbenchPanelsContext`: the Stage renders a panel through a portal at its own place in
@@ -16,7 +16,7 @@ import { ChordsPanel } from '../chordInput/ChordsPanel';
 import {
   CANVAS_PANEL,
   CHORDS_PANEL,
-  CLIP_EDITOR_PANEL,
+  DATA_BLOCK_EDITOR_PANEL,
   DESK_PANEL,
   MODULE_DETAIL_PANEL,
 } from './workbenchScreensets';
@@ -26,7 +26,7 @@ export interface WorkbenchPanelNodes {
   canvas: ReactNode;
   desk: ReactNode;
   moduleDetail: ReactNode;
-  clipEditor: ReactNode;
+  dataBlockEditor: ReactNode;
 }
 
 export const WorkbenchPanelsContext = createContext<WorkbenchPanelNodes | null>(null);
@@ -78,12 +78,12 @@ export const WORKBENCH_KINDS: readonly PanelKind[] = [
     render: () => <PanelSlot which="moduleDetail" scroll />,
   },
   {
-    id: CLIP_EDITOR_PANEL,
-    title: 'Clip editor',
+    id: DATA_BLOCK_EDITOR_PANEL,
+    title: 'Data-block editor',
     sizes: SIZES,
     minSize: MIN_SIZE,
     home: 'Detail',
-    render: () => <PanelSlot which="clipEditor" scroll />,
+    render: () => <PanelSlot which="dataBlockEditor" scroll />,
   },
   {
     id: CHORDS_PANEL,

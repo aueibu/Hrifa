@@ -46,7 +46,9 @@ describe('the workbench center on the dock Stage', () => {
 
     // Desk and Edit screensets: the canvas is the very same element afterwards, parked then back.
     await user.click(footerTab('Desk'));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'New clip' })).toBeVisible());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'New data-block' })).toBeVisible()
+    );
     expect(canvas.closest('[inert]')).not.toBeNull();
     // Interference changes its resultant while the Desk screenset shows: Melodicization still gets it.
     fireEvent.change(document.querySelector('input[aria-label="Generator 1 pattern"]')!, {
@@ -73,7 +75,9 @@ describe('the workbench center on the dock Stage', () => {
     const user = userEvent.setup();
     const first = render(<CompositionWorkbenchPage />);
     await user.click(footerTab('Desk'));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'New clip' })).toBeVisible());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'New data-block' })).toBeVisible()
+    );
 
     // Send the desk to the Tools docker from its tab's context menu.
     const deskTab = within(screen.getByRole('region', { name: 'Desk' })).getByRole('tab', {
@@ -96,28 +100,31 @@ describe('the workbench center on the dock Stage', () => {
     expect(storedStore().active).toBe('desk');
   }, 40_000);
 
-  it('clears the open clip target when its clip is deleted while the clip editor tab is closed', async () => {
+  it('clears the open data-block target when its data-block is deleted while the data-block editor tab is closed', async () => {
     const user = userEvent.setup();
     storeDefaultScreensets({ active: 'desk' });
     render(<CompositionWorkbenchPage />);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'New clip' })).toBeEnabled(), {
-      timeout: 10_000,
-    });
-    await user.click(screen.getByRole('button', { name: 'New clip' }));
-    const input = await screen.findByDisplayValue('New clip');
-    expect(localStorage.getItem(compositionStateKeys.editorClipTarget)).not.toBe('null');
+    await waitFor(
+      () => expect(screen.getByRole('button', { name: 'New data-block' })).toBeEnabled(),
+      {
+        timeout: 10_000,
+      }
+    );
+    await user.click(screen.getByRole('button', { name: 'New data-block' }));
+    const input = await screen.findByDisplayValue('New data-block');
+    expect(localStorage.getItem(compositionStateKeys.editorTarget)).not.toBe('null');
 
-    // Close the Clip editor tab, so nothing of the editor panel is mounted.
+    // Close the Data-block editor tab, so nothing of the editor panel is mounted.
     fireEvent.contextMenu(
       within(screen.getByRole('region', { name: 'Detail' })).getByRole('tab', {
-        name: 'Clip editor',
+        name: 'Data-block editor',
       })
     );
-    await user.click(await screen.findByRole('menuitem', { name: 'Close Clip editor' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Close Data-block editor' }));
     await waitFor(() =>
       expect(
         within(screen.getByRole('region', { name: 'Detail' })).queryByRole('tab', {
-          name: 'Clip editor',
+          name: 'Data-block editor',
         })
       ).not.toBeInTheDocument()
     );
@@ -126,7 +133,7 @@ describe('the workbench center on the dock Stage', () => {
     await user.click(within(card).getByRole('button', { name: 'Delete' }));
     await user.click(within(card).getByRole('button', { name: 'Confirm delete' }));
     await waitFor(() =>
-      expect(localStorage.getItem(compositionStateKeys.editorClipTarget)).toBe('null')
+      expect(localStorage.getItem(compositionStateKeys.editorTarget)).toBe('null')
     );
   }, 40_000);
 });

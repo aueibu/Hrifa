@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { NoteEventValue } from './melodicization';
 import { packet, type DataItem } from './model';
 import { musicalDuration, musicalPosition } from './musicalTime';
-import { moveNotes } from './noteClipEdits';
+import { moveNotes } from './notesEdits';
 import {
   clearTimeSelection,
   emptyNoteSelection,
@@ -86,7 +86,7 @@ describe('note selection: events and the time they occupy', () => {
     expect(pruneSelection(wide, notes)).toBe(wide);
   });
 
-  it('a time selection keeps its kind and range when notes go, held only to the clip', () => {
+  it('a time selection keeps its kind and range when notes go, held only to the data-block', () => {
     const time = { ...selectTime(selectIds(notes, ['a', 'b']), { start: 0, end: 4 }) };
     const without = packet('events', 'note', [item('a', 0, 1)]);
     // Deleted notes drop out of the ids; the span and the kind stay.
@@ -96,7 +96,7 @@ describe('note selection: events and the time they occupy', () => {
       kind: 'time',
     });
     expect(pruneSelection(time, notes)).toBe(time);
-    // Pruned to the clip: the start at 0 and the end at the limit.
+    // Pruned to the data-block: the start at 0 and the end at the limit.
     expect(pruneSelection(time, notes, 3).range).toEqual({ start: 0, end: 3 });
     expect(pruneTimeRange({ start: -2, end: 1 })).toEqual({ start: 0, end: 1 });
     expect(pruneTimeRange({ start: 5, end: 8 }, 4)).toBeNull();

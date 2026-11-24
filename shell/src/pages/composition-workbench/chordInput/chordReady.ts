@@ -5,14 +5,14 @@ import type { ReadyValue } from '../components/readyState';
  *
  * - `ready`: what Insert will do ("Anchor: click in the roll", "Insert: one chord on each of 2 selected notes").
  * - `waiting`: the one thing needed next ("Select a note, or use the Chords tool").
- * - `no-target`: why nothing can happen here now ("No target: open a clip to insert").
+ * - `no-target`: why nothing can happen here now ("No target: open a data-block to insert").
  *
  * Audition never needs a target, so no state blocks it; only the insert is blocked (`insertBlocked`).
  */
 import { barBeatText } from '../positionWording';
 import { pitchLabel } from '../routeTreatments';
 
-export const NO_TARGET_TEXT = 'No target: open a clip to insert';
+export const NO_TARGET_TEXT = 'No target: open a data-block to insert';
 export const ANCHOR_TEXT = 'Anchor: click in the roll';
 export const NO_SELECTION_TEXT = 'Select a note, or use the Chords tool';
 export const RANGE_ONLY_TEXT = 'Select a note';
@@ -20,7 +20,7 @@ const LIST_WAITING_TEXT = 'Choose where the chord goes';
 export const CANNOT_INSERT_MANY_TEXT = 'This host cannot insert several chords';
 
 export interface ChordReadyInput {
-  /** Is there an active claim (a clip open)? */
+  /** Is there an active claim (a data-block open)? */
   hasTarget: boolean;
   /** The host's display name, for a host that is not a roll ("Insert into <name>"); empty: just "Insert". Never a raw id. */
   targetName: string;
@@ -30,7 +30,7 @@ export interface ChordReadyInput {
   canInsertMany?: boolean;
   /** Anchor mode (the Chords tool, or any host that wants the picker) or selection mode (another tool). */
   mode: 'anchor' | 'selection';
-  /** Does the host have notes and a selection (the clip editor), as opposed to a list? */
+  /** Does the host have notes and a selection (the data-block editor), as opposed to a list? */
   rollHost: boolean;
   /** Anchor mode: the anchor, when one is set. */
   anchor: { pitchMidicents: number; start: number } | null;

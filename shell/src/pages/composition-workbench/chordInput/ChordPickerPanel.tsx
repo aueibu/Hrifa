@@ -14,7 +14,7 @@ const DEFAULT_HINT = 'Choose where the chord goes.';
 /**
  * The chord picker body bound to the chord session: it reads the session's values and the active
  * claim's target (pitch set, empty-state hint) and writes back through the session, so it works for
- * any host that claims the session (the clip editor, a progression list in a test). Three states:
+ * any host that claims the session (the Notes editor, a progression list in a test). Three states:
  *
  * - **Anchor mode** (the claim wants the picker: the Chords tool): the target's hint until an anchor is set, then the
  *   picker at the anchor.

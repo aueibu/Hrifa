@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { clipActionOperation, type ClipActionResult } from './clipActions';
-import { freezeClipProperties } from './clipProperties';
-import { clipActionById, clipActionsOf } from './clipTypes';
+import { operatorOperation, type OperatorResult } from './dataBlockOperators';
+import { operatorById, operatorsOf } from './dataBlockTypes';
 import type { NoteEventValue } from './melodicization';
 import { packet, type DataItem, type DataPacket } from './model';
 import {
@@ -11,7 +10,8 @@ import {
   rationalFromNumber,
   rationalToNumber,
 } from './musicalTime';
-import { newNoteItemId } from './noteClipEdits';
+import { newNoteItemId } from './notesEdits';
+import { freezeNotesProperties } from './notesProperties';
 import {
   copyToClipboard,
   duplicateNotes,
@@ -20,7 +20,7 @@ import {
   makeEqualDuration,
   makeEqualPitch,
   makeEqualVelocity,
-  noteClipActions,
+  notesOperators,
   parseNoteDuration,
   parseScaleFactor,
   parseVelocityPercent,
@@ -60,7 +60,7 @@ function item(
   };
 }
 
-function clip(items: DataItem<NoteEventValue>[], extent = 8): DataPacket {
+function dataBlock(items: DataItem<NoteEventValue>[], extent = 8): DataPacket {
   return {
     ...packet('events', 'note', items),
     frame: {
@@ -76,7 +76,7 @@ function clip(items: DataItem<NoteEventValue>[], extent = 8): DataPacket {
 
 /** a 0..1 C4, b 2..3 E4, c 4..6 chord C4 + E4. */
 const base = () =>
-  clip([item('a', 0, 1, [6000]), item('b', 2, 1, [6400]), item('c', 4, 2, [6000, 6400])]);
+  dataBlock([item('a', 0, 1, [6000]), item('b', 2, 1, [6400]), item('c', 4, 2, [6000, 6400])]);
 
 const none: Selection = { ids: [], range: null };
 const notes = (selection: Selection['ids'], range: Selection['range'] = null): Selection => ({
@@ -94,13 +94,13 @@ const value = (p: DataPacket, id: string) =>
 const onset = (p: DataPacket, id: string) => rationalToNumber(value(p, id).onset.quarterNotes);
 const length = (p: DataPacket, id: string) => rationalToNumber(value(p, id).duration.quarterNotes);
 const pitches = (p: DataPacket, id: string) => value(p, id).pitches;
-const ok = (result: ClipActionResult) => {
+const ok = (result: OperatorResult) => {
   if (!result.ok) {
     throw new Error(`refused: ${result.error}`);
   }
   return result.packet;
 };
-const refused = (result: ClipActionResult) => {
+const refused = (result: OperatorResult) => {
   expect(result.ok).toBe(false);
   return result.ok ? '' : result.error;
 };
@@ -144,12 +144,12 @@ describe('parseScaleFactor', () => {
 });
 
 describe('scale', () => {
-  it('whole, with nothing selected, scales onsets and durations about the clip start', () => {
+  it('whole, with nothing selected, scales onsets and durations about the data-block start', () => {
     const before = base();
     const after = ok(scaleNotes(before, none, rational(2), 'whole'));
     expect(['a', 'b', 'c'].map((id) => onset(after, id))).toEqual([0, 4, 8]);
     expect(['a', 'b', 'c'].map((id) => length(after, id))).toEqual([2, 2, 4]);
-    // Pitches, velocity and ids are untouched; the clip's length never changes (c now ends at 12).
+    // Pitches, velocity and ids are untouched; the data-block's length never changes (c now ends at 12).
     expect(pitches(after, 'c')).toEqual([6000, 6400]);
     expect(after.frame).toBe(before.frame);
     expect(after.metadata).toBe(before.metadata);
@@ -189,22 +189,22 @@ describe('scale', () => {
   });
 
   it('refuses, changing nothing, when any duration would drop under the minimum note length', () => {
-    const fine = clip([item('a', 0, 1, [6000]), item('tiny', 2, 1 / 32, [6400])]);
+    const fine = dataBlock([item('a', 0, 1, [6000]), item('tiny', 2, 1 / 32, [6400])]);
     const message = refused(scaleNotes(fine, none, rational(1, 2), 'individual'));
     expect(message).toMatch(/minimum note length/);
     expect(ok(scaleNotes(fine, notes(['a']), rational(1, 2), 'individual'))).not.toBe(fine);
     // 1/16 halved is exactly the minimum (1/32): allowed.
-    const sixteenth = clip([item('s', 2, 1 / 16, [6400])]);
+    const sixteenth = dataBlock([item('s', 2, 1 / 16, [6400])]);
     expect(length(ok(scaleNotes(sixteenth, none, rational(1, 2), 'whole')), 's')).toBe(1 / 32);
   });
 
-  it('refuses a whole scale that would move a note before the clip start, and a factor of 1 changes nothing', () => {
+  it('refuses a whole scale that would move a note before the data-block start, and a factor of 1 changes nothing', () => {
     const before = base();
     // b starts at 2 and the span starts at 3: scaling by 4 about 3 puts b at -1.
     expect(
       refused(
         scaleNotes(
-          clip([item('b', 2, 2, [6000]), item('x', 3, 1, [6100])]),
+          dataBlock([item('b', 2, 2, [6000]), item('x', 3, 1, [6100])]),
           time(3, 5),
           rational(4),
           'whole'
@@ -215,14 +215,14 @@ describe('scale', () => {
     expect(ok(same)).toBe(before);
   });
 
-  it('refuses with a message on an empty clip and on a time selection with no notes', () => {
-    expect(refused(scaleNotes(clip([]), none, rational(2), 'whole'))).toMatch(/no notes/);
+  it('refuses with a message on an empty data-block and on a time selection with no notes', () => {
+    expect(refused(scaleNotes(dataBlock([]), none, rational(2), 'whole'))).toMatch(/no notes/);
     expect(refused(scaleNotes(base(), time(7, 8), rational(2), 'whole'))).toMatch(/no notes/);
   });
 });
 
 describe('reverse in time', () => {
-  it('mirrors the whole clip with nothing selected', () => {
+  it('mirrors the whole data-block with nothing selected', () => {
     const after = ok(reverseInTime(base(), none));
     expect(['a', 'b', 'c'].map((id) => onset(after, id))).toEqual([7, 5, 2]);
     expect(['a', 'b', 'c'].map((id) => length(after, id))).toEqual([1, 1, 2]);
@@ -240,15 +240,15 @@ describe('reverse in time', () => {
     expect([onset(after, 'b'), onset(after, 'c'), onset(after, 'a')]).toEqual([3, 0, 0]);
   });
 
-  it('refuses when a note would land before the clip start', () => {
-    const before = clip([item('x', 0, 4, [6000])]);
+  it('refuses when a note would land before the data-block start', () => {
+    const before = dataBlock([item('x', 0, 4, [6000])]);
     expect(refused(reverseInTime(before, time(1, 2)))).toMatch(/before the start/);
   });
 });
 
 describe('reverse order', () => {
   it('reverses pitches and velocities across the slots and keeps the rhythm', () => {
-    const before = clip([
+    const before = dataBlock([
       item('a', 0, 1, [6000], 0.2),
       item('b', 2, 1, [6400], 0.5),
       item('c', 4, 2, [6000, 6400], 0.9),
@@ -271,7 +271,7 @@ describe('reverse order', () => {
 
 describe('rotate values', () => {
   const seeded = () =>
-    clip([
+    dataBlock([
       item('a', 0, 1, [6000], 0.2),
       item('b', 2, 1, [6400], 0.5),
       item('c', 4, 2, [6700], 0.9),
@@ -301,9 +301,9 @@ describe('rotate values', () => {
   });
 });
 
-/** A clip frozen at length 8 with these notes (they may run past that length). */
+/** A data-block frozen at length 8 with these notes (they may run past that length). */
 function frozenWith(items: DataItem<NoteEventValue>[]): DataPacket {
-  const held = freezeClipProperties(clip([item('seed', 0, 1, [6000])]));
+  const held = freezeNotesProperties(dataBlock([item('seed', 0, 1, [6000])]));
   return { ...held, items };
 }
 
@@ -333,7 +333,7 @@ const pattern = (p: DataPacket) =>
 const soundOf = (p: DataPacket) => p.items.reduce((sum, entry) => sum + length(p, entry.id), 0);
 
 describe('rotate in time (bounded, circular)', () => {
-  it('shifts by grid steps and wraps whole notes around the clip length with nothing selected', () => {
+  it('shifts by grid steps and wraps whole notes around the data-block length with nothing selected', () => {
     const after = ok(rotateInTime(base(), none, 1, 1));
     expect(['a', 'b', 'c'].map((id) => onset(after, id))).toEqual([1, 3, 5]);
     expect(after.items).toHaveLength(3);
@@ -344,7 +344,7 @@ describe('rotate in time (bounded, circular)', () => {
 
   it('splits a note that would cross the span end and wraps its tail to the start', () => {
     // Selection Aq Ah Ae (A4 at 0 for 1, A4 at 1 for 2, A4 at 3 for 1/2): span 0..3.5.
-    const before = clip([
+    const before = dataBlock([
       item('q', 0, 1, [6900]),
       item('h', 1, 2, [6900]),
       item('e', 3, 0.5, [6900]),
@@ -383,10 +383,10 @@ describe('rotate in time (bounded, circular)', () => {
     expect(soundOf(after)).toBe(1);
   });
 
-  it('a note over the clip end is cut at the clip length: the part outside stays, the inside part rotates', () => {
+  it('a note over the data-block end is cut at the data-block length: the part outside stays, the inside part rotates', () => {
     const crossing = frozenWith([item('a', 0, 1, [6000]), item('x', 7.5, 1, [6400])]);
     const after = ok(rotateInTime(crossing, none, 1, 1));
-    // x was 7.5..8.5: 8..8.5 (outside the clip) stays put and keeps the id; the inside 7.5..8 moves to
+    // x was 7.5..8.5: 8..8.5 (outside the data-block) stays put and keeps the id; the inside 7.5..8 moves to
     // 8.5..9 and wraps to 0.5..1 (fresh id); a moves to 1..2.
     expect([onset(after, 'x'), length(after, 'x')]).toEqual([8, 0.5]);
     expect([onset(after, 'x~r1'), length(after, 'x~r1')]).toEqual([0.5, 0.5]);
@@ -412,7 +412,7 @@ describe('rotate in time (bounded, circular)', () => {
   });
 
   it('uses the grid unit exactly, triplets included, and a sixteenth for Auto', () => {
-    const solo = () => clip([item('a', 0, 1, [6000])]);
+    const solo = () => dataBlock([item('a', 0, 1, [6000])]);
     const triplet = ok(rotateInTime(solo(), none, 1, 2 / 3));
     expect(value(triplet, 'a').onset.quarterNotes).toEqual(rational(2, 3));
     const auto = ok(rotateInTime(solo(), none, 3, undefined));
@@ -454,7 +454,7 @@ describe('rotate in time (bounded, circular)', () => {
   });
 
   it('a note longer than the span is cut at the edges, not refused; a split that leaves a sliver is refused', () => {
-    const long = clip([item('l', 0, 4, [6000])]);
+    const long = dataBlock([item('l', 0, 4, [6000])]);
     const cut = ok(rotateInTime(long, time(0, 2), 1, 1));
     // 2..4 stays (keeps the id); the inside 0..2 is a whole span, so +1 splits it into 1..2 and 0..1.
     expect([onset(cut, 'l'), length(cut, 'l')]).toEqual([2, 2]);
@@ -472,13 +472,13 @@ describe('rotate in time (bounded, circular)', () => {
 });
 
 describe('rotate in time: repeated presses stay in a stable span', () => {
-  /** A clip frozen at length 8 first, then holding notes that may run past it. */
+  /** A data-block frozen at length 8 first, then holding notes that may run past it. */
   const frozen = (...extra: DataItem<NoteEventValue>[]) => {
-    const held = freezeClipProperties(clip([item('a', 0, 1, [6000])]));
+    const held = freezeNotesProperties(dataBlock([item('a', 0, 1, [6000])]));
     return { ...held, items: [...held.items, ...extra] };
   };
 
-  it('with nothing selected, notes stay inside 0..clip length over a full cycle, sound conserved', () => {
+  it('with nothing selected, notes stay inside 0..notes length over a full cycle, sound conserved', () => {
     let state = { packet: frozen(item('b', 6.5, 1.5, [6400])), selection: none };
     const total = soundOf(state.packet);
     for (let press = 0; press < 8; press += 1) {
@@ -507,7 +507,11 @@ describe('rotate in time: repeated presses stay in a stable span', () => {
   });
 
   it('with a note selection the span is the original one and pieces rotate with their notes', () => {
-    const start = clip([item('a', 0, 1, [6000]), item('b', 2, 1, [6400]), item('c', 5, 1, [6700])]);
+    const start = dataBlock([
+      item('a', 0, 1, [6000]),
+      item('b', 2, 1, [6400]),
+      item('c', 5, 1, [6700]),
+    ]);
     let state = { packet: start, selection: notes(['a', 'b'], { start: 0, end: 3 }) };
     const seen: number[][] = [];
     for (let press = 0; press < 3; press += 1) {
@@ -525,7 +529,7 @@ describe('rotate in time: repeated presses stay in a stable span', () => {
   });
 
   it('a note selection without a range uses the notes span once and keeps it afterwards', () => {
-    const start = clip([item('a', 0, 1, [6000]), item('b', 2, 1, [6400])]);
+    const start = dataBlock([item('a', 0, 1, [6000]), item('b', 2, 1, [6400])]);
     let state = { packet: start, selection: notes(['a', 'b']) };
     state = rotateAgain(state.packet, state.selection, 1, 1);
     expect(state.selection.range).toEqual({ start: 0, end: 3 });
@@ -537,7 +541,7 @@ describe('rotate in time: repeated presses stay in a stable span', () => {
   });
 
   it('the Aq Ah Ae selection rotated forward and back returns the same sound', () => {
-    const start = clip([
+    const start = dataBlock([
       item('q', 0, 1, [6900]),
       item('h', 1, 2, [6900]),
       item('e', 3, 0.5, [6900]),
@@ -593,7 +597,7 @@ describe('rotate in time: repeated presses stay in a stable span', () => {
 describe('rotate durations', () => {
   /** C quarter at 0, D half at 1, E eighth at 3 (pitches 6000, 6200, 6400). */
   const cde = () =>
-    clip([item('c', 0, 1, [6000]), item('d', 1, 2, [6200]), item('e', 3, 0.5, [6400])]);
+    dataBlock([item('c', 0, 1, [6000]), item('d', 1, 2, [6200]), item('e', 3, 0.5, [6400])]);
   const lengths = (p: DataPacket) => ['c', 'd', 'e'].map((id) => length(p, id));
 
   it('moves the durations later for a positive amount, pitches and onsets fixed (worked example)', () => {
@@ -616,7 +620,7 @@ describe('rotate durations', () => {
   it('acts on the selection only, and a chord slot hands its durations over in order', () => {
     const sel = ok(rotateDurations(cde(), notes(['c', 'e']), 1));
     expect(lengths(sel)).toEqual([0.5, 2, 1]);
-    const chorded = clip([
+    const chorded = dataBlock([
       item('p', 0, 1, [100]),
       item('q', 0, 2, [200]),
       item('r', 2, 0.5, [300]),
@@ -629,7 +633,7 @@ describe('rotate durations', () => {
 
 describe('chord slots in reverse order and rotate values', () => {
   const pair = () =>
-    clip([
+    dataBlock([
       item('p', 0, 1, [100], 0.2),
       item('q', 0, 0.5, [200], 0.4),
       item('r', 1, 2, [300], 0.6),
@@ -655,7 +659,7 @@ describe('chord slots in reverse order and rotate values', () => {
   });
 
   it('unequal slots become one single-pitch item per incoming pitch, all with the longest duration', () => {
-    const before = clip([
+    const before = dataBlock([
       item('p', 0, 1, [100], 0.2),
       item('q', 0, 2, [200], 0.4),
       item('r', 3, 1, [300], 0.6),
@@ -678,7 +682,7 @@ describe('chord slots in reverse order and rotate values', () => {
   });
 
   it('the resulting selection is every note of the rebuilt slots: kept and created ids, never removed ones', () => {
-    const before = clip([
+    const before = dataBlock([
       item('p', 0, 1, [100]),
       item('q', 0, 1, [200]),
       item('s', 0, 1, [250]),
@@ -704,7 +708,7 @@ describe('chord slots in reverse order and rotate values', () => {
   });
 
   it('an existing multi-pitch item still moves as a unit between equal-size slots', () => {
-    const before = clip([item('p', 0, 1, [100, 200]), item('r', 2, 1, [300])]);
+    const before = dataBlock([item('p', 0, 1, [100, 200]), item('r', 2, 1, [300])]);
     const after = ok(reverseOrder(before, none, counter('x')));
     expect(pitches(after, 'p')).toEqual([300]);
     expect(pitches(after, 'r')).toEqual([100, 200]);
@@ -738,7 +742,7 @@ describe('legato', () => {
     expect(length(selected, 'c')).toBe(2);
     const shared = ok(
       legato(
-        clip([item('p', 0, 0.5, [100]), item('q', 0, 0.25, [200]), item('r', 1, 1, [300])]),
+        dataBlock([item('p', 0, 0.5, [100]), item('q', 0, 0.25, [200]), item('r', 1, 1, [300])]),
         none
       )
     );
@@ -746,7 +750,7 @@ describe('legato', () => {
   });
 
   it('shortens a note that overlaps the next one, and a single onset changes nothing', () => {
-    const shortened = ok(legato(clip([item('a', 0, 4, [100]), item('b', 1, 1, [200])]), none));
+    const shortened = ok(legato(dataBlock([item('a', 0, 4, [100]), item('b', 1, 1, [200])]), none));
     expect(length(shortened, 'a')).toBe(1);
     const before = base();
     expect(ok(legato(before, notes(['c'])))).toBe(before);
@@ -755,7 +759,7 @@ describe('legato', () => {
 
 describe('transpose', () => {
   it('moves every pitch of a chord and keeps microtonal offsets', () => {
-    const before = clip([item('m', 0, 1, [6050, 6450]), item('n', 1, 1, [6000])]);
+    const before = dataBlock([item('m', 0, 1, [6050, 6450]), item('n', 1, 1, [6000])]);
     const up = ok(transposeNotes(before, notes(['m']), 12));
     expect(pitches(up, 'm')).toEqual([7250, 7650]);
     expect(pitches(up, 'n')).toEqual([6000]);
@@ -766,7 +770,7 @@ describe('transpose', () => {
   });
 
   it('refuses, changing nothing, if any note would leave the keyboard', () => {
-    const before = clip([item('lo', 0, 1, [1100]), item('mid', 1, 1, [6000, 12600])]);
+    const before = dataBlock([item('lo', 0, 1, [1100]), item('mid', 1, 1, [6000, 12600])]);
     expect(refused(transposeNotes(before, none, -12))).toMatch(/off the keyboard/);
     expect(refused(transposeNotes(before, none, 2))).toMatch(/off the keyboard/);
     // Only the low note selected: moving up is fine, down 12 is not (1100 - 1200 < 0).
@@ -782,7 +786,7 @@ describe('transpose', () => {
 
 describe('quantize', () => {
   const loose = () =>
-    clip([
+    dataBlock([
       item('a', 0.4, 0.5, [6000]),
       item('b', 0.5, 0.5, [6100]),
       item('c', 1.6, 0.25, [6200]),
@@ -802,7 +806,7 @@ describe('quantize', () => {
   it('uses a sixteenth on Auto and exact triplet grids', () => {
     const auto = ok(quantizeNotes(loose(), notes(['a']), undefined));
     expect(onset(auto, 'a')).toBe(0.5);
-    const triplet = ok(quantizeNotes(clip([item('a', 0.7, 1, [6000])]), none, 2 / 3));
+    const triplet = ok(quantizeNotes(dataBlock([item('a', 0.7, 1, [6000])]), none, 2 / 3));
     expect(value(triplet, 'a').onset.quarterNotes).toEqual(rational(2, 3));
   });
 
@@ -843,7 +847,7 @@ describe('duplicate', () => {
       ids: ['dup1', 'dup2', 'dup3'],
       range: { start: 6, end: 12 },
     });
-    // The clip's length is untouched.
+    // The data-block's length is untouched.
     expect(after.frame).toBe(before.frame);
   });
 
@@ -883,27 +887,27 @@ describe('duplicate', () => {
     ]);
   });
 
-  it('refuses on an empty clip', () => {
-    expect(refused(duplicateNotes(clip([]), none, ids()))).toMatch(/no notes/);
+  it('refuses on an empty data-block', () => {
+    expect(refused(duplicateNotes(dataBlock([]), none, ids()))).toMatch(/no notes/);
   });
 });
 
 describe('unique ids for bulk copies', () => {
   it('newNoteItemId never repeats within one millisecond', () => {
-    const ids = new Set(Array.from({ length: 5000 }, () => newNoteItemId('clip')));
+    const ids = new Set(Array.from({ length: 5000 }, () => newNoteItemId('dataBlock')));
     expect(ids.size).toBe(5000);
-    expect([...ids].every((id) => /^clip:note:[a-z0-9]+-[a-z0-9]+$/.test(id))).toBe(true);
+    expect([...ids].every((id) => /^dataBlock:note:[a-z0-9]+-[a-z0-9]+$/.test(id))).toBe(true);
   });
 
   it('a duplicate of 2000 notes has 2000 new unique ids, even from a repeating id source', () => {
-    const many = clip(
+    const many = dataBlock(
       Array.from({ length: 2000 }, (_, index) => item(`n${index}`, index * 0.25, 0.25, [6000])),
       600
     );
     let calls = 0;
     // A deliberately bad source: every id is handed out twice, and some are existing ids.
     const bad = () => (calls++ % 2 === 0 ? `dup-${calls}` : `n${calls % 2000}`);
-    for (const source of [() => newNoteItemId('clip'), bad]) {
+    for (const source of [() => newNoteItemId('dataBlock'), bad]) {
       const after = ok(duplicateNotes(many, none, source));
       const ids = after.items.map((entry) => entry.id);
       expect(ids).toHaveLength(4000);
@@ -912,7 +916,7 @@ describe('unique ids for bulk copies', () => {
   });
 
   it('a time-selection duplicate also gets unique ids', () => {
-    const many = clip(
+    const many = dataBlock(
       Array.from({ length: 300 }, (_, index) => item(`n${index}`, index * 0.25, 0.25, [6000])),
       100
     );
@@ -932,10 +936,10 @@ describe('unique ids for bulk copies', () => {
   });
 });
 
-describe('the clip-type registry actions', () => {
+describe('the data-block type registry actions', () => {
   it('registers the note actions on the Notes type with params and applicability', () => {
     const blank = base();
-    expect(clipActionsOf(blank).map((action) => action.id)).toEqual([
+    expect(operatorsOf(blank).map((action) => action.id)).toEqual([
       'scale',
       'reverse-time',
       'reverse-order',
@@ -953,42 +957,42 @@ describe('the clip-type registry actions', () => {
       'copy',
       'paste',
     ]);
-    expect(clipActionsOf(blank)).toBe(noteClipActions);
-    expect(clipActionById(blank, 'scale')?.params.map((param) => param.id)).toEqual([
+    expect(operatorsOf(blank)).toBe(notesOperators);
+    expect(operatorById(blank, 'scale')?.params.map((param) => param.id)).toEqual([
       'factor',
       'mode',
     ]);
-    expect(clipActionById(blank, 'nope')).toBeUndefined();
-    for (const action of noteClipActions) {
+    expect(operatorById(blank, 'nope')).toBeUndefined();
+    for (const action of notesOperators) {
       expect(action.applies(blank)).toBe(true);
       expect(action.label).toBeTruthy();
     }
-    expect(clipActionOperation('scale')).toBe('transform-scale');
+    expect(operatorOperation('scale')).toBe('transform-scale');
   });
 
-  it('only note clips implement them: other packets have none and cyclic note packets do not apply', () => {
-    expect(clipActionsOf(packet('list', 'pitch', []))).toEqual([]);
-    expect(clipActionsOf(packet('events', 'pitchClass', []))).toEqual([]);
+  it('only notes data-blocks implement them: other packets have none and cyclic note packets do not apply', () => {
+    expect(operatorsOf(packet('list', 'pitch', []))).toEqual([]);
+    expect(operatorsOf(packet('events', 'pitchClass', []))).toEqual([]);
     const cyclic: DataPacket = {
       ...base(),
       frame: { ...base().frame!, topology: 'cyclic' },
     };
-    expect(clipActionById(cyclic, 'scale')?.applies(cyclic)).toBe(false);
+    expect(operatorById(cyclic, 'scale')?.applies(cyclic)).toBe(false);
   });
 
   it('runs from a context with typed (string) params, and refuses bad params with a message', () => {
     const context = { selection: none, gridUnit: 1, newId: () => 'n' };
-    const scale = clipActionById(base(), 'scale')!;
+    const scale = operatorById(base(), 'scale')!;
     expect(ok(scale.run(base(), context, { factor: '2', mode: 'individual' })).items).toHaveLength(
       3
     );
     expect(refused(scale.run(base(), context, { factor: 'nope', mode: 'whole' }))).toMatch(
       /factor/
     );
-    const rotate = clipActionById(base(), 'rotate-time')!;
+    const rotate = operatorById(base(), 'rotate-time')!;
     expect(refused(rotate.run(base(), context, { amount: '1.5' }))).toMatch(/whole number/);
     expect(onset(ok(rotate.run(base(), context, { amount: '-1' })), 'a')).toBe(7);
-    const transpose = clipActionById(base(), 'transpose')!;
+    const transpose = operatorById(base(), 'transpose')!;
     expect(refused(transpose.run(base(), context, { semitones: '' }))).toMatch(/number/);
     expect(pitches(ok(transpose.run(base(), context, { semitones: '12' })), 'a')).toEqual([7200]);
   });
@@ -996,19 +1000,19 @@ describe('the clip-type registry actions', () => {
 
 describe('rotate in time: zero steps', () => {
   it('returns the same packet: notes past the end or before a time selection are not folded', () => {
-    const crossing = clip([item('a', 0, 1, [6000]), item('x', 7.5, 1, [6400])]);
+    const crossing = dataBlock([item('a', 0, 1, [6000]), item('x', 7.5, 1, [6400])]);
     expect(ok(rotateInTime(crossing, none, 0, 1))).toBe(crossing);
     const before = base();
     expect(ok(rotateInTime(before, time(1, 5), 0, 1))).toBe(before);
     expect(ok(rotateInTime(before, notes(['a', 'b'], { start: 1, end: 3 }), 0, 1))).toBe(before);
     // Still refuses when there is nothing to act on, as every transform does.
-    expect(refused(rotateInTime(clip([]), none, 0, 1))).toMatch(/no notes/);
+    expect(refused(rotateInTime(dataBlock([]), none, 0, 1))).toMatch(/no notes/);
   });
 });
 
 describe('guarded arithmetic', () => {
   it('turns a musical-time overflow into the "too fine" refusal', () => {
-    const fine = clip([item('a', 0, 1, [6000])]);
+    const fine = dataBlock([item('a', 0, 1, [6000])]);
     fine.items[0] = {
       ...fine.items[0],
       value: {
@@ -1057,13 +1061,15 @@ describe('invert', () => {
   });
 
   it('preserves microtonal offsets (cents mirror exactly)', () => {
-    const micro = clip([item('m', 0, 1, [6050]), item('n', 1, 1, [6130])]);
+    const micro = dataBlock([item('m', 0, 1, [6050]), item('n', 1, 1, [6130])]);
     const middle = ok(invertNotes(micro, none));
     expect([pitches(middle, 'm'), pitches(middle, 'n')]).toEqual([[6130], [6050]]);
     const picked = ok(invertNotes(micro, none, 6100));
     expect([pitches(picked, 'm'), pitches(picked, 'n')]).toEqual([[6150], [6070]]);
     // An odd midpoint (6050 and 6131: middle 6090.5) still lands on whole midicents.
-    const odd = ok(invertNotes(clip([item('m', 0, 1, [6050]), item('n', 1, 1, [6131])]), none));
+    const odd = ok(
+      invertNotes(dataBlock([item('m', 0, 1, [6050]), item('n', 1, 1, [6131])]), none)
+    );
     expect([pitches(odd, 'm'), pitches(odd, 'n')]).toEqual([[6131], [6050]]);
   });
 
@@ -1090,17 +1096,19 @@ describe('invert', () => {
   it('refuses, changing nothing, when a result leaves 0..12700', () => {
     const before = base();
     expect(refused(invertNotes(before, none, 0))).toMatch(/off the keyboard/);
-    expect(refused(invertNotes(clip([item('hi', 0, 1, [12600])]), none, 100))).toMatch(
+    expect(refused(invertNotes(dataBlock([item('hi', 0, 1, [12600])]), none, 100))).toMatch(
       /off the keyboard/
     );
     expect(refused(invertNotes(before, none, Number.NaN))).toMatch(/axis/);
     // The edge itself is allowed: 0 mirrors to 12700 around 6350.
-    const edge = ok(invertNotes(clip([item('lo', 0, 1, [0]), item('hi', 1, 1, [12700])]), none));
+    const edge = ok(
+      invertNotes(dataBlock([item('lo', 0, 1, [0]), item('hi', 1, 1, [12700])]), none)
+    );
     expect([pitches(edge, 'lo'), pitches(edge, 'hi')]).toEqual([[12700], [0]]);
   });
 
-  it('refuses on an empty clip', () => {
-    expect(refused(invertNotes(clip([]), none))).toMatch(/no notes/);
+  it('refuses on an empty data-block', () => {
+    expect(refused(invertNotes(dataBlock([]), none))).toMatch(/no notes/);
   });
 });
 
@@ -1153,9 +1161,9 @@ describe('make all equal: duration', () => {
     expect(['a', 'b', 'c'].map((id) => onset(after, id))).toEqual([0, 2, 4]);
     // The slot-matched inter-onset follows the length.
     expect(value(after, 'c').interOnset.quarterNotes).toEqual(rational(1));
-    // First of a selection, not of the clip: b (1) beats c (2).
+    // First of a selection, not of the data-block: b (1) beats c (2).
     expect(length(ok(makeEqualDuration(base(), notes(['c', 'b']))), 'c')).toBe(1);
-    const longFirst = clip([item('x', 3, 0.5, [6000]), item('y', 1, 2, [6100])]);
+    const longFirst = dataBlock([item('x', 3, 0.5, [6000]), item('y', 1, 2, [6100])]);
     expect(length(ok(makeEqualDuration(longFirst, none)), 'x')).toBe(2);
   });
 
@@ -1181,7 +1189,7 @@ describe('make all equal: duration', () => {
   it('applies to a time selection and leaves the rest, and changes nothing when already equal', () => {
     const after = ok(makeEqualDuration(base(), time(3.5, 5), rational(1, 4)));
     expect(['a', 'b', 'c'].map((id) => length(after, id))).toEqual([1, 1, 0.25]);
-    const equal = clip([item('a', 0, 1, [6000]), item('b', 2, 1, [6400])]);
+    const equal = dataBlock([item('a', 0, 1, [6000]), item('b', 2, 1, [6400])]);
     expect(ok(makeEqualDuration(equal, none))).toBe(equal);
   });
 
@@ -1192,7 +1200,11 @@ describe('make all equal: duration', () => {
 
 describe('make all equal: velocity', () => {
   const voiced = () =>
-    clip([item('a', 0, 1, [6000], 0.5), item('b', 2, 1, [6400], 1), item('c', 4, 1, [6700], 0.25)]);
+    dataBlock([
+      item('a', 0, 1, [6000], 0.5),
+      item('b', 2, 1, [6400], 1),
+      item('c', 4, 1, [6700], 0.25),
+    ]);
   const velocityOf = (p: DataPacket, id: string) => value(p, id).velocity;
 
   it('defaults to the first target note velocity', () => {
@@ -1230,7 +1242,7 @@ describe('make all equal: pitch', () => {
       [6000],
       [6000, 6400],
     ]);
-    const before = clip([item('a', 0, 1, [6000])]);
+    const before = dataBlock([item('a', 0, 1, [6000])]);
     expect(ok(makeEqualPitch(before, none, 6000))).toBe(before);
   });
 
@@ -1256,7 +1268,7 @@ describe('copy and paste', () => {
     return copied.clipboard;
   };
 
-  it('copy refuses with nothing selected (it never copies the whole clip)', () => {
+  it('copy refuses with nothing selected (it never copies the whole data-block)', () => {
     expect(copyToClipboard(base(), none)).toEqual({
       ok: false,
       error: 'Select the notes to copy first.',
@@ -1274,7 +1286,7 @@ describe('copy and paste', () => {
     if (!copied.ok) {
       throw new Error(copied.error);
     }
-    // In clip order, offsets from b's onset (2).
+    // In data-block order, offsets from b's onset (2).
     expect(copied.clipboard.notes.map((note) => note.offset)).toEqual([rational(0), rational(2)]);
     expect(copied.clipboard.notes.map((note) => note.value.pitches)).toEqual([
       [6400],
@@ -1282,7 +1294,7 @@ describe('copy and paste', () => {
     ]);
     expect(copied.clipboard.notes[1].value.duration.quarterNotes).toEqual(rational(2));
     expect(copied.clipboard.notes[1].provenance).toEqual(source.items[2].provenance);
-    // The clipboard does not alias the clip.
+    // The clipboard does not alias the data-block.
     expect(copied.clipboard.notes[1].value.pitches).not.toBe(
       (source.items[2].value as NoteEventValue).pitches
     );
@@ -1327,11 +1339,11 @@ describe('copy and paste', () => {
     expect((added[1].value as NoteEventValue).pitches).toEqual([6000, 6400]);
     expect(result.selection).toEqual({ ids: ['a~1', 'p2'], range: { start: 0, end: 4 } });
     expect(result.selection?.kind).toBeUndefined();
-    // The clip length (frame) never grows.
+    // The data-block length (frame) never grows.
     expect(after.frame).toEqual(target.frame);
   });
 
-  it('pastes at a time selection start, and at the clip start with nothing selected', () => {
+  it('pastes at a time selection start, and at the data-block start with nothing selected', () => {
     const clipboard = clipboardOf(notes(['b', 'c']));
     const atTime = ok(pasteNotes(base(), time(3, 5), clipboard, counter('v')));
     expect(['v1', 'v2'].map((id) => onset(atTime, id))).toEqual([3, 5]);
@@ -1339,7 +1351,7 @@ describe('copy and paste', () => {
     expect(['u1', 'u2'].map((id) => onset(atStart, id))).toEqual([0, 2]);
   });
 
-  it('keeps notes that land past the clip end and never grows the clip', () => {
+  it('keeps notes that land past the data-block end and never grows the data-block', () => {
     const clipboard = clipboardOf(notes(['b', 'c']));
     const target = base();
     const after = ok(pasteNotes(target, time(7, 8), clipboard, counter('w')));
@@ -1379,7 +1391,7 @@ describe('the second-pass registry actions', () => {
   });
 
   it('registers invert, the three make-equal actions, copy and paste with their param kinds', () => {
-    const ids = clipActionsOf(base()).map((action) => action.id);
+    const ids = operatorsOf(base()).map((action) => action.id);
     expect(ids.slice(-6)).toEqual([
       'invert',
       'equal-duration',
@@ -1388,19 +1400,19 @@ describe('the second-pass registry actions', () => {
       'copy',
       'paste',
     ]);
-    expect(clipActionById(base(), 'invert')?.params).toEqual([
+    expect(operatorById(base(), 'invert')?.params).toEqual([
       { id: 'axis', label: 'Axis', type: 'pick-pitch', optional: true },
     ]);
-    expect(clipActionById(base(), 'equal-duration')?.params).toEqual([
+    expect(operatorById(base(), 'equal-duration')?.params).toEqual([
       { id: 'duration', label: 'Length', type: 'duration', optional: true },
     ]);
-    expect(clipActionById(base(), 'equal-velocity')?.params[0]).toMatchObject({ type: 'number' });
-    expect(clipActionById(base(), 'equal-pitch')?.params[0]).toMatchObject({ type: 'pick-pitch' });
-    expect(clipActionById(base(), 'equal-pitch')?.params[0].optional).toBeUndefined();
+    expect(operatorById(base(), 'equal-velocity')?.params[0]).toMatchObject({ type: 'number' });
+    expect(operatorById(base(), 'equal-pitch')?.params[0]).toMatchObject({ type: 'pick-pitch' });
+    expect(operatorById(base(), 'equal-pitch')?.params[0].optional).toBeUndefined();
   });
 
   it('invert: no axis is the default, a picked pitch (midicents) is the axis', () => {
-    const invert = clipActionById(base(), 'invert')!;
+    const invert = operatorById(base(), 'invert')!;
     expect(pitches(ok(invert.run(base(), context(), {})), 'a')).toEqual([6400]);
     expect(pitches(ok(invert.run(base(), context(), { axis: 6000 })), 'b')).toEqual([5600]);
     expect(pitches(ok(invert.run(base(), context(), { axis: '6000' })), 'b')).toEqual([5600]);
@@ -1409,20 +1421,20 @@ describe('the second-pass registry actions', () => {
   });
 
   it('make equal: typed duration (grid fraction) and velocity, defaults when empty, required pitch', () => {
-    const duration = clipActionById(base(), 'equal-duration')!;
+    const duration = operatorById(base(), 'equal-duration')!;
     expect(length(ok(duration.run(base(), context(), { duration: '1/8' })), 'c')).toBe(0.5);
     expect(length(ok(duration.run(base(), context(), {})), 'c')).toBe(1);
     expect(refused(duration.run(base(), context(), { duration: 'abc' }))).toMatch(/quarter notes/);
-    const velocity = clipActionById(base(), 'equal-velocity')!;
+    const velocity = operatorById(base(), 'equal-velocity')!;
     expect(value(ok(velocity.run(base(), context(), { velocity: '40%' })), 'b').velocity).toBe(0.4);
     expect(refused(velocity.run(base(), context(), { velocity: '300' }))).toMatch(/1 to 100/);
-    const pitch = clipActionById(base(), 'equal-pitch')!;
+    const pitch = operatorById(base(), 'equal-pitch')!;
     expect(pitches(ok(pitch.run(base(), context(), { pitch: 7200 })), 'c')).toEqual([7200]);
     expect(refused(pitch.run(base(), context(), {}))).toMatch(/Pick a pitch/);
   });
 
   it('copy returns the clipboard and the same packet; paste reads it from the context', () => {
-    const copy = clipActionById(base(), 'copy')!;
+    const copy = operatorById(base(), 'copy')!;
     const source = base();
     const copied = copy.run(source, context(notes(['a', 'b'])), {});
     if (!copied.ok) {
@@ -1432,7 +1444,7 @@ describe('the second-pass registry actions', () => {
     expect(copied.clipboard?.notes).toHaveLength(2);
     expect(copied.message).toBe('Copied 2 notes.');
     expect(refused(copy.run(source, context(), {}))).toMatch(/Select the notes/);
-    const paste = clipActionById(base(), 'paste')!;
+    const paste = operatorById(base(), 'paste')!;
     expect(refused(paste.run(source, context(), {}))).toMatch(/clipboard is empty/);
     const pasted = paste.run(source, { ...context(), clipboard: copied.clipboard }, {});
     if (!pasted.ok) {
@@ -1445,7 +1457,7 @@ describe('the second-pass registry actions', () => {
 
 describe('rotate in time: the rotation session (pieces rejoin, circular across presses)', () => {
   const aqhae = () =>
-    clip([item('q', 0, 1, [6900]), item('h', 1, 2, [6900]), item('e', 3, 0.5, [6900])]);
+    dataBlock([item('q', 0, 1, [6900]), item('h', 1, 2, [6900]), item('e', 3, 0.5, [6900])]);
   const start = () => ({
     packet: aqhae(),
     selection: notes(['q', 'h', 'e']) as Selection,
@@ -1550,7 +1562,7 @@ describe('rotate in time: the rotation session (pieces rejoin, circular across p
     expect(after.packet.items.some((entry) => entry.id === 'q')).toBe(false);
   });
 
-  it('works for nothing selected (the clip span) and a time selection too', () => {
+  it('works for nothing selected (the data-block span) and a time selection too', () => {
     const frozen = () =>
       frozenWith([item('a', 0, 1, [6000]), item('x', 3, 2, [6400]), item('y', 6.5, 1, [6700])]);
     let state = {
@@ -1562,7 +1574,7 @@ describe('rotate in time: the rotation session (pieces rejoin, circular across p
       state = rotateAgain(state.packet, state.selection, 1, 0.5, state.session);
       expect(soundOf(state.packet)).toBe(4);
     }
-    // 16 half-steps = a full turn of the 8-quarter clip: the original notes, nothing split.
+    // 16 half-steps = a full turn of the 8-quarter data-block: the original notes, nothing split.
     expect(state.packet.items).toEqual(frozen().items);
     let timed = {
       packet: base(),
@@ -1620,7 +1632,7 @@ describe('rotate in time: cut at the span edges, outside parts stay and re-merge
   });
 
   it('a note crossing the left edge keeps its outside part still too (+1 then -1 restores)', () => {
-    const original = clip([item('w', 0.5, 1, [6000]), item('m', 2, 1, [6400])]);
+    const original = dataBlock([item('w', 0.5, 1, [6000]), item('m', 2, 1, [6400])]);
     let state = press(begin(original, time(1, 5)), 1);
     // w's part over 0.5..1 stays (keeps the id); its inside part 1..1.5 moves to 2..2.5; m to 3..4.
     expect([onset(state.packet, 'w'), length(state.packet, 'w')]).toEqual([0.5, 0.5]);
@@ -1630,7 +1642,7 @@ describe('rotate in time: cut at the span edges, outside parts stay and re-merge
   });
 
   it('a note over both edges: outside parts stay, the inside rotates, and it rejoins', () => {
-    const original = clip([item('n', 0, 6, [6000])]);
+    const original = dataBlock([item('n', 0, 6, [6000])]);
     let state = press(begin(original, time(1, 5)), 1);
     expect(soundOf(state.packet)).toBe(6);
     expect([0.5, 5.5].every((at) => soundsAt(state.packet, at))).toBe(true);
@@ -1641,15 +1653,15 @@ describe('rotate in time: cut at the span edges, outside parts stay and re-merge
     expect(state.packet.items).toEqual(original.items);
   });
 
-  it('nothing selected with a note past the clip end: that part stays, the rest rotates and rejoins', () => {
+  it('nothing selected with a note past the data-block end: that part stays, the rest rotates and rejoins', () => {
     const original = frozenWith([item('a', 0, 1, [6000]), item('x', 7.5, 1, [6400])]);
     let state = begin(original, none);
     for (let step = 0; step < 16; step += 1) {
       state = press(state, 1, 0.5);
       expect(soundOf(state.packet)).toBe(2);
-      // 8..8.5 (past the clip end) is x's own part and never moves.
+      // 8..8.5 (past the data-block end) is x's own part and never moves.
       expect(soundsAt(state.packet, 8.25)).toBe(true);
-      // (The last press rejoins x into the one original note, which crosses the clip end again.)
+      // (The last press rejoins x into the one original note, which crosses the data-block end again.)
       expect(
         step === 15 ||
           state.packet.items.every(
@@ -1666,7 +1678,7 @@ describe('rotate in time: cut at the span edges, outside parts stay and re-merge
   });
 
   it('a note selection spans its own notes, so nothing is cut at the edges', () => {
-    const original = clip([item('p', 0, 1, [6000]), item('q', 1, 2, [6400])]);
+    const original = dataBlock([item('p', 0, 1, [6000]), item('q', 1, 2, [6400])]);
     const state = press(begin(original, notes(['p', 'q'])), 1, 1);
     // Pieces only come from wrapping at the selection's end (3), never from a cut at an edge.
     expect(soundOf(state.packet)).toBe(3);
@@ -1689,7 +1701,7 @@ describe('wholeWindows', () => {
 
 describe('a rest payload landing in a slot of another size', () => {
   const restSlots = () =>
-    clip([item('r', 0, 1, []), item('p', 1, 1, [6000]), item('q', 1, 1, [6400])]);
+    dataBlock([item('r', 0, 1, []), item('p', 1, 1, [6000]), item('q', 1, 1, [6400])]);
 
   it('keeps one empty-pitch item at that onset instead of deleting the slot', () => {
     // Slots: {r} (a rest) and {p, q} (a chord). Reverse order swaps their payloads.
@@ -1711,7 +1723,7 @@ describe('a rest payload landing in a slot of another size', () => {
 
 describe('selection after an action on a chord (separate same-onset notes and a multi-pitch item)', () => {
   const chorded = () =>
-    clip([
+    dataBlock([
       item('x1', 0, 1, [6000]),
       item('x2', 0, 1, [6400]),
       item('x3', 0, 1, [6700]),

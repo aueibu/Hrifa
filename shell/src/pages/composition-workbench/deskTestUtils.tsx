@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@test-utils';
+import type { DataBlock } from './dataBlock';
 import { DeskProvider, useDesk } from './desk';
 import { deskStoreIdle, loadDesk, writeDeskNow } from './deskStore';
-import type { Snippet } from './snippet';
 
 /** Renders the desk and waits for its saved copy to load (it starts in a loading state). */
 export async function renderDesk() {
@@ -11,15 +11,15 @@ export async function renderDesk() {
 }
 
 /** Flushes the desk's pending write, then reads back what IndexedDB holds. */
-export async function storedDesk(desk: ReturnType<typeof useDesk>): Promise<Snippet[]> {
+export async function storedDesk(desk: ReturnType<typeof useDesk>): Promise<DataBlock[]> {
   await act(async () => {
     await desk.flushDesk();
   });
   await deskStoreIdle();
-  return (await loadDesk()).snippets;
+  return (await loadDesk()).dataBlocks;
 }
 
 /** Puts a desk into the (fresh, per-test) IndexedDB, as if an earlier session had saved it. */
-export async function seedDesk(snippets: Snippet[]) {
-  await writeDeskNow({ snippets, stored: new Map(), expectedRev: 0 });
+export async function seedDesk(dataBlocks: DataBlock[]) {
+  await writeDeskNow({ dataBlocks, stored: new Map(), expectedRev: 0 });
 }

@@ -16,7 +16,7 @@ export interface ModuleInstanceHostProps {
   instanceId: string;
   moduleId: CompositionModuleId;
   instanceLabel: string;
-  snippetId?: string;
+  dataBlockId?: string;
   /** Whether this instance is the one shown; the others stay mounted and hidden. */
   shown: boolean;
   routeState: ModuleRouteState | undefined;
@@ -42,7 +42,7 @@ export const ModuleInstanceHost = memo(function ModuleInstanceHost({
   instanceId,
   moduleId,
   instanceLabel,
-  snippetId,
+  dataBlockId,
   shown,
   routeState,
   onBind,
@@ -71,7 +71,7 @@ export const ModuleInstanceHost = memo(function ModuleInstanceHost({
         {entry.render({
           instanceId,
           instanceLabel,
-          snippetId,
+          dataBlockId,
           active: shown,
           outputs,
           routeState: resolvedRouteState,

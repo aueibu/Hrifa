@@ -5,6 +5,11 @@ import {
   evaluateArithmetic,
 } from './evaluators/arithmetic';
 import {
+  computeDataBlockSource,
+  evaluateDataBlockSource,
+  dataBlockSourceOutputs,
+} from './evaluators/dataBlockSource';
+import {
   computeFractioning,
   evaluateFractioning,
   fractioningOutputs,
@@ -42,11 +47,6 @@ import {
   evaluateScaleEvolution,
   scaleEvolutionOutputs,
 } from './evaluators/scaleEvolution';
-import {
-  computeSnippetSource,
-  evaluateSnippetSource,
-  snippetSourceOutputs,
-} from './evaluators/snippetSource';
 import {
   computeSwirlingMists,
   evaluateSwirlingMists,
@@ -138,10 +138,10 @@ export const moduleEvaluators = {
     outputs: melodicizationOutputs,
     evaluate: evaluateMelodicization,
   },
-  snippet: {
-    compute: computeSnippetSource,
-    outputs: snippetSourceOutputs,
-    evaluate: evaluateSnippetSource,
+  'data-block-source': {
+    compute: computeDataBlockSource,
+    outputs: dataBlockSourceOutputs,
+    evaluate: evaluateDataBlockSource,
   },
 } satisfies Record<string, ModuleEvaluatorParts>;
 

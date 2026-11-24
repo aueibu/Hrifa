@@ -1,20 +1,20 @@
-import { acceptsSnippets, type Snippet } from './snippet';
+import { acceptsDataBlocks, type DataBlock } from './dataBlock';
 
 /**
- * The desk's storage: IndexedDB, by a small hand-written wrapper. Each clip is its own record (so a
- * write touches only clips that changed), plus one `order` record naming them in desk order and a
- * `rev` counter that is bumped on every write. The stored clip is the v1 `Snippet`, lineage
+ * The desk's storage: IndexedDB, by a small hand-written wrapper. Each data-block is its own record (so a
+ * write touches only data-blocks that changed), plus one `order` record naming them in desk order and a
+ * `rev` counter that is bumped on every write. The stored data-block is the v1 `DataBlock`, lineage
  * included. Every operation opens and closes its own connection, and all of them run through one
  * queue, so reads and writes never interleave within a tab. Across tabs, `rev` is compared inside
  * the write transaction, so a tab never writes over a desk it has not seen.
  *
- * Saved projects live in the same database (version 2): `projects` holds each project's name, time
+ * Saved projects live in the same database: `projects` holds each project's name, time
  * and raw workbench keys, and `project-desks` its whole desk with lineage, so listing projects
  * never reads their desks.
  */
-export const DESK_DB_NAME = 'hrifa-composition-workbench';
-const DB_VERSION = 2;
-const CLIPS = 'desk-clips';
+export const DESK_DB_NAME = 'hrifa-workbench';
+const DB_VERSION = 1;
+const DATA_BLOCKS = 'desk-data-blocks';
 const META = 'desk-meta';
 const PROJECTS = 'projects';
 const PROJECT_DESKS = 'project-desks';
@@ -58,13 +58,13 @@ function openOnce() {
     let abandoned = false;
     req.onupgradeneeded = () => {
       const db = req.result;
-      if (!db.objectStoreNames.contains(CLIPS)) {
-        db.createObjectStore(CLIPS, { keyPath: 'id' });
+      if (!db.objectStoreNames.contains(DATA_BLOCKS)) {
+        db.createObjectStore(DATA_BLOCKS, { keyPath: 'id' });
       }
       if (!db.objectStoreNames.contains(META)) {
         db.createObjectStore(META);
       }
-      // Version 2: saved projects. A version 1 database keeps its desk untouched.
+      // Saved projects.
       if (!db.objectStoreNames.contains(PROJECTS)) {
         db.createObjectStore(PROJECTS, { keyPath: 'id' });
       }
@@ -127,23 +127,23 @@ async function withDb<T>(use: (db: IDBDatabase) => Promise<T>) {
 
 export interface DeskWrite {
   /** The whole desk in order. */
-  snippets: Snippet[];
-  /** Clips (by reference) already stored, so only changed or new ones are written. */
-  stored: ReadonlyMap<string, Snippet>;
+  dataBlocks: DataBlock[];
+  /** Data-blocks (by reference) already stored, so only changed or new ones are written. */
+  stored: ReadonlyMap<string, DataBlock>;
   /** The `rev` this tab last read or wrote; the write is refused if the store has moved on. */
   expectedRev: number;
 }
 
 /**
- * Writes the desk atomically: changed clips, removed clips, the order and a bumped `rev`, in one
+ * Writes the desk atomically: changed data-blocks, removed data-blocks, the order and a bumped `rev`, in one
  * transaction. Inside that same transaction the stored `rev` is compared with `expectedRev`; on a
  * mismatch (another tab wrote) the transaction is aborted and nothing is written
  * (`DeskConflictError`). Resolves with the new rev. Call it from inside a queued task
  * (`enqueueDeskTask`); it does not queue itself.
  */
-export function writeDeskNow({ snippets, stored, expectedRev }: DeskWrite): Promise<number> {
+export function writeDeskNow({ dataBlocks, stored, expectedRev }: DeskWrite): Promise<number> {
   return withDb(async (db) => {
-    const tx = db.transaction([CLIPS, META], 'readwrite');
+    const tx = db.transaction([DATA_BLOCKS, META], 'readwrite');
     const finished = done(tx);
     // A failure in the body aborts the transaction; the rethrow (or the await below) reports it.
     finished.catch(() => undefined);
@@ -154,20 +154,20 @@ export function writeDeskNow({ snippets, stored, expectedRev }: DeskWrite): Prom
       if (current !== expectedRev) {
         throw new DeskConflictError();
       }
-      const clips = tx.objectStore(CLIPS);
-      const keep = new Set(snippets.map((snippet) => snippet.id));
-      snippets.forEach((snippet) => {
-        if (stored.get(snippet.id) !== snippet) {
-          clips.put(snippet);
+      const store = tx.objectStore(DATA_BLOCKS);
+      const keep = new Set(dataBlocks.map((dataBlock) => dataBlock.id));
+      dataBlocks.forEach((dataBlock) => {
+        if (stored.get(dataBlock.id) !== dataBlock) {
+          store.put(dataBlock);
         }
       });
-      stored.forEach((_snippet, id) => {
+      stored.forEach((_dataBlock, id) => {
         if (!keep.has(id)) {
-          clips.delete(id);
+          store.delete(id);
         }
       });
       meta.put(
-        snippets.map((snippet) => snippet.id),
+        dataBlocks.map((dataBlock) => dataBlock.id),
         ORDER_KEY
       );
       nextRev = current + 1;
@@ -218,9 +218,9 @@ export function resetPersistRequest() {
 }
 
 export interface LoadedDesk {
-  snippets: Snippet[];
-  /** The clips known to be in IndexedDB (by reference), for the next incremental write. */
-  stored: Map<string, Snippet>;
+  dataBlocks: DataBlock[];
+  /** The data-blocks known to be in IndexedDB (by reference), for the next incremental write. */
+  stored: Map<string, DataBlock>;
   /** The stored `rev` this was read at; the next write must expect it. */
   rev: number;
   /** False when the stored desk could not be read: nothing may be written over it. */
@@ -229,12 +229,12 @@ export interface LoadedDesk {
   error?: string;
 }
 
-const storedOf = (snippets: Snippet[]) =>
-  new Map(snippets.map((snippet) => [snippet.id, snippet] as const));
+const storedOf = (dataBlocks: DataBlock[]) =>
+  new Map(dataBlocks.map((dataBlock) => [dataBlock.id, dataBlock] as const));
 
 interface RawDesk {
   order: unknown[] | null;
-  clips: { id?: unknown }[];
+  dataBlocks: { id?: unknown }[];
   rev: number;
 }
 
@@ -250,22 +250,22 @@ export function loadDesk(): Promise<LoadedDesk> {
     let raw: RawDesk;
     try {
       raw = await withDb(async (db) => {
-        const tx = db.transaction([CLIPS, META], 'readonly');
+        const tx = db.transaction([DATA_BLOCKS, META], 'readonly');
         const meta = tx.objectStore(META);
-        const [order, clips, rev] = await Promise.all([
+        const [order, dataBlocks, rev] = await Promise.all([
           request(meta.get(ORDER_KEY)),
-          request(tx.objectStore(CLIPS).getAll()),
+          request(tx.objectStore(DATA_BLOCKS).getAll()),
           request(meta.get(REV_KEY)),
         ]);
         return {
           order: Array.isArray(order) ? (order as unknown[]) : null,
-          clips: clips as { id?: unknown }[],
+          dataBlocks: dataBlocks as { id?: unknown }[],
           rev: typeof rev === 'number' ? rev : 0,
         };
       });
     } catch (error) {
       return {
-        snippets: [],
+        dataBlocks: [],
         stored: new Map(),
         rev: 0,
         writable: false,
@@ -274,7 +274,7 @@ export function loadDesk(): Promise<LoadedDesk> {
     }
     const { rev } = raw;
     if (raw.order) {
-      const byId = new Map(raw.clips.map((clip) => [clip.id, clip]));
+      const byId = new Map(raw.dataBlocks.map((dataBlock) => [dataBlock.id, dataBlock]));
       const records: unknown[] = [];
       let missing = 0;
       raw.order.forEach((id) => {
@@ -288,15 +288,17 @@ export function loadDesk(): Promise<LoadedDesk> {
       });
       const orphans = byId.size;
       records.push(...byId.values());
-      if (acceptsSnippets(records)) {
+      if (acceptsDataBlocks(records)) {
         const warnings = [
-          missing > 0 ? `${missing} missing ${plural(missing, 'clip', 'clips')} skipped` : '',
+          missing > 0
+            ? `${missing} missing ${plural(missing, 'data-block', 'data-blocks')} skipped`
+            : '',
           orphans > 0
-            ? `${orphans} ${plural(orphans, 'clip', 'clips')} outside the saved order added at the end`
+            ? `${orphans} ${plural(orphans, 'data-block', 'data-blocks')} outside the saved order added at the end`
             : '',
         ].filter(Boolean);
         return {
-          snippets: records,
+          dataBlocks: records,
           stored: storedOf(records),
           rev,
           writable: true,
@@ -306,14 +308,14 @@ export function loadDesk(): Promise<LoadedDesk> {
         };
       }
       return {
-        snippets: [],
+        dataBlocks: [],
         stored: new Map(),
         rev,
         writable: false,
         error: 'The saved desk is damaged or from a newer version, so it was left untouched.',
       };
     }
-    return { snippets: [], stored: new Map(), rev, writable: true };
+    return { dataBlocks: [], stored: new Map(), rev, writable: true };
   });
 }
 
@@ -331,7 +333,7 @@ export interface StoredProject {
 
 /** A saved project with its whole desk, lineage included (null: the desk is left as it is on open). */
 export interface ProjectRecord extends Omit<StoredProject, 'hasDesk'> {
-  desk: Snippet[] | null;
+  desk: DataBlock[] | null;
 }
 
 /** Projects, newest first. Reads no desks. */
@@ -400,7 +402,7 @@ export function getProject(id: string): Promise<ProjectRecord | null> {
       if (!hasDesk) {
         return { ...rest, desk: null };
       }
-      if (!desks || !acceptsSnippets(desks.desk)) {
+      if (!desks || !acceptsDataBlocks(desks.desk)) {
         throw new Error('The saved desk in this project is damaged or from a newer version.');
       }
       return { ...rest, desk: desks.desk };

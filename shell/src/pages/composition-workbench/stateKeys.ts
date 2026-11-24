@@ -3,11 +3,11 @@ export const compositionStateKeys = {
   activeView: 'hrifa.composition-workbench.ui.active-view.v1',
   activeCompositionModule: 'hrifa.composition-workbench.ui.active-composition-module.v1',
   compositionInspectorTarget: 'hrifa.composition-workbench.ui.inspector-target.v1',
-  editorClipTarget: 'hrifa.composition-workbench.ui.editor-clip-target.v1',
+  editorTarget: 'hrifa.composition-workbench.ui.editor-target.v1',
   compositionInstances: 'hrifa.composition-workbench.ui.instances.v3',
   inspectorOpen: 'hrifa.composition-workbench.ui.inspector-open.v1',
   // Names the desk's undo steps; the desk itself is stored in IndexedDB, not under this key.
-  desk: 'hrifa.composition-workbench.desk.snippets.v1',
+  desk: 'hrifa.composition-workbench.desk.data-blocks.v1',
   // The project's screensets (layout of the center, per project; one JSON value).
   screensets: 'hrifa.composition-workbench.ui.screensets.v1',
   settingsOpen: 'hrifa.composition-workbench.ui.settings-open.v1',
@@ -104,7 +104,7 @@ export const unrecordedStateKeys: ReadonlySet<string> = new Set<string>([
   compositionStateKeys.activeView,
   compositionStateKeys.activeCompositionModule,
   compositionStateKeys.compositionInspectorTarget,
-  compositionStateKeys.editorClipTarget,
+  compositionStateKeys.editorTarget,
   compositionStateKeys.inspectorOpen,
   compositionStateKeys.screensets,
   compositionStateKeys.settingsOpen,

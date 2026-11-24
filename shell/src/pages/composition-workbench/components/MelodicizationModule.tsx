@@ -17,7 +17,8 @@ import {
 } from '../compositionRouting';
 import { useCompositionSettings } from '../compositionSettings';
 import type { ModuleRouteState } from '../compositionWorkspace';
-import { newSnippetId, useDesk } from '../desk';
+import { captureDataBlock } from '../dataBlock';
+import { newDataBlockId, useDesk } from '../desk';
 import type { PitchAllocation } from '../melodicization';
 import type { DataPacket } from '../model';
 import {
@@ -33,7 +34,6 @@ import { useModuleEvaluationResult } from '../runtime/evaluationStore';
 import { pickMelodicizationInputs } from '../runtime/evaluators/melodicization';
 import { useModuleState } from '../runtime/moduleState';
 import { melodicizationState } from '../runtime/moduleState/melodicization';
-import { captureSnippet } from '../snippet';
 import { countInSeconds, parseMeter, transportPulse } from '../transport';
 import { useModulePreview, type PreviewEnd } from '../useModulePreview';
 import {
@@ -272,11 +272,11 @@ export function MelodicizationModule({
     return rawSelection.filter((id) => known.has(id));
   }, [rawSelection, result.packet.items]);
   const [rollTool, setRollTool] = useState('select');
-  const { addSnippet } = useDesk();
+  const { addDataBlock } = useDesk();
 
   function captureSelection(ids: string[]) {
-    return captureSnippet({
-      id: newSnippetId(),
+    return captureDataBlock({
+      id: newDataBlockId(),
       createdAt: new Date().toISOString(),
       name: `${instanceLabel} · ${ids.length} ${ids.length === 1 ? 'note' : 'notes'}`,
       packet: result.packet,
@@ -298,7 +298,7 @@ export function MelodicizationModule({
           preview.setStatus(captured.error);
           return;
         }
-        addSnippet(captured.snippet);
+        addDataBlock(captured.dataBlock);
         preview.setStatus(
           [`Sent ${selectedIds.length} to the desk.`, ...captured.warnings].join(' ')
         );
@@ -317,7 +317,7 @@ export function MelodicizationModule({
         try {
           const plan = createNotePacketPerformancePlan({
             sourceId: instanceId,
-            packet: captured.snippet.packet as typeof result.packet,
+            packet: captured.dataBlock.packet as typeof result.packet,
             timeline,
           });
           const started = await preview.play(plan, `Auditioning ${selectedIds.length} selected.`);
@@ -328,7 +328,7 @@ export function MelodicizationModule({
                 .filter((item) => chosen.has(item.id))
                 .map((item) => rationalToNumber(item.value.onset.quarterNotes))
             );
-            startPlayhead(Number(tempo), from, captured.snippet.packet.frame?.extent ?? 1);
+            startPlayhead(Number(tempo), from, captured.dataBlock.packet.frame?.extent ?? 1);
           }
         } catch (error) {
           preview.setStatus(error instanceof Error ? error.message : 'Audition could not start.');

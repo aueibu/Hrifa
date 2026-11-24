@@ -27,14 +27,14 @@ import type { Screenset } from '../lib/stage';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
 import { ChordPanelBridge } from './composition-workbench/chordInput/ChordPanelBridge';
 import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
-import {
-  BlankFloor,
-  ClipEditorSlot,
-  ClipTargetGuard,
-} from './composition-workbench/components/ClipEditorSlot';
 import { CompositionCanvas } from './composition-workbench/components/CompositionCanvas';
 import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
+import {
+  BlankFloor,
+  DataBlockEditorSlot,
+  EditorTargetGuard,
+} from './composition-workbench/components/DataBlockEditorSlot';
 import { DeskView } from './composition-workbench/components/DeskView';
 import { DeveloperMenu } from './composition-workbench/components/DeveloperMenu';
 import { InfoBarActiveContext } from './composition-workbench/components/hoverInfo';
@@ -71,7 +71,7 @@ import {
 import {
   acceptsScreensetStore,
   bringPanelForward,
-  CLIP_EDITOR_PANEL,
+  DATA_BLOCK_EDITOR_PANEL,
   defaultWorkbenchScreensets,
   MODULE_DETAIL_PANEL,
   parseStoredScreensets,
@@ -150,9 +150,9 @@ export function CompositionWorkbenchPage() {
       { kind: 'module', instanceId: 'interference' },
       acceptsCompositionInspectorTarget
     );
-  // The bottom panel targets a module (the active one) or, when this is set, a desk clip.
-  const [editorClipTarget, setEditorClipTarget] = usePersistentState<string | null>(
-    compositionStateKeys.editorClipTarget,
+  // The bottom panel targets a module (the active one) or, when this is set, a desk data-block.
+  const [editorTarget, setEditorTarget] = usePersistentState<string | null>(
+    compositionStateKeys.editorTarget,
     null,
     (value): value is string | null => value === null || typeof value === 'string'
   );
@@ -217,14 +217,14 @@ export function CompositionWorkbenchPage() {
     { melodicization: createDefaultModuleRouteState(modulePorts.melodicization!) },
     acceptsModuleRouteStates
   );
-  // While a clip is open nothing else is selected: no module counts as active or highlighted.
-  const moduleShown = editorClipTarget === null;
+  // While a data-block is open nothing else is selected: no module counts as active or highlighted.
+  const moduleShown = editorTarget === null;
   const shownInstanceId = moduleShown ? activeCompositionInstanceId : null;
   const shownInspectorTarget = useMemo<CompositionInspectorTarget>(
     () => (moduleShown ? compositionInspectorTarget : { kind: 'canvas' }),
     [moduleShown, compositionInspectorTarget]
   );
-  // The panel is blank when neither a clip nor an existing module is open.
+  // The panel is blank when neither a data-block nor an existing module is open.
   const panelBlank =
     moduleShown && !compositionInstances.some((instance) => instance.id === shownInstanceId);
 
@@ -258,24 +258,24 @@ export function CompositionWorkbenchPage() {
     evaluationStore.prune(live);
   }, [compositionInstances, outputStore, evaluationStore]);
 
-  // The front tab of the Detail docker follows the exclusive target (a clip, or a module): when the target flips, the
+  // The front tab of the Detail docker follows the exclusive target (a data-block, or a module): when the target flips, the
   // matching panel comes to the front in every screenset (expanding nothing). A click on the other tab does not change
   // the target, and stays until the target flips again.
-  const clipOpen = editorClipTarget !== null;
+  const editorOpen = editorTarget !== null;
   // Starts at the mount value, so a reload keeps the stored tab choice; the rule applies only when the target flips.
-  const lastClipOpen = useRef<boolean>(clipOpen);
+  const lastEditorOpen = useRef<boolean>(editorOpen);
   useEffect(() => {
-    if (lastClipOpen.current === clipOpen) {
+    if (lastEditorOpen.current === editorOpen) {
       return;
     }
-    lastClipOpen.current = clipOpen;
-    const panel = clipOpen ? CLIP_EDITOR_PANEL : MODULE_DETAIL_PANEL;
+    lastEditorOpen.current = editorOpen;
+    const panel = editorOpen ? DATA_BLOCK_EDITOR_PANEL : MODULE_DETAIL_PANEL;
     setScreensetStore((store) => bringPanelForward(store, panel));
-  }, [clipOpen, setScreensetStore]);
+  }, [editorOpen, setScreensetStore]);
 
-  // The latest clip target, read by the stable bindModulePort below.
-  const editorClipTargetRef = useRef(editorClipTarget);
-  editorClipTargetRef.current = editorClipTarget;
+  // The latest data-block target, read by the stable bindModulePort below.
+  const editorTargetRef = useRef(editorTarget);
+  editorTargetRef.current = editorTarget;
 
   const bindModulePort = useCallback(
     (
@@ -313,8 +313,8 @@ export function CompositionWorkbenchPage() {
           },
         };
       });
-      // Wiring is not a request to open anything: while a clip is open, leave what is open alone.
-      if (editorClipTargetRef.current === null) {
+      // Wiring is not a request to open anything: while a data-block is open, leave what is open alone.
+      if (editorTargetRef.current === null) {
         setCompositionInspectorTarget({ kind: 'route', instanceId, port });
         setActiveCompositionInstanceId(instanceId);
       }
@@ -382,38 +382,38 @@ export function CompositionWorkbenchPage() {
     (instanceId: string) => {
       setActiveCompositionInstanceId(instanceId);
       setCompositionInspectorTarget({ kind: 'module', instanceId });
-      setEditorClipTarget(null);
+      setEditorTarget(null);
       // Opening a module brings its panel forward and expands its docker if it was collapsed.
       stageApiRef.current?.show(MODULE_DETAIL_PANEL);
     },
-    [setActiveCompositionInstanceId, setCompositionInspectorTarget, setEditorClipTarget]
+    [setActiveCompositionInstanceId, setCompositionInspectorTarget, setEditorTarget]
   );
-  const openClipEditor = useCallback(
-    (snippetId: string) => {
-      setEditorClipTarget(snippetId);
-      stageApiRef.current?.show(CLIP_EDITOR_PANEL);
+  const openDataBlockEditor = useCallback(
+    (dataBlockId: string) => {
+      setEditorTarget(dataBlockId);
+      stageApiRef.current?.show(DATA_BLOCK_EDITOR_PANEL);
     },
-    [setEditorClipTarget]
+    [setEditorTarget]
   );
-  // The open clip is gone: the panel goes blank (nothing open), not back to a module.
-  const clearClipTarget = useCallback(() => {
-    setEditorClipTarget(null);
+  // The open data-block is gone: the panel goes blank (nothing open), not back to a module.
+  const clearEditorTarget = useCallback(() => {
+    setEditorTarget(null);
     setActiveCompositionInstanceId(null);
     setCompositionInspectorTarget({ kind: 'canvas' });
-  }, [setEditorClipTarget, setActiveCompositionInstanceId, setCompositionInspectorTarget]);
+  }, [setEditorTarget, setActiveCompositionInstanceId, setCompositionInspectorTarget]);
   const selectCompositionRoute = useCallback(
     (instanceId: string, port: string) => {
       setActiveCompositionInstanceId(instanceId);
       setCompositionInspectorTarget({ kind: 'route', instanceId, port });
-      setEditorClipTarget(null);
+      setEditorTarget(null);
     },
-    [setActiveCompositionInstanceId, setCompositionInspectorTarget, setEditorClipTarget]
+    [setActiveCompositionInstanceId, setCompositionInspectorTarget, setEditorTarget]
   );
 
   function addCompositionModule(
     moduleId: CompositionModuleId,
     position?: Position,
-    snippetId?: string
+    dataBlockId?: string
   ) {
     const instanceId = uniqueId(moduleId);
     // The instance and its route state are one undo step.
@@ -424,7 +424,7 @@ export function CompositionWorkbenchPage() {
           id: instanceId,
           moduleId,
           ...(position ?? nextFreePosition(current)),
-          ...(snippetId ? { snippetId } : {}),
+          ...(dataBlockId ? { dataBlockId } : {}),
         },
       ]);
       const ports = moduleId === 'mixer' ? defaultMixerPorts() : moduleRegistry[moduleId].ports;
@@ -494,9 +494,9 @@ export function CompositionWorkbenchPage() {
     ),
     desk: (
       <DeskView
-        onOpenClip={(snippet) => openClipEditor(snippet.id)}
-        onMakeSource={(snippet) => {
-          addCompositionModule('snippet', undefined, snippet.id);
+        onOpenDataBlock={(dataBlock) => openDataBlockEditor(dataBlock.id)}
+        onMakeSource={(dataBlock) => {
+          addCompositionModule('data-block-source', undefined, dataBlock.id);
           // Back to a screenset that shows the canvas, where the new source module appears.
           const target = screensetForCanvas(screensetStore);
           if (target !== null) {
@@ -515,7 +515,7 @@ export function CompositionWorkbenchPage() {
             instanceId={instance.id}
             moduleId={instance.moduleId}
             instanceLabel={compositionInstanceLabel(instance, compositionInstances)}
-            snippetId={instance.snippetId}
+            dataBlockId={instance.dataBlockId}
             shown={shownInstanceId === instance.id}
             routeState={moduleRouteStates[instance.id]}
             onBind={bindModulePort}
@@ -535,9 +535,9 @@ export function CompositionWorkbenchPage() {
         )}
       </div>
     ),
-    clipEditor: (
+    dataBlockEditor: (
       <div className={classes.moduleHost}>
-        <ClipEditorSlot snippetId={editorClipTarget} onMissing={clearClipTarget} />
+        <DataBlockEditorSlot dataBlockId={editorTarget} onMissing={clearEditorTarget} />
       </div>
     ),
   };
@@ -550,7 +550,7 @@ export function CompositionWorkbenchPage() {
             <MantineThemeProvider theme={compactWorkbenchTheme}>
               <InfoBarActiveContext.Provider value>
                 <EvaluationStoreContext.Provider value={evaluationStore}>
-                  <ClipTargetGuard snippetId={editorClipTarget} onMissing={clearClipTarget} />
+                  <EditorTargetGuard dataBlockId={editorTarget} onMissing={clearEditorTarget} />
                   {/* Every placed module is evaluated and publishes here, whether or not its view is
                     mounted. Before the panels, so a view reads its evaluation on its first render. */}
                   {compositionInstances.map(
@@ -563,16 +563,16 @@ export function CompositionWorkbenchPage() {
                           instanceId={instance.id}
                           moduleId={instance.moduleId as keyof typeof moduleEvaluators}
                           instanceLabel={compositionInstanceLabel(instance, compositionInstances)}
-                          snippetId={instance.snippetId}
+                          dataBlockId={instance.dataBlockId}
                           routeState={moduleRouteStates[instance.id]}
                         />
                       )
                   )}
-                  {/* The page-level sessions (chord, clip editor, input scope, selection chain) sit
+                  {/* The page-level sessions (chord, data-block editor, input scope, selection chain) sit
                     above the Stage and every editor, with no key, so nothing below remounts. */}
                   <WorkbenchSessions
                     inspectorTarget={shownInspectorTarget}
-                    clipId={editorClipTarget}
+                    dataBlockId={editorTarget}
                   >
                     {/* Shows the Chords panel while the Chords tool wants it, and reports the person closing it. */}
                     <ChordPanelBridge screenset={screenset} api={stageApi} />
@@ -633,7 +633,7 @@ export function CompositionWorkbenchPage() {
                                   <CompositionInspector
                                     selected={shownInspectorTarget}
                                     activeInstanceId={shownInstanceId}
-                                    clipId={editorClipTarget}
+                                    dataBlockId={editorTarget}
                                     outputs={publishedCompositionOutputs}
                                     instances={compositionInstances}
                                     routes={moduleRouteStates}

@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import type { PublishedCompositionOutput } from '../../compositionRouting';
 import { createDefaultModuleRouteState } from '../../compositionWorkspace';
+import { captureDataBlock, type DataBlock } from '../../dataBlock';
 import { melodicize } from '../../melodicization';
 import { packet } from '../../model';
 import { signalTypeRegistry } from '../../signalTypes';
-import { captureSnippet, type Snippet } from '../../snippet';
 import { transportPulse } from '../../transport';
 import { createMemo } from '../memo';
 import { moduleEvaluators } from '../moduleEvaluators';
 import { modulePorts } from '../modulePorts';
+import {
+  computeDataBlockSource,
+  evaluateDataBlockSource,
+  dataBlockSourceOutputs,
+} from './dataBlockSource';
 import {
   computeMelodicization,
   evaluateMelodicization,
@@ -18,11 +23,10 @@ import {
 } from './melodicization';
 import { evaluatePitchList } from './pitchList';
 import { evaluateRhythmList } from './rhythmList';
-import { computeSnippetSource, evaluateSnippetSource, snippetSourceOutputs } from './snippetSource';
 
 // "Today's output" is rebuilt from the same pure helpers the components called at HEAD
-// (resolve + signalTypeRegistry.apply + melodicize for Melodicization; the snippet's name and
-// packet for Snippet), written out as the components did it.
+// (resolve + signalTypeRegistry.apply + melodicize for Melodicization; the data-block's name and
+// packet for Data-block), written out as the components did it.
 
 const rhythmCtx = { instanceId: 'rhythm-list-1', instanceLabel: 'Rhythm List 1' };
 const pitchCtx = { instanceId: 'pitch-list-1', instanceLabel: 'Pitch List 1', edo: 12 };
@@ -179,58 +183,58 @@ describe('evaluateMelodicization', () => {
   });
 });
 
-describe('evaluateSnippetSource', () => {
-  const ctx = { instanceId: 'snippet-1', instanceLabel: 'Snippet 1' };
+describe('evaluateDataBlockSource', () => {
+  const ctx = { instanceId: 'data-block-1', instanceLabel: 'Data-block 1' };
   const notes = evaluateMelodicization(
     { allocation: 'cycle', articulationPercent: 100 },
     pickMelodicizationInputs(sourceOutputs, routeState, 'm'),
     { instanceId: 'm', instanceLabel: 'M', edo: 12, pulseUnit }
   ).outputs[0].packet;
-  const captured = captureSnippet({
-    id: 'clip-1',
+  const captured = captureDataBlock({
+    id: 'block-1',
     createdAt: '2026-11-18T00:00:00.000Z',
-    name: 'Clip 1',
+    name: 'Data-block 1',
     packet: notes,
     moduleInstance: 'm',
     portId: 'notes',
     itemIds: notes.items.slice(0, 2).map((item) => item.id),
   });
-  const snippet: Snippet = captured.ok ? captured.snippet : (undefined as never);
+  const dataBlock: DataBlock = captured.ok ? captured.dataBlock : (undefined as never);
 
-  it('publishes the clip packet unchanged under its name', () => {
+  it('publishes the data-block packet unchanged under its name', () => {
     expect(captured.ok).toBe(true);
-    const evaluation = evaluateSnippetSource({}, { snippet }, ctx);
+    const evaluation = evaluateDataBlockSource({}, { dataBlock }, ctx);
     expect(evaluation.outputs).toEqual([
       {
-        ref: { instanceId: ctx.instanceId, port: 'snippet' },
-        label: `Snippet 1 · ${snippet.name}`,
-        packet: snippet.packet,
+        ref: { instanceId: ctx.instanceId, port: 'data-block' },
+        label: `Data-block 1 · ${dataBlock.name}`,
+        packet: dataBlock.packet,
       },
     ]);
-    expect(evaluation.outputs[0].packet).toBe(snippet.packet);
+    expect(evaluation.outputs[0].packet).toBe(dataBlock.packet);
   });
 
-  it('an edited clip (new name and packet) publishes the new one', () => {
-    const edited: Snippet = { ...snippet, name: 'Edited', packet: { ...snippet.packet } };
-    const evaluation = evaluateSnippetSource({}, { snippet: edited }, ctx);
-    expect(evaluation.outputs[0].label).toBe('Snippet 1 · Edited');
+  it('an edited data-block (new name and packet) publishes the new one', () => {
+    const edited: DataBlock = { ...dataBlock, name: 'Edited', packet: { ...dataBlock.packet } };
+    const evaluation = evaluateDataBlockSource({}, { dataBlock: edited }, ctx);
+    expect(evaluation.outputs[0].label).toBe('Data-block 1 · Edited');
     expect(evaluation.outputs[0].packet).toBe(edited.packet);
   });
 
-  it('publishes nothing when the clip is gone', () => {
-    expect(evaluateSnippetSource({}, { snippet: undefined }, ctx).outputs).toEqual([]);
+  it('publishes nothing when the data-block is gone', () => {
+    expect(evaluateDataBlockSource({}, { dataBlock: undefined }, ctx).outputs).toEqual([]);
   });
 
   it('a rename keeps the packet', () => {
-    const core = computeSnippetSource({}, { snippet }, ctx);
-    const before = snippetSourceOutputs(core, ctx);
-    const after = snippetSourceOutputs(core, { ...ctx, instanceLabel: 'Renamed' });
-    expect(after[0].label).toBe(`Renamed · ${snippet.name}`);
+    const core = computeDataBlockSource({}, { dataBlock }, ctx);
+    const before = dataBlockSourceOutputs(core, ctx);
+    const after = dataBlockSourceOutputs(core, { ...ctx, instanceLabel: 'Renamed' });
+    expect(after[0].label).toBe(`Renamed · ${dataBlock.name}`);
     expect(after[0].packet).toBe(before[0].packet);
   });
 
-  it('is registered under the snippet id', () => {
-    expect(moduleEvaluators.snippet.evaluate).toBe(evaluateSnippetSource);
+  it('is registered under the data-block-source id', () => {
+    expect(moduleEvaluators['data-block-source'].evaluate).toBe(evaluateDataBlockSource);
     expect(moduleEvaluators.melodicization.evaluate).toBe(evaluateMelodicization);
   });
 });

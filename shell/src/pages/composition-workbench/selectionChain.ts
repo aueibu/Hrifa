@@ -2,14 +2,14 @@ import type { CompositionInspectorTarget } from './compositionWorkspace';
 import type { NoteSelection } from './noteSelection';
 
 /**
- * The read-only selection chain (design one-stage 7.4): `[note-or-time selection, clip,
+ * The read-only selection chain (design one-stage 7.4): `[note-or-time selection, data-block,
  * module-or-canvas]`, derived from the three stored shapes (the editor's note selection, the page's
- * `editorClipTarget`, the page's inspector target). The stored shapes and their semantics do not
+ * `editorTarget`, the page's inspector target). The stored shapes and their semantics do not
  * change; the chain only makes consumers independent of where each part lives.
  */
 export type WorkbenchSelectionNode =
-  | { level: 'note'; clipId: string; selection: NoteSelection }
-  | { level: 'clip'; clipId: string }
+  | { level: 'note'; dataBlockId: string; selection: NoteSelection }
+  | { level: 'data-block'; dataBlockId: string }
   | { level: 'module'; instanceId: string }
   | { level: 'route'; instanceId: string; port: string }
   | { level: 'canvas' };
@@ -20,9 +20,9 @@ export type WorkbenchSelectionChain = readonly WorkbenchSelectionNode[];
 export interface SelectionChainInputs {
   /** The page's inspector target (null reads as the canvas). */
   inspectorTarget: CompositionInspectorTarget | null;
-  /** The open clip (`editorClipTarget`), or null. */
-  clipId: string | null;
-  /** The open clip's editor selection, or null/undefined when none is held. */
+  /** The open data-block (`editorTarget`), or null. */
+  dataBlockId: string | null;
+  /** The open data-block's editor selection, or null/undefined when none is held. */
   noteSelection?: NoteSelection | null;
 }
 
@@ -32,15 +32,15 @@ function hasSelection(selection: NoteSelection | null | undefined): selection is
 
 export function buildSelectionChain({
   inspectorTarget,
-  clipId,
+  dataBlockId,
   noteSelection,
 }: SelectionChainInputs): WorkbenchSelectionChain {
   const chain: WorkbenchSelectionNode[] = [];
-  if (clipId !== null) {
+  if (dataBlockId !== null) {
     if (hasSelection(noteSelection)) {
-      chain.push({ level: 'note', clipId, selection: noteSelection });
+      chain.push({ level: 'note', dataBlockId, selection: noteSelection });
     }
-    chain.push({ level: 'clip', clipId });
+    chain.push({ level: 'data-block', dataBlockId });
   }
   if (inspectorTarget?.kind === 'module') {
     chain.push({ level: 'module', instanceId: inspectorTarget.instanceId });
@@ -57,7 +57,7 @@ export function buildSelectionChain({
 }
 
 /**
- * One step up: note to clip, clip to the module-or-canvas it sits under, a module or route to the
+ * One step up: note to data-block, data-block to the module-or-canvas it sits under, a module or route to the
  * canvas (the project), the canvas to null.
  */
 export function parentSelection(

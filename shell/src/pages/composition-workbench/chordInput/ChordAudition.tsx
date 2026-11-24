@@ -14,7 +14,7 @@ import type { PlacedNote } from './placement';
  * hoc one-item note packet, `createNotePacketPerformancePlan`, `useModulePreview`). A component of
  * its own, mounted by the session's provider only while the active claim wants the picker, so the
  * audio engine is needed only then; it registers its function as the session's audition sink. Sound
- * only ever starts from a click, never a hover. (Moved from the note clip editor, M4a.)
+ * only ever starts from a click, never a hover. (Moved from the Notes editor, M4a.)
  */
 export function ChordAudition({ sourceId, session }: { sourceId: string; session: ChordSession }) {
   const { settings } = useCompositionSettings();

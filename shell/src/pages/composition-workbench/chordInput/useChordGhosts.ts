@@ -9,7 +9,7 @@ import { mergeChordInserts, type ExistingNote } from './placeChords';
 /**
  * Selection mode (M6c): the ghosts of the chord the picker would insert on EVERY selected note of this host's
  * claim, computed by the code Insert runs (the session's selection requests through `mergeChordInserts` against
- * the clip's notes, nothing committed), so notes the stack rule or the same-onset merge drops are not ghosted.
+ * the data-block's notes, nothing committed), so notes the stack rule or the same-onset merge drops are not ghosted.
  * The pinned chord shows as 'pinned' and a different hovered one as 'hover', like anchor mode. undefined while the
  * claim is not in selection mode or nothing is selected.
  */

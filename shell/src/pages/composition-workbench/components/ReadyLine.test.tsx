@@ -22,7 +22,7 @@ describe('ReadyLine', () => {
       'waiting'
     );
     rerender(
-      <ReadyLine value={{ state: 'no-target', text: 'No target: open a clip to insert' }} />
+      <ReadyLine value={{ state: 'no-target', text: 'No target: open a data-block to insert' }} />
     );
     expect(line(container).querySelector('[data-ready-icon]')).toHaveAttribute(
       'data-ready-icon',

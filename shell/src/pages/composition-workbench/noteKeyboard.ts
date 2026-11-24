@@ -1,7 +1,7 @@
 import { MIN_NOTE_QUARTERS } from '../../components/PianoRoll';
 import type { DataPacket } from './model';
 import { rationalToNumber } from './musicalTime';
-import { moveNotes, resizeNotesByDeltas, isNoteItem, type NoteItem } from './noteClipEdits';
+import { moveNotes, resizeNotesByDeltas, isNoteItem, type NoteItem } from './notesEdits';
 
 /**
  * Pure parts of the note editor's keyboard editing (the arrow keys act on the selected notes; the
@@ -62,7 +62,7 @@ export function noteKeyEdit(
 
 /**
  * Moves the selected notes in time by `quarters`: all by the same amount, so a group keeps its
- * shape, held at the clip's start (the whole group stops when its earliest note reaches 0).
+ * shape, held at the data-block's start (the whole group stops when its earliest note reaches 0).
  */
 export function moveNotesInTime(
   packet: DataPacket,
@@ -147,10 +147,10 @@ export function navigationOrder(packet: DataPacket): string[] {
 }
 
 /**
- * The note Alt+Right (`direction` 1) or Alt+Left (-1) selects, or null when the clip has no notes.
+ * The note Alt+Right (`direction` 1) or Alt+Left (-1) selects, or null when the data-block has no notes.
  * Several notes selected: the first (Right) or last (Left) of them in navigation order, alone. One
  * note: the next or previous in order, staying where it is at the end. Nothing selected: the first
- * or last note of the clip.
+ * or last note of the data-block.
  */
 export function navigateSelection(
   packet: DataPacket,

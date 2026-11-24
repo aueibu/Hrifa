@@ -6,7 +6,7 @@ import type { Rational } from './musicalTime';
 /**
  * The note clipboard (K5b-2b): what Copy took, held in memory for this viewer only. It is
  * module-level state, deliberately outside the history, the projects and any desk storage: it
- * crosses clips (copy in one, paste in another) and is gone with the page. Copied notes are held
+ * crosses data-blocks (copy in one, paste in another) and is gone with the page. Copied notes are held
  * relative to where the copy started, so a paste can land them anywhere.
  */
 export interface ClipboardNote {
@@ -20,7 +20,7 @@ export interface ClipboardNote {
 }
 
 export interface NoteClipboard {
-  /** The notes, in the order they were in the clip they were copied from. */
+  /** The notes, in the order they were in the data-block they were copied from. */
   notes: ClipboardNote[];
 }
 

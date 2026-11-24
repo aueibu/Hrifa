@@ -4,6 +4,7 @@ import { dockerHolding, parseScreensetStore, type ScreensetStore } from '../../l
 import { CompositionWorkbenchPage } from '../CompositionWorkbench.page';
 import type { ChordSession } from './chordInput/chordSession';
 import { defaultProjectPitchSet } from './compositionSettings';
+import type { DataBlock } from './dataBlock';
 import { seedDesk } from './deskTestUtils';
 import { resetHistory } from './history';
 import { storeDefaultScreensets } from './layout/screensetFixtures';
@@ -11,13 +12,12 @@ import { WORKBENCH_KNOWN_IDS } from './layout/workbenchScreensets';
 import type { NoteEventValue } from './melodicization';
 import { packet } from './model';
 import { musicalDuration, musicalPosition } from './musicalTime';
-import type { Snippet } from './snippet';
 import { compositionStateKeys } from './usePersistentState';
 
 // M6a: the chord picker is the page's `chords` panel. These tests drive the real page (the dock Stage, the page chord
 // session, the bridge that shows the panel) for the scenarios of SCENARIOS.M6.md that are about placement: A1, A4, A5, A6,
 // A7, A8, B6 (the panel stays when the tool is left) and the second chord host on the page Stage. The chord behavior
-// itself (insert, W-20 keys, ghosts, audition gate) stays covered by the NoteClipEditor chord tests.
+// itself (insert, W-20 keys, ghosts, audition gate) stays covered by the NotesEditor chord tests.
 
 // A stand-in audio engine that makes no sound and records what was played.
 const engine = vi.hoisted(() => ({
@@ -61,7 +61,7 @@ vi.mock('./WorkbenchSessions', async (importOriginal) => {
 });
 const chordSession = () => seen.chord as ChordSession;
 
-function noteClip(id: string, name: string): Snippet {
+function notesDataBlock(id: string, name: string): DataBlock {
   const value: NoteEventValue = {
     onset: musicalPosition(0),
     interOnset: musicalDuration(1),
@@ -89,7 +89,7 @@ function noteClip(id: string, name: string): Snippet {
 }
 
 async function seed(view: 'canvas' | 'desk' = 'desk') {
-  await seedDesk([noteClip('clip-a', 'Alpha')]);
+  await seedDesk([notesDataBlock('block-a', 'Alpha')]);
   storeDefaultScreensets({ active: view });
 }
 
@@ -108,11 +108,11 @@ const chordsDocker = (screenset: string) =>
 const footerTab = (name: string) =>
   within(screen.getByRole('contentinfo')).getByRole('tab', { name });
 
-async function openClip(user: ReturnType<typeof userEvent.setup>, name: string) {
+async function openDataBlock(user: ReturnType<typeof userEvent.setup>, name: string) {
   const input = await screen.findByDisplayValue(name);
   const card = input.closest('div[class*="card"]') as HTMLElement;
   await user.dblClick(within(card).getByText(/^events \| note/));
-  return screen.findByRole('group', { name: /Note clip piano roll/ });
+  return screen.findByRole('group', { name: /Notes piano roll/ });
 }
 
 // jsdom lays nothing out: the roll's origin is (0, 0), 64 px a quarter and 22 px a semitone.
@@ -141,7 +141,7 @@ describe('the Chords panel on the page Stage', () => {
     const user = userEvent.setup();
     await seed();
     render(<CompositionWorkbenchPage />);
-    const roll = await openClip(user, 'Alpha');
+    const roll = await openDataBlock(user, 'Alpha');
     expect(screen.queryByRole('tab', { name: 'Chords' })).toBeNull();
 
     // A1: first time, the Tools docker, in front.
@@ -221,12 +221,14 @@ describe('the Chords panel on the page Stage', () => {
     expect(chordsDocker('desk')).toBe('Desk');
   }, 30_000);
 
-  it('A7 and the second chord host: with no clip the panel opens from the Panels menu and auditions; a list host claims the session and receives the chord', async () => {
+  it('A7 and the second chord host: with no data-block the panel opens from the Panels menu and auditions; a list host claims the session and receives the chord', async () => {
     const user = userEvent.setup();
     render(<CompositionWorkbenchPage />);
     await user.click(screen.getByRole('button', { name: 'Panels' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Open Chords' }));
-    await waitFor(() => expect(readyLine()).toHaveTextContent('No target: open a clip to insert'));
+    await waitFor(() =>
+      expect(readyLine()).toHaveTextContent('No target: open a data-block to insert')
+    );
     // Audition never needs a target.
     await user.click(screen.getByRole('button', { name: 'C' }));
     await waitFor(() => expect(engine.play).toHaveBeenCalledTimes(1));
@@ -250,14 +252,16 @@ describe('the Chords panel on the page Stage', () => {
     await user.dblClick(await screen.findByRole('button', { name: 'C' }));
     expect(inserted).toEqual([[0, 4, 7]]);
     act(() => release());
-    await waitFor(() => expect(readyLine()).toHaveTextContent('No target: open a clip to insert'));
+    await waitFor(() =>
+      expect(readyLine()).toHaveTextContent('No target: open a data-block to insert')
+    );
   }, 30_000);
 
   it('A8 and A6: with the roll hidden behind the Modules tab the picker stays and the keys are not captured; flipping screensets keeps the picker and the anchor', async () => {
     const user = userEvent.setup();
     await seed();
     render(<CompositionWorkbenchPage />);
-    const roll = await openClip(user, 'Alpha');
+    const roll = await openDataBlock(user, 'Alpha');
     roll.focus();
     fireEvent.keyDown(roll, { key: '7' });
     await screen.findByRole('tab', { name: 'Chords' });
@@ -272,7 +276,7 @@ describe('the Chords panel on the page Stage', () => {
     fireEvent.keyDown(document.body, { key: 'ArrowRight', shiftKey: true });
     expect(chordSession().getState().anchor).toBe(anchored);
     // Clicking back restores everything: the same key now moves the anchor.
-    await user.click(screen.getByRole('tab', { name: 'Clip editor' }));
+    await user.click(screen.getByRole('tab', { name: 'Data-block editor' }));
     await waitFor(() => expect(roll.closest('[inert]')).toBeNull());
     fireEvent.keyDown(document.body, { key: 'ArrowRight', shiftKey: true });
     const moved = chordSession().getState().anchor!;
@@ -292,11 +296,11 @@ describe('the Chords panel on the page Stage', () => {
     const user = userEvent.setup();
     await seed();
     render(<CompositionWorkbenchPage />);
-    const roll = await openClip(user, 'Alpha');
+    const roll = await openDataBlock(user, 'Alpha');
     roll.focus();
     fireEvent.keyDown(roll, { key: '7' });
     await screen.findByRole('tab', { name: 'Chords' });
-    // Move Chords into the Detail docker (beside Modules and Clip editor), then put Modules in front of it.
+    // Move Chords into the Detail docker (beside Modules and Data-block editor), then put Modules in front of it.
     fireEvent.contextMenu(screen.getByRole('tab', { name: 'Chords' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Detail' }));
     await waitFor(() => expect(chordsDocker('desk')).toBe('Detail'));
@@ -317,7 +321,7 @@ describe('the Chords panel on the page Stage', () => {
     const user = userEvent.setup();
     await seed();
     render(<CompositionWorkbenchPage />);
-    const roll = await openClip(user, 'Alpha');
+    const roll = await openDataBlock(user, 'Alpha');
     roll.focus();
     fireEvent.keyDown(roll, { key: '7' });
     await screen.findByRole('tab', { name: 'Chords' });

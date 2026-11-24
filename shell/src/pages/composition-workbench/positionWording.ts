@@ -1,10 +1,10 @@
 /**
- * The workbench's wording for a position in time: "bar X beat Y" in the clip's meter (the note editor's own phrase, shared
+ * The workbench's wording for a position in time: "bar X beat Y" in the data-block's meter (the note editor's own phrase, shared
  * so the Chords panel's ready line says the same). Pure.
  */
 import { parseMeter } from './transport';
 
-/** `onsetQuarters` is a position in quarter notes from the clip start; the meter is the clip's ("3/4", "6/8"). */
+/** `onsetQuarters` is a position in quarter notes from the data-block start; the meter is the data-block's ("3/4", "6/8"). */
 export function barBeatText(onsetQuarters: number, meter: string): string {
   const { numerator, denominator } = parseMeter(meter);
   const barLength = (numerator * 4) / denominator;

@@ -165,7 +165,7 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
     const result = await saveProject({
       name,
       existing,
-      desk: deskReady ? desk.snippets : null,
+      desk: deskReady ? desk.dataBlocks : null,
     });
     if (!result.ok) {
       setStatus(result.error);

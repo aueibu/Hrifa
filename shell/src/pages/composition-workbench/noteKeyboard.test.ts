@@ -3,7 +3,6 @@ import { MIN_NOTE_QUARTERS } from '../../components/PianoRoll';
 import type { NoteEventValue } from './melodicization';
 import { packet, type DataItem, type DataPacket } from './model';
 import { rationalFromNumber, rationalToNumber } from './musicalTime';
-import { resizeNotes, resolveSamePitchOverlaps } from './noteClipEdits';
 import {
   navigateSelection,
   navigationOrder,
@@ -17,6 +16,7 @@ import {
   PITCH_STEP_MIDICENTS,
   resizeNotesByGrid,
 } from './noteKeyboard';
+import { resizeNotes, resolveSamePitchOverlaps } from './notesEdits';
 
 function item(
   id: string,
@@ -38,7 +38,8 @@ function item(
   };
 }
 
-const clip = (items: DataItem<NoteEventValue>[]): DataPacket => packet('events', 'note', items);
+const dataBlock = (items: DataItem<NoteEventValue>[]): DataPacket =>
+  packet('events', 'note', items);
 const value = (p: DataPacket, id: string) =>
   p.items.find((entry) => entry.id === id)!.value as NoteEventValue;
 const start = (p: DataPacket, id: string) => rationalToNumber(value(p, id).onset.quarterNotes);
@@ -121,7 +122,7 @@ describe('noteKeyEdit: which key does what', () => {
 
 describe('moving in time', () => {
   it('moves every selected note by the same amount; others stay by reference', () => {
-    const before = clip([
+    const before = dataBlock([
       item('a', 1, 1, [6000]),
       item('b', 2, 1, [6400]),
       item('c', 5, 1, [6000]),
@@ -134,16 +135,16 @@ describe('moving in time', () => {
   });
 
   it('stops at 0 and does nothing when a note is already there', () => {
-    const before = clip([item('a', 0, 1, [6000]), item('b', 1, 1, [6400])]);
+    const before = dataBlock([item('a', 0, 1, [6000]), item('b', 1, 1, [6400])]);
     expect(moveNotesInTime(before, ['a', 'b'], -1)).toBe(before);
-    const near = clip([item('a', 0.25, 1, [6000])]);
+    const near = dataBlock([item('a', 0.25, 1, [6000])]);
     expect(start(moveNotesInTime(near, ['a'], -1), 'a')).toBe(0);
   });
 });
 
 describe('moving in pitch', () => {
   it('moves by a semitone and by an octave, keeping the group shape', () => {
-    const before = clip([item('a', 0, 1, [6000]), item('b', 0, 1, [6400])]);
+    const before = dataBlock([item('a', 0, 1, [6000]), item('b', 0, 1, [6400])]);
     const up = moveNotesInPitch(before, ['a', 'b'], PITCH_STEP_MIDICENTS);
     expect([value(up, 'a').pitches, value(up, 'b').pitches]).toEqual([[6100], [6500]]);
     const down = moveNotesInPitch(before, ['a', 'b'], -OCTAVE_MIDICENTS);
@@ -152,12 +153,12 @@ describe('moving in pitch', () => {
   });
 
   it('refuses the whole group at the keyboard ends (no partial move)', () => {
-    const top = clip([item('a', 0, 1, [12700]), item('b', 0, 1, [6000])]);
+    const top = dataBlock([item('a', 0, 1, [12700]), item('b', 0, 1, [6000])]);
     expect(moveNotesInPitch(top, ['a', 'b'], PITCH_STEP_MIDICENTS)).toBe(top);
     expect(moveNotesInPitch(top, ['a', 'b'], OCTAVE_MIDICENTS)).toBe(top);
-    const bottom = clip([item('a', 0, 1, [50]), item('b', 0, 1, [6000])]);
+    const bottom = dataBlock([item('a', 0, 1, [50]), item('b', 0, 1, [6000])]);
     expect(moveNotesInPitch(bottom, ['a', 'b'], -PITCH_STEP_MIDICENTS)).toBe(bottom);
-    const nearTop = clip([item('a', 0, 1, [12000])]);
+    const nearTop = dataBlock([item('a', 0, 1, [12000])]);
     expect(moveNotesInPitch(nearTop, ['a'], OCTAVE_MIDICENTS)).toBe(nearTop);
     expect(value(moveNotesInPitch(nearTop, ['a'], PITCH_STEP_MIDICENTS), 'a').pitches).toEqual([
       12100,
@@ -165,7 +166,7 @@ describe('moving in pitch', () => {
   });
 
   it('a chord moves as one event and is refused when any of its pitches would leave', () => {
-    const chord = clip([item('c', 0, 1, [6000, 12700])]);
+    const chord = dataBlock([item('c', 0, 1, [6000, 12700])]);
     expect(moveNotesInPitch(chord, ['c'], PITCH_STEP_MIDICENTS)).toBe(chord);
     expect(value(moveNotesInPitch(chord, ['c'], -PITCH_STEP_MIDICENTS), 'c').pitches).toEqual([
       5900, 12600,
@@ -173,7 +174,7 @@ describe('moving in pitch', () => {
   });
 
   it('nothing selected, or an unknown id, is no change', () => {
-    const before = clip([item('a', 0, 1, [6000])]);
+    const before = dataBlock([item('a', 0, 1, [6000])]);
     expect(moveNotesInPitch(before, [], 100)).toBe(before);
     expect(moveNotesInPitch(before, ['zzz'], 100)).toBe(before);
   });
@@ -181,7 +182,7 @@ describe('moving in pitch', () => {
 
 describe('lengthening and shortening by the grid', () => {
   it('lengthens by one division and shortens by one', () => {
-    const before = clip([item('a', 0, 2, [6000]), item('b', 4, 1, [6400])]);
+    const before = dataBlock([item('a', 0, 2, [6000]), item('b', 4, 1, [6400])]);
     const longer = resizeNotesByGrid(before, ['a', 'b'], 0.5, 0.5);
     expect([length(longer, 'a'), length(longer, 'b')]).toEqual([2.5, 1.5]);
     const shorter = resizeNotesByGrid(before, ['a', 'b'], -0.5, 0.5);
@@ -189,7 +190,7 @@ describe('lengthening and shortening by the grid', () => {
   });
 
   it('never goes below one division: each note is held on its own', () => {
-    const before = clip([
+    const before = dataBlock([
       item('big', 0, 2, [6000]),
       item('edge', 4, 0.75, [6400]),
       item('at', 8, 0.5, [6700]),
@@ -204,15 +205,15 @@ describe('lengthening and shortening by the grid', () => {
     expect(length(shorter, 'under')).toBe(0.25);
     expect(shorter.items[2]).toBe(before.items[2]);
     expect(shorter.items[3]).toBe(before.items[3]);
-    const atFloor = clip([item('a', 0, 0.5, [6000])]);
+    const atFloor = dataBlock([item('a', 0, 0.5, [6000])]);
     expect(resizeNotesByGrid(atFloor, ['a'], -0.5, 0.5)).toBe(atFloor);
   });
 });
 
 describe('selection navigation', () => {
   // A C E G chord at 0, then a second chord of the same pitches (G, D, C) at 1.
-  const clipOf = () =>
-    clip([
+  const dataBlockOf = () =>
+    dataBlock([
       item('c', 0, 1, [6000]),
       item('e', 0, 1, [6400]),
       item('g', 0, 1, [6700]),
@@ -222,16 +223,16 @@ describe('selection navigation', () => {
     ]);
 
   it('orders by onset ascending, then pitch high to low, then packet order', () => {
-    expect(navigationOrder(clipOf())).toEqual(['g', 'e', 'c', 'late-g', 'late-d', 'late-c']);
-    const ties = clip([item('x', 0, 1, [6000]), item('y', 0, 2, [6000])]);
+    expect(navigationOrder(dataBlockOf())).toEqual(['g', 'e', 'c', 'late-g', 'late-d', 'late-c']);
+    const ties = dataBlock([item('x', 0, 1, [6000]), item('y', 0, 2, [6000])]);
     expect(navigationOrder(ties)).toEqual(['x', 'y']);
     // A chord event sorts by its top pitch.
-    const mixed = clip([item('low', 0, 1, [5000]), item('chord', 0, 1, [4000, 7000])]);
+    const mixed = dataBlock([item('low', 0, 1, [5000]), item('chord', 0, 1, [4000, 7000])]);
     expect(navigationOrder(mixed)).toEqual(['chord', 'low']);
   });
 
   it('Alt+Right walks the C E G chord G, E, C, then the next onset, then stays at the end', () => {
-    const p = clipOf();
+    const p = dataBlockOf();
     let selected: string[] = ['c', 'e', 'g'];
     const walk: string[] = [];
     for (let step = 0; step < 6; step += 1) {
@@ -244,7 +245,7 @@ describe('selection navigation', () => {
   });
 
   it('Alt+Left mirrors it: the last of several, then back, staying at the first', () => {
-    const p = clipOf();
+    const p = dataBlockOf();
     expect(navigateSelection(p, ['c', 'e', 'g'], -1)).toBe('c');
     expect(navigateSelection(p, ['c'], -1)).toBe('e');
     expect(navigateSelection(p, ['e'], -1)).toBe('g');
@@ -253,15 +254,15 @@ describe('selection navigation', () => {
   });
 
   it('with nothing selected: the first note (Right) or the last note (Left)', () => {
-    const p = clipOf();
+    const p = dataBlockOf();
     expect(navigateSelection(p, [], 1)).toBe('g');
     expect(navigateSelection(p, [], -1)).toBe('late-c');
     expect(navigateSelection(p, ['zzz'], 1)).toBe('g');
-    expect(navigateSelection(clip([]), [], 1)).toBeNull();
+    expect(navigateSelection(dataBlock([]), [], 1)).toBeNull();
   });
 
   it('several selected: the first or last of THEM in order, alone', () => {
-    const p = clipOf();
+    const p = dataBlockOf();
     expect(navigateSelection(p, ['late-d', 'e'], 1)).toBe('e');
     expect(navigateSelection(p, ['late-d', 'e'], -1)).toBe('late-d');
   });
@@ -276,7 +277,7 @@ describe('Ctrl+Right on a whole selected same-pitch legato run', () => {
     ['b', 'a', 'c'],
   ];
   const result = (order: string[]) => {
-    const before = clip(order.map((id) => run.find((entry) => entry.id === id)!));
+    const before = dataBlock(order.map((id) => run.find((entry) => entry.id === id)!));
     const lengthened = resizeNotesByGrid(before, ['a', 'b', 'c'], 1, 1);
     const resolved = resolveSamePitchOverlaps(lengthened, before, () => 'piece').packet;
     return resolved.items
@@ -300,7 +301,7 @@ describe('Ctrl+Right on a whole selected same-pitch legato run', () => {
 describe('performance: thousands of notes', () => {
   const count = 5000;
   const big = () =>
-    clip(
+    dataBlock(
       Array.from({ length: count }, (_, index) =>
         item(`n${index}`, index * 2, index % 3 === 0 ? 0.25 : 1, [6000 + (index % 12) * 100])
       )

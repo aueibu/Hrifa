@@ -1,7 +1,7 @@
 /**
  * The ghost notes the Chords tool draws on a roll (hover cell, anchor, hovered and pinned chord),
  * from the chord session's values. Pure: the roll host feeds the result to the PianoRoll's
- * `ghostNotes`. Moved verbatim from the note clip editor (M4a).
+ * `ghostNotes`. Moved verbatim from the Notes editor (M4a).
  */
 import type { PianoRollProps } from '../../../components/PianoRoll';
 import { pitchLabel } from '../routeTreatments';

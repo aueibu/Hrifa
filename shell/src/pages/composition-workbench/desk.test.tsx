@@ -2,6 +2,7 @@ import { act, render, screen, userEvent, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransportBar } from './components/TransportBar';
 import { CompositionSettingsProvider } from './compositionSettings';
+import { acceptsDataBlocks, captureDataBlock, type DataBlock } from './dataBlock';
 import { DeskProvider, useDesk } from './desk';
 import { renderDesk, storedDesk } from './deskTestUtils';
 import { canRedo, canUndo, HISTORY_DEPTH, redo, resetHistory, undo } from './history';
@@ -9,7 +10,6 @@ import { melodicize } from './melodicization';
 import { packet } from './model';
 import { musicalDuration } from './musicalTime';
 import { interpretPitchList } from './pitch';
-import { acceptsSnippets, captureSnippet, type Snippet } from './snippet';
 import { compositionStateKeys } from './usePersistentState';
 
 vi.mock('./audio/AudioEngineProvider', () => ({
@@ -21,7 +21,7 @@ vi.mock('./audio/AudioEngineProvider', () => ({
   }),
 }));
 
-function noteSnippet(id = 'snip-1', name = 'Gesture'): Snippet {
+function noteDataBlock(id = 'data-block-1', name = 'Gesture'): DataBlock {
   const rhythm = packet(
     'list',
     'duration',
@@ -42,7 +42,7 @@ function noteSnippet(id = 'snip-1', name = 'Gesture'): Snippet {
     pulseUnit: musicalDuration(1, 4),
     articulationPercent: 100,
   });
-  const captured = captureSnippet({
+  const captured = captureDataBlock({
     id,
     createdAt: '2026-11-11T00:00:00Z',
     name,
@@ -52,7 +52,7 @@ function noteSnippet(id = 'snip-1', name = 'Gesture'): Snippet {
   if (!captured.ok) {
     throw new Error(captured.error);
   }
-  return captured.snippet;
+  return captured.dataBlock;
 }
 
 async function setup() {
@@ -62,7 +62,7 @@ async function setup() {
 }
 
 /** Deep snapshot so a later mutation of shared objects could not hide a bad restore. */
-const snapshot = (snippets: Snippet[]) => JSON.parse(JSON.stringify(snippets)) as Snippet[];
+const snapshot = (dataBlocks: DataBlock[]) => JSON.parse(JSON.stringify(dataBlocks)) as DataBlock[];
 
 describe('desk history', () => {
   beforeEach(() => {
@@ -76,37 +76,40 @@ describe('desk history', () => {
     expect(canRedo()).toBe(false);
     act(() => undo());
     act(() => redo());
-    expect(result.current.snippets).toEqual([]);
+    expect(result.current.dataBlocks).toEqual([]);
   });
 
   type Desk = ReturnType<typeof useDesk>;
   const mutations: [string, (desk: Desk) => void][] = [
-    ['add', (desk) => desk.addSnippet(noteSnippet('snip-2', 'Other'))],
-    ['remove', (desk) => desk.removeSnippet('snip-1')],
-    ['rename', (desk) => desk.renameSnippet('snip-1', 'Renamed')],
-    ['note', (desk) => desk.setSnippetNote('snip-1', 'a fresh note')],
-    ['duplicate', (desk) => desk.duplicateSnippetById('snip-1')],
-    ['convert to pitch class', (desk) => void desk.convertToPitchClassById('snip-1', { edo: 12 })],
+    ['add', (desk) => desk.addDataBlock(noteDataBlock('data-block-2', 'Other'))],
+    ['remove', (desk) => desk.removeDataBlock('data-block-1')],
+    ['rename', (desk) => desk.renameDataBlock('data-block-1', 'Renamed')],
+    ['note', (desk) => desk.setDataBlockNote('data-block-1', 'a fresh note')],
+    ['duplicate', (desk) => desk.duplicateDataBlockById('data-block-1')],
+    [
+      'convert to pitch class',
+      (desk) => void desk.convertToPitchClassById('data-block-1', { edo: 12 }),
+    ],
   ];
 
   it.each(mutations)(
-    'undoes and redoes %s, restoring the exact snippets',
+    'undoes and redoes %s, restoring the exact data-blocks',
     async (_name, mutate) => {
       const { result } = await setup();
-      act(() => result.current.addSnippet(noteSnippet()));
-      const before = snapshot(result.current.snippets);
+      act(() => result.current.addDataBlock(noteDataBlock()));
+      const before = snapshot(result.current.dataBlocks);
       act(() => mutate(result.current));
-      const after = snapshot(result.current.snippets);
+      const after = snapshot(result.current.dataBlocks);
       expect(after).not.toEqual(before);
       expect(canUndo()).toBe(true);
 
       act(() => undo());
-      expect(result.current.snippets).toEqual(before);
+      expect(result.current.dataBlocks).toEqual(before);
       expect(await storedDesk(result.current)).toEqual(before);
       expect(canRedo()).toBe(true);
 
       act(() => redo());
-      expect(result.current.snippets).toEqual(after);
+      expect(result.current.dataBlocks).toEqual(after);
       expect(await storedDesk(result.current)).toEqual(after);
       expect(canRedo()).toBe(false);
     }
@@ -114,17 +117,17 @@ describe('desk history', () => {
 
   it('steps back through several changes in order', async () => {
     const { result } = await setup();
-    const states: Snippet[][] = [[]];
+    const states: DataBlock[][] = [[]];
     const run = (mutate: (desk: Desk) => void) => {
       act(() => mutate(result.current));
-      states.push(snapshot(result.current.snippets));
+      states.push(snapshot(result.current.dataBlocks));
     };
-    run((desk) => desk.addSnippet(noteSnippet()));
-    run((desk) => desk.renameSnippet('snip-1', 'B'));
-    run((desk) => desk.duplicateSnippetById('snip-1'));
+    run((desk) => desk.addDataBlock(noteDataBlock()));
+    run((desk) => desk.renameDataBlock('data-block-1', 'B'));
+    run((desk) => desk.duplicateDataBlockById('data-block-1'));
     for (let index = states.length - 2; index >= 0; index -= 1) {
       act(() => undo());
-      expect(result.current.snippets).toEqual(states[index]);
+      expect(result.current.dataBlocks).toEqual(states[index]);
     }
     expect(canUndo()).toBe(false);
   });
@@ -132,88 +135,88 @@ describe('desk history', () => {
   it('records changes made together in one event as separate entries', async () => {
     const { result } = await setup();
     act(() => {
-      result.current.addSnippet(noteSnippet('a', 'A'));
-      result.current.addSnippet(noteSnippet('b', 'B'));
+      result.current.addDataBlock(noteDataBlock('a', 'A'));
+      result.current.addDataBlock(noteDataBlock('b', 'B'));
     });
     act(() => undo());
-    expect(result.current.snippets.map((snippet) => snippet.id)).toEqual(['a']);
+    expect(result.current.dataBlocks.map((dataBlock) => dataBlock.id)).toEqual(['a']);
   });
 
   it('clears redo when a new change follows an undo', async () => {
     const { result } = await setup();
-    act(() => result.current.addSnippet(noteSnippet()));
-    act(() => result.current.renameSnippet('snip-1', 'B'));
+    act(() => result.current.addDataBlock(noteDataBlock()));
+    act(() => result.current.renameDataBlock('data-block-1', 'B'));
     act(() => undo());
     expect(canRedo()).toBe(true);
-    act(() => result.current.renameSnippet('snip-1', 'C'));
+    act(() => result.current.renameDataBlock('data-block-1', 'C'));
     expect(canRedo()).toBe(false);
     act(() => redo());
-    expect(result.current.snippets[0].name).toBe('C');
+    expect(result.current.dataBlocks[0].name).toBe('C');
   });
 
   it('records nothing for changes that do nothing', async () => {
     const { result } = await setup();
-    act(() => result.current.addSnippet(noteSnippet()));
+    act(() => result.current.addDataBlock(noteDataBlock()));
     act(() => undo());
     act(() => redo());
     act(() => {
-      result.current.removeSnippet('missing');
-      result.current.renameSnippet('snip-1', 'Gesture');
-      result.current.renameSnippet('missing', 'x');
-      result.current.duplicateSnippetById('missing');
+      result.current.removeDataBlock('missing');
+      result.current.renameDataBlock('data-block-1', 'Gesture');
+      result.current.renameDataBlock('missing', 'x');
+      result.current.duplicateDataBlockById('missing');
       result.current.convertToPitchClassById('missing', { edo: 12 });
     });
-    expect(result.current.snippets).toHaveLength(1);
+    expect(result.current.dataBlocks).toHaveLength(1);
     expect(canRedo()).toBe(false);
     act(() => undo());
-    expect(result.current.snippets).toEqual([]);
+    expect(result.current.dataBlocks).toEqual([]);
   });
 
   it('is bounded to the history depth', async () => {
     const { result } = await setup();
     for (let index = 0; index < HISTORY_DEPTH + 5; index += 1) {
-      act(() => result.current.addSnippet(noteSnippet(`s-${index}`)));
+      act(() => result.current.addDataBlock(noteDataBlock(`s-${index}`)));
     }
     for (let index = 0; index < HISTORY_DEPTH + 5; index += 1) {
       act(() => undo());
     }
     expect(canUndo()).toBe(false);
-    expect(result.current.snippets).toHaveLength(5);
+    expect(result.current.dataBlocks).toHaveLength(5);
   });
 
-  it('keeps the stored desk equal to the snippets, valid, and free of history', async () => {
+  it('keeps the stored desk equal to the data-blocks, valid, and free of history', async () => {
     const { result } = await setup();
-    act(() => result.current.addSnippet(noteSnippet()));
-    act(() => result.current.renameSnippet('snip-1', 'B'));
+    act(() => result.current.addDataBlock(noteDataBlock()));
+    act(() => result.current.renameDataBlock('data-block-1', 'B'));
     act(() => undo());
     const saved = await storedDesk(result.current);
-    expect(saved).toEqual(result.current.snippets);
-    expect(acceptsSnippets(saved)).toBe(true);
+    expect(saved).toEqual(result.current.dataBlocks);
+    expect(acceptsDataBlocks(saved)).toBe(true);
     // The desk lives in IndexedDB now: nothing is written to the old localStorage key.
     expect(localStorage.getItem(compositionStateKeys.desk)).toBeNull();
   });
 
   it('does not carry history across a reload', async () => {
     const first = await setup();
-    act(() => first.result.current.addSnippet(noteSnippet()));
-    const saved = snapshot(first.result.current.snippets);
+    act(() => first.result.current.addDataBlock(noteDataBlock()));
+    const saved = snapshot(first.result.current.dataBlocks);
     first.unmount();
     resetHistory(); // a reload starts a fresh session
     const reloaded = await renderDesk();
-    expect(reloaded.result.current.snippets).toEqual(saved);
+    expect(reloaded.result.current.dataBlocks).toEqual(saved);
     expect(canUndo()).toBe(false);
   });
 });
 
 describe('Undo and Redo buttons', () => {
   function Seed() {
-    const { addSnippet, snippets, loading } = useDesk();
+    const { addDataBlock, dataBlocks, loading } = useDesk();
     return (
       <>
-        <button type="button" disabled={loading} onClick={() => addSnippet(noteSnippet())}>
+        <button type="button" disabled={loading} onClick={() => addDataBlock(noteDataBlock())}>
           seed
         </button>
-        <div data-testid="count">{snippets.length}</div>
+        <div data-testid="count">{dataBlocks.length}</div>
       </>
     );
   }

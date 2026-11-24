@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { act, fireEvent, render, screen, userEvent, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NoteClipEditor } from '../components/NoteClipEditor';
+import { NotesEditor } from '../components/NotesEditor';
 import { CompositionSettingsProvider, defaultProjectPitchSet } from '../compositionSettings';
 import { DeskProvider, useDesk } from '../desk';
 import { resetHistory } from '../history';
@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 
 /**
- * The second consumer (M4a): a host that is NOT a clip. A chord progression list that claims the
+ * The second consumer (M4a): a host that is NOT a data-block. A chord progression list that claims the
  * session with its own insert (it appends the chord's pitch classes), chooses its own anchor, and
  * mounts the picker body inside a `data-chord-scope` root.
  */
@@ -69,7 +69,7 @@ function ProgressionList({ lastRequest }: { lastRequest?: { current: unknown } }
   );
 }
 
-describe('a second chord host that is not a clip', () => {
+describe('a second chord host that is not a data-block', () => {
   it('claims the session, shows the picker body and receives the inserted chord', async () => {
     const user = userEvent.setup();
     const lastRequest = { current: null as unknown };
@@ -84,7 +84,7 @@ describe('a second chord host that is not a clip', () => {
     await user.click(screen.getByRole('button', { name: 'Choose position' }));
     await user.dblClick(screen.getByRole('button', { name: 'C' }));
     expect(screen.getByRole('list', { name: 'Progression' })).toHaveTextContent('0,4,7');
-    // The default placement came with the request (C4 root position), no clip anywhere.
+    // The default placement came with the request (C4 root position), no data-block anywhere.
     expect(lastRequest.current).toMatchObject({ notes: [{ pitchMidicents: 6000 }, {}, {}] });
   });
 
@@ -113,7 +113,7 @@ describe('a second chord host that is not a clip', () => {
       </CompositionSettingsProvider>
     );
     expect(document.querySelector('[data-ready-line]')).toHaveTextContent(
-      'No target: open a clip to insert'
+      'No target: open a data-block to insert'
     );
   });
 
@@ -127,7 +127,7 @@ describe('a second chord host that is not a clip', () => {
       </CompositionSettingsProvider>
     );
     expect(document.querySelector('[data-ready-line]')).toHaveTextContent(
-      'No target: open a clip to insert'
+      'No target: open a data-block to insert'
     );
     // No Close button (nothing to clear) and no claim, but the picker is there and sounds.
     expect(screen.queryByRole('button', { name: 'Close chord picker' })).toBeNull();
@@ -136,7 +136,7 @@ describe('a second chord host that is not a clip', () => {
     // Insert (double-click) does nothing without a target.
     await user.dblClick(screen.getByRole('button', { name: 'C' }));
     expect(document.querySelector('[data-ready-line]')).toHaveTextContent(
-      'No target: open a clip to insert'
+      'No target: open a data-block to insert'
     );
   });
 
@@ -170,11 +170,11 @@ describe('a second chord host that is not a clip', () => {
 let desk: ReturnType<typeof useDesk>;
 function EditorAndList({ showEditor }: { showEditor: boolean }) {
   desk = useDesk();
-  const clip = desk.snippets[0];
+  const dataBlock = desk.dataBlocks[0];
   return (
     <>
       <ProgressionList />
-      {showEditor && clip && <NoteClipEditor snippet={clip} />}
+      {showEditor && dataBlock && <NotesEditor dataBlock={dataBlock} />}
     </>
   );
 }
@@ -192,7 +192,7 @@ function Toggle() {
 
 const rowY = (midi: number) => (127 - midi) * 22 + 11;
 const pitches = () =>
-  desk.snippets[0].packet.items
+  desk.dataBlocks[0].packet.items
     .flatMap((item) => (item.value as NoteEventValue).pitches)
     .sort((a, b) => a - b);
 
@@ -206,15 +206,15 @@ function mountWithDesk(content: ReactNode) {
   );
 }
 
-describe('the clip editor under WorkbenchSessions', () => {
+describe('the data-block editor under WorkbenchSessions', () => {
   it('works as before: the Chords tool, an anchor click, a chord insert and the W-20 keys', async () => {
     const user = userEvent.setup();
     function Harness() {
       desk = useDesk();
-      const clip = desk.snippets[0];
+      const dataBlock = desk.dataBlocks[0];
       return (
         <>
-          {clip && <NoteClipEditor snippet={clip} />}
+          {dataBlock && <NotesEditor dataBlock={dataBlock} />}
           <ChordPanelStandIn />
         </>
       );
@@ -222,9 +222,9 @@ describe('the clip editor under WorkbenchSessions', () => {
     mountWithDesk(<Harness />);
     await waitFor(() => expect(desk.loading).toBe(false));
     act(() => {
-      desk.addBlankClip('notes', rational(4));
+      desk.addBlankDataBlock('notes', rational(4));
     });
-    const roll = await screen.findByRole('group', { name: /Note clip piano roll/ });
+    const roll = await screen.findByRole('group', { name: /Notes piano roll/ });
     roll.focus();
     fireEvent.keyDown(roll, { key: '7' });
     fireEvent.pointerDown(roll, { clientX: 70, clientY: rowY(60), pointerId: 1 });
@@ -245,12 +245,12 @@ describe('the clip editor under WorkbenchSessions', () => {
     expect(document.querySelectorAll('[data-ghost-overlay="anchor"]')).toHaveLength(0);
   });
 
-  it('takes the session from a list host while its clip is open and returns it on unmount', async () => {
+  it('takes the session from a list host while its data-block is open and returns it on unmount', async () => {
     const user = userEvent.setup();
     mountWithDesk(<Toggle />);
     await waitFor(() => expect(desk.loading).toBe(false));
     act(() => {
-      desk.addBlankClip('notes', rational(4));
+      desk.addBlankDataBlock('notes', rational(4));
     });
     // The list holds the claim: its position, its insert.
     await user.click(screen.getByRole('button', { name: 'Choose position' }));
@@ -258,7 +258,7 @@ describe('the clip editor under WorkbenchSessions', () => {
     expect(screen.getByRole('list', { name: 'Progression' })).toHaveTextContent('0,4,7');
     // The editor opens: the last claim wins (the session resets, so the list anchor is gone).
     await user.click(screen.getByRole('button', { name: 'Toggle editor' }));
-    await screen.findByRole('group', { name: /Note clip piano roll/ });
+    await screen.findByRole('group', { name: /Notes piano roll/ });
     // (the editor's tool is not Chords: selection mode, nothing selected, so the panel only auditions)
     expect(document.querySelector('[data-ready-line]')).toHaveTextContent(
       'Select a note, or use the Chords tool'
@@ -269,7 +269,7 @@ describe('the clip editor under WorkbenchSessions', () => {
     // The editor closes: the list is the active claim again and works.
     await user.click(screen.getByRole('button', { name: 'Toggle editor' }));
     await waitFor(() =>
-      expect(screen.queryByRole('group', { name: /Note clip piano roll/ })).toBeNull()
+      expect(screen.queryByRole('group', { name: /Notes piano roll/ })).toBeNull()
     );
     await user.click(screen.getByRole('button', { name: 'Choose position' }));
     await user.dblClick(screen.getByRole('button', { name: 'C' }));

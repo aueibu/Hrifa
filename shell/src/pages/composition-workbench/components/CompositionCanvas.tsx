@@ -419,7 +419,7 @@ function CanvasBody({
                     instance.moduleId === 'rhythm-list' ||
                     instance.moduleId === 'rhythm-edit'
                   ? `Durations | ${primaryOutput.packet.items.length}`
-                  : instance.moduleId === 'snippet'
+                  : instance.moduleId === 'data-block-source'
                     ? `${primaryOutput.packet.kind} | ${primaryOutput.packet.items.length}`
                     : `Notes | ${primaryOutput.packet.items.length}`;
       const selectRoute = (descriptor: RouteDescriptor) =>

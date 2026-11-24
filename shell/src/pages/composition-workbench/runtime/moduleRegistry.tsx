@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { ArithmeticModule } from '../components/ArithmeticModule';
+import { DataBlockSourceModule } from '../components/DataBlockSourceModule';
 import { FractioningModule } from '../components/FractioningModule';
 import { HouseholderModule } from '../components/HouseholderModule';
 import { InterferenceModule } from '../components/InterferenceModule';
@@ -11,7 +12,6 @@ import { RhythmEditModule } from '../components/RhythmEditModule';
 import { RhythmListModule } from '../components/RhythmListModule';
 import { ScaleConstructionModule } from '../components/ScaleConstructionModule';
 import { ScaleEvolutionModule } from '../components/ScaleEvolutionModule';
-import { SnippetSourceModule } from '../components/SnippetSourceModule';
 import { SwirlingMistsModule } from '../components/SwirlingMistsModule';
 import type { CompositionOutputRef, PublishedCompositionOutput } from '../compositionRouting';
 import type { CompositionModuleId, ModuleRouteState } from '../compositionWorkspace';
@@ -23,8 +23,8 @@ import { modulePorts, type ModulePort } from './modulePorts';
 export interface ModuleRenderProps {
   instanceId: string;
   instanceLabel: string;
-  /** The desk clip a snippet source module reads. */
-  snippetId?: string;
+  /** The desk data-block a data-block source module reads. */
+  dataBlockId?: string;
   /** Whether this instance is the one shown (Melodicization still takes it as a prop). */
   active: boolean;
   /** Every published output; empty unless the module's entry has `takesOutputs`. */
@@ -56,16 +56,16 @@ export interface ModuleRegistryEntry {
  * Adding a module is one entry here (plus its id in `compositionWorkspace.ts`).
  */
 export const moduleRegistry: Record<CompositionModuleId, ModuleRegistryEntry> = {
-  snippet: {
-    // A snippet module keeps nothing of its own: the desk owns the material.
+  'data-block-source': {
+    // A data-block module keeps nothing of its own: the desk owns the material.
     stateKeys: [],
     takesOutputs: false,
-    evaluate: moduleEvaluators['snippet'].evaluate,
-    render: ({ instanceId, instanceLabel, snippetId }) => (
-      <SnippetSourceModule
+    evaluate: moduleEvaluators['data-block-source'].evaluate,
+    render: ({ instanceId, instanceLabel, dataBlockId }) => (
+      <DataBlockSourceModule
         instanceId={instanceId}
         instanceLabel={instanceLabel}
-        snippetId={snippetId}
+        dataBlockId={dataBlockId}
       />
     ),
   },

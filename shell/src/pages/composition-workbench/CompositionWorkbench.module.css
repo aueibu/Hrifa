@@ -61,7 +61,7 @@
 
 /*
  * A workbench panel's body inside its docker (workbenchPanels.tsx): fills the docker. The canvas and desk clip; the module
- * and clip editor panels scroll on their own, as the old bottom pane did. `relative` is the canvas takeover slot's frame.
+ * and Notes editor panels scroll on their own, as the old bottom pane did. `relative` is the canvas takeover slot's frame.
  */
 .dockPanel,
 .dockPanelScroll {

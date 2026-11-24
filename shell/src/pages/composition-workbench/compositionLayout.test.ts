@@ -100,15 +100,17 @@ describe('migrateCompositionInstances', () => {
     ).toEqual([{ id: 'a', moduleId: 'mixer', x: 12, y: 34 }]);
   });
 
-  it('keeps the snippet a snippet module points at, and rejects a non-string one', () => {
-    const saved = [{ id: 's', moduleId: 'snippet', x: 1, y: 2, snippetId: 'snippet-abc' }];
+  it('keeps the data-block a data-block module points at, and rejects a non-string one', () => {
+    const saved = [
+      { id: 's', moduleId: 'data-block-source', x: 1, y: 2, dataBlockId: 'data-block-abc' },
+    ];
     expect(migrateCompositionInstances(saved)).toEqual(saved);
     expect(acceptsCompositionInstances(migrateCompositionInstances(saved))).toBe(true);
-    expect(acceptsCompositionInstances([{ ...saved[0], snippetId: 7 }])).toBe(false);
+    expect(acceptsCompositionInstances([{ ...saved[0], dataBlockId: 7 }])).toBe(false);
   });
 
-  it('keeps a snippet module out of the Add module menu', () => {
-    expect(isAddableModule('snippet')).toBe(false);
+  it('keeps a data-block module out of the Add module menu', () => {
+    expect(isAddableModule('data-block-source')).toBe(false);
     expect(isAddableModule('mixer')).toBe(true);
   });
 
