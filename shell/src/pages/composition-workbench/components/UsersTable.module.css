@@ -1,0 +1,42 @@
+/* The "Used by" table: a small table that scrolls sideways inside its container. */
+.wrap {
+  overflow-x: auto;
+  padding-bottom: 0.3rem;
+}
+
+.table {
+  border-collapse: collapse;
+  font-size: 0.7rem;
+  width: 100%;
+}
+
+.table th {
+  color: var(--text-muted);
+  font-weight: 500;
+  text-align: left;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.1rem 0.4rem 0.1rem 0;
+  white-space: nowrap;
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--panel-header);
+}
+
+.row[data-selected='true'] {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.name {
+  color: inherit;
+  font: inherit;
+}

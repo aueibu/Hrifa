@@ -227,3 +227,21 @@
 .cardMuted .cardName {
   color: var(--text-muted);
 }
+
+/* The Users row (L5): "Used by N" folds a small table of the users; the table scrolls sideways inside the panel. */
+.usersToggle {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-xs);
+  text-align: left;
+}
+
+.usersToggle:hover {
+  color: var(--text);
+}
+
+.usersCaret {
+  display: inline-block;
+  text-align: center;
+  width: 0.9rem;
+}
+

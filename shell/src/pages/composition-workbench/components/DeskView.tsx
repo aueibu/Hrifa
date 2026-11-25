@@ -11,13 +11,16 @@ import { dataBlockUsers, deleteImpact, unusedDeskBlocks } from '../dataBlocks/da
 import { makeSourceRefusal, type AuditionSettings } from '../dataBlocks/registry';
 import { useDesk } from '../desk';
 import { transportRhythmContext } from '../rhythmRealization';
+import { allUsersTable } from '../scene/sharedUsersTable';
 import { layerSound } from '../sounds';
 import { transportTimeline } from '../transport';
 import { useNodePreview } from '../useNodePreview';
 import { AuditionSettingsPopover, auditionControlsOf } from './AuditionSettingsPopover';
 import { DataBlockMenu } from './DataBlockMenu';
 import { DataBlockPreview } from './DataBlockPreview';
+import { MakeSingleUserButton } from './MakeSingleUserButton';
 import { NewDataBlockPopover } from './NewDataBlockPopover';
+import { UsersTable } from './UsersTable';
 import classes from './DeskView.module.css';
 
 function describe(dataBlock: PacketBlock) {
@@ -389,32 +392,24 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                       </Button>
                     </Popover.Target>
                     <Popover.Dropdown>
-                      {users.map((user) => (
-                        <Group
-                          key={`${user.ownerKind}:${user.ownerId}:${user.slot ?? ''}`}
-                          gap="xs"
-                          wrap="nowrap"
-                          justify="space-between"
-                        >
-                          <Text size="xs">{user.label}</Text>
-                          <Button
-                            size="compact-xs"
-                            variant="default"
-                            disabled={users.length < 2}
-                            data-info={
-                              users.length < 2
-                                ? 'Only one place uses this data-block, so it is already single user.'
-                                : 'Give this place its own copy, named as a variation. The other places keep the original.'
-                            }
-                            onClick={() => {
-                              report(ops.makeSingleUser(dataBlock.id, user));
-                              setUsersOpenId(null);
-                            }}
-                          >
-                            Make single user
-                          </Button>
-                        </Group>
-                      ))}
+                      <UsersTable
+                        rows={allUsersTable(project, dataBlock.id)}
+                        meter={settings.transport.meter}
+                        action={(row) =>
+                          row.entry && (
+                            <MakeSingleUserButton
+                              users={users.length}
+                              who="this place"
+                              onClick={() => {
+                                if (row.entry) {
+                                  report(ops.makeSingleUser(dataBlock.id, row.entry));
+                                }
+                                setUsersOpenId(null);
+                              }}
+                            />
+                          )
+                        }
+                      />
                     </Popover.Dropdown>
                   </Popover>
                 )}

@@ -55,6 +55,7 @@
 
 /* A row's height is set inline (the viewer's, per row); this is the default (O2d). */
 .row {
+  border-bottom: 1px solid var(--grid);
   height: 2.5rem;
   position: relative;
 }
@@ -150,21 +151,95 @@
 }
 
 .block {
-  align-items: center;
   background: var(--panel-body);
   border: 1px solid transparent;
   border-radius: var(--radius-hairline);
-  bottom: 0.15rem;
   color: var(--text);
   cursor: grab;
   display: flex;
+  flex-direction: column;
   font-size: 0.78rem;
   overflow: hidden;
-  padding: 0 0.5rem 0 0.25rem;
   position: absolute;
-  top: 0.15rem;
   touch-action: none;
   user-select: none;
+}
+
+/* A block being moved follows the pointer freely, above the other lanes (L1a). */
+.blockLifted {
+  cursor: grabbing;
+  z-index: 2;
+}
+
+/* The lane a dragged block is over, and where it will land: subtle, theme roles only (L1a). */
+/* The sub-lane a dragged block would drop onto (L3): only that sub-lane, not the whole lane. */
+.subTarget {
+  box-shadow: inset 0 0 0 1px var(--text-subtle);
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+/* The new-lane strip: an overlay at the bottom of every lane, only while a block is dragged (no layout shift). */
+.newLane {
+  border-top: 1px dashed var(--text-subtle);
+  bottom: 0;
+  left: 0;
+  opacity: 0.5;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+.newLaneTarget {
+  box-shadow: inset 0 0 0 1px var(--text-subtle);
+  opacity: 1;
+}
+
+.landing {
+  border: 1px dashed var(--text-subtle);
+  border-radius: var(--radius-hairline);
+  pointer-events: none;
+  position: absolute;
+}
+
+/*
+ * The edge two touching blocks share (L1a): the only handle there, the split cursor, the same subtle
+ * hover highlight and width as the outer edge strips.
+ */
+.sharedEdge {
+  background: var(--text-subtle);
+  cursor: col-resize;
+  opacity: 0;
+  position: absolute;
+  touch-action: none;
+  transition: opacity 80ms linear;
+  width: 0.65rem;
+  z-index: 1;
+}
+
+.sharedEdge:hover {
+  opacity: 0.35;
+}
+
+/* The anchor a right-click menu opens at. */
+.menuAnchor {
+  height: 0;
+  pointer-events: none;
+  position: fixed;
+  width: 0;
+}
+
+/* The Arranger's status line (refusals), beside Play: the same look as the scene name in the Outliner. */
+.status {
+  color: var(--text-muted);
+  flex: 1 1 0;
+  font-size: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .block:hover {
@@ -176,48 +251,94 @@
   outline: 1px solid var(--text);
 }
 
-/* Blender (NLA, tracks): a muted strip receives a dotted outline. Dotted outline plus muted text, not color alone. */
+/* A muted block: the tile itself is dimmed (same border, less of everything), like its ghosted notes. */
 .blockMuted {
-  border: 1px dotted var(--text-muted);
   color: var(--text-muted);
+  opacity: 0.55;
 }
 
 .blockMuted.blockSelected {
-  border-style: solid;
+  opacity: 0.8;
 }
 
-/* The part beyond the parent's end, which is not played: hatched, on the lane's own fill. */
-.cut {
-  background:
-    repeating-linear-gradient(135deg, transparent 0 3px, var(--text-subtle) 3px 4px),
-    var(--panel-slot);
-  border-left: 1px dashed var(--text-subtle);
-  bottom: 0;
-  position: absolute;
-  right: 0;
-  top: 0;
-}
-
-.cut[data-cut='false'] {
-  display: none;
-}
-
-/* The note preview (O2c): behind the name, never takes a pointer event, never changes the block's size. */
+/* The note preview (O2c): under the title bar (the block minus the bar), never takes a pointer event, never changes the block's size. */
 .preview {
   fill: var(--text-subtle);
+  height: calc(100% - 1rem);
   left: 0;
   pointer-events: none;
   position: absolute;
-  top: 0;
+  top: 1rem;
 }
 
-.blockLabel {
-  min-width: 0;
+/*
+ * The title bar (L5): a fixed 1rem row, name then data name on the left, icons on the right. The text
+ * part is a wrapping row exactly one line high with overflow hidden: when the data name does not fit
+ * beside the name it wraps to a second line and is cut off (removed from view, not truncated), with
+ * no measuring, so nothing shifts while a block is dragged or resized. The name truncates only when
+ * it alone is too wide. The icons are outside that row and never hide.
+ */
+.titleBar {
+  align-items: center;
+  background: var(--panel-header);
+  display: flex;
+  flex: 0 0 1rem;
+  gap: 0.25rem;
+  height: 1rem;
+  padding: 0 0.25rem;
   position: relative;
-  z-index: 0;
+  z-index: 1;
+}
+
+.titleText {
+  column-gap: 0.4rem;
+  display: flex;
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  height: 1rem;
+  line-height: 1rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.blockName {
+  flex: 0 1 auto;
+  font-size: 0.7rem;
+  font-weight: 600;
+  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/*
+ * The data name takes the room left beside the name and truncates with an ellipsis; its flex basis is the
+ * smallest width worth showing (2.5rem), so when even that does not fit it wraps out of the one-line row
+ * and disappears. Order of loss: ellipsis first, then gone, then the name truncates.
+ */
+.dataName {
+  color: var(--text-muted);
+  flex: 1 1 2.5rem;
+  font-size: 0.7rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The linked marker (L5): a small light triangle on the left edge of the OTHER blocks sharing the selected data, tip pointing in, centered vertically; clip-path gives a real point. */
+.sharedMarker {
+  background: var(--text);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  height: 0.9rem;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.5rem;
+  z-index: 2;
 }
 
 /*
@@ -262,5 +383,73 @@
   top: 0;
   visibility: hidden;
   width: 2px;
+  z-index: 2;
+}
+
+/* A muted block still shows its notes, ghosted: the same fill, less of it (L1b). */
+.previewMuted {
+  opacity: 0.75; /* on top of the dimmed tile (.blockMuted), so the notes read about as before */
+}
+
+/* The block of a selected parent or child, the one it is linked to, and the other sharers of the selected data: a subtle tint (L1b, L5). */
+.blockRelated {
+  background: var(--panel-header);
+}
+
+/* On a parented block: a small marker before the name, hover says whom it follows. Static, so nothing shifts. */
+.follows {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  margin-right: -0.2rem;
+}
+
+/* On a block whose data another block shares: the link icon and the user count, right end of the title bar. Static. */
+.shares {
+  align-items: center;
+  color: var(--text-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.65rem;
+  gap: 0.15rem;
+}
+
+/*
+ * On a PARENT block: a tiny tick where each child starts. The hit area is wider than the line; a press on
+ * it still drags the block (the pointer events bubble to the block).
+ */
+.childTick {
+  bottom: 0;
+  height: 0.5rem;
+  margin-left: -0.2rem;
+  position: absolute;
+  width: 0.4rem;
+  z-index: 1;
+}
+
+.childTick::after {
+  background: var(--text-muted);
+  bottom: 0;
+  content: '';
+  left: 50%;
+  position: absolute;
+  top: 0;
+  width: 1px;
+}
+
+/*
+ * The dashed relationship lines of the selection (Blender: Overlays, Relationship Lines). Over the lanes,
+ * under the sticky header and name column, never takes a pointer event, adds no layout.
+ */
+.relations {
+  fill: none;
+  height: calc(100% - 1.5rem);
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  stroke: var(--text-muted);
+  stroke-dasharray: 4 3;
+  stroke-width: 1;
+  top: 1.5rem;
   z-index: 2;
 }

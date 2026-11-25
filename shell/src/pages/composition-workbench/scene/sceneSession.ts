@@ -12,13 +12,20 @@ export interface SceneSession {
   selectedId: string | null;
   /** The Arranger's row heights in rem, by row id (O2d): the viewer's, never project data or history. */
   rowHeights: Record<string, number>;
+  /** Properties "Used by" table open (L5): the viewer's, default folded. */
+  usersOpen: boolean;
 }
 
 export const ROW_HEIGHT_MIN_REM = 1.5;
 export const ROW_HEIGHT_MAX_REM = 8;
 export const ROW_HEIGHT_DEFAULT_REM = 2.5;
 
-const EMPTY: SceneSession = { activeSceneId: null, selectedId: null, rowHeights: {} };
+const EMPTY: SceneSession = {
+  activeSceneId: null,
+  selectedId: null,
+  rowHeights: {},
+  usersOpen: false,
+};
 
 /** A row's height in rem: the remembered one (kept within the limits) or the default. */
 export function rowHeightRem(session: SceneSession, rowId: string): number {
@@ -64,6 +71,7 @@ export function readSceneSession(): SceneSession {
       activeSceneId: idOrNull(parsed.activeSceneId),
       selectedId: idOrNull(parsed.selectedId),
       rowHeights: heightsOrEmpty(parsed.rowHeights),
+      usersOpen: parsed.usersOpen === true,
     };
   } catch {
     // A damaged value reads as empty.

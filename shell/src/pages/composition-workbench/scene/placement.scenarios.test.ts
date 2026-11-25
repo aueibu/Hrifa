@@ -133,8 +133,9 @@ describe('row 2: Duplicate Object and Duplicate Linked', () => {
     const under = world(clave('par', 0, 40), clave('c', 4, 8, { parentRef: { id: 'par' } }));
     const result = ok(duplicateObject(under, env(), 'c'));
     expect(data(result.blocks, result.created[0]).parentRef).toEqual({ id: 'par' });
-    // The parent is a sibling in the same lane (it spans 0 to 40), so the first free space is 40.
-    expect(data(result.blocks, result.created[0]).timeSpan.start).toEqual(rational(40));
+    // L3: only the same sub-lane counts. The parent (0 to 40) is on sub-lane 0 and the child on sub-lane 1,
+    // so the first free space on the child's sub-lane is right after it, at 12.
+    expect(data(result.blocks, result.created[0]).timeSpan.start).toEqual(rational(12));
   });
 
   it('an object in no collection refuses with "No room here."', () => {
@@ -324,5 +325,31 @@ describe('deleting a parent re-roots its children at their world start', () => {
     const next = deleteSelected({ dataBlocks: blocks, instances: [] }, 'p').dataBlocks;
     expect(data(next, 'k').parentRef).toBeNull();
     expect(span(next, 'k')).toEqual([20, 24]);
+  });
+});
+
+describe('a child inside its parent in one collection (parent chain is not an overlap)', () => {
+  const family = () => [
+    clave('p', 20, 8),
+    clave('k', 2, 2, { parentRef: { id: 'p' } }), // world 22 to 24
+  ];
+
+  it('dragging the child to world 24 to 26 lands exactly there', () => {
+    const blocks = world(...family());
+    const next = ok(placeObjectNearest(blocks, 'k', rational(4)));
+    expect(span(next.blocks, 'k')).toEqual([24, 26]);
+  });
+
+  it('an unrelated sibling at 24 to 26 pushes it to the nearest free slot', () => {
+    const blocks = world(...family(), clave('s', 24, 2));
+    const next = ok(placeObjectNearest(blocks, 'k', rational(4)));
+    expect(span(next.blocks, 'k')).toEqual([22, 24]);
+  });
+
+  it('room, resize and the span edit ignore the parent', () => {
+    const blocks = world(...family());
+    expect(objectRoom(blocks, 'k')).toEqual({ before: null, after: null });
+    expect(refused(setTimeSpan(blocks, 'k', { duration: rational(3) }))).toBeNull();
+    expect(refused(setTimeSpan(blocks, 'p', { duration: rational(10) }))).toBeNull();
   });
 });

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import {
   Button,
+  Collapse,
   Menu,
   Popover,
   SegmentedControl,
@@ -8,6 +9,7 @@ import {
   Switch,
   Text,
   TextInput,
+  UnstyledButton,
 } from '@mantine/core';
 import { useCompositionSettings } from '../compositionSettings';
 import { EnsureDataBlockOps, useDataBlockOps } from '../dataBlockOps';
@@ -59,9 +61,12 @@ import {
   type ModifierInstance,
   type ObjectMapping,
 } from '../scene/sceneTypes';
+import { sharedUsersTable } from '../scene/sharedUsersTable';
 import { useSceneEvaluation, useScenePlayback } from '../scene/useScenePlayback';
 import { layerSound } from '../sounds';
 import { DataBlockMenu } from './DataBlockMenu';
+import { MakeSingleUserButton } from './MakeSingleUserButton';
+import { UsersTable } from './UsersTable';
 import classes from './ScenePanels.module.css';
 
 /**
@@ -681,6 +686,9 @@ function PropertiesBody() {
   const users = primary ? dataBlockUsers(project, primary.id) : [];
   const mine = users.find((user) => user.ownerId === id && user.slot === 'data');
   const heardRefusal = primary ? auditionRefusal(primary) : null;
+  const { session, updateSession } = editor;
+  const userRows =
+    primary && editor.scene ? sharedUsersTable(project, primary.id, editor.scene.id) : [];
 
   const timeText = (value: Rational | undefined, length: boolean) => {
     if (!value) {
@@ -797,30 +805,53 @@ function PropertiesBody() {
             </Button>
           </Field>
           <Field label="Users">
-            <Text size="xs" c="dimmed" className={classes.grow}>
-              {primary ? `Used by ${users.length}` : 'No data'}
-            </Text>
-            <Button
-              size="compact-xs"
-              variant="default"
-              disabled={!mine || users.length < 2 || deskReason !== null}
-              data-info={
-                !primary
-                  ? 'This object has no data.'
-                  : users.length < 2
-                    ? 'Only this object uses this data-block, so it is already single user.'
-                    : 'Give this object its own copy, named as a variation. The other users keep the original.'
-              }
-              onClick={() => {
-                if (mine) {
-                  const result = ops.makeSingleUser(primary?.id ?? '', mine);
-                  setMessage(result.ok ? '' : result.error);
+            {primary ? (
+              <UnstyledButton
+                className={`${classes.grow} ${classes.usersToggle}`}
+                aria-expanded={session.usersOpen}
+                aria-controls="users-table"
+                data-info={
+                  session.usersOpen
+                    ? 'Hide the list of what uses this data-block.'
+                    : 'Show the list of what uses this data-block.'
                 }
-              }}
-            >
-              Make single user
-            </Button>
+                onClick={() => updateSession({ usersOpen: !session.usersOpen })}
+              >
+                <span className={classes.usersCaret} aria-hidden>
+                  {session.usersOpen ? '▾' : '▸'}
+                </span>
+                {`Used by ${users.length}`}
+              </UnstyledButton>
+            ) : (
+              <Text size="xs" c="dimmed" className={classes.grow}>
+                No data
+              </Text>
+            )}
+            {primary && (
+              <MakeSingleUserButton
+                users={users.length}
+                who="this object"
+                disabled={!mine || deskReason !== null}
+                onClick={() => {
+                  if (mine) {
+                    const result = ops.makeSingleUser(primary.id, mine);
+                    setMessage(result.ok ? '' : result.error);
+                  }
+                }}
+              />
+            )}
           </Field>
+          {primary && (
+            <Collapse expanded={session.usersOpen} transitionDuration={0}>
+              <UsersTable
+                id="users-table"
+                rows={userRows}
+                meter={meter}
+                currentId={id}
+                onSelect={(rowId) => updateSession({ selectedId: rowId })}
+              />
+            </Collapse>
+          )}
           <Field label="Mapping">
             <SegmentedControl
               size="xs"

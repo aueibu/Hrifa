@@ -7,7 +7,7 @@ import {
   type SlotRef,
   type StoredDataBlock,
 } from '../dataBlocks/registry';
-import { addRational, compareRational, rational, type Rational } from '../musicalTime';
+import { addRational, rational, type Rational } from '../musicalTime';
 
 /**
  * The scene, object and collection record types (workbench O1; W-66). Records only: the data holds
@@ -64,6 +64,12 @@ export interface ObjectData {
    * Stretch ignores it.
    */
   contentOffset: Rational;
+  /**
+   * The sub-lane the human put this object on inside its collection's Arranger lane (W-78): a
+   * non-negative whole number, compared only with its siblings' numbers. Absent = automatic (the first
+   * sub-lane that is free where it plays). It never changes playback, only where blocks may overlap.
+   */
+  lane?: number;
   /** Stored and validated, NOT applied yet (what it does to notes outside it is undecided). */
   registerSpan: { lowMc: number; highMc: number };
   primaryDataRef: Ref | null;
@@ -177,20 +183,18 @@ export function objectChain(
   return chain;
 }
 
-/** World start of a chain (sum of the relative starts), and the tightest end bound up the chain. */
+/**
+ * World start of a chain (sum of the relative starts). A parent is structure and the start reference
+ * only: its end never limits a child (W-79).
+ */
 export function chainPlacement(chain: readonly { data: ObjectData }[]): {
   start: Rational;
-  bound: Rational;
 } {
   let start = rational(0);
-  let bound: Rational | null = null;
   for (let index = chain.length - 1; index >= 0; index -= 1) {
-    const { timeSpan } = chain[index].data;
-    start = addRational(start, timeSpan.start);
-    const end = addRational(start, timeSpan.duration);
-    bound = bound === null || compareRational(end, bound) < 0 ? end : bound;
+    start = addRational(start, chain[index].data.timeSpan.start);
   }
-  return { start, bound: bound ?? rational(0) };
+  return { start };
 }
 
 /** The world start of an object (the parent chain's relative starts summed), or null when circular. */
@@ -247,6 +251,9 @@ function validateObjectData(data: unknown): string | null {
   }
   if (!isRationalValue(data.contentOffset)) {
     return 'An object content offset is an exact quarter-note amount.';
+  }
+  if (data.lane !== undefined && !(Number.isSafeInteger(data.lane) && (data.lane as number) >= 0)) {
+    return 'An object lane is a whole number from 0, or left automatic.';
   }
   if (!isNullableRef(data.parentRef) || !isNullableRef(data.primaryDataRef)) {
     return 'An object parent and data are references or blank.';

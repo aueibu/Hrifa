@@ -1,4 +1,4 @@
-import { act, render, screen, userEvent, waitFor } from '@test-utils';
+import { act, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MusicalPerformancePlan } from '../audio/types';
 import { CompositionSettingsProvider } from '../compositionSettings';
@@ -171,6 +171,43 @@ describe('Duplicate Object and Duplicate Linked in Properties (W-77)', () => {
     expect(screen.getByLabelText('Name')).toHaveValue('Empty.001.001');
     // The copy lands after the original in time: starts 0, then 4, then 8.
     expect(screen.getByLabelText('Start')).toHaveValue('3.1.0');
+  });
+});
+
+describe('the Used by table in Properties (L5)', () => {
+  it('is folded by default, opens sorted by start, marks this one and selects a clicked row', async () => {
+    await seedDesk([
+      claveBlock(),
+      objectBlock('a', { primaryDataRef: { id: 'clave' }, start: 16, duration: 6 }, 'Late'),
+      objectBlock('b', { primaryDataRef: { id: 'clave' }, start: 0, duration: 8 }, 'First'),
+      objectBlock('d', { primaryDataRef: { id: 'clave' }, start: 4 }, 'Middle'),
+      collectionBlock('verse', ['a', 'b'], {}, 'Verse'),
+      collectionBlock('chorus', ['d'], {}, 'Chorus'),
+      collectionBlock('root', ['verse', 'chorus']),
+      sceneBlock('s', 'root'),
+    ]);
+    writeSceneSession({ activeSceneId: 's', selectedId: 'a', usersOpen: false });
+    render(
+      <CompositionSettingsProvider>
+        <DeskProvider>
+          <PropertiesPanel />
+        </DeskProvider>
+      </CompositionSettingsProvider>
+    );
+    const toggle = await screen.findByRole('button', { name: /Used by 3/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(toggle);
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-expanded', 'true'));
+    const body = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    expect(body.map((row) => row.textContent)).toEqual([
+      'FirstVerse' + 'bar 1 beat 1' + '2 bars',
+      'MiddleChorus' + 'bar 2 beat 1' + '1 bar',
+      'Late (this one)Verse' + 'bar 5 beat 1' + '1 bar 2 beats',
+    ]);
+    await userEvent.click(within(body[0]).getByRole('button', { name: 'First' }));
+    await waitFor(() => expect(screen.getByLabelText('Name')).toHaveValue('First'));
+    // The fold state is the viewer's session state.
+    expect(JSON.parse(localStorage.getItem('hrifa.scene-session.v1') ?? '{}').usersOpen).toBe(true);
   });
 });
 

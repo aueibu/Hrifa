@@ -69,6 +69,15 @@ export interface DragBase {
 /** `resize` is the right edge, `resize-left` the left edge (O2d). */
 export type DragKind = 'move' | 'resize' | 'resize-left';
 
+/**
+ * How far an edge drag may go (`objectRoom`): the end of the neighbor before and the start of the
+ * neighbor after, in world quarter notes (null: no neighbor on that side). An edge drag clamps to it.
+ */
+export interface DragRoom {
+  before: Rational | null;
+  after: Rational | null;
+}
+
 /** The span (and, for a left-edge drag, the content offset) a drag gives. */
 export interface DragResult {
   start: Rational;
@@ -90,7 +99,8 @@ export function dragOutcome(
   base: DragBase,
   deltaPx: number,
   step: Rational | null,
-  minimum: Rational
+  minimum: Rational,
+  room: DragRoom | null = null
 ): DragResult {
   const delta = pxToRational(deltaPx);
   const land = (value: Rational) => (step === null ? value : snapToStep(value, step));
@@ -117,6 +127,10 @@ export function dragOutcome(
     if (world.numerator < 0) {
       world = rational(0);
     }
+    // Never into the neighbor before it (L1a): the edge stops at the neighbor's end.
+    if (room?.before && compareRational(world, room.before) < 0) {
+      world = room.before;
+    }
     const shift = subtractRational(world, base.worldStart);
     const offset = base.contentOffset ?? rational(0);
     return {
@@ -129,6 +143,13 @@ export function dragOutcome(
   let duration = subtractRational(end, base.worldStart);
   if (compareRational(duration, minimum) < 0) {
     duration = minimum;
+  }
+  // Never into the neighbor after it (L1a): the edge stops at the neighbor's start.
+  if (room?.after) {
+    const longest = subtractRational(room.after, base.worldStart);
+    if (compareRational(duration, longest) > 0) {
+      duration = longest;
+    }
   }
   return { start: base.relativeStart, duration };
 }
@@ -147,6 +168,8 @@ export interface DragState {
   shift: boolean;
   /** Latched once the pointer has travelled `DRAG_THRESHOLD_PX`; a press that never did is a click. */
   moved: boolean;
+  /** An edge drag's bounds among its neighbors (null: none). */
+  room: DragRoom | null;
 }
 
 /** What a drag commits: a new relative start and duration (the caller writes the field its kind changes). */
@@ -157,9 +180,10 @@ export function dragStart(
   kind: DragKind,
   base: DragBase,
   startX: number,
-  shift: boolean
+  shift: boolean,
+  room: DragRoom | null = null
 ): DragState {
-  return { id, kind, base, startX, deltaPx: 0, shift, moved: false };
+  return { id, kind, base, startX, deltaPx: 0, shift, moved: false, room };
 }
 
 export function dragMove(state: DragState, clientX: number, shift: boolean): DragState {
@@ -182,8 +206,36 @@ export function dragLive(state: DragState, meter: string): DragResult {
     state.base,
     state.deltaPx,
     dragStep(meter, state.shift),
-    beatStep(meter)
+    beatStep(meter),
+    state.room
   );
+}
+
+/**
+ * Where the edge two touching objects share lands (world quarter notes) for a drag of `deltaPx` from
+ * `edge`: on the grid (or free with Shift), and never within `minimum` of either far end (the left
+ * object keeps at least one beat, so does the right one). Mirrors `resizeSharedEdge`'s own clamp.
+ */
+export function sharedEdgeOutcome(
+  edge: Rational,
+  leftStart: Rational,
+  rightEnd: Rational,
+  deltaPx: number,
+  step: Rational | null,
+  minimum: Rational
+): Rational {
+  const wanted = addRational(edge, pxToRational(deltaPx));
+  const landed = step === null ? wanted : snapToStep(wanted, step);
+  const earliest = addRational(leftStart, minimum);
+  const latest = subtractRational(rightEnd, minimum);
+  if (compareRational(earliest, latest) > 0) {
+    return edge;
+  }
+  return compareRational(landed, earliest) < 0
+    ? earliest
+    : compareRational(landed, latest) > 0
+      ? latest
+      : landed;
 }
 
 /**
@@ -259,24 +311,4 @@ export function sceneLengthQuarters(planQuarters: number, meter: string, marginB
 export function playheadQuarters(nowMs: number, startedAtMs: number, tempo: number): number | null {
   const seconds = (nowMs - startedAtMs) / 1000;
   return seconds < 0 || !(tempo > 0) ? null : (seconds * tempo) / 60;
-}
-
-/**
- * How much of a block the evaluator plays: from the world start up to the effective end bound
- * (`chainPlacement().bound`, the tightest end up the parent chain), and how much lies beyond it.
- * `visible + cut` is always the block's full duration; a block entirely past the bound has visible 0.
- */
-export function cutExtent(
-  worldStart: Rational,
-  duration: Rational,
-  bound: Rational
-): { visible: Rational; cut: Rational } {
-  let visible = subtractRational(bound, worldStart);
-  if (visible.numerator < 0) {
-    visible = rational(0);
-  }
-  if (compareRational(visible, duration) > 0) {
-    visible = duration;
-  }
-  return { visible, cut: subtractRational(duration, visible) };
 }

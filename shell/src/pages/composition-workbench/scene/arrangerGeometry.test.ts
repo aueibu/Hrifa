@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { rational } from '../musicalTime';
+import { rational, rationalToNumber } from '../musicalTime';
 import {
   PIXELS_PER_QUARTER,
   beatStep,
   DRAG_THRESHOLD_PX,
-  cutExtent,
   dragCancel,
   dragLive,
   dragMove,
@@ -17,6 +16,7 @@ import {
   quartersToPx,
   rulerMarks,
   sceneLengthQuarters,
+  sharedEdgeOutcome,
   snapToStep,
 } from './arrangerGeometry';
 import { objectBlock } from './sceneTestHelpers';
@@ -129,53 +129,15 @@ describe('the playhead position', () => {
   });
 });
 
-describe('the cut at the parent end', () => {
-  const place = (blocks: ReturnType<typeof objectBlock>[], id: string) => {
-    const chain = objectChain(new Map(blocks.map((block) => [block.id, block])), id) ?? [];
-    const { start, bound } = chainPlacement(chain);
-    return cutExtent(start, chain[0].data.timeSpan.duration, bound);
-  };
-
-  it('a child inside its parent is all visible', () => {
-    const blocks = [
-      objectBlock('p', { start: 0, duration: 8 }),
-      objectBlock('c', { parentRef: { id: 'p' }, start: 1, duration: 2 }),
-    ];
-    expect(place(blocks, 'c')).toEqual({ visible: q(2), cut: q(0) });
-  });
-
-  it('a child crossing the parent end is cut there', () => {
-    const blocks = [
-      objectBlock('p', { start: 0, duration: 4 }),
-      objectBlock('c', { parentRef: { id: 'p' }, start: 2, duration: 4 }),
-    ];
-    expect(place(blocks, 'c')).toEqual({ visible: q(2), cut: q(2) });
-  });
-
-  it('a child starting past the parent end is all cut', () => {
-    const blocks = [
-      objectBlock('p', { start: 0, duration: 4 }),
-      objectBlock('c', { parentRef: { id: 'p' }, start: 6, duration: 2 }),
-    ];
-    expect(place(blocks, 'c')).toEqual({ visible: q(0), cut: q(2) });
-  });
-
-  it('nested parents: the tightest end up the chain wins', () => {
+describe('the world start of a chain', () => {
+  it('sums the relative starts up the parent chain; a parent end bounds nothing (W-79)', () => {
     const blocks = [
       objectBlock('g', { start: 0, duration: 8 }),
       objectBlock('p', { parentRef: { id: 'g' }, start: 2, duration: 8 }),
       objectBlock('c', { parentRef: { id: 'p' }, start: 1, duration: 10 }),
     ];
-    // World start 3; ends: own 13, p 10, g 8.
-    expect(place(blocks, 'c')).toEqual({ visible: q(5), cut: q(5) });
-    expect(place(blocks, 'p')).toEqual({ visible: q(6), cut: q(2) });
-  });
-
-  it('a root object is never cut', () => {
-    expect(place([objectBlock('r', { start: 3, duration: 5 })], 'r')).toEqual({
-      visible: q(5),
-      cut: q(0),
-    });
+    const chain = objectChain(new Map(blocks.map((block) => [block.id, block])), 'c') ?? [];
+    expect(chainPlacement(chain)).toEqual({ start: q(3) });
   });
 });
 
@@ -240,5 +202,43 @@ describe('the drag state machine', () => {
 
   it('cancel throws the drag away with nothing to commit', () => {
     expect(dragCancel()).toBeNull();
+  });
+});
+
+describe('edge drags clamp at the neighbors (L1a)', () => {
+  const block = { worldStart: q(8), relativeStart: q(8), duration: q(8) };
+  const room = { before: q(6), after: q(20) };
+
+  it('the right edge stops at the next neighbor instead of overlapping', () => {
+    const px = 50 * PIXELS_PER_QUARTER;
+    expect(dragOutcome('resize', block, px, beat, beat, room).duration).toEqual(q(12));
+    expect(dragOutcome('resize', block, px, beat, beat, null).duration).toEqual(q(58));
+  });
+
+  it('the left edge stops at the end of the neighbor before it', () => {
+    const px = -50 * PIXELS_PER_QUARTER;
+    const result = dragOutcome('resize-left', block, px, beat, beat, room);
+    expect(result.start).toEqual(q(6));
+    expect(result.duration).toEqual(q(10));
+  });
+
+  it('a live drag and its release both use the room', () => {
+    let state = dragStart('a', 'resize', block, 100, false, room);
+    const x = 100 + 50 * PIXELS_PER_QUARTER;
+    state = dragMove(state, x, false);
+    expect(dragLive(state, '4/4').duration).toEqual(q(12));
+    expect(dragRelease(state, x, false, '4/4')?.duration).toEqual(q(12));
+  });
+});
+
+describe('the shared edge (L1a)', () => {
+  it('lands on the grid and keeps a beat on each side', () => {
+    const at = (px: number, step = beat as typeof beat | null) =>
+      sharedEdgeOutcome(q(8), q(4), q(16), px, step, beat);
+    expect(at(2.4 * PIXELS_PER_QUARTER)).toEqual(q(10));
+    expect(at(-100 * PIXELS_PER_QUARTER)).toEqual(q(5));
+    expect(at(100 * PIXELS_PER_QUARTER)).toEqual(q(15));
+    // Shift: free, at tick resolution.
+    expect(rationalToNumber(at(0.4 * PIXELS_PER_QUARTER, null))).toBeCloseTo(8.4, 6);
   });
 });

@@ -18,10 +18,10 @@ import { createSceneEvaluator } from './evaluateScene';
  */
 
 /** The scene's compiled plan. One evaluator per settings change, never per render. */
-export function useSceneEvaluation(blocks: readonly StoredDataBlock[], sceneId: string | null) {
+function useSceneEvaluator() {
   const { settings } = useCompositionSettings();
   const [auditionSettings] = useAuditionSettings();
-  const evaluator = useMemo(
+  return useMemo(
     () =>
       createSceneEvaluator({
         settings: { ...auditionSettings, loop: false },
@@ -33,8 +33,27 @@ export function useSceneEvaluation(blocks: readonly StoredDataBlock[], sceneId: 
       }),
     [auditionSettings, settings.transport, settings.sounds.rhythm]
   );
+}
+
+export function useSceneEvaluation(blocks: readonly StoredDataBlock[], sceneId: string | null) {
+  const evaluator = useSceneEvaluator();
   return useMemo(
     () => (sceneId ? evaluator.evaluate(blocks, sceneId) : null),
+    [evaluator, blocks, sceneId]
+  );
+}
+
+/**
+ * The same evaluation with muted objects included, for the Arranger's ghosted note previews ONLY (memoized
+ * separately; its plan is never played and its length equals the playing plan's).
+ */
+export function useScenePreviewEvaluation(
+  blocks: readonly StoredDataBlock[],
+  sceneId: string | null
+) {
+  const evaluator = useSceneEvaluator();
+  return useMemo(
+    () => (sceneId ? evaluator.evaluate(blocks, sceneId, { includeMuted: true }) : null),
     [evaluator, blocks, sceneId]
   );
 }

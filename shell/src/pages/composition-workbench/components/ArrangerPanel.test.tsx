@@ -49,17 +49,13 @@ beforeEach(() => {
 });
 
 describe('the Arranger (O2b)', () => {
-  it('draws one block per object in Outliner order, children indented and later by their relative start', async () => {
+  it('draws ONE lane for the collection with a block per object, a child later by its relative start', async () => {
     await renderArranger();
-    const headers = screen.getAllByRole('rowheader').map((cell) => cell.textContent);
-    const outliner = screen.getAllByRole('treeitem').map((item) => item.textContent ?? '');
-    expect(headers).toHaveLength(4);
-    headers.forEach((name, index) => expect(outliner[index]).toContain(name));
-    expect(headers).toEqual(['Lead', 'Bass', 'Tail', 'Echo']);
-
-    const rows = screen.getAllByRole('row');
-    expect(rows[1]).toHaveAttribute('aria-level', '2');
-    expect(screen.getAllByRole('rowheader')[1].style.paddingLeft).toBe('1.25rem');
+    // One lane per collection (L1a): the root collection's name, not one row per object.
+    expect(screen.getAllByRole('rowheader').map((cell) => cell.textContent)).toEqual(['root']);
+    expect(screen.getAllByRole('row')).toHaveLength(1);
+    expect(screen.getAllByRole('row')[0]).toHaveAttribute('aria-level', '1');
+    expect(screen.getAllByRole('button', { name: /^Block / })).toHaveLength(4);
     expect(leftOf('Lead')).toBe(4 * PIXELS_PER_QUARTER);
     // Bass: world start = Lead 4 + relative 2.
     expect(leftOf('Bass')).toBe(6 * PIXELS_PER_QUARTER);
@@ -103,15 +99,11 @@ describe('the Arranger (O2b)', () => {
     expect(within(block('Bass')).queryByTestId('arranger-preview')).toBeNull();
   });
 
-  it('shows the part of a child beyond its parent end as cut, and nothing cut inside it', async () => {
+  it('a child past its parent end is drawn at full width, with no cut mark (W-79)', async () => {
     await renderArranger();
-    // Tail: world 7 to 10, Lead ends at 8, so one quarter is played and two are cut.
-    const cut = (name: string) => block(name).querySelector('[data-cut]') as HTMLElement;
-    expect(cut('Tail')).toHaveAttribute('data-cut', 'true');
-    expect(cut('Tail').style.left).toBe(`${PIXELS_PER_QUARTER}px`);
-    expect(cut('Tail')).toHaveAttribute('title', 'Cut at the end of its parent');
-    expect(cut('Bass')).toHaveAttribute('data-cut', 'false');
-    expect(cut('Lead')).toHaveAttribute('data-cut', 'false');
+    // Tail: world 7 to 10, Lead ends at 8: the whole 3 quarters stay.
+    expect(block('Tail').style.width).toBe(`${3 * PIXELS_PER_QUARTER}px`);
+    expect(block('Tail').querySelector('[data-cut]')).toBeNull();
   });
 });
 
@@ -364,7 +356,8 @@ describe('edge strips and row height (O2d)', () => {
     await seedDesk([
       claveBlock(),
       sceneBlock('scene-1', 'root'),
-      collectionBlock('root', ['loop', 'shot']),
+      collectionBlock('root', ['loop', 'second']),
+      collectionBlock('second', ['shot']),
       objectBlock('loop', { start: 4, duration: 8, primaryDataRef: { id: 'clave' } }, 'Loop'),
       objectBlock(
         'shot',
@@ -411,7 +404,7 @@ describe('edge strips and row height (O2d)', () => {
     await waitFor(() => expect(leftOf('Loop')).toBe(4 * PIXELS_PER_QUARTER));
   });
 
-  it('the default row is 2.5rem tall; dragging the bottom grip keeps a per-row height in the session, not in history', async () => {
+  it('the default lane is 2.5rem tall; dragging the bottom grip keeps a per-lane height in the session, not in history', async () => {
     await renderTwo();
     const rows = screen.getAllByRole('row');
     expect(rows[0].style.height).toBe('2.5rem');
@@ -425,7 +418,7 @@ describe('edge strips and row height (O2d)', () => {
     expect(rows[1].style.height).toBe('2.5rem');
     expect(historyChangeCount()).toBe(before);
     expect(JSON.parse(localStorage.getItem('hrifa.scene-session.v1') ?? '{}').rowHeights).toEqual({
-      loop: 4.5,
+      root: 4.5,
     });
   });
 
@@ -464,7 +457,8 @@ describe('two objects of one collection (W-77)', () => {
     );
     const first = await screen.findByRole('button', { name: 'Block A' });
     const second = screen.getByRole('button', { name: 'Block B' });
-    expect(screen.getAllByRole('row')).toHaveLength(2);
+    // Both objects share the root collection's one lane.
+    expect(screen.getAllByRole('row')).toHaveLength(1);
     expect(Number.parseFloat(first.style.left)).toBe(4 * PIXELS_PER_QUARTER);
     expect(Number.parseFloat(second.style.left)).toBe(12 * PIXELS_PER_QUARTER);
     // Dropping B at 7 would overlap A (4 to 8): it lands at 8, the nearest free start.

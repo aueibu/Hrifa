@@ -4,6 +4,7 @@ import { auditionBlock } from '../dataBlocks/audition';
 import { deleteBlockFromProject } from '../dataBlocks/dataBlockRefs';
 import { validateBlock, type StoredDataBlock } from '../dataBlocks/registry';
 import { musicalDuration, rational, rationalToNumber } from '../musicalTime';
+import { groupEventsByObject } from './arrangerPreview';
 import { createSceneEvaluator, evaluateScene } from './evaluateScene';
 import {
   claveBlock,
@@ -148,46 +149,47 @@ describe('row 6: deleting a parent keeps the child in place', () => {
   });
 });
 
-describe('row 7: a child is cut at its parent end', () => {
-  it('a 32-quarter Loop under an 8-quarter parent: nothing starts at or after quarter 8', () => {
+describe('row 7 (W-79): a parent is structure, not a mask', () => {
+  it('a child past its parent end plays its full length (bars 1 to 4 parent, child at quarter 8 for 16)', () => {
     const blocks = sceneOf(
-      objectBlock('parent', { start: 0, duration: 8 }),
-      clave('child', { parentRef: { id: 'parent' }, start: 0, duration: 32 })
+      objectBlock('parent', { start: 0, duration: 16 }),
+      clave('child', { parentRef: { id: 'parent' }, start: 8, duration: 16 })
     );
     const { plan } = evaluateScene(blocks, 'scene');
-    expect(plan.events).toHaveLength(10);
-    expect(Math.max(...starts(plan))).toBeLessThan(8);
-    // The form is still the longest object end.
-    expect(planLength(plan)).toBe(32);
+    // Four 4-quarter cycles of 5 attacks, the last cycle at quarter 20 (attack at 23).
+    expect(plan.events).toHaveLength(20);
+    expect(Math.min(...starts(plan))).toBe(8);
+    expect(Math.max(...starts(plan))).toBe(23);
+    expect(starts(plan).filter((at) => at >= 16)).toHaveLength(10);
+    expect(planLength(plan)).toBe(24);
   });
 
-  it('shortens an event that crosses the bound to end exactly there', () => {
-    // One-shot clave (last attack at 3, quarter-length-ish) under a parent ending at 3.25.
+  it('a child ends at its OWN end: an event crossing it is shortened there', () => {
     const blocks = sceneOf(
-      objectBlock('parent', { start: 0, duration: 3.25 }),
+      objectBlock('parent', { start: 0, duration: 1 }),
       clave('child', {
         parentRef: { id: 'parent' },
         start: 0,
-        duration: 4,
+        duration: 3.25,
         mapping: 'one-shot',
       })
     );
     const { plan } = evaluateScene(blocks, 'scene');
     const last = plan.events.at(-1)!;
-    expect(rationalToNumber(last.at.quarterNotes)).toBe(3);
+    expect(plan.events).toHaveLength(5);
     expect(
       rationalToNumber(last.at.quarterNotes) + rationalToNumber(last.duration.quarterNotes)
-    ).toBe(3.25);
+    ).toBeLessThanOrEqual(3.25);
   });
 
-  it('a parent that starts later bounds the child by its own world end', () => {
+  it('a parent that starts later still places the child, and does not end it', () => {
     const blocks = sceneOf(
       objectBlock('parent', { start: 10, duration: 2 }),
       clave('child', { parentRef: { id: 'parent' }, start: 0, duration: 32 })
     );
     const { plan } = evaluateScene(blocks, 'scene');
-    expect(Math.max(...starts(plan))).toBeLessThan(12);
     expect(Math.min(...starts(plan))).toBe(10);
+    expect(Math.max(...starts(plan))).toBeGreaterThan(12);
   });
 });
 
@@ -225,6 +227,24 @@ describe('silence rules', () => {
     const { plan } = evaluateScene(blocks, 'scene');
     expect(plan.events).toEqual([]);
     expect(planLength(plan)).toBe(12);
+  });
+
+  it('includeMuted builds muted objects (own and collection mute) for the preview; plan length is unchanged', () => {
+    const blocks: StoredDataBlock[] = [
+      claveBlock(),
+      clave('o', { mapping: 'one-shot', mute: true }),
+      clave('p', { mapping: 'one-shot', start: 8 }),
+      collectionBlock('inner', ['p'], { mute: true }),
+      collectionBlock('root', ['o', 'inner']),
+      sceneBlock('scene', 'root'),
+    ];
+    const playing = createSceneEvaluator().evaluate(blocks, 'scene');
+    const preview = createSceneEvaluator().evaluate(blocks, 'scene', { includeMuted: true });
+    expect(playing.plan.events).toEqual([]);
+    const groups = groupEventsByObject(preview.plan.events);
+    expect(groups.get('o')?.length).toBeGreaterThan(0);
+    expect(groups.get('p')?.length).toBeGreaterThan(0);
+    expect(planLength(preview.plan)).toBe(planLength(playing.plan));
   });
 
   it('a scene with no root collection is silent with length 0', () => {

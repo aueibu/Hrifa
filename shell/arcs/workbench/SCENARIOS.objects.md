@@ -10,7 +10,7 @@ Time is exact quarter notes ("beat" = quarter at 4/4). Example rhythm: **son cla
 | 4 | Apply on Rhythm + Melodicize (clave, 3-pitch set) | Bakes **one cycle** (5 notes, the pitches as the modifier's allocation sets) into a new Notes data-block, clears the modifiers, **keeps the mapping** (still Loop, 16 repeats); the Rhythm data-block stays on the desk with one user fewer |
 | 5 | Scene with an Empty "Verse" (0 to 64) and a one-shot clave (0 to 4) | Play lasts to the **end of the objects' spans** (64 quarters, silent tail); the empty object contributes no sound and no error |
 | 6 | Delete a parent object (child at relative 4, parent at 16) | Child **keeps its place** (world start 20), now a root-level object |
-| 7 | A child longer than its parent's span | Played only **to the parent's end** (cut there) |
+| 7 | A child longer than its parent's span | Plays its **full length** (changed by W-79, 2026-11-25: a parent is structure, not a mask; it was cut at the parent end before) |
 
 Also confirmed: hand-editing a modified object asks to Apply first (no override layer); references blank on delete, never fall back; empty objects are silent and visible; mapping is applied after the tree or modifiers produce one cycle; the scene has one root collection and no separate object list.
 

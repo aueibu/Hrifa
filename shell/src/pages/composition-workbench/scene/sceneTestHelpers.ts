@@ -67,6 +67,7 @@ interface ObjectPatch {
   start?: number;
   duration?: number;
   mapping?: ObjectData['mapping'];
+  lane?: number;
   contentOffset?: Rational;
   registerSpan?: ObjectData['registerSpan'];
   modifiers?: ModifierInstance[];

@@ -45,7 +45,7 @@ import {
  * the end bound below do not change. A stack with a problem makes the object silent and adds a
  * warning naming the object, the modifier and the problem.
  *
- * End bound (row 7, decided): an object ends at `min(its own end, every ancestor's end)`. An event
+ * End bound (W-79): an object ends at its OWN end; a parent's end never cuts a child. An event
  * starting at or after the bound is dropped; one that crosses it is shortened to end exactly there.
  * Objects are silent when muted, when under a muted collection (any ancestor collection in the scene's
  * tree), or when their parent chain is circular (with a warning). A muted object does not silence the
@@ -93,7 +93,15 @@ export interface EvaluateSceneOptions {
 }
 
 export interface SceneEvaluator {
-  evaluate(blocks: readonly StoredDataBlock[], sceneId: string): SceneEvaluation;
+  /**
+   * `includeMuted` also builds the events of muted objects (own, collection or ancestor mute): the Arranger
+   * draws them ghosted. Scene length is the same either way; never use it for playback.
+   */
+  evaluate(
+    blocks: readonly StoredDataBlock[],
+    sceneId: string,
+    evaluateOptions?: { includeMuted?: boolean }
+  ): SceneEvaluation;
 }
 
 /** How many placements one cycle result remembers (a drag over start values stays bounded). */
@@ -303,7 +311,12 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
     return events;
   };
 
-  const evaluate = (blocks: readonly StoredDataBlock[], sceneId: string): SceneEvaluation => {
+  const evaluate = (
+    blocks: readonly StoredDataBlock[],
+    sceneId: string,
+    evaluateOptions?: { includeMuted?: boolean }
+  ): SceneEvaluation => {
+    const includeMuted = evaluateOptions?.includeMuted ?? false;
     const byId = new Map(blocks.map((block) => [block.id, block]));
     const warnings: string[] = [];
     const empty = (duration: Rational): SceneEvaluation => ({
@@ -366,12 +379,13 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
         warnings.push(`Object "${block.name}" has a circular parent chain and is silent.`);
         continue;
       }
-      const { start, bound } = chainPlacement(chain);
+      const { start } = chainPlacement(chain);
       const ownEnd = addRational(start, data.timeSpan.duration);
+      const bound = ownEnd;
       if (compareRational(ownEnd, formEnd) > 0) {
         formEnd = ownEnd;
       }
-      if (muted || data.mute || data.primaryDataRef === null) {
+      if ((!includeMuted && (muted || data.mute)) || data.primaryDataRef === null) {
         continue;
       }
       const primary = byId.get(data.primaryDataRef.id);
