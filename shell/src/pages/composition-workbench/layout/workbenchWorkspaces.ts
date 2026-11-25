@@ -23,6 +23,8 @@ export const CHORDS_PANEL = 'chords';
 /** The scene Outliner and Properties panels (O2a). Reachable from the Panels menu; not in a default workspace. */
 export const OUTLINER_PANEL = 'outliner';
 export const PROPERTIES_PANEL = 'properties';
+/** The scene Arranger (O2b): one row per Outliner row, objects as blocks on a time ruler. Panels menu only. */
+export const ARRANGER_PANEL = 'arranger';
 
 /** The panels the workbench page registers. */
 export const WORKBENCH_PANEL_IDS = [
@@ -33,6 +35,7 @@ export const WORKBENCH_PANEL_IDS = [
   CHORDS_PANEL,
   OUTLINER_PANEL,
   PROPERTIES_PANEL,
+  ARRANGER_PANEL,
 ] as const;
 
 /** Ids a stored workspace may name (a place or a tab for an id outside this set is dropped on every parse). */

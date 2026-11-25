@@ -1,31 +1,20 @@
 import { act, render, screen, userEvent, waitFor } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MusicalPerformancePlan, PlaybackRequest } from '../audio/types';
+import type { MusicalPerformancePlan } from '../audio/types';
 import { CompositionSettingsProvider } from '../compositionSettings';
 import { DeskProvider } from '../desk';
 import { seedDesk } from '../deskTestUtils';
 import { redo, resetHistory, undo } from '../history';
 import { claveBlock } from '../scene/sceneTestHelpers';
+import { mockEngineState } from './sceneEngineMock';
 import { OutlinerPanel, PropertiesPanel } from './ScenePanels';
 
-// A stand-in engine: it records each request and hands back a session that can be stopped.
-const played: PlaybackRequest[] = [];
-const stopped = vi.fn();
-vi.mock('../audio/AudioEngineProvider', () => ({
-  useAudioEngine: () => ({
-    play: async (request: PlaybackRequest) => {
-      played.push(request);
-      return {
-        id: `s${played.length}`,
-        sourceId: request.plan.sourceId,
-        active: true,
-        stop: stopped,
-        setBusGain: () => undefined,
-      };
-    },
-    subscribe: () => () => undefined,
-  }),
-}));
+// A stand-in engine (components/sceneEngineMock.ts): sessions per source id, like the real one.
+vi.mock('../audio/AudioEngineProvider', async () => {
+  const { mockEngine } = await import('./sceneEngineMock');
+  return { useAudioEngine: () => mockEngine };
+});
+const played = mockEngineState.played;
 
 async function renderPanels() {
   await seedDesk([claveBlock()]);
@@ -38,6 +27,8 @@ async function renderPanels() {
     </CompositionSettingsProvider>
   );
   await screen.findByText('No scene yet');
+  // The desk loads asynchronously and the button stays disabled until it has: wait, never click early.
+  await waitFor(() => expect(screen.getByRole('button', { name: 'New scene' })).toBeEnabled());
 }
 
 const click = (name: string) => userEvent.click(screen.getByRole('button', { name }));
@@ -47,8 +38,7 @@ const names = () => screen.queryAllByRole('treeitem').map((item) => item.textCon
 beforeEach(() => {
   localStorage.clear();
   resetHistory();
-  played.length = 0;
-  stopped.mockClear();
+  mockEngineState.reset();
 });
 
 describe('the Outliner and Properties panels (O2a)', () => {
@@ -84,7 +74,7 @@ describe('the Outliner and Properties panels (O2a)', () => {
     expect(plan.events).toHaveLength(5);
     expect(played[0].loop).toBeFalsy();
     await userEvent.click(await screen.findByRole('button', { name: '■ Stop' }));
-    expect(stopped).toHaveBeenCalled();
+    expect(mockEngineState.stopped).toBe(1);
   });
 
   it('deleting a parent keeps the child in place, and undo and redo restore and remove it', async () => {

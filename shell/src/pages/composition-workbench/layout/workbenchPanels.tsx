@@ -13,6 +13,7 @@ import { createContext, useContext, type ReactNode } from 'react';
 import type { PanelKind } from '../../../components/Stage/dock';
 import { HEIGHT_CLASSES, WIDTH_CLASSES, type SlotSize } from '../../../lib/stage';
 import { ChordsPanel } from '../chordInput/ChordsPanel';
+import { ArrangerPanel } from '../components/ArrangerPanel';
 import { OutlinerPanel, PropertiesPanel } from '../components/ScenePanels';
 import {
   CANVAS_PANEL,
@@ -20,6 +21,7 @@ import {
   DATA_BLOCK_EDITOR_PANEL,
   DESK_PANEL,
   NODE_DETAIL_PANEL,
+  ARRANGER_PANEL,
   OUTLINER_PANEL,
   PROPERTIES_PANEL,
 } from './workbenchWorkspaces';
@@ -111,5 +113,13 @@ export const WORKBENCH_KINDS: readonly PanelKind[] = [
     minSize: MIN_SIZE,
     home: 'Detail',
     render: () => <PropertiesPanel />,
+  },
+  {
+    id: ARRANGER_PANEL,
+    title: 'Arranger',
+    sizes: SIZES,
+    minSize: MIN_SIZE,
+    home: 'Canvas',
+    render: () => <ArrangerPanel />,
   },
 ];

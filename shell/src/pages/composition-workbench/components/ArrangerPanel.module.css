@@ -1,0 +1,216 @@
+/*
+ * The Arranger (O2b). Same fills and row height as the Outliner (ScenePanels.module.css): the panel is
+ * --panel, the lanes sit on --panel-slot, a block is --panel-body. Every row has a fixed height; the
+ * scroller scrolls inside itself. The ruler stays at the top and the name column at the left while
+ * the lanes scroll. A block's live drag position is set from local state only.
+ */
+.panel {
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 100%;
+  min-height: 0;
+  padding: 0.5rem;
+}
+
+.bar {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.25rem;
+  height: 1.6rem;
+}
+
+/* Same width for Play and Stop, so the header never shifts. */
+.play {
+  min-width: 4.5rem;
+}
+
+.scroller {
+  background: var(--panel-slot);
+  border-radius: var(--radius-hairline);
+  flex: 1 1 0;
+  min-height: 0;
+  outline: none;
+  overflow: auto;
+  position: relative;
+}
+
+.content {
+  position: relative;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 0.5rem;
+}
+
+.header,
+.row {
+  display: flex;
+  height: 1.5rem;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+
+.corner,
+.name {
+  background: var(--panel-slot);
+  color: var(--text);
+  flex: 0 0 8rem;
+  font-size: 0.78rem;
+  left: 0;
+  overflow: hidden;
+  position: sticky;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 3;
+}
+
+.corner {
+  background: var(--panel-header);
+}
+
+.name {
+  align-items: center;
+  display: flex;
+  padding-right: 0.25rem;
+}
+
+.row[aria-selected='true'] .name,
+.row[aria-selected='true'] .lane {
+  background: var(--panel-header);
+}
+
+.rowMuted .name {
+  color: var(--text-muted);
+}
+
+.rowCollection .name {
+  color: var(--text-muted);
+}
+
+.ruler {
+  background: var(--panel-header);
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.mark {
+  background: var(--grid);
+  bottom: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.markBeat {
+  height: 0.4rem;
+}
+
+.markBar {
+  height: 100%;
+}
+
+.markLabel {
+  color: var(--text-muted);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.68rem;
+  left: 0.25rem;
+  line-height: 1.5rem;
+  position: absolute;
+  top: 0;
+}
+
+.lane {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.block {
+  align-items: center;
+  background: var(--panel-body);
+  border: 1px solid transparent;
+  border-radius: var(--radius-hairline);
+  bottom: 0.15rem;
+  color: var(--text);
+  cursor: grab;
+  display: flex;
+  font-size: 0.78rem;
+  overflow: hidden;
+  padding: 0 0.5rem 0 0.25rem;
+  position: absolute;
+  top: 0.15rem;
+  touch-action: none;
+  user-select: none;
+}
+
+.block:hover {
+  background: var(--panel-header);
+}
+
+.blockSelected {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+}
+
+/* Blender (NLA, tracks): a muted strip receives a dotted outline. Dotted outline plus muted text, not color alone. */
+.blockMuted {
+  border: 1px dotted var(--text-muted);
+  color: var(--text-muted);
+}
+
+.blockMuted.blockSelected {
+  border-style: solid;
+}
+
+/* The part beyond the parent's end, which is not played: hatched, on the lane's own fill. */
+.cut {
+  background:
+    repeating-linear-gradient(135deg, transparent 0 3px, var(--text-subtle) 3px 4px),
+    var(--panel-slot);
+  border-left: 1px dashed var(--text-subtle);
+  bottom: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.cut[data-cut='false'] {
+  display: none;
+}
+
+.blockLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Bitwig: resize at the TOP right edge of the clip. */
+.handle {
+  bottom: 50%;
+  cursor: ew-resize;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 0.4rem;
+  z-index: 1;
+}
+
+.playhead {
+  background: var(--accent);
+  bottom: 0;
+  left: 8rem;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  visibility: hidden;
+  width: 2px;
+  z-index: 2;
+}

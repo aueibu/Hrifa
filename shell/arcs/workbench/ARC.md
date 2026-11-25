@@ -145,7 +145,7 @@ Scenarios first: `SCENARIOS.objects.md` (confirmed by the human 2026-11-24). Obj
 - Human checkpoint after: **yes** (look, feel and sound; no reviewer polish or commit of polish before the human has tried it)
 
 ### O2b: Arranger view
-- Scope: horizontal view of objects as blocks by time span and register; select, move, resize, playhead with the transport. A view of the same objects, never its own data.
+- **DONE 2026-11-24 (W-71; the human tried it and approved the look).** Scope as built: horizontal view of objects as blocks by time span and register; select, move, resize, playhead with the transport. A view of the same objects, never its own data.
 - Human checkpoint after: **yes** (look and feel)
 
 ### O3: Native modifiers and Apply

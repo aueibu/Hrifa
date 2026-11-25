@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Button, Popover, SegmentedControl, Select, Switch, Text, TextInput } from '@mantine/core';
-import { useAuditionSettings } from '../auditionPreferences';
 import { useCompositionSettings } from '../compositionSettings';
 import { EnsureDataBlockOps, useDataBlockOps } from '../dataBlockOps';
 import { dataBlockUsers } from '../dataBlocks/dataBlockRefs';
@@ -9,8 +8,6 @@ import { newDataBlockId, useDesk } from '../desk';
 import { recordGroup } from '../history';
 import { formatLength, formatPosition, parseLength, parsePosition } from '../meterTime';
 import { rationalToNumber, type Rational } from '../musicalTime';
-import { transportRhythmContext } from '../rhythmRealization';
-import { createSceneEvaluator } from '../scene/evaluateScene';
 import { outlinerRows, type OutlinerRow } from '../scene/outlinerRows';
 import {
   addChildEmpty,
@@ -34,9 +31,7 @@ import {
   sceneDataOf,
   type ObjectMapping,
 } from '../scene/sceneTypes';
-import { layerSound } from '../sounds';
-import { transportTimeline } from '../transport';
-import { useNodePreview } from '../useNodePreview';
+import { useSceneEvaluation, useScenePlayback } from '../scene/useScenePlayback';
 import { DataBlockMenu } from './DataBlockMenu';
 import classes from './ScenePanels.module.css';
 
@@ -50,7 +45,7 @@ import classes from './ScenePanels.module.css';
 const NO_DESK = 'The desk is not accepting changes right now.';
 
 /** The shared state of both panels: the scene, its rows, the selection and the one apply. */
-function useSceneEditor() {
+export function useSceneEditor() {
   const desk = useDesk();
   const ops = useDataBlockOps();
   const [session, updateSession] = useSceneSession();
@@ -120,64 +115,17 @@ export function OutlinerPanel() {
 function OutlinerBody() {
   const editor = useSceneEditor();
   const { blocks, scenes, scene, rows, selectedRow, writable, session, updateSession } = editor;
-  const { settings } = useCompositionSettings();
-  const [auditionSettings] = useAuditionSettings();
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState('');
   const treeRef = useRef<HTMLDivElement>(null);
 
-  // ONE evaluator for the panel's life: it is rebuilt only when what it reads from the transport,
-  // the rhythm voice or the viewer's settings changes, never per render.
-  const evaluator = useMemo(
-    () =>
-      createSceneEvaluator({
-        settings: { ...auditionSettings, loop: false },
-        context: {
-          pulseUnit: transportRhythmContext(settings.transport).pulseUnit,
-          rhythmSound: layerSound(settings.sounds.rhythm, 0),
-        },
-        timeline: transportTimeline(settings.transport),
-      }),
-    [auditionSettings, settings.transport, settings.sounds.rhythm]
-  );
-  const evaluation = useMemo(
-    () => (scene ? evaluator.evaluate(blocks, scene.id) : null),
-    [evaluator, blocks, scene]
-  );
-  const preview = useNodePreview({
-    instanceId: 'scene',
-    volume: 30,
-    followTransport: true,
-    transportPlay: () => undefined,
-  });
-
-  const hasSound =
-    evaluation !== null &&
-    evaluation.plan.events.length > 0 &&
-    evaluation.plan.duration.quarterNotes.numerator > 0;
-  const playRefusal =
-    scene === null
-      ? 'Create or choose a scene first.'
-      : hasSound
-        ? null
-        : 'Add an object with data to hear anything.';
-
-  async function togglePlay() {
-    if (preview.playing) {
-      preview.stop('');
-      return;
-    }
-    if (!evaluation || !hasSound) {
-      return;
-    }
-    try {
-      await preview.play(evaluation.plan, 'Playing the scene.', { loop: false });
-    } catch (error) {
-      preview.setStatus(error instanceof Error ? error.message : 'The scene could not start.');
-    }
-  }
+  // The evaluation and the one play controller are shared with the Arranger (scene/useScenePlayback.ts).
+  const evaluation = useSceneEvaluation(blocks, scene?.id ?? null);
+  const playback = useScenePlayback(scene?.id ?? null, evaluation);
+  const playRefusal = playback.refusal;
+  const togglePlay = playback.toggle;
 
   function report(result: SceneOpResult) {
     setMessage(result.ok ? '' : result.error);
@@ -272,15 +220,15 @@ function OutlinerBody() {
         <Button
           size="compact-xs"
           variant="default"
-          disabled={!preview.playing && playRefusal !== null}
+          disabled={!playback.playing && playRefusal !== null}
           data-info={
-            preview.playing
+            playback.playing
               ? 'Stop the scene'
               : (playRefusal ?? 'Play the scene once through on the transport')
           }
           onClick={togglePlay}
         >
-          {preview.playing ? '■ Stop' : '▶ Play'}
+          {playback.playing ? '■ Stop' : '▶ Play'}
         </Button>
       </div>
       <div className={classes.bar}>
@@ -374,10 +322,10 @@ function OutlinerBody() {
       </div>
       <div
         className={classes.line}
-        title={message || evaluation?.warnings.join(' ') || preview.status}
+        title={message || evaluation?.warnings.join(' ') || playback.status}
         role="status"
       >
-        {message || evaluation?.warnings.join(' ') || preview.status}
+        {message || evaluation?.warnings.join(' ') || playback.status}
       </div>
       <div
         ref={treeRef}
