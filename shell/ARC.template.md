@@ -30,6 +30,9 @@ Each milestone is small enough for one builder run and has criteria a command or
 
 ### M1: <name>
 - Scope: <files/modules>
+- Consumer check (REQUIRED when the milestone changes a stored record: a type's fields, a registry record, a desk or scene shape): a table written and confirmed BEFORE the first builder run, one row per panel, op, evaluator or view that reads the record: `Panel or op | Reads (fields) | Shows or does (with a concrete example)`. Include other pages that import it (C0 lists them). A row that cannot be filled in means the design is not ready.
+- Static mock (REQUIRED when the milestone adds or splits entity levels or changes the panel hierarchy; NOT for pure math or evaluator work): a throwaway static HTML wireframe (like the prototypes in `arcs/interval-placement/crystal/`) built and shown to the human before data work; the human's reaction is written under the milestone as a checkpoint decision.
+- Split rule: a schema-changing milestone is two milestones, each one builder run (about 150k tokens at most): (a) types, validation and migration; (b) evaluator, ops and scenario tests. UI is a third.
 - Acceptance:
   - [ ] The arc's `Check command` passes
   - [ ] <specific test or command proving behavior, e.g. "interference(3,4) yields [3,1,2,2,1,3]">

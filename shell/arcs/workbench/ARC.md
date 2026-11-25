@@ -165,14 +165,6 @@ Scenarios first: `SCENARIOS.objects.md` (confirmed by the human 2026-11-24). Obj
 - **L1 (UI thin slice, human checkpoint: look and feel):** Arranger lanes per Collection with sub-lanes for overlaps, drag to another lane, free move to the nearest free slot, shared edge, ghosted muted blocks, per-lane row height, Outliner nesting restored, Properties for the object (with Duplicate Object and Duplicate Linked). STOP for the human.
 - **Parent display (human, 2026-11-24, for L1):** no always-on line along the child's lane (that crossed other blocks). Instead: (1) a small dash on the PARENT's lane at the world start of each child ("look at the parent to see the children"; hover names the child; always visible, tiny, theme role); (2) when a parent or a child is selected, a dashed connector from the parent's start (its lane) to the child's start (its lane) and a subtle tint on both blocks (Blender: Overlays, Relationship Lines, "dashed lines indicating parent or constraint relationships"); (3) a small marker on a parented block with hover help "Follows <parent>". An all-relationships toggle is a later option.
 - **L2:** review, gate, wording.
-- Strip-era acceptance below is historical.
-
-### S0 to S2: Strips (SUPERSEDED by L0 to L2 and W-77; S0 is committed as 48ca128 and will be migrated away) (added 2026-11-24, W-75; scenarios `SCENARIOS.strips.md` confirmed by the human)
-- Checkpoint decisions (human, 2026-11-24): objects are rows, a strip is one placement of content inside an object (Blender NLA); parent strip to strip; no overlap in a row, the shared edge of touching strips drags both with the `<][>` cursor; a strip can be dragged to another object's row; Duplicate Strip (independent) and Duplicate Linked (shares the data-block); an Empty keeps one silent strip; migrate stored objects on load; no tracks inside a row yet.
-- **S0 (pure, no UI):** `Strip` type and validation, `strips` on the object, `contentOffset`, modifiers and parent move onto the strip; evaluator over strips; ops (add, duplicate, duplicate linked, delete, move within a row with the no-overlap rule, move to another object, shared-edge resize, set parent); strip refs in the users and delete paths; migration on load; scenario tests from the table (rows 1 to 4c, 6 to 12); DECISIONS update. Acceptance: `check:workbench` passes; rows tested with the clave example.
-- **S1 (UI thin slice, human checkpoint: look and feel):** Arranger draws several strips per row (O2c bars and O2d drags per strip, split cursor on a shared edge, drag to another row), strip selection, Properties split into Object and Strip sections, Duplicate Strip and Duplicate Linked, parent strip picker. STOP for the human before review or commit.
-- **S2:** Apply and modifiers per strip in Properties (O3-ii moved to strips), wording, review, gate.
-- Human checkpoint after S1: **yes**.
 
 ### O3: Native modifiers and Apply (split 2026-11-24: O3-i pure, O3-ii Properties UI; scenarios confirmed: `SCENARIOS.modifiers.md`, W-72)
 - Checkpoint decisions (human, 2026-11-24): rows 1, 2, 5, 6, 7 as recommended (Apply only on the top modifier plus Apply All; the second modifier is named **Snap to Pitch Set**); row 3 gets a toggle for both behaviors (Repeat every octave, default on, with an editable Period in cents); row 4 accepted for now, to be tuned after hearing it; **non-12-EDO is a core rule** (exact cents with a period, a Pitch classes input brings its own EDO).
@@ -194,60 +186,7 @@ Scenarios first: `SCENARIOS.objects.md` (confirmed by the human 2026-11-24). Obj
 - Scope: Group Input and Output nodes, a Node tree modifier on objects (tree outputs one cycle; mapping after).
 - Human checkpoint after: **yes** (listen)
 
-### Superseded plan kept for reference: T0 to T6b (do not build from these; their content moved into O2b and later)
-### T0: Scenarios (no code)
-- Scope: `arcs/workbench/SCENARIOS.T.md`, with a recommended answer per row from `RESEARCH.blender.md` section 5 (NLA table) and section 6 (markers); where the human has not changed it, the recommendation stands: a strip references its clip (B0), **extrapolation per strip** (Hold Forward so a short pitch strip governs a long rhythm strip, or Nothing), crop, repeat, scale and reverse live on the strip, tracks combine by order plus Replace or Add, double-click is tweak mode (edit the clip in place, Pin toggles clip time or timeline time), meta strips and placed collections, mute, solo and lock per track and mute per strip, bake as Push Down in reverse, sections are shared markers (a marker bound to a pitch context is the T6b model). The human's concrete cases, each choice shown with an example where the options give different results. First question: **how strips get associated** — (A) by overlap in time (a realization track combines whatever pitch and rhythm strips sit above it at each moment), (B) by an explicit link between two strips, (C) by a realize strip whose pitch source, rhythm source and rule are chosen in its settings, or a mix (e.g. C's rule with A's overlap). Then: which combining rules come first (Melodicization's; others from the canvas modules); what happens where the pitch and rhythm strips have different lengths or start at different bars; what tracks are (typed by material kind, or free); a strip as a reference to its desk clip (edit once, every use follows) or a copy, and "make single user"; bake (realization → note clip) and what stays linked; what a sounding track owns (sound, volume, mute, solo); what happens when a source clip is deleted; one tempo and meter or changes; how material gets onto the timeline first (Send to timeline, then drag); the Arrange panel's place in the screensets; how the canvas modules relate (can a canvas module's output be a strip?).
-- Acceptance:
-  - [ ] The human confirms the scenarios; decisions written under T0 here
-- Human checkpoint after: **yes**
-
-### T1: Timeline data (pure TS)
-- Scope: `timeline/` model: tracks (mute, solo, lock), strips over a data-block in the registry (a Notes, Rhythm or Pitch set data-block or a collection; start, length, clip start and end, repeat, scale, reverse, extrapolation, mute), markers, realizations (sources, rule, settings; output derived, never stored); pure operations (add, move, resize, delete, duplicate, split if confirmed), validation, persistence and undo through the existing history recorder; old projects open with an empty timeline.
-- Acceptance:
-  - [ ] `check:workbench` passes
-  - [ ] Unit tests from the confirmed T0 rows (node env)
-  - [ ] DECISIONS row: the timeline model, realizations as derived output, storage
-- Human checkpoint after: no
-
-### T2: The Arrange panel: tracks and material strips
-- Scope: an `arrange` panel on the dock Stage (crop, repeat and extrapolation are strip handles and a small strip inspector; double-click is tweak mode; the user count shows on a strip whose data-block has other users) (registered by the page, under a lock): tracks on a bar ruler; strips of each material kind drawn readably (a pitch set, a chord, a rhythm, notes: reuse the desk's `SnippetPreview` renderers where they fit); select, move and resize with the confirmed snapping; "Send to timeline" from the desk (drag if T0 puts it here); double-click a note strip opens the clip editor; an "Arrange" screenset if confirmed.
-- Acceptance:
-  - [ ] `check:workbench` passes; the page test passes
-  - [ ] Tests from the confirmed T0 rows
-- Human checkpoint after: **yes** (look and feel)
-
-### T3: Realizations
-- Scope: the confirmed association (T0) and the first combining rule(s): a realization combines a pitch strip and a rhythm strip (and later others) into notes over its span, through the module evaluators (no second copy of the logic); its notes are drawn on the Arrange panel as a derived track and update when a source strip changes or moves; the ready line (W-49) says what a realization is missing ("Waiting: place a rhythm strip under this span").
-- Acceptance:
-  - [ ] `check:workbench` passes
-  - [ ] Tests from the confirmed T0 rows: the realization's notes equal the evaluator's output for those strips; editing or moving a source strip changes the notes; a missing source gives the waiting state, never guessed notes
-  - [ ] DECISIONS row: realizations reuse evaluators; association rule
-- Human checkpoint after: **yes** (look; and listen through a strip preview if T4 is not in yet)
-
-### T4: Play the arrangement
-- Scope: Play, Stop, a playhead across the Arrange panel, a loop region, mute and solo per sounding track; note strips and realizations compiled into the existing finite performance plan on the transport (metronome and count-in as today).
-- Acceptance:
-  - [ ] `check:workbench` passes
-  - [ ] Tests: the compiled plan's events equal the note strips and the realizations' notes (positions, pitches, lengths); mute and solo; loop region
-- Human checkpoint after: **yes** (listen)
-
-### T5: Bake
-- Scope: an operation that turns a realization (or a region of it) into a note clip on the desk and, per T0, places it on a track in place of or beside the realization; one undo step; the clip records where it came from (lineage `derivedFrom`).
-- Acceptance:
-  - [ ] `check:workbench` passes; tests: the baked notes equal the realization's notes at that moment; the result is an ordinary editable note clip
-- Human checkpoint after: **yes**
-
-### T6a: Meta track: sections and labels
-- Scope: a track above the tracks holding sections (a span with a label and a color role); add, rename, move, resize; sections show across the ruler. No pitch behavior yet.
-- Acceptance:
-  - [ ] `check:workbench` passes; tests from scenarios written before this milestone
-- Human checkpoint after: **yes**
-
-### T6b: Meta track: pitch context per section
-- Scope: designed with the human first (scenarios): a section's EDO and key or scale; realizations inside the span realize in that pitch space; the clip editor shows that EDO's keyboard and snapping for a strip inside the span; transforms work in that pitch space. Touches the pitch contracts (W-1, W-44): DECISIONS rows and the shell `ARCHITECTURE.md`.
-- Acceptance:
-  - [ ] `check:workbench` passes; tests from the confirmed scenarios
-- Human checkpoint after: **yes**
+### Removed 2026-11-25: T0 to T6b and S0 to S2 (superseded by the object phase, W-66, and by L0 to L2, W-77). Recover from git history if ever needed; do not build from them.
 
 ### Not in this arc (routed from `RESEARCH.blender.md`, logged in `BACKLOG.md`)
 - A **Stage and Inspector arc**: swap and join areas, Maximize and Focus, workspace tabs at the top, folding inspector sections with Blender's gestures, breadcrumb and pin, display filter, presets, Adjust Last Operation. Look changes: the human first.
