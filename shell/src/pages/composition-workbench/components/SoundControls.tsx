@@ -1,5 +1,5 @@
 import { Group, Popover, Stack, Text, Tooltip } from '@mantine/core';
-import { ActionIcon, Button, NumberInput, Select, Switch } from '../../../ui';
+import { ActionIcon, Button, ScrubNumber, Select, Switch } from '../../../ui';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { midiNoteName } from '../interference';
 import {
@@ -45,15 +45,14 @@ export function PitchField({
         comboboxProps={{ withinPortal: !inPopover }}
         onChange={(next) => next && onChange(Number(next) * 100 + cents)}
       />
-      <NumberInput
+      <ScrubNumber
         aria-label={`${label} cents`}
-        w={78}
+        style={{ width: 78 }}
         suffix="¢"
-        min={-50}
-        max={50}
-        clampBehavior="strict"
+        range={[-50, 50]}
+        defaultValue={0}
         value={cents}
-        onChange={(next) => typeof next === 'number' && onChange(note * 100 + next)}
+        onChange={(next) => onChange(note * 100 + next)}
       />
     </Group>
   );
@@ -73,27 +72,23 @@ function OffsetField({
   const cents = Math.round(value - semitones * 100);
   return (
     <Group gap={6} wrap="nowrap">
-      <NumberInput
+      <ScrubNumber
         aria-label={`${label} semitones`}
-        w={84}
+        style={{ width: 84 }}
         suffix=" st"
-        min={-48}
-        max={48}
-        clampBehavior="strict"
-        allowDecimal={false}
+        range={[-48, 48]}
+        defaultValue={0}
         value={semitones}
-        onChange={(next) => typeof next === 'number' && onChange(next * 100 + cents)}
+        onChange={(next) => onChange(Math.trunc(next) * 100 + cents)}
       />
-      <NumberInput
+      <ScrubNumber
         aria-label={`${label} cents`}
-        w={78}
+        style={{ width: 78 }}
         suffix="¢"
-        min={-99}
-        max={99}
-        clampBehavior="strict"
-        allowDecimal={false}
+        range={[-99, 99]}
+        defaultValue={0}
         value={cents}
-        onChange={(next) => typeof next === 'number' && onChange(semitones * 100 + next)}
+        onChange={(next) => onChange(semitones * 100 + Math.trunc(next))}
       />
     </Group>
   );

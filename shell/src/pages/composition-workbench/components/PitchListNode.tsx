@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Badge, Group, Slider, Text } from '@mantine/core';
-import { Button, NumberInput, Select, Switch, TextInput } from '../../../ui';
+import { Button, ScrubNumber, Select, Switch, TextInput } from '../../../ui';
 import { createPitchPreviewPlan } from '../audio/performancePlans';
 import { useCompositionSettings } from '../compositionSettings';
 import { formatPitchClassGroup, type ForteSetSelection } from '../forteCatalog';
@@ -450,13 +450,13 @@ export function PitchListNode({ instanceId, instanceLabel, upstream }: PitchList
 
             <NodeInspectorContent>
               <InspectorSection label="Preview">
-                <NumberInput
+                <ScrubNumber
                   label="Step"
                   aria-label="Preview step duration"
                   suffix=" ms"
-                  min={20}
-                  max={5000}
-                  value={stepMilliseconds}
+                  clamp={[20, 5000]}
+                  step={10}
+                  value={Number(stepMilliseconds) || 20}
                   onChange={setStepMilliseconds}
                 />
                 <div className={classes.nodeParameterRow}>
@@ -475,12 +475,12 @@ export function PitchListNode({ instanceId, instanceLabel, upstream }: PitchList
                   </Group>
                 </div>
                 {interpreted.packet.domain === 'pitchClass' && (
-                  <NumberInput
+                  <ScrubNumber
                     label="Register"
                     aria-label="Pitch-class preview octave"
-                    min={-1}
-                    max={9}
-                    value={previewOctave}
+                    range={[-1, 9]}
+                    defaultValue={4}
+                    value={Number(previewOctave) || 0}
                     onChange={setPreviewOctave}
                   />
                 )}

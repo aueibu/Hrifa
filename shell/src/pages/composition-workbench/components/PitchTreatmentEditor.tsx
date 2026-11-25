@@ -1,5 +1,5 @@
 import { Stack, Text } from '@mantine/core';
-import { NumberInput, Select, Switch } from '../../../ui';
+import { ScrubNumber, Select, Switch } from '../../../ui';
 import type { DataPacket } from '../model';
 import type { PitchRouteTreatment } from '../routeTreatments';
 import classes from './CompositionInspector.module.css';
@@ -45,13 +45,13 @@ export function PitchTreatmentEditor({ treatment, source, onChange }: PitchTreat
             <Text className={treatment.midiNoteBase !== 60 ? classes.changed : undefined}>
               0 maps to
             </Text>
-            <NumberInput
+            <ScrubNumber
               aria-label="MIDI note that a raw value of 0 maps to"
               prefix="MIDI "
-              min={0}
-              max={127}
+              range={[0, 127]}
+              defaultValue={60}
               value={treatment.midiNoteBase}
-              onChange={(value) => update({ midiNoteBase: Math.trunc(Number(value) || 0) })}
+              onChange={(value) => update({ midiNoteBase: Math.trunc(value) })}
             />
           </div>
         )}
@@ -67,13 +67,13 @@ export function PitchTreatmentEditor({ treatment, source, onChange }: PitchTreat
               <Text className={treatment.transposition !== 0 ? classes.changed : undefined}>
                 Transpose
               </Text>
-              <NumberInput
+              <ScrubNumber
                 aria-label="Pitch route transposition"
                 suffix=" st"
-                min={-48}
-                max={48}
+                range={[-48, 48]}
+                defaultValue={0}
                 value={treatment.transposition}
-                onChange={(value) => update({ transposition: Number(value) || 0 })}
+                onChange={(value) => update({ transposition: value })}
               />
             </div>
             <div className={classes.parameterRow}>
@@ -87,13 +87,13 @@ export function PitchTreatmentEditor({ treatment, source, onChange }: PitchTreat
             {!sourceIsPitchClass && treatment.inverted && (
               <div className={classes.parameterRow}>
                 <Text>Axis</Text>
-                <NumberInput
+                <ScrubNumber
                   aria-label="Pitch inversion axis"
                   prefix="MIDI "
-                  min={0}
-                  max={127}
+                  range={[0, 127]}
+                  defaultValue={60}
                   value={treatment.inversionAxisMidi}
-                  onChange={(value) => update({ inversionAxisMidi: Number(value) || 60 })}
+                  onChange={(value) => update({ inversionAxisMidi: value })}
                 />
               </div>
             )}
@@ -107,12 +107,12 @@ export function PitchTreatmentEditor({ treatment, source, onChange }: PitchTreat
             </div>
             <div className={classes.parameterRow}>
               <Text className={treatment.rotation !== 0 ? classes.changed : undefined}>Rotate</Text>
-              <NumberInput
+              <ScrubNumber
                 aria-label="Rotate pitch groups"
-                min={-128}
-                max={128}
+                clamp={[-128, 128]}
+                defaultValue={0}
                 value={treatment.rotation}
-                onChange={(value) => update({ rotation: Math.trunc(Number(value) || 0) })}
+                onChange={(value) => update({ rotation: Math.trunc(value) })}
               />
             </div>
           </>
@@ -144,13 +144,13 @@ export function PitchTreatmentEditor({ treatment, source, onChange }: PitchTreat
         {showVoicingControls && sourceIsPitchClass && (
           <div className={classes.parameterRow}>
             <Text>Register floor</Text>
-            <NumberInput
+            <ScrubNumber
               aria-label="Pitch-class register floor"
               prefix="MIDI "
-              min={0}
-              max={127}
+              range={[0, 127]}
+              defaultValue={60}
               value={treatment.registerBaseMidi}
-              onChange={(value) => update({ registerBaseMidi: Number(value) || 60 })}
+              onChange={(value) => update({ registerBaseMidi: value })}
             />
           </div>
         )}
@@ -160,12 +160,12 @@ export function PitchTreatmentEditor({ treatment, source, onChange }: PitchTreat
               <Text className={treatment.voicingInversion !== 0 ? classes.changed : undefined}>
                 Inversion
               </Text>
-              <NumberInput
+              <ScrubNumber
                 aria-label="Voicing inversion"
-                min={-24}
-                max={24}
+                range={[-24, 24]}
+                defaultValue={0}
                 value={treatment.voicingInversion}
-                onChange={(value) => update({ voicingInversion: Math.trunc(Number(value) || 0) })}
+                onChange={(value) => update({ voicingInversion: Math.trunc(value) })}
               />
             </div>
             <div className={classes.parameterRow}>

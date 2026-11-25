@@ -225,6 +225,34 @@
   z-index: 1;
 }
 
+.scrub[data-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.scrub[data-disabled='true']:hover {
+  background: var(--panel-slot);
+}
+
+.scrubField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.scrubLabel {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-xs);
+  line-height: 1.2;
+}
+
+.scrubDescription {
+  color: var(--text-subtle);
+  font-size: var(--mantine-font-size-xs);
+  line-height: 1.25;
+}
+
 .scrubInput {
   background: var(--input-bg);
   border: 1px solid var(--focus-ring);

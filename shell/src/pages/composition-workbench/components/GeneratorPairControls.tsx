@@ -1,5 +1,5 @@
 import { Group } from '@mantine/core';
-import { NumberInput } from '../../../ui';
+import { ScrubNumber } from '../../../ui';
 
 interface GeneratorPairControlsProps {
   a: number | string;
@@ -12,18 +12,18 @@ interface GeneratorPairControlsProps {
 export function GeneratorPairControls({ a, b, onAChange, onBChange }: GeneratorPairControlsProps) {
   return (
     <Group gap="xs" grow wrap="nowrap">
-      <NumberInput
+      <ScrubNumber
         label="Major a"
         aria-label="Major generator a"
-        min={2}
-        value={a}
+        clamp={[2, 999]}
+        value={Number(a) || 2}
         onChange={onAChange}
       />
-      <NumberInput
+      <ScrubNumber
         label="Minor b"
         aria-label="Minor generator b"
-        min={1}
-        value={b}
+        clamp={[1, 999]}
+        value={Number(b) || 1}
         onChange={onBChange}
       />
     </Group>

@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Group, Text } from '@mantine/core';
-import { NumberInput, Button } from '../../../ui';
+import { ScrubNumber, Button } from '../../../ui';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { cyclesOf, periodOf, type MistField, type MistSettings } from '../mist';
 import classes from './SwirlingMists.module.css';
@@ -472,30 +472,24 @@ export const MistStage = memo(function MistStage({
         >
           {running ? '❚❚ Pause' : '▶ Run'}
         </Button>
-        <NumberInput
-          w="6.5rem"
+        <ScrubNumber
+          style={{ width: '6.5rem' }}
           label="Speed / s"
           aria-label="Positions advanced per second"
           step={0.5}
-          decimalScale={3}
           value={speedSetting ?? Number(speed.toFixed(3))}
-          onChange={(value) => {
-            const next = typeof value === 'number' ? value : Number(value);
-            onSpeed(Number.isFinite(next) && value !== '' ? next : null);
-          }}
+          onChange={(value) => onSpeed(Number.isFinite(value) ? value : null)}
         />
-        <NumberInput
-          w="6.5rem"
+        <ScrubNumber
+          style={{ width: '6.5rem' }}
           label="View span"
           aria-label="Positions shown across the plot"
-          decimalScale={6}
           step={Math.max(0.001, Number((span / 20).toPrecision(1)))}
+          clamp={[0.000001, 100000]}
           value={Number(span.toFixed(6))}
           onChange={(value) => {
-            // Anything above 0 is taken as typed; a half-typed or empty value waits for the next key.
-            const next = typeof value === 'number' ? value : Number(value);
-            if (value !== '' && Number.isFinite(next) && next > 0) {
-              onSpan(next);
+            if (Number.isFinite(value) && value > 0) {
+              onSpan(value);
             }
           }}
         />
@@ -514,19 +508,17 @@ export const MistStage = memo(function MistStage({
         >
           Fit repeat{repeat ? ` (${formatNumber(repeat)})` : ''}
         </Button>
-        <NumberInput
-          w="6.5rem"
+        <ScrubNumber
+          style={{ width: '6.5rem' }}
           label="Position"
           aria-label="Position of the now line"
-          decimalScale={2}
+          step={0.1}
           disabled={running || audioFollowing}
           value={Number(wrap(position).toFixed(2))}
           onChange={(value) => {
-            const next = typeof value === 'number' ? value : Number(value);
-            if (Number.isFinite(next) && value !== '') {
-              // Typing a position stays in the current cycle.
+            if (Number.isFinite(value)) {
               setPosition(
-                cycleLength ? Math.floor(position / cycleLength) * cycleLength + next : next
+                cycleLength ? Math.floor(position / cycleLength) * cycleLength + value : value
               );
             }
           }}

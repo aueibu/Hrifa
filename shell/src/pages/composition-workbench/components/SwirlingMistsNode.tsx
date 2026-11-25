@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Badge, Group, Modal, Slider, Text } from '@mantine/core';
-import { Button, NumberInput, Select, Switch, TextInput, ActionIcon } from '../../../ui';
+import { Button, ScrubNumber, Select, Switch, TextInput, ActionIcon } from '../../../ui';
 import { createPitchPreviewPlan } from '../audio/performancePlans';
 import {
   curveShape,
@@ -41,11 +41,6 @@ import classes from './SwirlingMists.module.css';
 export interface SwirlingMistsNodeProps {
   instanceId: string;
   instanceLabel: string;
-}
-
-function numberOr(value: number | string, fallback: number) {
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNodeProps) {
@@ -201,47 +196,36 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
           }}
         />
       </Group>
-      <NumberInput
+      <ScrubNumber
         aria-label={`Stratum ${index + 1} cycles per pass`}
-        title="Whole cycles of the waveform in one pass"
-        min={1}
-        max={maxMistCycles}
+        range={[1, maxMistCycles]}
         value={stratum.cycles}
-        onChange={(value) =>
-          updateStratum(index, { cycles: Math.round(numberOr(value, stratum.cycles)) })
-        }
+        onChange={(value) => updateStratum(index, { cycles: Math.round(value) })}
       />
-      <NumberInput
+      <ScrubNumber
         aria-label={`Stratum ${index + 1} speed: passes per position`}
-        title="How fast the shape is traversed, in passes per position (bigger is faster). Speeds 1 and 0.5 line up every 2; 2 and 3 every 1. 0 holds still."
         step={0.25}
-        decimalScale={4}
         value={stratum.speed}
-        onChange={(value) => updateStratum(index, { speed: numberOr(value, stratum.speed) })}
+        onChange={(value) => updateStratum(index, { speed: value })}
       />
-      <NumberInput
+      <ScrubNumber
         aria-label={`Stratum ${index + 1} phase as a fraction of a pass`}
         step={0.05}
-        decimalScale={3}
         value={stratum.phase}
-        onChange={(value) => updateStratum(index, { phase: numberOr(value, stratum.phase) })}
+        onChange={(value) => updateStratum(index, { phase: value })}
       />
-      <NumberInput
+      <ScrubNumber
         aria-label={`Stratum ${index + 1} center`}
         step={0.25}
-        decimalScale={3}
         value={stratum.center}
-        onChange={(value) => updateStratum(index, { center: numberOr(value, stratum.center) })}
+        onChange={(value) => updateStratum(index, { center: value })}
       />
-      <NumberInput
+      <ScrubNumber
         aria-label={`Stratum ${index + 1} amplitude`}
         step={0.1}
-        min={0}
-        decimalScale={3}
+        clamp={[0, 1000]}
         value={stratum.amplitude}
-        onChange={(value) =>
-          updateStratum(index, { amplitude: numberOr(value, stratum.amplitude) })
-        }
+        onChange={(value) => updateStratum(index, { amplitude: value })}
       />
       <ActionIcon
         variant="subtle"
@@ -253,39 +237,30 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
       </ActionIcon>
       {stratum.waveform === 'walk' && (
         <Group gap="xs" wrap="nowrap" style={{ gridColumn: '2 / -1' }}>
-          <NumberInput
-            w="6.5rem"
+          <ScrubNumber
+            style={{ width: '6.5rem' }}
             label="Points"
             aria-label={`Stratum ${index + 1} points per cycle`}
-            min={2}
-            max={maxWalkPoints}
+            range={[2, maxWalkPoints]}
             value={stratum.walkPoints}
-            onChange={(value) =>
-              updateStratum(index, { walkPoints: Math.round(numberOr(value, stratum.walkPoints)) })
-            }
+            onChange={(value) => updateStratum(index, { walkPoints: Math.round(value) })}
           />
-          <NumberInput
-            w="6.5rem"
+          <ScrubNumber
+            style={{ width: '6.5rem' }}
             label="Walk step"
             aria-label={`Stratum ${index + 1} walk step`}
             step={0.05}
-            min={0}
-            decimalScale={3}
+            clamp={[0, 100]}
             value={stratum.walkStep}
-            onChange={(value) =>
-              updateStratum(index, { walkStep: numberOr(value, stratum.walkStep) })
-            }
+            onChange={(value) => updateStratum(index, { walkStep: value })}
           />
-          <NumberInput
-            w="6.5rem"
+          <ScrubNumber
+            style={{ width: '6.5rem' }}
             label="Smoothing"
             aria-label={`Stratum ${index + 1} smoothing window`}
-            min={1}
-            max={64}
+            range={[1, 64]}
             value={stratum.smoothing}
-            onChange={(value) =>
-              updateStratum(index, { smoothing: Math.round(numberOr(value, stratum.smoothing)) })
-            }
+            onChange={(value) => updateStratum(index, { smoothing: Math.round(value) })}
           />
         </Group>
       )}
@@ -377,26 +352,23 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
                 value={null}
                 onChange={applyPreset}
               />
-              <NumberInput
+              <ScrubNumber
                 label="Steps"
-                min={1}
-                max={maxMistSteps}
+                range={[1, maxMistSteps]}
                 value={settings.steps}
-                onChange={(value) => update({ steps: Math.round(numberOr(value, settings.steps)) })}
+                onChange={(value) => update({ steps: Math.round(value) })}
               />
-              <NumberInput
+              <ScrubNumber
                 label="Start"
-                decimalScale={6}
                 value={settings.start}
-                onChange={(value) => update({ start: numberOr(value, settings.start) })}
+                onChange={(value) => update({ start: value })}
               />
-              <NumberInput
+              <ScrubNumber
                 label="Stride"
                 description="Positions between samples. Speed 1 is one pass per position."
                 step={0.0625}
-                decimalScale={6}
                 value={settings.stride}
-                onChange={(value) => update({ stride: numberOr(value, settings.stride) })}
+                onChange={(value) => update({ stride: value })}
               />
             </InspectorSection>
             <InspectorSection label="Strata">
@@ -448,40 +420,37 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
                   The field&apos;s full reach maps onto this range, so values do not move when the
                   window does.
                 </Text>
-                <NumberInput
+                <ScrubNumber
                   label="Low"
                   value={settings.mapLow}
-                  onChange={(value) => update({ mapLow: numberOr(value, settings.mapLow) })}
+                  onChange={(value) => update({ mapLow: value })}
                 />
-                <NumberInput
+                <ScrubNumber
                   label="High"
                   value={settings.mapHigh}
-                  onChange={(value) => update({ mapHigh: numberOr(value, settings.mapHigh) })}
+                  onChange={(value) => update({ mapHigh: value })}
                 />
-                <NumberInput
+                <ScrubNumber
                   label="Round to"
                   description="Outputs are rounded to a multiple of this, e.g. 1, 0.5, 0.01."
                   step={settings.mapStep <= 0.1 ? 0.01 : 0.5}
-                  decimalScale={6}
+                  clamp={[0.000001, 1000]}
                   value={settings.mapStep}
                   onChange={(value) => {
-                    // Any positive step is taken as typed. A half-typed value such as "0" or "0." on the
-                    // way to 0.01 waits for the next key instead of being saved as 0.
-                    const next = typeof value === 'number' ? value : Number(value);
-                    if (value !== '' && Number.isFinite(next) && next > 0) {
-                      update({ mapStep: next });
+                    if (Number.isFinite(value) && value > 0) {
+                      update({ mapStep: value });
                     }
                   }}
                 />
               </InspectorSection>
               <InspectorSection label="Preview">
-                <NumberInput
+                <ScrubNumber
                   label="Step"
                   suffix=" ms"
-                  min={20}
-                  max={5000}
+                  clamp={[20, 5000]}
+                  step={10}
                   value={stepMilliseconds}
-                  onChange={(value) => setStepMilliseconds(numberOr(value, stepMilliseconds))}
+                  onChange={setStepMilliseconds}
                 />
                 <div className={workbench.nodeParameterRow}>
                   <Text>Gate</Text>

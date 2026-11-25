@@ -273,9 +273,11 @@ describe('the New data-block control', () => {
       expect(screen.getByRole('button', { name: 'New data-block' })).toBeEnabled()
     );
     await user.click(screen.getByRole('button', { name: 'New data-block defaults' }));
+    const barsSpin = await screen.findByRole('spinbutton', { name: 'Length (bars)' });
+    await user.click(barsSpin);
     const bars = await screen.findByRole('textbox', { name: 'Length (bars)' });
     await user.clear(bars);
-    await user.type(bars, '3');
+    await user.type(bars, '3{Enter}');
     expect(readDataBlockDefaults()).toEqual({ typeId: 'notes', bars: 3 });
     expect(JSON.parse(localStorage.getItem(DATA_BLOCK_DEFAULTS_KEY)!)).toEqual({
       typeId: 'notes',

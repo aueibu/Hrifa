@@ -6,7 +6,7 @@ import {
   type PianoRollViewState,
 } from '../../../components/PianoRoll';
 import { Surface } from '../../../components/Surface/Surface';
-import { Button, NumberInput, SegmentedControl, Select, ActionIcon } from '../../../ui';
+import { Button, ScrubNumber, SegmentedControl, Select, ActionIcon } from '../../../ui';
 import { volumePercentToGain } from '../audio';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import {
@@ -721,40 +721,37 @@ export function MixerNode({
                           updateChannel(port, { loop: value as MixerChannelSettings['loop'] })
                         }
                       />
-                      <NumberInput
+                      <ScrubNumber
                         label="Offset (pulses)"
                         aria-label={`Channel ${index + 1} offset in pulses`}
-                        min={0}
+                        clamp={[0, 9999]}
                         step={1}
-                        allowDecimal={false}
+                        defaultValue={0}
                         value={channel.offsetPulses}
                         onChange={(value) =>
                           updateChannel(port, {
-                            offsetPulses: Math.max(0, Math.trunc(Number(value) || 0)),
+                            offsetPulses: Math.max(0, Math.trunc(value)),
                           })
                         }
-                        w={110}
+                        style={{ width: 110 }}
                       />
                       {isRhythm && (
-                        <NumberInput
+                        <ScrubNumber
                           label="Gate %"
                           aria-label={`Channel ${index + 1} gate percent`}
-                          min={MIN_GATE_PERCENT}
-                          max={MAX_GATE_PERCENT}
+                          range={[MIN_GATE_PERCENT, MAX_GATE_PERCENT]}
                           step={5}
+                          defaultValue={defaultMixerChannelSettings.gatePercent}
                           value={channel.gatePercent}
                           onChange={(value) =>
                             updateChannel(port, {
                               gatePercent: Math.min(
                                 MAX_GATE_PERCENT,
-                                Math.max(
-                                  MIN_GATE_PERCENT,
-                                  Number(value) || defaultMixerChannelSettings.gatePercent
-                                )
+                                Math.max(MIN_GATE_PERCENT, value)
                               ),
                             })
                           }
-                          w={90}
+                          style={{ width: 90 }}
                         />
                       )}
                       {isRhythm && (

@@ -4,7 +4,7 @@ import {
   ActionIcon,
   Button,
   Chip,
-  NumberInput,
+  ScrubNumber,
   SegmentedControl,
   Select,
   Switch,
@@ -624,23 +624,25 @@ export function RhythmEditNode({
                   onChange={(event) => setProgram(event.currentTarget.value)}
                 />
                 <Group gap="xs" grow>
-                  <NumberInput
+                  <ScrubNumber
                     label={
                       <HelpTip help="Notes that pass before the program starts.">Phase</HelpTip>
                     }
                     aria-label="Structure program phase"
-                    min={0}
+                    clamp={[0, 999]}
+                    defaultValue={0}
                     value={editSettings.programPhase}
                     onChange={(value) => update({ programPhase: whole(value, 0) })}
                   />
-                  <NumberInput
+                  <ScrubNumber
                     label={
                       <HelpTip help="The program acts on every this-many-th note; the notes between pass through.">
                         Rate
                       </HelpTip>
                     }
                     aria-label="Structure program rate"
-                    min={1}
+                    clamp={[1, 999]}
+                    defaultValue={1}
                     value={editSettings.programRate}
                     onChange={(value) => update({ programRate: whole(value, 1) })}
                   />
@@ -679,21 +681,23 @@ export function RhythmEditNode({
               onChange={(event) => setLengths(event.currentTarget.value)}
             />
             <Group gap="xs" grow>
-              <NumberInput
+              <ScrubNumber
                 label={<HelpTip help="Notes that pass before the program starts.">Phase</HelpTip>}
                 aria-label="Length program phase"
-                min={0}
+                clamp={[0, 999]}
+                defaultValue={0}
                 value={editSettings.lengthPhase}
                 onChange={(value) => update({ lengthPhase: whole(value, 0) })}
               />
-              <NumberInput
+              <ScrubNumber
                 label={
                   <HelpTip help="The program acts on every this-many-th note; the notes between pass through.">
                     Rate
                   </HelpTip>
                 }
                 aria-label="Length program rate"
-                min={1}
+                clamp={[1, 999]}
+                defaultValue={1}
                 value={editSettings.lengthRate}
                 onChange={(value) => update({ lengthRate: whole(value, 1) })}
               />
@@ -706,23 +710,27 @@ export function RhythmEditNode({
               help="A count of n starts at Start and changes by Change after every this many completed blocks of the program that uses it, never below 1."
             >
               <Group gap="xs" grow>
-                <NumberInput
+                <ScrubNumber
                   label="Start"
                   aria-label="n start"
-                  min={1}
+                  clamp={[1, 999]}
+                  defaultValue={1}
                   value={editSettings.nStart}
                   onChange={(value) => update({ nStart: whole(value, 1) })}
                 />
-                <NumberInput
+                <ScrubNumber
                   label="Change"
                   aria-label="n change"
+                  clamp={[-999, 999]}
+                  defaultValue={0}
                   value={editSettings.nChange}
-                  onChange={(value) => update({ nChange: Math.trunc(Number(value) || 0) })}
+                  onChange={(value) => update({ nChange: Math.trunc(value) })}
                 />
-                <NumberInput
+                <ScrubNumber
                   label="Every"
                   aria-label="n every"
-                  min={1}
+                  clamp={[1, 999]}
+                  defaultValue={1}
                   value={editSettings.nEvery}
                   onChange={(value) => update({ nEvery: whole(value, 1) })}
                 />

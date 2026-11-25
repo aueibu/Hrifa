@@ -1,5 +1,5 @@
 import { Group, Text } from '@mantine/core';
-import { NumberInput, Switch } from '../../../ui';
+import { ScrubNumber, Switch } from '../../../ui';
 import type { ModuloTreatment } from '../moduloTreatment';
 import classes from '../CompositionWorkbench.module.css';
 
@@ -19,14 +19,14 @@ export function ModuloControl({ value, onChange }: ModuloControlProps) {
           onChange={(event) => onChange({ ...value, enabled: event.currentTarget.checked })}
         />
         {value.enabled && (
-          <NumberInput
+          <ScrubNumber
             aria-label="Modulo divisor"
-            w="5rem"
-            min={1}
+            style={{ width: '5rem' }}
+            clamp={[1, 999]}
             step={1}
             value={value.divisor}
             onChange={(divisor) =>
-              onChange({ ...value, divisor: Math.max(1, Math.trunc(Number(divisor) || 1)) })
+              onChange({ ...value, divisor: Math.max(1, Math.trunc(divisor)) })
             }
           />
         )}

@@ -1,5 +1,5 @@
 import { Alert, Badge, Stack, Text } from '@mantine/core';
-import { NumberInput, Select } from '../../../ui';
+import { ScrubNumber, Select } from '../../../ui';
 import {
   arithmeticOperatorDefaults,
   arithmeticOperatorLabels,
@@ -224,10 +224,10 @@ export function ArithmeticNode({
                 onChange={(value) => onBind('a', value ? parseOutputRef(value) : null)}
               />
               {!bindingA?.source && (
-                <NumberInput
+                <ScrubNumber
                   aria-label="A fallback value"
                   label="A fallback"
-                  value={fallbackA}
+                  value={Number(fallbackA) || 0}
                   onChange={setFallbackA}
                 />
               )}
@@ -241,10 +241,10 @@ export function ArithmeticNode({
                     onChange={(value) => onBind('b', value ? parseOutputRef(value) : null)}
                   />
                   {!bindingB?.source && (
-                    <NumberInput
+                    <ScrubNumber
                       aria-label="B fallback value"
                       label="B fallback"
-                      value={fallbackB}
+                      value={Number(fallbackB) || 0}
                       onChange={setFallbackB}
                     />
                   )}

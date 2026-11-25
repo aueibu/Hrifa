@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Popover, Stack } from '@mantine/core';
-import { NumberInput, SegmentedControl, Switch, Button } from '../../../ui';
+import { ScrubNumber, SegmentedControl, Switch, Button } from '../../../ui';
 import {
   MAX_BASE_OCTAVE,
   MAX_OFFSET,
@@ -69,31 +69,18 @@ export function AuditionSettingsPopover({ typeId }: { typeId: string }) {
           )}
           {controls.pitchClasses && (
             <>
-              <NumberInput
+              <ScrubNumber
                 label="Base octave"
-                min={MIN_BASE_OCTAVE}
-                max={MAX_BASE_OCTAVE}
-                allowDecimal={false}
-                clampBehavior="strict"
+                range={[MIN_BASE_OCTAVE, MAX_BASE_OCTAVE]}
                 value={settings.baseOctave}
-                onChange={(value) => {
-                  if (typeof value === 'number' && Number.isInteger(value)) {
-                    update({ baseOctave: value });
-                  }
-                }}
+                onChange={(value) => update({ baseOctave: Math.trunc(value) })}
               />
-              <NumberInput
+              <ScrubNumber
                 label="Offset"
-                min={-MAX_OFFSET}
-                max={MAX_OFFSET}
-                allowDecimal={false}
-                clampBehavior="strict"
+                range={[-MAX_OFFSET, MAX_OFFSET]}
+                defaultValue={0}
                 value={settings.offset}
-                onChange={(value) => {
-                  if (typeof value === 'number' && Number.isInteger(value)) {
-                    update({ offset: value });
-                  }
-                }}
+                onChange={(value) => update({ offset: Math.trunc(value) })}
               />
             </>
           )}

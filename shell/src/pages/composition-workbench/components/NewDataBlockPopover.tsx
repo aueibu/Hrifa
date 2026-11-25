@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Popover, Stack, Text } from '@mantine/core';
-import { NumberInput, Select, Button } from '../../../ui';
+import { ScrubNumber, Select, Button } from '../../../ui';
 import { useCompositionSettings } from '../compositionSettings';
 import type { PacketBlock } from '../dataBlock';
 import {
@@ -90,18 +90,11 @@ export function NewDataBlockPopover({ onCreated }: { onCreated?(dataBlock: Packe
               value={typeId}
               onChange={(value) => value && writeDataBlockDefaults({ typeId: value })}
             />
-            <NumberInput
+            <ScrubNumber
               label="Length (bars)"
-              min={MIN_DATA_BLOCK_BARS}
-              max={MAX_DATA_BLOCK_BARS}
-              allowDecimal={false}
-              clampBehavior="strict"
+              range={[MIN_DATA_BLOCK_BARS, MAX_DATA_BLOCK_BARS]}
               value={defaults.bars}
-              onChange={(value) => {
-                if (typeof value === 'number' && Number.isInteger(value)) {
-                  writeDataBlockDefaults({ bars: value });
-                }
-              }}
+              onChange={(value) => writeDataBlockDefaults({ bars: Math.trunc(value) })}
             />
             <Text c="dimmed">Bars of {settings.transport.meter}.</Text>
           </Stack>

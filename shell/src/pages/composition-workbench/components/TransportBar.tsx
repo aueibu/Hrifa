@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { Group, Popover, Stack, Text, Tooltip } from '@mantine/core';
-import { NumberInput, Select, Switch, ActionIcon } from '../../../ui';
+import { ScrubNumber, Select, Switch, ActionIcon } from '../../../ui';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { useCompositionSettings } from '../compositionSettings';
 import { useHistory } from '../history';
@@ -260,18 +260,14 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
           <StopIcon />
         </ActionIcon>
       </Tooltip>
-      <NumberInput
-        w={92}
+      <ScrubNumber
+        style={{ width: 92 }}
         aria-label="Tempo"
         suffix=" BPM"
-        min={MIN_TEMPO}
-        max={MAX_TEMPO}
-        clampBehavior="blur"
-        allowDecimal={false}
+        clamp={[MIN_TEMPO, MAX_TEMPO]}
+        defaultValue={120}
         value={transport.tempo}
-        onChange={(value) =>
-          typeof value === 'number' && value >= MIN_TEMPO && updateTransport({ tempo: value })
-        }
+        onChange={(value) => updateTransport({ tempo: Math.trunc(value) })}
       />
       <Group gap={6} wrap="nowrap" visibleFrom="sm">
         <MeterAndPulse transport={transport} update={updateTransport} />

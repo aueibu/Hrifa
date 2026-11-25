@@ -178,10 +178,12 @@ describe('the desk card Play (R3)', () => {
       })
     );
     await openSettings();
-    const offset = screen.getByLabelText('Offset');
-    expect(screen.getByLabelText('Base octave')).toHaveValue('4');
+    const offsetSpin = screen.getByLabelText('Offset');
+    expect(screen.getByLabelText('Base octave')).toHaveValue(4);
+    await userEvent.click(offsetSpin);
+    const offset = screen.getByRole('textbox', { name: 'Offset' });
     await userEvent.clear(offset);
-    await userEvent.type(offset, '3');
+    await userEvent.type(offset, '3{Enter}');
     await userEvent.keyboard('{Escape}');
     await play();
     await waitFor(() => expect(played).toHaveLength(1));

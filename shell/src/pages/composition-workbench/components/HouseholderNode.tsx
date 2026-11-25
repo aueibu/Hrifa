@@ -3,7 +3,7 @@ import { Alert, Badge, Slider, Stack, Text, Tooltip } from '@mantine/core';
 import {
   Button,
   Checkbox,
-  NumberInput,
+  ScrubNumber,
   Radio,
   SegmentedControl,
   Select,
@@ -429,14 +429,13 @@ export function HouseholderNode({
                   value={settings.reflectCoefficient}
                   onChange={(value) => update({ reflectCoefficient: value })}
                 />
-                <NumberInput
+                <ScrubNumber
                   label="Morph steps"
-                  min={1}
-                  max={8}
+                  range={[1, 8]}
                   value={settings.reflectSteps}
                   onChange={(value) =>
                     update({
-                      reflectSteps: Math.max(1, Math.min(8, Math.floor(Number(value) || 1))),
+                      reflectSteps: Math.max(1, Math.min(8, Math.floor(value))),
                     })
                   }
                 />
@@ -473,17 +472,16 @@ export function HouseholderNode({
                             update({ [key]: { ...settings[key], coefficient: value } })
                           }
                         />
-                        <NumberInput
+                        <ScrubNumber
                           label="Weight"
-                          min={0}
+                          clamp={[0, 100]}
                           step={0.25}
-                          decimalScale={2}
                           value={settings[key].weight}
                           onChange={(value) =>
                             update({
                               [key]: {
                                 ...settings[key],
-                                weight: Math.max(0, Number(value) || 0),
+                                weight: Math.max(0, value),
                               },
                             })
                           }
@@ -498,23 +496,21 @@ export function HouseholderNode({
                   checked={settings.pinStart ?? false}
                   onChange={(event) => update({ pinStart: event.currentTarget.checked })}
                 />
-                <NumberInput
+                <ScrubNumber
                   label="Keep identity"
                   description="Penalty for changing the distances between attacks. Favours displacing the whole rhythm over reshaping it."
-                  min={0}
+                  clamp={[0, 100]}
                   step={0.25}
-                  decimalScale={2}
                   value={identityWeight}
-                  onChange={(value) => update({ identity: Math.max(0, Number(value) || 0) })}
+                  onChange={(value) => update({ identity: Math.max(0, value) })}
                 />
-                <NumberInput
+                <ScrubNumber
                   label="Stay close"
                   description="Penalty for moving attacks away from the input."
-                  min={0}
+                  clamp={[0, 100]}
                   step={0.05}
-                  decimalScale={2}
                   value={settings.closeness}
-                  onChange={(value) => update({ closeness: Math.max(0, Number(value) || 0) })}
+                  onChange={(value) => update({ closeness: Math.max(0, value) })}
                 />
               </>
             )}
@@ -549,13 +545,11 @@ export function HouseholderNode({
                 allowDeselect={false}
                 onChange={(value) => value && update({ grid: Number(value) })}
               />
-              <NumberInput
+              <ScrubNumber
                 label="Minimum duration (grid steps)"
-                min={1}
+                clamp={[1, 64]}
                 value={settings.minUnits}
-                onChange={(value) =>
-                  update({ minUnits: Math.max(1, Math.floor(Number(value) || 1)) })
-                }
+                onChange={(value) => update({ minUnits: Math.max(1, Math.floor(value)) })}
               />
             </InspectorSection>
 

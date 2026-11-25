@@ -291,6 +291,12 @@ export function ScrubNumber({
   step = 1,
   defaultValue,
   prefix = '',
+  suffix = '',
+  disabled = false,
+  label,
+  description,
+  style,
+  className,
   'aria-label': ariaLabel,
 }: {
   value: number;
@@ -302,6 +308,12 @@ export function ScrubNumber({
   step?: number;
   defaultValue?: number;
   prefix?: string;
+  suffix?: string;
+  disabled?: boolean;
+  label?: ReactNode;
+  description?: ReactNode;
+  style?: React.CSSProperties;
+  className?: string;
   'aria-label'?: string;
 }) {
   const [editing, setEditing] = useState(false);
@@ -313,11 +325,19 @@ export function ScrubNumber({
     startValue: number;
     moved: boolean;
   } | null>(null);
-  const labelProps = useFieldLabel(ariaLabel);
+  const ctxLabelProps = useFieldLabel(ariaLabel);
+  const labelId = useId();
+  const labelProps = label && !ariaLabel ? { 'aria-labelledby': labelId } : ctxLabelProps;
 
   const bounds = range ?? clampBounds;
   const min = bounds?.[0];
   const max = bounds?.[1];
+
+  const roundToStep = (n: number, fine: boolean) => {
+    const unit = step * (fine ? 0.1 : 1);
+    const decimals = Math.max(0, (String(unit).split('.')[1] ?? '').length);
+    return Number(n.toFixed(Math.min(6, decimals)));
+  };
 
   const clampValue = (n: number) => {
     let out = n;
@@ -345,13 +365,14 @@ export function ScrubNumber({
     setEditing(false);
   };
 
-  if (editing) {
-    return (
+  if (editing && !disabled) {
+    const inputEl = (
       <input
         ref={inputRef}
         type="text"
         inputMode="decimal"
-        className={classes.scrubInput}
+        className={className ? `${classes.scrubInput} ${className}` : classes.scrubInput}
+        style={style}
         value={draft}
         onChange={(e) => setDraft(e.currentTarget.value)}
         onBlur={commitDraft}
@@ -366,6 +387,19 @@ export function ScrubNumber({
         }}
         {...labelProps}
       />
+    );
+    return label || description ? (
+      <div className={classes.scrubField}>
+        {label && (
+          <span id={labelId} className={classes.scrubLabel}>
+            {label}
+          </span>
+        )}
+        {description && <span className={classes.scrubDescription}>{description}</span>}
+        {inputEl}
+      </div>
+    ) : (
+      inputEl
     );
   }
 
@@ -390,18 +424,21 @@ export function ScrubNumber({
     }
   }
 
-  return (
+  const scrubEl = (
     <div
       role="spinbutton"
-      tabIndex={0}
+      tabIndex={disabled ? -1 : 0}
       aria-valuenow={value}
       aria-valuemin={min}
       aria-valuemax={max}
+      aria-disabled={disabled || undefined}
       data-kit="scrub-number"
       data-dragging={dragging ? 'true' : undefined}
-      className={classes.scrub}
+      data-disabled={disabled ? 'true' : undefined}
+      className={className ? `${classes.scrub} ${className}` : classes.scrub}
+      style={style}
       onPointerDown={(e) => {
-        if (e.button !== 0) {
+        if (disabled || e.button !== 0) {
           return;
         }
         e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -409,7 +446,7 @@ export function ScrubNumber({
       }}
       onPointerMove={(e) => {
         const d = dragRef.current;
-        if (!d) {
+        if (disabled || !d) {
           return;
         }
         const dx = e.clientX - d.startX;
@@ -421,7 +458,7 @@ export function ScrubNumber({
         const factor = e.shiftKey ? 0.1 : 1;
         // ~6px per step for crisp integer/fine control
         const delta = Math.round((dx / 6) * factor) * step;
-        const next = clampValue(d.startValue + delta);
+        const next = clampValue(roundToStep(d.startValue + delta, e.shiftKey));
         if (next !== value) {
           onChange(next);
         }
@@ -433,28 +470,31 @@ export function ScrubNumber({
         if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
           e.currentTarget.releasePointerCapture(e.pointerId);
         }
-        if (d && !d.moved && e.detail < 2) {
+        if (!disabled && d && !d.moved && e.detail < 2) {
           setDraft(String(value));
           setEditing(true);
         }
       }}
       onDoubleClick={() => {
-        if (defaultValue !== undefined) {
+        if (!disabled && defaultValue !== undefined) {
           setEditing(false);
           onChange(clampValue(defaultValue));
         }
       }}
       onKeyDown={(e) => {
+        if (disabled) {
+          return;
+        }
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           setDraft(String(value));
           setEditing(true);
         } else if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
           e.preventDefault();
-          onChange(clampValue(value + step * (e.shiftKey ? 0.1 : 1)));
+          onChange(clampValue(roundToStep(value + step * (e.shiftKey ? 0.1 : 1), e.shiftKey)));
         } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
           e.preventDefault();
-          onChange(clampValue(value - step * (e.shiftKey ? 0.1 : 1)));
+          onChange(clampValue(roundToStep(value - step * (e.shiftKey ? 0.1 : 1), e.shiftKey)));
         }
       }}
       {...labelProps}
@@ -465,8 +505,23 @@ export function ScrubNumber({
       <span className={classes.scrubValue}>
         {prefix}
         {value}
+        {suffix}
       </span>
     </div>
+  );
+
+  return label || description ? (
+    <div className={classes.scrubField}>
+      {label && (
+        <span id={labelId} className={classes.scrubLabel}>
+          {label}
+        </span>
+      )}
+      {description && <span className={classes.scrubDescription}>{description}</span>}
+      {scrubEl}
+    </div>
+  ) : (
+    scrubEl
   );
 }
 
