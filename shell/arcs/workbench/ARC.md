@@ -148,7 +148,9 @@ Scenarios first: `SCENARIOS.objects.md` (confirmed by the human 2026-11-24). Obj
 - **DONE 2026-11-24 (W-71; the human tried it and approved the look).** Scope as built: horizontal view of objects as blocks by time span and register; select, move, resize, playhead with the transport. A view of the same objects, never its own data.
 - Human checkpoint after: **yes** (look and feel)
 
-### O3: Native modifiers and Apply
+### O3: Native modifiers and Apply (split 2026-11-24: O3-i pure, O3-ii Properties UI; scenarios confirmed: `SCENARIOS.modifiers.md`, W-72)
+- Checkpoint decisions (human, 2026-11-24): rows 1, 2, 5, 6, 7 as recommended (Apply only on the top modifier plus Apply All; the second modifier is named **Snap to Pitch Set**); row 3 gets a toggle for both behaviors (Repeat every octave, default on, with an editable Period in cents); row 4 accepted for now, to be tuned after hearing it; **non-12-EDO is a core rule** (exact cents with a period, a Pitch classes input brings its own EDO).
+- O3-i (pure, no UI, no human checkpoint): modifier registry, object `modifiers` with refs, evaluation through the stack before the mapping, the three modifiers, Apply and Apply All ops, problem messages for Properties. O3-ii (UI thin slice, human checkpoint: look and sound): the Modifiers section in Properties.
 - Scope: modifier stack on objects (reorder, mute); Transpose to pitch set, Harmonize (chord engine), Melodicize (`melodicize`), each reading its pitch set or rhythm by reference; a missing reference silences the object and Properties says which is missing (row 3); Apply bakes ONE cycle into a new Notes data-block, clears the modifiers, keeps the mapping (row 4); a hand-edit of a modified object asks to Apply first.
 - Acceptance: [ ] `check:workbench` passes [ ] tests from rows 3 and 4 [ ] DECISIONS row
 - Human checkpoint after: **yes** (listen)
