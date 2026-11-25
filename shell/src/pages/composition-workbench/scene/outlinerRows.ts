@@ -1,11 +1,12 @@
 import type { StoredDataBlock } from '../dataBlocks/registry';
-import { collectionDataOf, objectDataOf, sceneDataOf } from './sceneTypes';
+import { collectionDataOf, firstStripOf, objectDataOf, sceneDataOf } from './sceneTypes';
 
 /**
  * The Outliner's visible tree (workbench O2a), pure. The scene's root collection is not shown. Inside a
  * collection an object whose parent is another member of the SAME collection nests under it; otherwise it
  * sits at the collection's level. Collections nest. A cycle or a block listed twice never hangs: each
- * block is shown once, and members caught in a parent cycle sit at the collection's level.
+ * block is shown once, and members caught in a parent cycle sit at the collection's level. Parents are
+ * strip to strip (W-75); the Outliner nests an object under the object of its FIRST strip's parent.
  */
 
 export interface OutlinerRow {
@@ -22,10 +23,13 @@ export interface OutlinerRow {
   /** Own or inherited. */
   muted: boolean;
   hasChildren: boolean;
-  /** The primary data-block's name, or '' (an Empty). Collections: ''. */
+  /** The first strip's data-block name, or '' (an Empty, or no strips). Collections: ''. */
   data: string;
   warnings: string[];
 }
+
+const dataName = (byId: ReadonlyMap<string, StoredDataBlock>, ref: { id: string } | null) =>
+  ref === null ? '' : (byId.get(ref.id)?.name ?? '');
 
 export function outlinerRows(blocks: readonly StoredDataBlock[], sceneId: string): OutlinerRow[] {
   const byId = new Map(blocks.map((block) => [block.id, block]));
@@ -51,7 +55,8 @@ export function outlinerRows(blocks: readonly StoredDataBlock[], sceneId: string
       .filter((block): block is StoredDataBlock => block !== undefined && !shown.has(block.id));
     const memberIds = new Set(members.map((block) => block.id));
     const parentOf = (block: StoredDataBlock) => {
-      const parent = objectDataOf(block)?.parentRef?.id;
+      const object = objectDataOf(block);
+      const parent = object ? firstStripOf(object)?.parentStrip?.objectId : undefined;
       return parent !== undefined && parent !== block.id && memberIds.has(parent) ? parent : null;
     };
     const childrenOf = new Map<string, StoredDataBlock[]>();
@@ -80,8 +85,7 @@ export function outlinerRows(blocks: readonly StoredDataBlock[], sceneId: string
           inheritedMute: inherited,
           muted: object.mute || inherited,
           hasChildren: kids.length > 0,
-          data:
-            object.primaryDataRef === null ? '' : (byId.get(object.primaryDataRef.id)?.name ?? ''),
+          data: dataName(byId, firstStripOf(object)?.dataRef ?? null),
           warnings: [],
         });
         kids.forEach((kid) => visit(kid, level + 1, block.id));

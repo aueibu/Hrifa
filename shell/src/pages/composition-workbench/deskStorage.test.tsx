@@ -10,6 +10,7 @@ import {
   pruneLineage,
   type PacketBlock,
 } from './dataBlock';
+import type { StoredDataBlock } from './dataBlocks/registry';
 import { DESK_WRITE_DEBOUNCE_MS, DeskProvider, useDesk } from './desk';
 import {
   DESK_DB_NAME,
@@ -20,7 +21,7 @@ import {
   resetPersistRequest,
   writeDeskNow,
 } from './deskStore';
-import { renderDesk, storedDesk } from './deskTestUtils';
+import { renderDesk, seedDesk, storedDesk } from './deskTestUtils';
 import { canUndo, redo, resetHistory, undo } from './history';
 import { packet, type DataItem, type DataPacket } from './model';
 import { musicalDuration, musicalPosition } from './musicalTime';
@@ -256,6 +257,60 @@ describe('loading', () => {
     expect((await storedDesk(result.current)).map((block) => block.id)).toEqual(['new']);
     const reloaded = await loadDesk();
     expect(reloaded.error).toBeUndefined();
+  });
+});
+
+describe('a desk saved before strips (W-75, row 12)', () => {
+  const oldObject = (id: string, extra: object = {}) => ({
+    schemaVersion: 2,
+    id,
+    typeId: 'object',
+    name: id,
+    createdAt: '2026-11-24T00:00:00Z',
+    payload: {
+      kind: 'record',
+      data: {
+        parentRef: null,
+        timeSpan: {
+          start: { numerator: 4, denominator: 1 },
+          duration: { numerator: 8, denominator: 1 },
+        },
+        registerSpan: { lowMc: 0, highMc: 12700 },
+        primaryDataRef: { id: 'n1' },
+        mapping: 'stretch',
+        modifiers: [],
+        mute: true,
+        ...extra,
+      },
+    },
+  });
+
+  it('opens with each old object migrated to one strip, writable, with no error', async () => {
+    await seedDesk([
+      dataBlock('n1'),
+      oldObject('verse'),
+      oldObject('kid', { parentRef: { id: 'verse' } }),
+    ] as unknown as StoredDataBlock[]);
+    const loaded = await loadDesk();
+    expect(loaded.error).toBeUndefined();
+    expect(loaded.writable).toBe(true);
+    expect(loaded.dataBlocks.map((block) => block.id)).toEqual(['n1', 'verse', 'kid']);
+    const strips = (id: string) =>
+      (
+        loaded.dataBlocks.find((block) => block.id === id)!.payload as {
+          data: { mute: boolean; strips: Record<string, unknown>[] };
+        }
+      ).data;
+    expect(strips('verse').mute).toBe(true);
+    expect(strips('verse').strips).toHaveLength(1);
+    expect(strips('verse').strips[0]).toMatchObject({
+      id: 'strip-1',
+      dataRef: { id: 'n1' },
+      mapping: 'stretch',
+      mute: false,
+      parentStrip: null,
+    });
+    expect(strips('kid').strips[0].parentStrip).toEqual({ objectId: 'verse', stripId: 'strip-1' });
   });
 });
 

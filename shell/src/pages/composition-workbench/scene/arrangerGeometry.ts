@@ -60,9 +60,22 @@ export interface DragBase {
   /** Its own start, relative to its parent (or to the scene start). */
   relativeStart: Rational;
   duration: Rational;
+  /** How far into the data the object's own start falls (default 0). */
+  contentOffset?: Rational;
+  /** The object's mapping (default Loop). It decides what a left-edge drag does to the content offset. */
+  mapping?: 'loop' | 'stretch' | 'one-shot';
 }
 
-export type DragKind = 'move' | 'resize';
+/** `resize` is the right edge, `resize-left` the left edge (O2d). */
+export type DragKind = 'move' | 'resize' | 'resize-left';
+
+/** The span (and, for a left-edge drag, the content offset) a drag gives. */
+export interface DragResult {
+  start: Rational;
+  duration: Rational;
+  /** Only for `resize-left`, and unchanged for Stretch. */
+  contentOffset?: Rational;
+}
 
 /**
  * The span a drag gives, for the pointer moved `deltaPx` from where it went down. `step` null: free.
@@ -78,7 +91,7 @@ export function dragOutcome(
   deltaPx: number,
   step: Rational | null,
   minimum: Rational
-): { start: Rational; duration: Rational } {
+): DragResult {
   const delta = pxToRational(deltaPx);
   const land = (value: Rational) => (step === null ? value : snapToStep(value, step));
   if (kind === 'move') {
@@ -89,6 +102,27 @@ export function dragOutcome(
     return {
       start: addRational(base.relativeStart, subtractRational(world, base.worldStart)),
       duration: base.duration,
+    };
+  }
+  if (kind === 'resize-left') {
+    // The left edge lands on the grid; the block's end stays. The edge never passes one beat short of
+    // the end and never goes before the scene start. The data keeps its place in time (the offset moves
+    // by the same amount as the start), except Stretch, which refits its one cycle to the new span.
+    const fixedEnd = addRational(base.worldStart, base.duration);
+    let world = land(addRational(base.worldStart, delta));
+    const latest = subtractRational(fixedEnd, minimum);
+    if (compareRational(world, latest) > 0) {
+      world = latest;
+    }
+    if (world.numerator < 0) {
+      world = rational(0);
+    }
+    const shift = subtractRational(world, base.worldStart);
+    const offset = base.contentOffset ?? rational(0);
+    return {
+      start: addRational(base.relativeStart, shift),
+      duration: subtractRational(fixedEnd, world),
+      contentOffset: base.mapping === 'stretch' ? offset : addRational(offset, shift),
     };
   }
   const end = land(addRational(addRational(base.worldStart, base.duration), delta));
@@ -116,10 +150,7 @@ export interface DragState {
 }
 
 /** What a drag commits: a new relative start and duration (the caller writes the field its kind changes). */
-export interface DragCommit {
-  start: Rational;
-  duration: Rational;
-}
+export type DragCommit = DragResult;
 
 export function dragStart(
   id: string,
@@ -142,7 +173,7 @@ export function dragMove(state: DragState, clientX: number, shift: boolean): Dra
 }
 
 /** What to show while the drag is live: the old span exactly until the threshold is passed. */
-export function dragLive(state: DragState, meter: string): { start: Rational; duration: Rational } {
+export function dragLive(state: DragState, meter: string): DragResult {
   if (!state.moved) {
     return { start: state.base.relativeStart, duration: state.base.duration };
   }
@@ -173,7 +204,10 @@ export function dragRelease(
   const unchanged =
     final.kind === 'move'
       ? compareRational(outcome.start, state.base.relativeStart) === 0
-      : compareRational(outcome.duration, state.base.duration) === 0;
+      : final.kind === 'resize-left'
+        ? compareRational(outcome.start, state.base.relativeStart) === 0 &&
+          compareRational(outcome.duration, state.base.duration) === 0
+        : compareRational(outcome.duration, state.base.duration) === 0;
   return unchanged ? null : outcome;
 }
 

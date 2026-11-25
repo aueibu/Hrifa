@@ -148,6 +148,24 @@ Scenarios first: `SCENARIOS.objects.md` (confirmed by the human 2026-11-24). Obj
 - **DONE 2026-11-24 (W-71; the human tried it and approved the look).** Scope as built: horizontal view of objects as blocks by time span and register; select, move, resize, playhead with the transport. A view of the same objects, never its own data.
 - Human checkpoint after: **yes** (look and feel)
 
+### O2c: Notes inside the Arranger blocks (added 2026-11-24, built right after O3-ii)
+- Checkpoint decisions (human, 2026-11-24): Bitwig-style note BARS inside each block, by default (dots only maybe later for percussion; not now). Start right after O3-ii. Reference: Bitwig clip previews in the arranger (small piano-roll bars inside the clip block).
+- Scope: each object block shows its EVALUATED notes (after modifiers and mapping, from `evaluateScene`) as bars, time on x, pitch on y scaled to the block's own range; rhythm-only data shows as ticks. A view only, no new data. THIN SLICE then stop for the human to look.
+- Future goal (human, 2026-11-24, BACKLOG): a combined view of a selection of objects overlaid in one pitch/time space (by Hz or by pitch), like Bitwig's clip editor showing several selected clips together, colored per clip.
+- Human checkpoint after: **yes** (look)
+
+### O2d: Arranger edge drags and row height (added 2026-11-24, W-74)
+- Checkpoint decisions (human, 2026-11-24): edge grab strips about 10 px on both sides with the length cursor and a hover highlight; Loop objects: both edge drags (full height) extend the loop with the cycle grid anchored (left drag reveals the earlier cycles); One-shot: left edge trims (notes keep their time), out past the data adds silence; Stretch: edge drag refits the span; one new field `contentOffset` on the object; drag a row's bottom edge to change its height (per row, per viewer, not undoable); taller default row (about 2.5rem). Option "content moves with the edge" deferred to a modifier key (BACKLOG). O2c preview keeps its 600-midicent minimum range (matches Bitwig).
+- Scope: `contentOffset` in `sceneTypes` and `evaluateScene`, edge drag state machine in `arrangerGeometry.ts`, the panel. THIN SLICE then stop for the human to try.
+- Human checkpoint after: **yes** (feel)
+
+### S0 to S2: Strips (added 2026-11-24, W-75; scenarios `SCENARIOS.strips.md` confirmed by the human)
+- Checkpoint decisions (human, 2026-11-24): objects are rows, a strip is one placement of content inside an object (Blender NLA); parent strip to strip; no overlap in a row, the shared edge of touching strips drags both with the `<][>` cursor; a strip can be dragged to another object's row; Duplicate Strip (independent) and Duplicate Linked (shares the data-block); an Empty keeps one silent strip; migrate stored objects on load; no tracks inside a row yet.
+- **S0 (pure, no UI):** `Strip` type and validation, `strips` on the object, `contentOffset`, modifiers and parent move onto the strip; evaluator over strips; ops (add, duplicate, duplicate linked, delete, move within a row with the no-overlap rule, move to another object, shared-edge resize, set parent); strip refs in the users and delete paths; migration on load; scenario tests from the table (rows 1 to 4c, 6 to 12); DECISIONS update. Acceptance: `check:workbench` passes; rows tested with the clave example.
+- **S1 (UI thin slice, human checkpoint: look and feel):** Arranger draws several strips per row (O2c bars and O2d drags per strip, split cursor on a shared edge, drag to another row), strip selection, Properties split into Object and Strip sections, Duplicate Strip and Duplicate Linked, parent strip picker. STOP for the human before review or commit.
+- **S2:** Apply and modifiers per strip in Properties (O3-ii moved to strips), wording, review, gate.
+- Human checkpoint after S1: **yes**.
+
 ### O3: Native modifiers and Apply (split 2026-11-24: O3-i pure, O3-ii Properties UI; scenarios confirmed: `SCENARIOS.modifiers.md`, W-72)
 - Checkpoint decisions (human, 2026-11-24): rows 1, 2, 5, 6, 7 as recommended (Apply only on the top modifier plus Apply All; the second modifier is named **Snap to Pitch Set**); row 3 gets a toggle for both behaviors (Repeat every octave, default on, with an editable Period in cents); row 4 accepted for now, to be tuned after hearing it; **non-12-EDO is a core rule** (exact cents with a period, a Pitch classes input brings its own EDO).
 - **O3-i DONE 2026-11-24 (W-73).** O3-i (pure, no UI, no human checkpoint): modifier registry, object `modifiers` with refs, evaluation through the stack before the mapping, the three modifiers, Apply and Apply All ops, problem messages for Properties. O3-ii (UI thin slice, human checkpoint: look and sound): the Modifiers section in Properties.

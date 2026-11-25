@@ -1,23 +1,27 @@
 import {
   DATA_BLOCK_SCHEMA_VERSION,
   type PacketBlock,
+  type Ref,
   type RecordBlock,
   type StoredDataBlock,
 } from '../dataBlocks/registry';
 import '../dataBlocks/types';
 import { packet } from '../model';
-import { rationalFromNumber } from '../musicalTime';
+import { rationalFromNumber, type Rational } from '../musicalTime';
 import { getModifierDef } from './modifiers';
 import {
   blankCollectionData,
   blankObjectData,
   blankSceneData,
+  blankStrip,
   COLLECTION_TYPE_ID,
   OBJECT_TYPE_ID,
   SCENE_TYPE_ID,
   type CollectionData,
   type ModifierInstance,
   type ObjectData,
+  type Strip,
+  type StripParent,
 } from './sceneTypes';
 
 /** Test helpers only: the 3-2 son clave and small scene builders. */
@@ -59,22 +63,57 @@ export function emptyRhythmBlock(id = 'empty-rhythm'): PacketBlock {
   };
 }
 
-type ObjectPatch = Partial<Omit<ObjectData, 'timeSpan'>> & {
+/** The id every helper-built first strip has. */
+export const S1 = 's1';
+
+interface StripPatch {
+  id?: string;
+  dataRef?: Ref | null;
   /** Quarter notes. */
   start?: number;
   duration?: number;
-};
+  mapping?: Strip['mapping'];
+  contentOffset?: Rational;
+  modifiers?: ModifierInstance[];
+  mute?: boolean;
+  parentStrip?: StripParent | null;
+}
 
-export function objectBlock(id: string, patch: ObjectPatch = {}, name = id): RecordBlock {
-  const { start, duration, ...rest } = patch;
-  const blank = blankObjectData();
-  const data: ObjectData = {
-    ...blank,
+/** A strip: start 0, 4 quarters, Loop, silent, unless `patch` says otherwise. */
+export function stripOf(patch: StripPatch = {}): Strip {
+  const { start, duration, id, ...rest } = patch;
+  return {
+    ...blankStrip(id ?? S1),
     ...rest,
-    timeSpan: {
-      start: rationalFromNumber(start ?? 0),
-      duration: rationalFromNumber(duration ?? 4),
-    },
+    start: rationalFromNumber(start ?? 0),
+    duration: rationalFromNumber(duration ?? 4),
+  };
+}
+
+type ObjectPatch = Partial<Omit<ObjectData, 'strips'>> &
+  Omit<StripPatch, 'id'> & {
+    /** Several strips instead of the one the other fields describe. */
+    strips?: Strip[];
+    /** Shorthand for `dataRef`. */
+    primaryDataRef?: Ref | null;
+    /** Shorthand: the first strip of this object is the parent. */
+    parentRef?: Ref | null;
+  };
+
+/** An object with the strips of `patch.strips`, else ONE strip `s1` built from the strip fields of `patch`. */
+export function objectBlock(id: string, patch: ObjectPatch = {}, name = id): RecordBlock {
+  const { strips, primaryDataRef, parentRef, registerSpan, mute, ...stripFields } = patch;
+  const data: ObjectData = {
+    ...blankObjectData(),
+    ...(registerSpan === undefined ? {} : { registerSpan }),
+    ...(mute === undefined ? {} : { mute }),
+    strips: strips ?? [
+      stripOf({
+        ...stripFields,
+        ...(primaryDataRef === undefined ? {} : { dataRef: primaryDataRef }),
+        ...(parentRef ? { parentStrip: { objectId: parentRef.id, stripId: S1 } } : {}),
+      }),
+    ],
   };
   return record(id, OBJECT_TYPE_ID, name, data);
 }

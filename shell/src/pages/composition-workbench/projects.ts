@@ -10,6 +10,7 @@ import {
   type StoredProject,
 } from './deskStore';
 import { setReloading } from './reloading';
+import { migrateStoredBlocks } from './scene/sceneMigration';
 
 /**
  * Saved projects. Everything the workbench remembers (nodes, their settings, routes, the
@@ -306,15 +307,19 @@ export function parseProjectFile(text: string): ProjectRecord[] {
   if (file.version !== 1) {
     throw new Error(`Unsupported project file version: ${String(file.version)}.`);
   }
-  return (file.projects as ProjectRecord[]).filter(isProjectShape).map((project, index) => ({
-    id: `project-${stamp}-import-${index}`,
-    name: project.name,
-    savedAt: project.savedAt,
-    entries: Object.fromEntries(
-      Object.entries(project.entries).filter(([key]) => key.startsWith(workbenchStoragePrefix))
-    ),
-    desk: acceptsDataBlocks(project.desk) ? project.desk : null,
-  }));
+  return (file.projects as ProjectRecord[]).filter(isProjectShape).map((project, index) => {
+    // Objects saved before strips are converted before the desk is checked (W-75, row 12).
+    const desk = Array.isArray(project.desk) ? migrateStoredBlocks(project.desk) : project.desk;
+    return {
+      id: `project-${stamp}-import-${index}`,
+      name: project.name,
+      savedAt: project.savedAt,
+      entries: Object.fromEntries(
+        Object.entries(project.entries).filter(([key]) => key.startsWith(workbenchStoragePrefix))
+      ),
+      desk: acceptsDataBlocks(desk) ? desk : null,
+    };
+  });
 }
 
 export type { StoredProject };

@@ -39,6 +39,7 @@ import {
   type SceneOpResult,
 } from './sceneOps';
 import {
+  S1,
   claveBlock,
   collectionBlock,
   modifierOf,
@@ -95,8 +96,9 @@ function ok(result: SceneOpResult) {
   return result;
 }
 
+/** The first (only) strip of object 'o'. */
 const objectOf = (blocks: readonly StoredDataBlock[]) =>
-  objectDataOf(blocks.find((block) => block.id === 'o'))!;
+  objectDataOf(blocks.find((block) => block.id === 'o'))!.strips[0];
 
 describe('the registry', () => {
   it('holds the three modifiers with their input kinds and reference slots', () => {
@@ -402,7 +404,7 @@ describe('stacks, order, mute (rows 1, 5, 6)', () => {
     expect(play(blocks).warnings).toEqual([
       'Object "Bass": Melodicize needs Rhythm; the data so far is Notes',
     ]);
-    expect(modifierProblems(blocks, 'o')).toEqual([
+    expect(modifierProblems(blocks, 'o', S1)).toEqual([
       { modifierId: 'm1', text: 'Melodicize needs Rhythm; the data so far is Notes' },
     ]);
   });
@@ -432,11 +434,11 @@ describe('stacks, order, mute (rows 1, 5, 6)', () => {
       modifierOf('m1', MELODICIZE_ID, {}),
       { id: 'm2', type: 'mystery', mute: false, params: {}, refs: {} },
     ]);
-    expect(modifierProblems(blocks, 'o').map((problem) => problem.modifierId)).toEqual([
+    expect(modifierProblems(blocks, 'o', S1).map((problem) => problem.modifierId)).toEqual([
       'm1',
       'm2',
     ]);
-    expect(modifierProblems(world('clave', []), 'o')).toEqual([]);
+    expect(modifierProblems(world('clave', []), 'o', S1)).toEqual([]);
   });
 
   it('an object with an old empty modifier list plays and validates as before', () => {
@@ -450,27 +452,30 @@ describe('a modifier pitch set is a reference (users, mapRefs, delete)', () => {
   const blocks = world('clave', [modifierOf('m1', MELODICIZE_ID, { pitches: 'P' })]);
   const project = (list: StoredDataBlock[]): RefsProject => ({ dataBlocks: list, instances: [] });
 
-  it('exposes the slot modifier:<id>:<slot>, only for non-blank refs', () => {
+  it('exposes the slot strip:<stripId>:modifier:<id>:<slot>, only for non-blank refs', () => {
     const object = blocks.find((block) => block.id === 'o')!;
-    expect(blockRefs(object).map((entry) => entry.slot)).toEqual(['data', 'modifier:m1:pitches']);
+    expect(blockRefs(object).map((entry) => entry.slot)).toEqual([
+      'strip:s1:data',
+      'strip:s1:modifier:m1:pitches',
+    ]);
     const blank = world('clave', [modifierOf('m1', MELODICIZE_ID, {})]).find((b) => b.id === 'o')!;
-    expect(blockRefs(blank).map((entry) => entry.slot)).toEqual(['data']);
+    expect(blockRefs(blank).map((entry) => entry.slot)).toEqual(['strip:s1:data']);
   });
 
   it('the pitch set shows the object as a user', () => {
     expect(
       dataBlockUsers(project(blocks), 'P').map((entry) => [entry.ownerId, entry.slot])
-    ).toEqual([['o', 'modifier:m1:pitches']]);
+    ).toEqual([['o', 'strip:s1:modifier:m1:pitches']]);
   });
 
   it('a mapped null clears the slot and the modifier stays', () => {
     const object = blocks.find((block) => block.id === 'o')!;
     const cleared = repointBlockRef(
       object,
-      { slot: 'modifier:m1:pitches', ref: { id: 'P' } },
+      { slot: 'strip:s1:modifier:m1:pitches', ref: { id: 'P' } },
       null
     );
-    const data = objectDataOf(cleared)!;
+    const data = objectDataOf(cleared)!.strips[0];
     expect(data.modifiers).toHaveLength(1);
     expect(data.modifiers[0].refs).toEqual({ pitches: null });
     expect(validateBlock(cleared)).toBeNull();
@@ -490,8 +495,8 @@ describe('the modifier ops', () => {
 
   it('Add Modifier appends at the BOTTOM with defaults and empty refs; each ref slot starts blank', () => {
     const e = env();
-    const a = ok(addModifier(start(), e, 'o', MELODICIZE_ID));
-    const b = ok(addModifier(a.blocks, e, 'o', HARMONIZE_ID));
+    const a = ok(addModifier(start(), e, 'o', S1, MELODICIZE_ID));
+    const b = ok(addModifier(a.blocks, e, 'o', S1, HARMONIZE_ID));
     const modifiers = objectOf(b.blocks).modifiers;
     expect(modifiers.map((modifier) => modifier.type)).toEqual([MELODICIZE_ID, HARMONIZE_ID]);
     expect(modifiers[1]).toEqual({
@@ -502,7 +507,7 @@ describe('the modifier ops', () => {
       refs: { set: null },
     });
     expect(validateBlock(b.blocks.find((block) => block.id === 'o')!)).toBeNull();
-    expect(addModifier(start(), e, 'o', 'nope')).toEqual({
+    expect(addModifier(start(), e, 'o', S1, 'nope')).toEqual({
       ok: false,
       error: 'That modifier does not exist.',
     });
@@ -510,18 +515,18 @@ describe('the modifier ops', () => {
 
   it('move, mute and remove', () => {
     const e = env();
-    let blocks = ok(addModifier(start(), e, 'o', MELODICIZE_ID)).blocks;
-    blocks = ok(addModifier(blocks, e, 'o', HARMONIZE_ID)).blocks;
+    let blocks = ok(addModifier(start(), e, 'o', S1, MELODICIZE_ID)).blocks;
+    blocks = ok(addModifier(blocks, e, 'o', S1, HARMONIZE_ID)).blocks;
     const [first, second] = objectOf(blocks).modifiers.map((modifier) => modifier.id);
-    const moved = ok(moveModifier(blocks, 'o', second, 'up')).blocks;
+    const moved = ok(moveModifier(blocks, 'o', S1, second, 'up')).blocks;
     expect(objectOf(moved).modifiers.map((modifier) => modifier.id)).toEqual([second, first]);
-    expect(moveModifier(moved, 'o', second, 'up').ok).toBe(false);
-    expect(moveModifier(moved, 'o', first, 'down').ok).toBe(false);
-    const muted = ok(setModifierMute(moved, 'o', first, true)).blocks;
+    expect(moveModifier(moved, 'o', S1, second, 'up').ok).toBe(false);
+    expect(moveModifier(moved, 'o', S1, first, 'down').ok).toBe(false);
+    const muted = ok(setModifierMute(moved, 'o', S1, first, true)).blocks;
     expect(objectOf(muted).modifiers[1].mute).toBe(true);
-    const removed = ok(removeModifier(muted, 'o', first)).blocks;
+    const removed = ok(removeModifier(muted, 'o', S1, first)).blocks;
     expect(objectOf(removed).modifiers.map((modifier) => modifier.id)).toEqual([second]);
-    expect(removeModifier(removed, 'o', first)).toEqual({
+    expect(removeModifier(removed, 'o', S1, first)).toEqual({
       ok: false,
       error: 'That modifier is gone.',
     });
@@ -529,26 +534,26 @@ describe('the modifier ops', () => {
 
   it('a setting is validated; a reference must exist and be of an accepted type', () => {
     const e = env();
-    const added = ok(addModifier(start(), e, 'o', HARMONIZE_ID));
+    const added = ok(addModifier(start(), e, 'o', S1, HARMONIZE_ID));
     const id = added.created[0];
-    const good = ok(setModifierParam(added.blocks, 'o', id, 'voices', 5));
+    const good = ok(setModifierParam(added.blocks, 'o', S1, id, 'voices', 5));
     expect(objectOf(good.blocks).modifiers[0].params.voices).toBe(5);
-    expect(ok(setModifierParam(good.blocks, 'o', id, 'period', TRITAVE)).ok).toBe(true);
-    expect(setModifierParam(good.blocks, 'o', id, 'voices', 9)).toEqual({
+    expect(ok(setModifierParam(good.blocks, 'o', S1, id, 'period', TRITAVE)).ok).toBe(true);
+    expect(setModifierParam(good.blocks, 'o', S1, id, 'voices', 9)).toEqual({
       ok: false,
       error: 'Voices must be a whole number from 2 to 8.',
     });
-    expect(setModifierParam(good.blocks, 'o', id, 'colour', 1).ok).toBe(false);
+    expect(setModifierParam(good.blocks, 'o', S1, id, 'colour', 1).ok).toBe(false);
 
-    const pointed = ok(setModifierRef(added.blocks, 'o', id, 'set', 'P'));
+    const pointed = ok(setModifierRef(added.blocks, 'o', S1, id, 'set', 'P'));
     expect(objectOf(pointed.blocks).modifiers[0].refs).toEqual({ set: { id: 'P' } });
-    expect(ok(setModifierRef(pointed.blocks, 'o', id, 'set', null)).ok).toBe(true);
-    expect(setModifierRef(added.blocks, 'o', id, 'set', 'clave')).toEqual({
+    expect(ok(setModifierRef(pointed.blocks, 'o', S1, id, 'set', null)).ok).toBe(true);
+    expect(setModifierRef(added.blocks, 'o', S1, id, 'set', 'clave')).toEqual({
       ok: false,
       error: 'Pitch set must be a Pitch set or Pitch classes data-block.',
     });
-    expect(setModifierRef(added.blocks, 'o', id, 'set', 'missing').ok).toBe(false);
-    expect(setModifierRef(added.blocks, 'o', id, 'bogus', 'P').ok).toBe(false);
+    expect(setModifierRef(added.blocks, 'o', S1, id, 'set', 'missing').ok).toBe(false);
+    expect(setModifierRef(added.blocks, 'o', S1, id, 'bogus', 'P').ok).toBe(false);
   });
 });
 
@@ -560,7 +565,7 @@ describe('row 7: Apply and Apply All', () => {
   const before = () => world('clave', stack(), [], { mapping: 'stretch', duration: 8 });
 
   it('Apply is refused on a lower modifier with the exact text', () => {
-    expect(applyModifier(before(), env(), 'o', 'm2')).toEqual({
+    expect(applyModifier(before(), env(), 'o', S1, 'm2')).toEqual({
       ok: false,
       error: 'Apply the modifiers above it first.',
     });
@@ -568,7 +573,7 @@ describe('row 7: Apply and Apply All', () => {
 
   it('applying the top one bakes a Notes block, leaves Harmonize in the stack, keeps the sound', () => {
     const blocks = before();
-    const applied = ok(applyModifier(blocks, env(), 'o', 'm1'));
+    const applied = ok(applyModifier(blocks, env(), 'o', S1, 'm1'));
     const baked = applied.blocks.find((block) => block.id === applied.created[0])!;
     expect(baked.typeId).toBe('notes');
     expect(baked.name).toBe('Clave (applied)');
@@ -577,7 +582,7 @@ describe('row 7: Apply and Apply All', () => {
     expect(validateBlock(baked)).toBeNull();
     expect(baked.payload.kind === 'packet' && baked.payload.packet.items).toHaveLength(5);
     const data = objectOf(applied.blocks);
-    expect(data.primaryDataRef).toEqual({ id: baked.id });
+    expect(data.dataRef).toEqual({ id: baked.id });
     expect(data.modifiers.map((modifier) => modifier.id)).toEqual(['m2']);
     expect(data.mapping).toBe('stretch');
     // The original data-blocks are the same objects, and the object sounds the same.
@@ -588,14 +593,14 @@ describe('row 7: Apply and Apply All', () => {
     expect(sounded(play(applied.blocks).plan)).toEqual(sounded(play(blocks).plan));
 
     // Now Harmonize is on top; Apply All bakes the rest.
-    const all = ok(applyAll(applied.blocks, env(), 'o'));
+    const all = ok(applyAll(applied.blocks, env(), 'o', S1));
     expect(objectOf(all.blocks).modifiers).toEqual([]);
     expect(sounded(play(all.blocks).plan)).toEqual(sounded(play(blocks).plan));
   });
 
   it('Apply All bakes the whole stack: 15 pitches in 5 events, mapping kept, originals untouched', () => {
     const blocks = before();
-    const all = ok(applyAll(blocks, env(), 'o'));
+    const all = ok(applyAll(blocks, env(), 'o', S1));
     const baked = all.blocks.find((block) => block.id === all.created[0])!;
     if (baked.payload.kind !== 'packet') {
       throw new Error('a packet');
@@ -607,7 +612,7 @@ describe('row 7: Apply and Apply All', () => {
     const data = objectOf(all.blocks);
     expect(data.modifiers).toEqual([]);
     expect(data.mapping).toBe('stretch');
-    expect(data.primaryDataRef).toEqual({ id: baked.id });
+    expect(data.dataRef).toEqual({ id: baked.id });
     expect(all.blocks.find((block) => block.id === 'clave')).toBe(
       blocks.find((b) => b.id === 'clave')
     );
@@ -619,9 +624,9 @@ describe('row 7: Apply and Apply All', () => {
     );
     // Baked Notes can be modified again: Snap to P then Apply All.
     const e = env();
-    const added = ok(addModifier(all.blocks, e, 'o', SNAP_TO_PITCH_SET_ID));
-    const pointed = ok(setModifierRef(added.blocks, 'o', added.created[0], 'set', 'P'));
-    const again = ok(applyAll(pointed.blocks, e, 'o'));
+    const added = ok(addModifier(all.blocks, e, 'o', S1, SNAP_TO_PITCH_SET_ID));
+    const pointed = ok(setModifierRef(added.blocks, 'o', S1, added.created[0], 'set', 'P'));
+    const again = ok(applyAll(pointed.blocks, e, 'o', S1));
     expect(objectOf(again.blocks).modifiers).toEqual([]);
     expect(again.blocks.find((block) => block.id === again.created[0])?.name).toBe(
       'Clave (applied) (applied)'
@@ -629,7 +634,7 @@ describe('row 7: Apply and Apply All', () => {
   });
 
   it('names stay unique per type', () => {
-    const first = ok(applyAll(before(), env(), 'o'));
+    const first = ok(applyAll(before(), env(), 'o', S1));
     const second = ok(
       applyAll(
         replaceBlock(
@@ -637,7 +642,8 @@ describe('row 7: Apply and Apply All', () => {
           objectBlock('o', { primaryDataRef: { id: 'clave' }, modifiers: stack() }, 'Bass')
         ),
         env(),
-        'o'
+        'o',
+        S1
       )
     );
     const name = second.blocks.find((block) => block.id === second.created[0])!.name;
@@ -649,7 +655,7 @@ describe('row 7: Apply and Apply All', () => {
       modifierOf('m1', MELODICIZE_ID, { pitches: 'P' }, {}, true),
       modifierOf('m2', MELODICIZE_ID, { pitches: 'P' }),
     ]);
-    expect(applyModifier(mutedTop, env(), 'o', 'm1')).toEqual({
+    expect(applyModifier(mutedTop, env(), 'o', S1, 'm1')).toEqual({
       ok: false,
       error: 'Turn the modifier on to apply it.',
     });
@@ -658,7 +664,7 @@ describe('row 7: Apply and Apply All', () => {
       modifierOf('m1', MELODICIZE_ID, { pitches: 'P' }),
       modifierOf('m2', HARMONIZE_ID, { set: 'P' }, {}, true),
     ]);
-    const all = ok(applyAll(half, env(), 'o'));
+    const all = ok(applyAll(half, env(), 'o', S1));
     const baked = all.blocks.find((block) => block.id === all.created[0])!;
     expect(baked.payload.kind === 'packet' && baked.payload.packet.items).toHaveLength(5);
     expect(
@@ -668,9 +674,9 @@ describe('row 7: Apply and Apply All', () => {
         )
     ).toBe(true);
     const onlyMuted = world('clave', [modifierOf('m1', MELODICIZE_ID, { pitches: 'P' }, {}, true)]);
-    const cleared = ok(applyAll(onlyMuted, env(), 'o'));
+    const cleared = ok(applyAll(onlyMuted, env(), 'o', S1));
     expect(objectOf(cleared.blocks).modifiers).toEqual([]);
-    expect(objectOf(cleared.blocks).primaryDataRef).toEqual({ id: 'clave' });
+    expect(objectOf(cleared.blocks).dataRef).toEqual({ id: 'clave' });
   });
 
   it('a stack with a problem refuses to apply, with the problem text', () => {
@@ -678,16 +684,16 @@ describe('row 7: Apply and Apply All', () => {
       modifierOf('m1', MELODICIZE_ID, { pitches: 'P' }),
       modifierOf('m2', MELODICIZE_ID, { pitches: 'P' }),
     ]);
-    expect(applyAll(broken, env(), 'o')).toEqual({
+    expect(applyAll(broken, env(), 'o', S1)).toEqual({
       ok: false,
       error: 'Melodicize needs Rhythm; the data so far is Notes',
     });
     const blank = world('clave', [modifierOf('m1', MELODICIZE_ID, {})]);
-    expect(applyModifier(blank, env(), 'o', 'm1')).toEqual({
+    expect(applyModifier(blank, env(), 'o', S1, 'm1')).toEqual({
       ok: false,
       error: 'Melodicize: Pitch set is missing',
     });
-    expect(applyAll(world('clave', []), env(), 'o').ok).toBe(false);
+    expect(applyAll(world('clave', []), env(), 'o', S1).ok).toBe(false);
   });
 });
 

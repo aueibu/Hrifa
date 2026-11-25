@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, userEvent, waitFor } from '@test-utils';
+import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CompositionSettingsProvider } from '../compositionSettings';
 import { DeskProvider } from '../desk';
@@ -6,7 +6,13 @@ import { seedDesk } from '../deskTestUtils';
 import { historyChangeCount, resetHistory, undo } from '../history';
 import { PIXELS_PER_QUARTER } from '../scene/arrangerGeometry';
 import { writeSceneSession } from '../scene/sceneSession';
-import { claveBlock, collectionBlock, objectBlock, sceneBlock } from '../scene/sceneTestHelpers';
+import {
+  claveBlock,
+  collectionBlock,
+  objectBlock,
+  sceneBlock,
+  stripOf,
+} from '../scene/sceneTestHelpers';
 import { ArrangerPanel } from './ArrangerPanel';
 import { mockEngine, mockEngineState } from './sceneEngineMock';
 import { OutlinerPanel, PropertiesPanel } from './ScenePanels';
@@ -89,6 +95,18 @@ describe('the Arranger (O2b)', () => {
     await waitFor(() => expect(leftOf('Lead')).toBe(8 * PIXELS_PER_QUARTER));
     // The child keeps its relative start, so it follows its parent.
     expect(leftOf('Bass')).toBe(10 * PIXELS_PER_QUARTER);
+  });
+
+  it('draws a note preview inside a block with data and none in an empty one', async () => {
+    await renderArranger();
+    await waitFor(() =>
+      expect(within(block('Lead')).getByTestId('arranger-preview')).toBeInTheDocument()
+    );
+    expect(
+      within(block('Lead')).getByTestId('arranger-preview').querySelector('path')
+    ).toHaveAttribute('d', expect.stringMatching(/^M/));
+    expect(within(block('Echo')).queryByTestId('arranger-preview')).toBeNull();
+    expect(within(block('Bass')).queryByTestId('arranger-preview')).toBeNull();
   });
 
   it('shows the part of a child beyond its parent end as cut, and nothing cut inside it', async () => {
@@ -344,5 +362,139 @@ describe('Play while the engine is still starting', () => {
     act(() => writeSceneSession({ activeSceneId: 'scene-2', selectedId: null }));
     await waitFor(() => expect(mockEngineState.live()).toEqual([]));
     expect(buttons(/Play/)).toHaveLength(2);
+  });
+});
+
+describe('edge strips and row height (O2d)', () => {
+  async function renderTwo() {
+    await seedDesk([
+      claveBlock(),
+      sceneBlock('scene-1', 'root'),
+      collectionBlock('root', ['loop', 'shot']),
+      objectBlock('loop', { start: 4, duration: 8, primaryDataRef: { id: 'clave' } }, 'Loop'),
+      objectBlock(
+        'shot',
+        { start: 4, duration: 8, mapping: 'one-shot', primaryDataRef: { id: 'clave' } },
+        'Shot'
+      ),
+    ]);
+    writeSceneSession({ activeSceneId: 'scene-1', selectedId: null });
+    render(
+      <CompositionSettingsProvider>
+        <DeskProvider>
+          <ArrangerPanel />
+        </DeskProvider>
+      </CompositionSettingsProvider>
+    );
+    await screen.findByRole('button', { name: 'Block Loop' });
+  }
+  const edge = (name: string, side: 'left' | 'right') =>
+    block(name).querySelector(`[data-edge="${side}"]`) as HTMLElement;
+
+  it('both edges are grab strips with the length wording; a Loop says it extends the loop and spans the full height', async () => {
+    await renderTwo();
+    expect(edge('Loop', 'left').getAttribute('data-info')).toMatch(/^Drag to extend the loop/);
+    expect(edge('Loop', 'right').getAttribute('data-info')).toMatch(/^Drag to extend the loop/);
+    expect(edge('Shot', 'left').getAttribute('data-info')).toMatch(/^Drag to change the length/);
+    expect(edge('Loop', 'left').className).toMatch(/edgeFull/);
+    expect(edge('Shot', 'left').className).not.toMatch(/edgeFull/);
+    expect(edge('Shot', 'right').className).not.toMatch(/edgeFull/);
+  });
+
+  it('dragging the left edge out on a Loop commits once: start and length move, the right end stays', async () => {
+    await renderTwo();
+    const before = historyChangeCount();
+    const strip = edge('Loop', 'left');
+    fireEvent.pointerDown(strip, { button: 0, clientX: 500, pointerId: 1 });
+    fireEvent.pointerMove(strip, { clientX: 500 - PIXELS_PER_QUARTER, pointerId: 1 });
+    // Live, from local state only.
+    expect(leftOf('Loop')).toBe(3 * PIXELS_PER_QUARTER);
+    expect(block('Loop').style.width).toBe(`${9 * PIXELS_PER_QUARTER}px`);
+    fireEvent.pointerUp(strip, { button: 0, clientX: 500 - PIXELS_PER_QUARTER, pointerId: 1 });
+    await waitFor(() => expect(historyChangeCount()).toBeGreaterThan(before));
+    expect(leftOf('Loop')).toBe(3 * PIXELS_PER_QUARTER);
+    act(() => undo());
+    await waitFor(() => expect(leftOf('Loop')).toBe(4 * PIXELS_PER_QUARTER));
+  });
+
+  it('the default row is 2.5rem tall; dragging the bottom grip keeps a per-row height in the session, not in history', async () => {
+    await renderTwo();
+    const rows = screen.getAllByRole('row');
+    expect(rows[0].style.height).toBe('2.5rem');
+    const before = historyChangeCount();
+    const grip = screen.getAllByTestId('arranger-row-grip')[0];
+    fireEvent.pointerDown(grip, { button: 0, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(grip, { clientY: 132, pointerId: 1 });
+    expect(rows[0].style.height).toBe('4.5rem');
+    fireEvent.pointerUp(grip, { button: 0, clientY: 132, pointerId: 1 });
+    expect(rows[0].style.height).toBe('4.5rem');
+    expect(rows[1].style.height).toBe('2.5rem');
+    expect(historyChangeCount()).toBe(before);
+    expect(JSON.parse(localStorage.getItem('hrifa.scene-session.v1') ?? '{}').rowHeights).toEqual({
+      loop: 4.5,
+    });
+  });
+
+  it('a row height stays within its limits', async () => {
+    await renderTwo();
+    const row = screen.getAllByRole('row')[0];
+    const grip = screen.getAllByTestId('arranger-row-grip')[0];
+    fireEvent.pointerDown(grip, { button: 0, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(grip, { clientY: -500, pointerId: 1 });
+    expect(row.style.height).toBe('1.5rem');
+    fireEvent.pointerMove(grip, { clientY: 900, pointerId: 1 });
+    expect(row.style.height).toBe('8rem');
+    fireEvent.pointerCancel(grip, { pointerId: 1 });
+    expect(row.style.height).toBe('2.5rem');
+  });
+});
+
+describe('an object with several strips (S0, W-75)', () => {
+  it('draws every strip in the object row, each at its own world start', async () => {
+    await seedDesk([
+      claveBlock(),
+      sceneBlock('scene-1', 'root'),
+      collectionBlock('root', ['two']),
+      objectBlock(
+        'two',
+        {
+          strips: [
+            stripOf({ id: 'a', dataRef: { id: 'clave' }, start: 4, duration: 4 }),
+            stripOf({
+              id: 'b',
+              dataRef: { id: 'clave' },
+              start: 12,
+              duration: 8,
+              mapping: 'stretch',
+            }),
+          ],
+        },
+        'Two'
+      ),
+    ]);
+    writeSceneSession({ activeSceneId: 'scene-1', selectedId: null });
+    render(
+      <CompositionSettingsProvider>
+        <DeskProvider>
+          <OutlinerPanel />
+          <ArrangerPanel />
+          <PropertiesPanel />
+        </DeskProvider>
+      </CompositionSettingsProvider>
+    );
+    const first = await screen.findByRole('button', { name: 'Block Two (strip 1)' });
+    const second = screen.getByRole('button', { name: 'Block Two (strip 2)' });
+    expect(screen.getAllByRole('row')).toHaveLength(1);
+    expect(Number.parseFloat(first.style.left)).toBe(4 * PIXELS_PER_QUARTER);
+    expect(Number.parseFloat(second.style.left)).toBe(12 * PIXELS_PER_QUARTER);
+    expect(second.style.width).toBe(`${8 * PIXELS_PER_QUARTER}px`);
+    // A drag moves only the strip it grabbed: the second one commits its own start.
+    fireEvent.pointerDown(second, { button: 0, clientX: 1000, pointerId: 1 });
+    fireEvent.pointerMove(second, { clientX: 1000 + 2 * PIXELS_PER_QUARTER, pointerId: 1 });
+    fireEvent.pointerUp(second, { clientX: 1000 + 2 * PIXELS_PER_QUARTER, pointerId: 1 });
+    await waitFor(() => expect(Number.parseFloat(second.style.left)).toBe(14 * PIXELS_PER_QUARTER));
+    expect(Number.parseFloat(first.style.left)).toBe(4 * PIXELS_PER_QUARTER);
+    // Properties edits the first strip (S1 adds strip selection).
+    await waitFor(() => expect(screen.getByLabelText('Start')).toHaveValue('2.1.0'));
   });
 });

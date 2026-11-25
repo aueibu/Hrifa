@@ -10,9 +10,35 @@ export const SCENE_SESSION_KEY = 'hrifa.scene-session.v1';
 export interface SceneSession {
   activeSceneId: string | null;
   selectedId: string | null;
+  /** The Arranger's row heights in rem, by row id (O2d): the viewer's, never project data or history. */
+  rowHeights: Record<string, number>;
 }
 
-const EMPTY: SceneSession = { activeSceneId: null, selectedId: null };
+export const ROW_HEIGHT_MIN_REM = 1.5;
+export const ROW_HEIGHT_MAX_REM = 8;
+export const ROW_HEIGHT_DEFAULT_REM = 2.5;
+
+const EMPTY: SceneSession = { activeSceneId: null, selectedId: null, rowHeights: {} };
+
+/** A row's height in rem: the remembered one (kept within the limits) or the default. */
+export function rowHeightRem(session: SceneSession, rowId: string): number {
+  const value = session.rowHeights[rowId];
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(ROW_HEIGHT_MAX_REM, Math.max(ROW_HEIGHT_MIN_REM, value))
+    : ROW_HEIGHT_DEFAULT_REM;
+}
+
+function heightsOrEmpty(value: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    for (const [id, height] of Object.entries(value)) {
+      if (typeof height === 'number' && Number.isFinite(height)) {
+        out[id] = height;
+      }
+    }
+  }
+  return out;
+}
 const listeners = new Set<() => void>();
 let cache: { raw: string | null; value: SceneSession } | null = null;
 
@@ -37,6 +63,7 @@ export function readSceneSession(): SceneSession {
     value = {
       activeSceneId: idOrNull(parsed.activeSceneId),
       selectedId: idOrNull(parsed.selectedId),
+      rowHeights: heightsOrEmpty(parsed.rowHeights),
     };
   } catch {
     // A damaged value reads as empty.

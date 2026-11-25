@@ -19,8 +19,8 @@ import {
   sceneLengthQuarters,
   snapToStep,
 } from './arrangerGeometry';
-import { objectBlock } from './sceneTestHelpers';
-import { chainPlacement, objectChain } from './sceneTypes';
+import { S1, objectBlock } from './sceneTestHelpers';
+import { chainPlacement, stripChain } from './sceneTypes';
 
 const beat = beatStep('4/4');
 const q = (n: number, d = 1) => rational(n, d);
@@ -131,9 +131,9 @@ describe('the playhead position', () => {
 
 describe('the cut at the parent end', () => {
   const place = (blocks: ReturnType<typeof objectBlock>[], id: string) => {
-    const chain = objectChain(new Map(blocks.map((block) => [block.id, block])), id) ?? [];
+    const chain = stripChain(new Map(blocks.map((block) => [block.id, block])), id, S1) ?? [];
     const { start, bound } = chainPlacement(chain);
-    return cutExtent(start, chain[0].data.timeSpan.duration, bound);
+    return cutExtent(start, chain[0].strip.duration, bound);
   };
 
   it('a child inside its parent is all visible', () => {

@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { dataBlockUsers, deleteBlockFromProject } from '../dataBlocks/dataBlockRefs';
 import { blockRefs, dataBlockTypeOf, repointBlockRef, validateBlock } from '../dataBlocks/registry';
 import { rational } from '../musicalTime';
-import { collectionBlock, objectBlock, sceneBlock } from './sceneTestHelpers';
+import { claveBlock, collectionBlock, objectBlock, sceneBlock, stripOf } from './sceneTestHelpers';
 import {
   blankObjectData,
   createBlankCollection,
   createBlankObject,
   createBlankScene,
+  stripDataSlot,
+  stripParentSlot,
   type CollectionData,
   type ObjectData,
 } from './sceneTypes';
@@ -45,19 +47,27 @@ describe('the three record types', () => {
     ]);
   });
 
-  it('createBlank gives a valid block: Empty object 0, 4 quarters, whole register, Loop', () => {
+  it('createBlank gives a valid block: Empty object, the whole register, ONE silent strip 0, 4 quarters, Loop', () => {
     expect(validateBlock(createBlankScene(request))).toBeNull();
     expect(validateBlock(createBlankCollection(request))).toBeNull();
     const object = createBlankObject(request);
     expect(validateBlock(object)).toBeNull();
     expect(dataOf<ObjectData>(object)).toEqual({
-      parentRef: null,
-      timeSpan: { start: rational(0), duration: rational(4) },
       registerSpan: { lowMc: 0, highMc: 12700 },
-      primaryDataRef: null,
-      mapping: 'loop',
-      modifiers: [],
       mute: false,
+      strips: [
+        {
+          id: 'strip-1',
+          dataRef: null,
+          start: rational(0),
+          duration: rational(4),
+          mapping: 'loop',
+          contentOffset: rational(0),
+          modifiers: [],
+          mute: false,
+          parentStrip: null,
+        },
+      ],
     });
   });
 
@@ -65,35 +75,46 @@ describe('the three record types', () => {
     const bad = (data: unknown) =>
       validateBlock({ ...createBlankObject(request), payload: { kind: 'record', data } });
     const good = blankObjectData();
-    expect(
-      bad({ ...good, timeSpan: { start: rational(0), duration: rational(0) } })
-    ).not.toBeNull();
-    expect(
-      bad({
-        ...good,
-        timeSpan: { start: { numerator: 1.5, denominator: 1 }, duration: rational(1) },
-      })
-    ).not.toBeNull();
+    const withStrip = (patch: Record<string, unknown>) => ({
+      ...good,
+      strips: [{ ...good.strips[0], ...patch }],
+    });
+    expect(bad(good)).toBeNull();
+    expect(bad(withStrip({ duration: rational(0) }))).not.toBeNull();
+    expect(bad(withStrip({ start: { numerator: 1.5, denominator: 1 } }))).not.toBeNull();
     expect(bad({ ...good, registerSpan: { lowMc: 5, highMc: 1 } })).not.toBeNull();
-    expect(bad({ ...good, mapping: 'bounce' })).not.toBeNull();
-    expect(bad({ ...good, modifiers: 'x' })).not.toBeNull();
-    // An object saved before modifiers had references (an empty list) stays valid.
-    expect(bad({ ...good, modifiers: [] })).toBeNull();
+    expect(bad(withStrip({ mapping: 'bounce' }))).not.toBeNull();
+    expect(bad(withStrip({ modifiers: 'x' }))).not.toBeNull();
+    expect(bad(withStrip({ modifiers: [] }))).toBeNull();
     expect(
-      bad({ ...good, modifiers: [{ id: 'm', type: 't', mute: false, params: {}, refs: {} }] })
+      bad(withStrip({ modifiers: [{ id: 'm', type: 't', mute: false, params: {}, refs: {} }] }))
     ).toBeNull();
     expect(
-      bad({
-        ...good,
-        modifiers: [{ id: 'm', type: 't', mute: false, params: {}, refs: { set: { id: 'p' } } }],
-      })
+      bad(
+        withStrip({
+          modifiers: [{ id: 'm', type: 't', mute: false, params: {}, refs: { set: { id: 'p' } } }],
+        })
+      )
     ).toBeNull();
     expect(
-      bad({
-        ...good,
-        modifiers: [{ id: 'm', type: 't', mute: false, params: {}, refs: { set: 3 } }],
-      })
+      bad(
+        withStrip({
+          modifiers: [{ id: 'm', type: 't', mute: false, params: {}, refs: { set: 3 } }],
+        })
+      )
     ).not.toBeNull();
+    // A strip needs every field, and its parent is another strip (both ids) or null.
+    expect(bad(withStrip({ mute: 'no' }))).not.toBeNull();
+    expect(bad(withStrip({ id: '' }))).not.toBeNull();
+    expect(bad(withStrip({ dataRef: 'x' }))).not.toBeNull();
+    expect(bad(withStrip({ parentStrip: { objectId: 'p', stripId: 's' } }))).toBeNull();
+    expect(bad(withStrip({ parentStrip: { objectId: 'p' } }))).not.toBeNull();
+    expect(bad(withStrip({ parentStrip: 'p' }))).not.toBeNull();
+    // Strip ids are unique within an object; zero strips is a valid (silent) Empty.
+    expect(bad({ ...good, strips: [good.strips[0], good.strips[0]] })).not.toBeNull();
+    expect(bad({ ...good, strips: [] })).toBeNull();
+    expect(bad({ ...good, strips: 'x' })).not.toBeNull();
+    expect(bad({ ...good, mute: 1 })).not.toBeNull();
     const collection = (data: unknown) =>
       validateBlock({ ...createBlankCollection(request), payload: { kind: 'record', data } });
     expect(collection({ memberRefs: [{ id: 'a' }, { id: 'a' }], mute: false })).not.toBeNull();
@@ -102,11 +123,11 @@ describe('the three record types', () => {
     expect(scene({ rootCollectionRef: null, markers: {} })).not.toBeNull();
   });
 
-  it('exposes stable slots and maps them back', () => {
+  it('exposes stable strip slots and maps them back', () => {
     const object = objectBlock('o', { parentRef: { id: 'p' }, primaryDataRef: { id: 'd' } });
     expect(blockRefs(object)).toEqual([
-      { slot: 'parent', ref: { id: 'p' } },
-      { slot: 'data', ref: { id: 'd' } },
+      { slot: 'strip:s1:data', ref: { id: 'd' } },
+      { slot: 'strip:s1:parent', ref: { id: 'p' } },
     ]);
     const collection = collectionBlock('c', ['a', 'b']);
     expect(blockRefs(collection).map((entry) => entry.slot)).toEqual(['member:a', 'member:b']);
@@ -117,11 +138,37 @@ describe('the three record types', () => {
     expect(blockRefs(trimmed).map((entry) => entry.slot)).toEqual(['member:b']);
     expect(dataOf<CollectionData>(trimmed).memberRefs).toEqual([{ id: 'b' }]);
     // Repointing the data slot leaves the parent slot alone.
-    const moved = repointBlockRef(object, { slot: 'data', ref: { id: 'd' } }, 'e');
+    const moved = repointBlockRef(object, { slot: stripDataSlot('s1'), ref: { id: 'd' } }, 'e');
     expect(blockRefs(moved)).toEqual([
-      { slot: 'parent', ref: { id: 'p' } },
-      { slot: 'data', ref: { id: 'e' } },
+      { slot: 'strip:s1:data', ref: { id: 'e' } },
+      { slot: 'strip:s1:parent', ref: { id: 'p' } },
     ]);
+    // Repointing the parent to another OBJECT cannot name a strip there: the strip is unparented.
+    const reparented = repointBlockRef(
+      object,
+      { slot: stripParentSlot('s1'), ref: { id: 'p' } },
+      'q'
+    );
+    expect(dataOf<ObjectData>(reparented).strips[0].parentStrip).toBeNull();
+  });
+
+  it('every strip has its own slots, so two strips can use one data-block', () => {
+    const two = objectBlock('o', {
+      strips: [
+        stripOf({ id: 'a', dataRef: { id: 'd' } }),
+        stripOf({ id: 'b', dataRef: { id: 'd' }, start: 4 }),
+      ],
+    });
+    expect(blockRefs(two).map((entry) => entry.slot)).toEqual(['strip:a:data', 'strip:b:data']);
+    const blocks = [two, claveBlock('d')];
+    const users = dataBlockUsers({ dataBlocks: blocks, instances: [] }, 'd');
+    expect(users.map((entry) => [entry.ownerId, entry.slot])).toEqual([
+      ['o', 'strip:a:data'],
+      ['o', 'strip:b:data'],
+    ]);
+    // Deleting the data-block blanks both strips (they stay).
+    const next = deleteBlockFromProject({ dataBlocks: blocks, instances: [] }, 'd').dataBlocks;
+    expect(dataOf<ObjectData>(next[0]).strips.map((strip) => strip.dataRef)).toEqual([null, null]);
   });
 
   it('counts users and removes a deleted member from its collection', () => {
@@ -139,5 +186,24 @@ describe('the three record types', () => {
       dataOf<{ rootCollectionRef: unknown }>(withoutRoot.dataBlocks.find((b) => b.id === 's')!)
         .rootCollectionRef
     ).toBeNull();
+  });
+});
+
+describe('contentOffset (O2d, W-74, on the strip since W-75)', () => {
+  it('is exact, and rejected when it is not a rational', () => {
+    const base = blankObjectData();
+    const check = (contentOffset: unknown) =>
+      validateBlock({
+        ...createBlankObject(request),
+        payload: {
+          kind: 'record',
+          data: { ...base, strips: [{ ...base.strips[0], contentOffset }] },
+        },
+      });
+    expect(check(rational(0))).toBeNull();
+    expect(check({ numerator: -3, denominator: 4 })).toBeNull();
+    expect(check(1.5)).not.toBeNull();
+    expect(check({ numerator: 1, denominator: 0 })).not.toBeNull();
+    expect(check(undefined)).not.toBeNull();
   });
 });

@@ -6,14 +6,16 @@ import { validateBlock, type StoredDataBlock } from '../dataBlocks/registry';
 import { musicalDuration, rational, rationalToNumber } from '../musicalTime';
 import { createSceneEvaluator, evaluateScene } from './evaluateScene';
 import {
+  S1,
   claveBlock,
   collectionBlock,
   emptyRhythmBlock,
+  stripOf,
   objectBlock,
   replaceBlock,
   sceneBlock,
 } from './sceneTestHelpers';
-import { objectWorldStart } from './sceneTypes';
+import { stripWorldStart } from './sceneTypes';
 
 const starts = (plan: MusicalPerformancePlan) =>
   plan.events.map((event) => rationalToNumber(event.at.quarterNotes));
@@ -90,7 +92,7 @@ describe('row 2: a child follows its parent', () => {
     expect(starts(evaluateScene(build(0), 'scene').plan)[0]).toBe(4);
     const moved = evaluateScene(build(16), 'scene').plan;
     expect(starts(moved)[0]).toBe(20);
-    expect(rationalToNumber(objectWorldStart(build(16), 'child')!)).toBe(20);
+    expect(rationalToNumber(stripWorldStart(build(16), 'child', S1)!)).toBe(20);
   });
 });
 
@@ -117,8 +119,10 @@ describe('row 6: deleting a parent keeps the child in place', () => {
     expect(starts(evaluateScene(next.dataBlocks, 'scene').plan)[0]).toBe(20);
     const kept = next.dataBlocks.find((block) => block.id === 'child')!;
     const data =
-      kept.payload.kind === 'record' ? (kept.payload.data as { parentRef: unknown }) : null;
-    expect(data?.parentRef).toBeNull();
+      kept.payload.kind === 'record'
+        ? (kept.payload.data as { strips: { parentStrip: unknown }[] })
+        : null;
+    expect(data?.strips[0].parentStrip).toBeNull();
     expect(validateBlock(kept)).toBeNull();
   });
 
@@ -134,7 +138,7 @@ describe('row 6: deleting a parent keeps the child in place', () => {
     // Deleting the grandparent: the parent keeps world 16, the child (still under it) stays at 20.
     const after = deleteBlockFromProject({ dataBlocks: blocks, instances: [] }, 'grand');
     expect(starts(evaluateScene(after.dataBlocks, 'scene').plan)[0]).toBe(20);
-    expect(rationalToNumber(objectWorldStart(after.dataBlocks, 'parent')!)).toBe(16);
+    expect(rationalToNumber(stripWorldStart(after.dataBlocks, 'parent', S1)!)).toBe(16);
   });
 
   it('deleting the primary data blanks the slot: the object stays, silent', () => {
@@ -300,21 +304,14 @@ describe('exact time', () => {
       timeline: { id: 'custom', tempoMap: [], meterMap: [], displayTick: musicalDuration(1, 4) },
     });
     expect(plan.timebase.timeline.id).toBe('custom');
-    const odd = objectBlock('o', {
-      primaryDataRef: { id: 'clave' },
-      mapping: 'one-shot',
-      duration: 1,
-    });
-    const thirds: StoredDataBlock = {
-      ...odd,
-      payload: {
-        kind: 'record',
-        data: {
-          ...(odd.payload.kind === 'record' ? (odd.payload.data as object) : {}),
-          timeSpan: { start: rational(1, 3), duration: rational(4) },
+    const thirds = objectBlock('o', {
+      strips: [
+        {
+          ...stripOf({ dataRef: { id: 'clave' }, mapping: 'one-shot', duration: 4 }),
+          start: rational(1, 3),
         },
-      },
-    };
+      ],
+    });
     const result = evaluateScene(sceneOf(thirds), 'scene').plan;
     expect(result.events[0].at.quarterNotes).toEqual(rational(1, 3));
     expect(result.events[1].at.quarterNotes).toEqual(rational(13, 12));

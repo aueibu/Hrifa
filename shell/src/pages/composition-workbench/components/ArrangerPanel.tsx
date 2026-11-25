@@ -28,8 +28,23 @@ import {
   type DragKind,
   type DragState,
 } from '../scene/arrangerGeometry';
+import {
+  PREVIEW_HEIGHT,
+  groupEventsByStrip,
+  previewRects,
+  rectsToPath,
+  toPreviewNotes,
+} from '../scene/arrangerPreview';
 import { setTimeSpan } from '../scene/sceneOps';
-import { chainPlacement, objectChain, type ObjectData } from '../scene/sceneTypes';
+import { ROW_HEIGHT_MAX_REM, ROW_HEIGHT_MIN_REM, rowHeightRem } from '../scene/sceneSession';
+import {
+  chainPlacement,
+  objectDataOf,
+  stripChain,
+  stripKey,
+  type ObjectMapping,
+  type PlacedStrip,
+} from '../scene/sceneTypes';
 import { useSceneEvaluation, useScenePlayback } from '../scene/useScenePlayback';
 import { useSceneEditor } from './ScenePanels';
 import classes from './ArrangerPanel.module.css';
@@ -45,6 +60,19 @@ import classes from './ArrangerPanel.module.css';
 /** The name column's width in rem (the CSS uses the same). */
 const NAME_REM = 8;
 
+/** One strip's placement: world start and duration, plus the strips from itself up its parents. */
+interface PlacedRowStrip {
+  key: string;
+  objectId: string;
+  stripId: string;
+  world: Rational;
+  relative: Rational;
+  duration: Rational;
+  offset: Rational;
+  mapping: ObjectMapping;
+  chain: PlacedStrip[];
+}
+
 export function ArrangerPanel() {
   return (
     <EnsureDataBlockOps>
@@ -59,6 +87,13 @@ function ArrangerBody() {
   const { settings } = useCompositionSettings();
   const meter = settings.transport.meter;
   const [drag, setDrag] = useState<DragState | null>(null);
+  // A row-height drag in progress (local until release, then kept in the viewer's session).
+  const [rowDrag, setRowDrag] = useState<{
+    id: string;
+    startY: number;
+    startRem: number;
+    rem: number;
+  } | null>(null);
 
   const evaluation = useSceneEvaluation(blocks, scene?.id ?? null);
   const playback = useScenePlayback(scene?.id ?? null, evaluation);
@@ -67,61 +102,84 @@ function ArrangerBody() {
   const byId = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks]);
   const step = beatStep(meter);
 
-  /** Each object row's placement: world start and duration, plus the ids from itself up its parents. */
+  /** Each object row's strips, in the object's order. */
   const placed = useMemo(() => {
-    const out = new Map<
-      string,
-      {
-        world: Rational;
-        relative: Rational;
-        duration: Rational;
-        chain: { id: string; data: ObjectData }[];
-      }
-    >();
+    const out = new Map<string, PlacedRowStrip[]>();
     for (const row of rows) {
-      if (row.kind !== 'object') {
+      const data = row.kind === 'object' ? objectDataOf(byId.get(row.id)) : null;
+      if (!data) {
         continue;
       }
-      const chain = objectChain(byId, row.id);
-      if (chain === null || chain.length === 0) {
-        continue;
+      const list: PlacedRowStrip[] = [];
+      for (const strip of data.strips) {
+        const chain = stripChain(byId, row.id, strip.id);
+        if (chain === null || chain.length === 0) {
+          continue;
+        }
+        list.push({
+          key: stripKey(row.id, strip.id),
+          objectId: row.id,
+          stripId: strip.id,
+          world: chainPlacement(chain).start,
+          relative: strip.start,
+          duration: strip.duration,
+          offset: strip.contentOffset,
+          mapping: strip.mapping,
+          chain,
+        });
       }
-      out.set(row.id, {
-        world: chainPlacement(chain).start,
-        relative: chain[0].data.timeSpan.start,
-        duration: chain[0].data.timeSpan.duration,
-        chain,
-      });
+      out.set(row.id, list);
     }
     return out;
   }, [rows, byId]);
+
+  /**
+   * Each strip's note preview as one SVG path, from the committed placement. It depends on the
+   * evaluation and the placement only (a live drag is local state), so dragging never recomputes it.
+   */
+  const previews = useMemo(() => {
+    const out = new Map<string, string>();
+    if (!evaluation) {
+      return out;
+    }
+    const groups = groupEventsByStrip(evaluation.plan.events);
+    for (const list of placed.values()) {
+      for (const item of list) {
+        const events = groups.get(item.key);
+        if (!events || events.length === 0) {
+          continue;
+        }
+        const notes = toPreviewNotes(events, rationalToNumber(item.world));
+        const path = rectsToPath(
+          previewRects(notes, rationalToNumber(item.duration), PIXELS_PER_QUARTER)
+        );
+        if (path !== '') {
+          out.set(item.key, path);
+        }
+      }
+    }
+    return out;
+  }, [evaluation, placed]);
 
   // The live result of the drag in progress (local state only: nothing is written until release).
   const live = drag ? dragLive(drag, meter) : null;
 
   /**
-   * A row's block: its world start, full width and the part the evaluator plays. While a drag is live,
-   * the chain is re-placed with the dragged object's live span, so a moved parent carries its children
+   * A strip's block: its world start, full width and the part the evaluator plays. While a drag is live,
+   * the chain is re-placed with the dragged strip's live span, so a moved parent carries its children
    * and the cut at the parent's end follows both, from local state only.
    */
-  function geometryOf(rowId: string) {
-    const item = placed.get(rowId);
-    if (!item) {
-      return null;
-    }
+  function geometryOf(item: PlacedRowStrip) {
     const chain =
-      drag && live && item.chain.some((link) => link.id === drag.id)
+      drag && live && item.chain.some((link) => stripKey(link.objectId, link.strip.id) === drag.id)
         ? item.chain.map((link) =>
-            link.id === drag.id
-              ? {
-                  ...link,
-                  data: { ...link.data, timeSpan: { start: live.start, duration: live.duration } },
-                }
+            stripKey(link.objectId, link.strip.id) === drag.id
+              ? { ...link, strip: { ...link.strip, start: live.start, duration: live.duration } }
               : link
           )
         : item.chain;
     const { start, bound } = chainPlacement(chain);
-    const { duration } = chain[0].data.timeSpan;
+    const { duration } = chain[0].strip;
     const { visible } = cutExtent(start, duration, bound);
     return {
       left: quartersToPx(start),
@@ -131,9 +189,9 @@ function ArrangerBody() {
   }
 
   let liveEnd = 0;
-  for (const row of rows) {
-    const g = geometryOf(row.id);
-    if (g) {
+  for (const list of placed.values()) {
+    for (const item of list) {
+      const g = geometryOf(item);
       liveEnd = Math.max(liveEnd, g.left + g.width);
     }
   }
@@ -141,21 +199,31 @@ function ArrangerBody() {
   const lanePx = Math.max(lengthQuarters * PIXELS_PER_QUARTER, liveEnd + 4 * quartersToPx(step));
   const marks = useMemo(() => rulerMarks(meter, lanePx / PIXELS_PER_QUARTER), [meter, lanePx]);
 
-  function begin(event: PointerEvent<HTMLElement>, rowId: string, kind: DragKind) {
+  function begin(
+    event: PointerEvent<HTMLElement>,
+    rowId: string,
+    item: PlacedRowStrip,
+    kind: DragKind
+  ) {
     if (event.button !== 0) {
       return;
     }
     updateSession({ selectedId: rowId });
-    const item = placed.get(rowId);
-    if (!item || !writable) {
+    if (!writable) {
       return;
     }
     event.currentTarget.setPointerCapture?.(event.pointerId);
     setDrag(
       dragStart(
-        rowId,
+        item.key,
         kind,
-        { worldStart: item.world, relativeStart: item.relative, duration: item.duration },
+        {
+          worldStart: item.world,
+          relativeStart: item.relative,
+          duration: item.duration,
+          contentOffset: item.offset,
+          mapping: item.mapping,
+        },
         event.clientX,
         event.shiftKey
       )
@@ -175,14 +243,53 @@ function ArrangerBody() {
     const commit = dragRelease(drag, event.clientX, event.shiftKey, meter);
     const { id, kind } = drag;
     setDrag(dragCancel());
-    if (commit === null) {
+    const target = [...placed.values()].flat().find((item) => item.key === id);
+    if (commit === null || !target) {
       return;
     }
+    const { objectId, stripId } = target;
     if (kind === 'move') {
-      editor.commit((list) => setTimeSpan(list, id, { start: commit.start }));
+      editor.commit((list) => setTimeSpan(list, objectId, stripId, { start: commit.start }));
+    } else if (kind === 'resize-left') {
+      editor.commit((list) =>
+        setTimeSpan(list, objectId, stripId, {
+          start: commit.start,
+          duration: commit.duration,
+          contentOffset: commit.contentOffset,
+        })
+      );
     } else {
-      editor.commit((list) => setTimeSpan(list, id, { duration: commit.duration }));
+      editor.commit((list) => setTimeSpan(list, objectId, stripId, { duration: commit.duration }));
     }
+  }
+
+  const remPx = () => Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+
+  function beginRow(event: PointerEvent<HTMLElement>, rowId: string) {
+    if (event.button !== 0) {
+      return;
+    }
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const startRem = rowHeightRem(session, rowId);
+    setRowDrag({ id: rowId, startY: event.clientY, startRem, rem: startRem });
+  }
+
+  function moveRow(event: PointerEvent<HTMLElement>) {
+    if (rowDrag) {
+      const rem = rowDrag.startRem + (event.clientY - rowDrag.startY) / remPx();
+      setRowDrag({
+        ...rowDrag,
+        rem: Math.min(ROW_HEIGHT_MAX_REM, Math.max(ROW_HEIGHT_MIN_REM, rem)),
+      });
+    }
+  }
+
+  function endRow() {
+    if (rowDrag && rowDrag.rem !== rowDrag.startRem) {
+      updateSession({ rowHeights: { ...session.rowHeights, [rowDrag.id]: rowDrag.rem } });
+    }
+    setRowDrag(null);
   }
 
   return (
@@ -225,8 +332,10 @@ function ArrangerBody() {
               </div>
             </div>
             {rows.map((row) => {
-              const geometry = geometryOf(row.id);
+              const items = placed.get(row.id) ?? [];
               const selected = row.id === session.selectedId;
+              const heightRem =
+                rowDrag && rowDrag.id === row.id ? rowDrag.rem : rowHeightRem(session, row.id);
               return (
                 <div
                   key={row.id}
@@ -236,6 +345,7 @@ function ArrangerBody() {
                   role="row"
                   aria-level={row.depth + 1}
                   aria-selected={selected}
+                  style={{ height: `${heightRem}rem` }}
                   onClick={() => updateSession({ selectedId: row.id })}
                 >
                   <div
@@ -246,46 +356,103 @@ function ArrangerBody() {
                     {row.name}
                   </div>
                   <div className={classes.lane} style={{ width: lanePx }} role="gridcell">
-                    {geometry && (
-                      <div
-                        className={`${classes.block} ${selected ? classes.blockSelected : ''} ${
-                          row.muted ? classes.blockMuted : ''
-                        }`}
-                        role="button"
-                        aria-label={`Block ${row.name}`}
-                        aria-pressed={selected}
-                        data-muted={row.muted}
-                        data-info="Drag to move. Drag the right edge to change the length. Hold Shift to turn snapping off."
-                        style={{ left: geometry.left, width: geometry.width }}
-                        onPointerDown={(event) => begin(event, row.id, 'move')}
-                        onPointerMove={move}
-                        onPointerUp={end}
-                        onPointerCancel={() => setDrag(dragCancel())}
-                      >
-                        <span
-                          className={classes.blockLabel}
-                          style={{ maxWidth: Math.max(0, geometry.visible - 12) }}
+                    {items.map((item, index) => {
+                      const geometry = geometryOf(item);
+                      const looping = item.mapping === 'loop';
+                      const edgeInfo = looping
+                        ? 'Drag to extend the loop. Hold Shift to turn snapping off.'
+                        : 'Drag to change the length. Hold Shift to turn snapping off.';
+                      const path = previews.get(item.key);
+                      return (
+                        <div
+                          key={item.key}
+                          className={`${classes.block} ${selected ? classes.blockSelected : ''} ${
+                            row.muted ? classes.blockMuted : ''
+                          }`}
+                          role="button"
+                          aria-label={
+                            items.length === 1
+                              ? `Block ${row.name}`
+                              : `Block ${row.name} (strip ${index + 1})`
+                          }
+                          aria-pressed={selected}
+                          data-muted={row.muted}
+                          data-info="Drag to move. Drag an edge to change the length. Hold Shift to turn snapping off."
+                          style={{ left: geometry.left, width: geometry.width }}
+                          onPointerDown={(event) => begin(event, row.id, item, 'move')}
+                          onPointerMove={move}
+                          onPointerUp={end}
+                          onPointerCancel={() => setDrag(dragCancel())}
                         >
-                          {row.name}
-                        </span>
-                        <span
-                          className={classes.cut}
-                          data-cut={geometry.visible < geometry.width}
-                          data-info="Cut at the end of its parent"
-                          title="Cut at the end of its parent"
-                          style={{ left: geometry.visible }}
-                        />
-                        <span
-                          className={classes.handle}
-                          data-info="Drag to change the length. Hold Shift to turn snapping off."
-                          onPointerDown={(event) => {
-                            event.stopPropagation();
-                            begin(event, row.id, 'resize');
-                          }}
-                        />
-                      </div>
-                    )}
+                          {path !== undefined && (
+                            <svg
+                              className={classes.preview}
+                              data-testid="arranger-preview"
+                              aria-hidden
+                              width={quartersToPx(item.duration)}
+                              height="100%"
+                              style={
+                                drag && drag.id === item.key && drag.kind === 'resize-left' && live
+                                  ? {
+                                      left: quartersToPx(item.relative) - quartersToPx(live.start),
+                                    }
+                                  : undefined
+                              }
+                              viewBox={`0 0 ${quartersToPx(item.duration)} ${PREVIEW_HEIGHT}`}
+                              preserveAspectRatio="none"
+                            >
+                              <path d={path} />
+                            </svg>
+                          )}
+                          <span
+                            className={classes.blockLabel}
+                            style={{ maxWidth: Math.max(0, geometry.visible - 12) }}
+                          >
+                            {row.name}
+                          </span>
+                          <span
+                            className={classes.cut}
+                            data-cut={geometry.visible < geometry.width}
+                            data-info="Cut at the end of its parent"
+                            title="Cut at the end of its parent"
+                            style={{ left: geometry.visible }}
+                          />
+                          <span
+                            className={`${classes.edge} ${classes.edgeLeft} ${
+                              looping ? classes.edgeFull : ''
+                            }`}
+                            data-edge="left"
+                            data-info={edgeInfo}
+                            onPointerDown={(event) => {
+                              event.stopPropagation();
+                              begin(event, row.id, item, 'resize-left');
+                            }}
+                          />
+                          <span
+                            className={`${classes.edge} ${classes.edgeRight} ${
+                              looping ? classes.edgeFull : ''
+                            }`}
+                            data-edge="right"
+                            data-info={edgeInfo}
+                            onPointerDown={(event) => {
+                              event.stopPropagation();
+                              begin(event, row.id, item, 'resize');
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
+                  <span
+                    className={classes.rowGrip}
+                    data-testid="arranger-row-grip"
+                    data-info="Drag to change the height of this row."
+                    onPointerDown={(event) => beginRow(event, row.id)}
+                    onPointerMove={moveRow}
+                    onPointerUp={endRow}
+                    onPointerCancel={() => setRowDrag(null)}
+                    onClick={(event) => event.stopPropagation()}
+                  />
                 </div>
               );
             })}

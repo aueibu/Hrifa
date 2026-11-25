@@ -133,6 +133,40 @@ describe('workbench state helpers', () => {
     expect(imported.desk).toEqual([dataBlock('a')]);
   });
 
+  it('migrates objects saved before strips when a file is imported (W-75)', () => {
+    const oldObject = {
+      schemaVersion: 2,
+      id: 'o',
+      typeId: 'object',
+      name: 'Obj',
+      createdAt: '2026-11-24T00:00:00Z',
+      payload: {
+        kind: 'record',
+        data: {
+          parentRef: null,
+          timeSpan: {
+            start: { numerator: 0, denominator: 1 },
+            duration: { numerator: 4, denominator: 1 },
+          },
+          registerSpan: { lowMc: 0, highMc: 12700 },
+          primaryDataRef: null,
+          mapping: 'loop',
+          modifiers: [],
+          mute: false,
+        },
+      },
+    };
+    const project = {
+      ...createProject('Old', null),
+      desk: [dataBlock('a'), oldObject] as unknown as PacketBlock[],
+    };
+    const [imported] = parseProjectFile(projectFileText([project]));
+    expect(imported.desk?.map((block) => block.id)).toEqual(['a', 'o']);
+    expect(
+      (imported.desk?.[1].payload as { data: { strips: unknown[] } }).data.strips
+    ).toHaveLength(1);
+  });
+
   it('rejects files that are not a project export', () => {
     const snapshots = JSON.stringify({
       format: 'hrifa-workbench-snapshots',

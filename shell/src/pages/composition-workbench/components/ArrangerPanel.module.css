@@ -53,6 +53,23 @@
   height: 1.5rem;
 }
 
+/* A row's height is set inline (the viewer's, per row); this is the default (O2d). */
+.row {
+  height: 2.5rem;
+  position: relative;
+}
+
+/* Drag the bottom edge of a row to change its height. Above the block and the sticky name column. */
+.rowGrip {
+  bottom: 0;
+  cursor: ns-resize;
+  height: 0.3rem;
+  left: 0;
+  position: absolute;
+  right: 0;
+  z-index: 3;
+}
+
 .header {
   position: sticky;
   top: 0;
@@ -185,22 +202,55 @@
   display: none;
 }
 
+/* The note preview (O2c): behind the name, never takes a pointer event, never changes the block's size. */
+.preview {
+  fill: var(--text-subtle);
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
 .blockLabel {
   min-width: 0;
+  position: relative;
+  z-index: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Bitwig: resize at the TOP right edge of the clip. */
-.handle {
+/*
+ * Edge grab strips (O2d, about 10 px), on both sides. Bitwig: a looping clip is resized from the whole
+ * edge height, any other clip from the top half only. The strip shows a subtle hover highlight.
+ */
+.edge {
+  background: var(--text-subtle);
   bottom: 50%;
   cursor: ew-resize;
+  max-width: 35%;
+  opacity: 0;
   position: absolute;
-  right: 0;
   top: 0;
-  width: 0.4rem;
+  transition: opacity 80ms linear;
+  width: 0.65rem;
   z-index: 1;
+}
+
+.edge:hover {
+  opacity: 0.35;
+}
+
+.edgeFull {
+  bottom: 0;
+}
+
+.edgeLeft {
+  left: 0;
+}
+
+.edgeRight {
+  right: 0;
 }
 
 .playhead {

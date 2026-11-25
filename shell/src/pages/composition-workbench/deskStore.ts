@@ -2,6 +2,7 @@ import { acceptsDataBlocks, isLegacyDataBlock } from './dataBlock';
 import type { StoredDataBlock } from './dataBlocks/registry';
 // Registers the built-in data-block types before any stored block is checked against them.
 import './dataBlocks/types';
+import { migrateStoredBlocks } from './scene/sceneMigration';
 
 /**
  * The desk's storage: IndexedDB, by a small hand-written wrapper. Each data-block is its own record (so a
@@ -296,7 +297,10 @@ export function loadDesk(): Promise<LoadedDesk> {
       // The earlier envelope is dropped, not migrated (W-60). The dropped records stay in `stored`,
       // so the next write deletes them from the database instead of leaving orphans behind.
       const dropped = records.filter(isLegacyDataBlock);
-      const current = records.filter((record) => !isLegacyDataBlock(record));
+      const kept = records.filter((record) => !isLegacyDataBlock(record));
+      // Objects stored before strips are converted before they are validated (W-75, row 12). `stored`
+      // keeps the records as they were saved, so the next write replaces them with the migrated ones.
+      const current = migrateStoredBlocks(kept);
       if (acceptsDataBlocks(current)) {
         const warnings = [
           dropped.length > 0
@@ -311,7 +315,7 @@ export function loadDesk(): Promise<LoadedDesk> {
         ].filter(Boolean);
         return {
           dataBlocks: current,
-          stored: storedOf([...dropped, ...current]),
+          stored: storedOf([...dropped, ...kept]),
           rev,
           writable: true,
           ...(warnings.length
@@ -416,7 +420,9 @@ export function getProject(id: string): Promise<ProjectRecord | null> {
       }
       // A desk saved before the registry rebuild (earlier envelope) opens empty: nothing migrates (W-60).
       const desk = Array.isArray(desks?.desk)
-        ? (desks.desk as unknown[]).filter((entry) => !isLegacyDataBlock(entry))
+        ? migrateStoredBlocks(
+            (desks.desk as unknown[]).filter((entry) => !isLegacyDataBlock(entry))
+          )
         : undefined;
       if (!desk || !acceptsDataBlocks(desk)) {
         throw new Error('The saved desk in this project is damaged or from a newer version.');

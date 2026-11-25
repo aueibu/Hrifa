@@ -1,25 +1,50 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { Button, Popover, SegmentedControl, Select, Switch, Text, TextInput } from '@mantine/core';
+import {
+  Button,
+  Menu,
+  Popover,
+  SegmentedControl,
+  Select,
+  Switch,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import { useCompositionSettings } from '../compositionSettings';
 import { EnsureDataBlockOps, useDataBlockOps } from '../dataBlockOps';
 import { dataBlockUsers } from '../dataBlocks/dataBlockRefs';
-import { auditionRefusal, dataBlockTypes, type StoredDataBlock } from '../dataBlocks/registry';
+import {
+  auditionRefusal,
+  dataBlockTypes,
+  type AuditionContext,
+  type StoredDataBlock,
+} from '../dataBlocks/registry';
 import { newDataBlockId, useDesk } from '../desk';
 import { recordGroup } from '../history';
 import { formatLength, formatPosition, parseLength, parsePosition } from '../meterTime';
 import { rationalToNumber, type Rational } from '../musicalTime';
+import { transportRhythmContext } from '../rhythmRealization';
+import { modifierProblems } from '../scene/evaluateScene';
+import { HARMONIZE_ID, MELODICIZE_ID, getModifierDef, modifierDefs } from '../scene/modifiers';
 import { outlinerRows, type OutlinerRow } from '../scene/outlinerRows';
 import {
   addChildEmpty,
   addCollection,
   addEmpty,
+  addModifier,
+  applyAll,
+  applyModifier,
+  moveModifier,
+  removeModifier,
+  setModifierMute,
+  setModifierParam,
+  setModifierRef,
   createScene,
   deleteSummary,
   deleteSelected,
   renameBlock,
   setMapping,
   setMute,
-  setParent,
+  setStripParent,
   setPrimaryData,
   setTimeSpan,
   type SceneOpResult,
@@ -27,11 +52,15 @@ import {
 import { useSceneSession } from '../scene/sceneSession';
 import {
   collectionDataOf,
+  firstStripOf,
   objectDataOf,
   sceneDataOf,
+  stripDataSlot,
+  type ModifierInstance,
   type ObjectMapping,
 } from '../scene/sceneTypes';
 import { useSceneEvaluation, useScenePlayback } from '../scene/useScenePlayback';
+import { layerSound } from '../sounds';
 import { DataBlockMenu } from './DataBlockMenu';
 import classes from './ScenePanels.module.css';
 
@@ -644,13 +673,15 @@ function PropertiesBody() {
   const id = selected.id;
   const deskReason = writable ? null : NO_DESK;
   const objectOnly = (what: string) => (isObject ? null : `A collection has no ${what}.`);
-  const lock = (what: string) => deskReason ?? objectOnly(what);
+  const lock = (what: string) =>
+    deskReason ?? objectOnly(what) ?? (isObject && !strip ? 'This object has no strips.' : null);
 
-  const primary = object?.primaryDataRef
-    ? blocks.find((b) => b.id === object.primaryDataRef?.id)
-    : undefined;
+  // Properties edits the object's first strip for now (S1 adds strip selection, W-75).
+  const strip = object ? firstStripOf(object) : undefined;
+  const stripId = strip?.id ?? '';
+  const primary = strip?.dataRef ? blocks.find((b) => b.id === strip.dataRef?.id) : undefined;
   const users = primary ? dataBlockUsers(project, primary.id) : [];
-  const mine = users.find((user) => user.ownerId === id && user.slot === 'data');
+  const mine = users.find((user) => user.ownerId === id && user.slot === stripDataSlot(stripId));
   const heardRefusal = primary ? auditionRefusal(primary) : null;
 
   const timeText = (value: Rational | undefined, length: boolean) => {
@@ -695,14 +726,25 @@ function PropertiesBody() {
               }
               data={parentOptions}
               value={
-                object?.parentRef && parentOptions.some((o) => o.value === object.parentRef?.id)
-                  ? object.parentRef.id
+                strip?.parentStrip &&
+                parentOptions.some((o) => o.value === strip.parentStrip?.objectId)
+                  ? strip.parentStrip.objectId
                   : NONE
               }
               onChange={(value) =>
-                apply((list) =>
-                  setParent(list, id, value === null || value === NONE ? null : value)
-                )
+                apply((list) => {
+                  if (value === null || value === NONE) {
+                    return setStripParent(list, id, stripId, null);
+                  }
+                  // A parent is a strip: the picked object's first strip (S1 picks any strip).
+                  const target = objectDataOf(list.find((block) => block.id === value))?.strips[0];
+                  return target
+                    ? setStripParent(list, id, stripId, { objectId: value, stripId: target.id })
+                    : {
+                        ok: false as const,
+                        error: 'That object has no strip to place this under.',
+                      };
+                })
               }
               comboboxProps={{ transitionProps: { duration: 0 } }}
             />
@@ -710,7 +752,7 @@ function PropertiesBody() {
           <Field label="Start">
             <CommitField
               ariaLabel="Start"
-              value={timeText(object?.timeSpan.start, false)}
+              value={timeText(strip?.start, false)}
               disabled={lock('start') !== null}
               info={
                 lock('start') ??
@@ -722,14 +764,14 @@ function PropertiesBody() {
                   setMessage(parsed.error);
                   return parsed.error;
                 }
-                return apply((list) => setTimeSpan(list, id, { start: parsed.value }));
+                return apply((list) => setTimeSpan(list, id, stripId, { start: parsed.value }));
               }}
             />
           </Field>
           <Field label="Duration">
             <CommitField
               ariaLabel="Duration"
-              value={timeText(object?.timeSpan.duration, true)}
+              value={timeText(strip?.duration, true)}
               disabled={lock('duration') !== null}
               info={lock('duration') ?? `Length as bars.beats.ticks in ${meter}.`}
               onCommit={(text) => {
@@ -738,7 +780,7 @@ function PropertiesBody() {
                   setMessage(parsed.error);
                   return parsed.error;
                 }
-                return apply((list) => setTimeSpan(list, id, { duration: parsed.value }));
+                return apply((list) => setTimeSpan(list, id, stripId, { duration: parsed.value }));
               }}
             />
           </Field>
@@ -750,19 +792,19 @@ function PropertiesBody() {
               info="The data-block this object plays. None is an Empty: silent."
               selectedId={primary?.id ?? null}
               disabledReason={lock('data')}
-              onPick={(row) => apply((list) => setPrimaryData(list, id, row.block.id))}
+              onPick={(row) => apply((list) => setPrimaryData(list, id, stripId, row.block.id))}
             />
             <Button
               size="compact-xs"
               variant="default"
-              disabled={lock('data') !== null || !object?.primaryDataRef}
+              disabled={lock('data') !== null || !strip?.dataRef}
               data-info={
                 lock('data') ??
-                (object?.primaryDataRef
+                (strip?.dataRef
                   ? 'Clear the data: the object becomes an Empty.'
                   : 'Already an Empty.')
               }
-              onClick={() => apply((list) => setPrimaryData(list, id, null))}
+              onClick={() => apply((list) => setPrimaryData(list, id, stripId, null))}
             >
               None
             </Button>
@@ -797,13 +839,15 @@ function PropertiesBody() {
               size="xs"
               aria-label="Mapping"
               data={MAPPING_OPTIONS}
-              value={object?.mapping ?? 'loop'}
+              value={strip?.mapping ?? 'loop'}
               disabled={lock('mapping') !== null}
               data-info={
                 lock('mapping') ??
                 'Loop repeats the data across the span. Stretch fits one cycle to it. One-shot plays it once.'
               }
-              onChange={(value) => apply((list) => setMapping(list, id, value as ObjectMapping))}
+              onChange={(value) =>
+                apply((list) => setMapping(list, id, stripId, value as ObjectMapping))
+              }
             />
           </Field>
         </>
@@ -817,9 +861,343 @@ function PropertiesBody() {
           onChange={(event) => apply((list) => setMute(list, id, event.currentTarget.checked))}
         />
       </Field>
+      {object && strip && (
+        <ModifiersSection
+          objectId={id}
+          stripId={strip.id}
+          modifiers={strip.modifiers}
+          blocks={blocks}
+          deskReason={deskReason}
+          apply={apply}
+        />
+      )}
       <div className={classes.line} title={message || heardRefusal || ''} role="status">
         {message || heardRefusal || ''}
       </div>
     </section>
+  );
+}
+
+/* ------------------------------------------------------------------------------------- Modifiers */
+
+/** A number the person typed, or null when it is not one. */
+function parseNumber(text: string): number | null {
+  const trimmed = text.trim();
+  const value = Number(trimmed);
+  return trimmed === '' || !Number.isFinite(value) ? null : value;
+}
+
+const ALLOCATION_OPTIONS = [
+  { value: 'cycle', label: 'Cycle' },
+  { value: 'cycle-rhythm', label: 'Cycle Rhythm' },
+  { value: 'zip', label: 'Zip' },
+  { value: 'cartesian', label: 'Cartesian' },
+];
+
+const APPLY_BELOW = 'Apply the modifiers above it first.';
+
+/**
+ * The modifier stack of the selected object (O3-ii, a thin slice): Add Modifier and Apply All on top,
+ * then one card per modifier in stack order. Every edit is one op from `scene/sceneOps.ts` through the
+ * panel's `apply`, which sends the refusal to the status line. Each card has the same slots whatever
+ * is in them (a problem line that is always present), so nothing changes height on an edit.
+ */
+function ModifiersSection({
+  objectId,
+  stripId,
+  modifiers,
+  blocks,
+  deskReason,
+  apply,
+}: {
+  objectId: string;
+  stripId: string;
+  modifiers: ModifierInstance[];
+  blocks: readonly StoredDataBlock[];
+  deskReason: string | null;
+  apply(run: (list: readonly StoredDataBlock[]) => SceneOpResult): string | null;
+}) {
+  const { settings } = useCompositionSettings();
+  const pulseUnit = transportRhythmContext(settings.transport).pulseUnit;
+  const rhythm = settings.sounds.rhythm;
+  const context = useMemo(
+    () => ({ pulseUnit, rhythmSound: layerSound(rhythm, 0) }),
+    [pulseUnit, rhythm]
+  );
+  const problems = useMemo(
+    () => modifierProblems(blocks, objectId, stripId, context),
+    [blocks, objectId, stripId, context]
+  );
+
+  return (
+    <div className={classes.modifiers}>
+      <div className={classes.bar}>
+        <span className={classes.heading}>Modifiers</span>
+        <Menu position="bottom-end" withinPortal={false} transitionProps={{ duration: 0 }}>
+          <Menu.Target>
+            <Button
+              size="compact-xs"
+              variant="default"
+              disabled={deskReason !== null}
+              data-info={deskReason ?? 'Add a modifier at the bottom of the stack. It runs last.'}
+            >
+              Add Modifier <span aria-hidden>▾</span>
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            {modifierDefs().map((def) => (
+              <Menu.Item
+                key={def.id}
+                onClick={() =>
+                  apply((list) => addModifier(list, newEnv(), objectId, stripId, def.id))
+                }
+              >
+                {def.label}
+              </Menu.Item>
+            ))}
+          </Menu.Dropdown>
+        </Menu>
+        <Button
+          size="compact-xs"
+          variant="default"
+          disabled={deskReason !== null || modifiers.length === 0}
+          data-info={
+            deskReason ??
+            (modifiers.length === 0
+              ? 'There are no modifiers to apply.'
+              : 'Bake the whole stack into a new Notes data-block and clear the stack.')
+          }
+          onClick={() => apply((list) => applyAll(list, newEnv(), objectId, stripId, context))}
+        >
+          Apply All
+        </Button>
+      </div>
+      <div className={classes.cards}>
+        {modifiers.map((modifier, index) => (
+          <ModifierCard
+            key={modifier.id}
+            objectId={objectId}
+            stripId={stripId}
+            modifier={modifier}
+            index={index}
+            last={index === modifiers.length - 1}
+            deskReason={deskReason}
+            problem={problems.find((entry) => entry.modifierId === modifier.id)?.text ?? ''}
+            context={context}
+            blocks={blocks}
+            apply={apply}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ModifierCard({
+  objectId,
+  stripId,
+  modifier,
+  index,
+  last,
+  deskReason,
+  problem,
+  context,
+  blocks,
+  apply,
+}: {
+  objectId: string;
+  stripId: string;
+  modifier: ModifierInstance;
+  blocks: readonly StoredDataBlock[];
+  index: number;
+  last: boolean;
+  deskReason: string | null;
+  problem: string;
+  context: AuditionContext;
+  apply(run: (list: readonly StoredDataBlock[]) => SceneOpResult): string | null;
+}) {
+  const def = getModifierDef(modifier.type);
+  if (!def) {
+    return null;
+  }
+  const id = modifier.id;
+  const params = modifier.params;
+  const setParam = (key: string, value: unknown) =>
+    apply((list) => setModifierParam(list, objectId, stripId, id, key, value));
+  const numberField = (key: string, label: string, info: string) => (
+    <Field label={label}>
+      <CommitField
+        ariaLabel={`${label} of ${def.label}`}
+        value={String(params[key])}
+        disabled={deskReason !== null}
+        info={deskReason ?? info}
+        onCommit={(text) => {
+          const value = parseNumber(text);
+          return value === null ? 'Enter a number.' : setParam(key, value);
+        }}
+      />
+    </Field>
+  );
+  const applyReason =
+    index > 0 ? APPLY_BELOW : modifier.mute ? 'Turn the modifier on to apply it.' : null;
+  const upReason = index === 0 ? 'It is already at the top.' : null;
+  const downReason = last ? 'It is already at the bottom.' : null;
+  const hasPeriod = 'period' in params;
+
+  return (
+    <div className={`${classes.card} ${modifier.mute ? classes.cardMuted : ''}`}>
+      <div className={classes.cardHead}>
+        <span className={classes.cardName} title={def.label}>
+          {def.label}
+        </span>
+        <Switch
+          size="xs"
+          aria-label={`${def.label} On`}
+          checked={!modifier.mute}
+          disabled={deskReason !== null}
+          data-info={deskReason ?? 'Play this modifier. Off skips it.'}
+          onChange={(event) =>
+            apply((list) =>
+              setModifierMute(list, objectId, stripId, id, !event.currentTarget.checked)
+            )
+          }
+        />
+        <Button
+          size="compact-xs"
+          variant="default"
+          aria-label={`Move ${def.label} Up`}
+          disabled={deskReason !== null || upReason !== null}
+          data-info={deskReason ?? upReason ?? 'Move this modifier up. It runs earlier.'}
+          onClick={() => apply((list) => moveModifier(list, objectId, stripId, id, 'up'))}
+        >
+          ▲
+        </Button>
+        <Button
+          size="compact-xs"
+          variant="default"
+          aria-label={`Move ${def.label} Down`}
+          disabled={deskReason !== null || downReason !== null}
+          data-info={deskReason ?? downReason ?? 'Move this modifier down. It runs later.'}
+          onClick={() => apply((list) => moveModifier(list, objectId, stripId, id, 'down'))}
+        >
+          ▼
+        </Button>
+        <Button
+          size="compact-xs"
+          variant="default"
+          aria-label={`Apply ${def.label}`}
+          disabled={deskReason !== null || index > 0}
+          data-info={
+            deskReason ??
+            applyReason ??
+            'Bake this modifier into a new Notes data-block and remove it from the stack.'
+          }
+          onClick={() =>
+            apply((list) => applyModifier(list, newEnv(), objectId, stripId, id, context))
+          }
+        >
+          Apply
+        </Button>
+        <Button
+          size="compact-xs"
+          variant="default"
+          aria-label={`Remove ${def.label}`}
+          disabled={deskReason !== null}
+          data-info={deskReason ?? 'Remove this modifier from the stack.'}
+          onClick={() => apply((list) => removeModifier(list, objectId, stripId, id))}
+        >
+          ✕
+        </Button>
+      </div>
+      {def.refSlots.map((slot) => {
+        const target = modifier.refs[slot.slot]
+          ? blocks.find((block) => block.id === modifier.refs[slot.slot]?.id)
+          : undefined;
+        return (
+          <Field key={slot.slot} label={slot.label}>
+            <DataBlockMenu
+              spec={{ accepts: [...slot.accepts] }}
+              label={target?.name ?? 'None'}
+              ariaLabel={`${slot.label} of ${def.label}`}
+              info="The pitches this modifier works with. A Pitch set gives exact cents."
+              selectedId={target?.id ?? null}
+              disabledReason={deskReason}
+              onPick={(row) =>
+                apply((list) =>
+                  setModifierRef(list, objectId, stripId, id, slot.slot, row.block.id)
+                )
+              }
+            />
+            <Button
+              size="compact-xs"
+              variant="default"
+              disabled={deskReason !== null || !modifier.refs[slot.slot]}
+              data-info={
+                deskReason ?? 'Clear the pitch set. The object is silent until one is chosen.'
+              }
+              onClick={() =>
+                apply((list) => setModifierRef(list, objectId, stripId, id, slot.slot, null))
+              }
+            >
+              None
+            </Button>
+          </Field>
+        );
+      })}
+      {modifier.type === MELODICIZE_ID && (
+        <>
+          <Field label="Allocation">
+            <Select
+              className={classes.grow}
+              size="xs"
+              aria-label={`Allocation of ${def.label}`}
+              allowDeselect={false}
+              disabled={deskReason !== null}
+              data-info={deskReason ?? 'How the pitches are given to the rhythm attacks.'}
+              data={ALLOCATION_OPTIONS}
+              value={String(params.allocation)}
+              onChange={(value) => value !== null && setParam('allocation', value)}
+              comboboxProps={{ transitionProps: { duration: 0 } }}
+            />
+          </Field>
+          {numberField(
+            'articulationPercent',
+            'Length %',
+            'Note length as a percent of the time to the next attack, from 1 to 200.'
+          )}
+        </>
+      )}
+      {modifier.type === HARMONIZE_ID && (
+        <>
+          {numberField('voices', 'Voices', 'Pitches per note, from 2 to 8.')}
+          {numberField('step', 'Step', 'Members skipped between added pitches, from 1 to 4.')}
+        </>
+      )}
+      {hasPeriod && (
+        <>
+          <Field label="Repeat">
+            <Switch
+              size="xs"
+              aria-label={`Repeat Every Octave of ${def.label}`}
+              checked={params.repeat === true}
+              disabled={deskReason !== null}
+              data-info={
+                deskReason ??
+                'Repeat the pitch set every period. Off keeps only the listed pitches.'
+              }
+              onChange={(event) => setParam('repeat', event.currentTarget.checked)}
+            />
+          </Field>
+          {numberField(
+            'period',
+            'Period',
+            'Cents after which the pitch set repeats. Applies to a Pitch set only: a Pitch classes input always repeats at 1200.'
+          )}
+        </>
+      )}
+      <div className={classes.line} title={problem}>
+        {problem}
+      </div>
+    </div>
   );
 }
