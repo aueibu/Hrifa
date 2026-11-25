@@ -48,6 +48,17 @@ JOBS = [
 ]
 LATER = [(13, 405, 9), (7, 2187, 9)]  # 9-note jobs for a later night (forecasts 6.35 h, 6.15 h)
 
+# round 2 (09:25 Eastern 2026-11-25): the first list ended 2.6 h before the noon stop; more 6-8-note jobs, all
+# pausable (they start whatever the forecast and resume another night). Jobs with big hash-mode groups ran at
+# 0.27-0.6 x their forecast tonight.
+ROUND2 = [
+    (5, 531441, 6, True), (5, 531441, 7, True), (5, 531441, 8, True),
+    (5, 885735, 6, True), (5, 885735, 7, True), (5, 885735, 8, True),
+    (7, 98415, 6, True),
+    (17, 729, 7, True),
+    (13, 1215, 7, True),
+]
+
 
 def log(msg):
     line = f"{datetime.datetime.now(datetime.timezone.utc):%H:%M}Z {msg}"
@@ -94,7 +105,11 @@ def main():
     ap.add_argument("--rate", type=float, default=75e6, help="sets enumerated per second, 7+ notes (calibrated)")
     ap.add_argument("--rate6", type=float, default=40e6, help="the same for 6 notes")
     ap.add_argument("--forecast-only", action="store_true")
+    ap.add_argument("--round2", action="store_true", help="run ROUND2 instead of JOBS")
     a = ap.parse_args()
+    global JOBS
+    if a.round2:
+        JOBS = ROUND2
     rate = lambda k: a.rate6 if k == 6 else a.rate
     stop = datetime.datetime.fromisoformat(a.stop.replace("Z", "+00:00")).timestamp()
     log(f"night queue start: stop {a.stop}, rate {a.rate:.3g}/s (6 notes {a.rate6:.3g}/s), bin {RS}, mem {MEMGB} GB")
