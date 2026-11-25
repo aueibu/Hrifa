@@ -18,7 +18,7 @@ only those edges are branched on. This reaches every maximal type flat (proof in
 
 usage: python typeflats.py K [--max-nodes N] [--out FILE.json]
 """
-import argparse, hashlib, itertools, json, sys, time
+import argparse, collections, hashlib, itertools, json, multiprocessing as mp, os, sys, time
 from fractions import Fraction as F
 
 
@@ -175,21 +175,30 @@ class Search:
                         best = key
         return best
 
-    def run(self, max_nodes, log=sys.stderr, use_canon=False):
+    def root(self):
         n = self.n
         full = tuple(tuple(F(int(r == c)) for c in range(n)) for r in range(n))
-        root = self.cut(full, self.edge_form(0, 0, 1))
-        seen = set()  # 16-byte hashes of exact flats already pushed
-        canon_seen = set()
-        stack = [root]
+        return self.cut(full, self.edge_form(0, 0, 1))
+
+    def run(self, max_nodes, log=sys.stderr, use_canon=False, starts=None, frontier=0):
+        """depth-first search from `starts` (default: the root). Dedup sets live on the object, so a worker
+        process keeps them across its tasks. With frontier > 0: breadth-first until that many flats wait,
+        then return them unexpanded (5th value) for parallel workers."""
+        if not hasattr(self, "seen"):
+            self.seen = set()  # 16-byte hashes of exact flats already pushed
+            self.canon_seen = set()
+        seen, canon_seen = self.seen, self.canon_seen
+        stack = collections.deque(starts if starts else [self.root()])
         types, nodes, bad, dup = [], 0, 0, 0
         t0 = time.time()
         while stack:
-            basis = stack.pop()
+            if frontier and len(stack) >= frontier:
+                return types, nodes, bad, False, list(stack)
+            basis = stack.popleft() if frontier else stack.pop()
             nodes += 1
             if nodes > max_nodes:
                 log.write(f"node budget {max_nodes} reached; INCOMPLETE\n")
-                return types, nodes, bad, False
+                return types, nodes, bad, False, []
             st, data = self.analyse(basis)
             if st == "bad":
                 bad += 1
@@ -201,6 +210,10 @@ class Search:
                     dup += 1
                     continue
                 canon_seen.add(key)
+                shared = getattr(self, "shared", None)
+                if shared is not None and shared.setdefault(key, self.wid) != self.wid:
+                    dup += 1  # another worker already expands this class (setdefault is one atomic call)
+                    continue
             mP, mQ = self.matching(adj)
             if -1 not in mP:
                 types.append(basis)
@@ -232,7 +245,24 @@ class Search:
                           f"{len(canon_seen)} classes, {len(types)} type flats, "
                           f"stack {len(stack)}, {time.time() - t0:.0f} s\n")
                 log.flush()
-        return types, nodes, bad, True
+        return types, nodes, bad, True, []
+
+
+_W = None
+
+
+def _winit(k, use_canon, shared):
+    global _W
+    _W = Search(k)
+    _W.use_canon = use_canon
+    _W.shared = shared  # Manager dict: canonical keys claimed by any worker
+    _W.wid = os.getpid()
+    _W.devnull = open(os.devnull, "w")
+
+
+def _wtask(basis):
+    t, n, b, _, _ = _W.run(10 ** 15, log=_W.devnull, use_canon=_W.use_canon, starts=[basis])
+    return t, n, b
 
 
 def main():
@@ -241,10 +271,40 @@ def main():
     ap.add_argument("--max-nodes", type=int, default=2_000_000)
     ap.add_argument("--out")
     ap.add_argument("--canon", action="store_true", help="merge flats equal up to relabeling/mirror/swap (needs igraph)")
+    ap.add_argument("--workers", type=int, default=1, help="> 1: breadth-first frontier, then one DFS per frontier flat in a pool "
+                    "(each worker dedups within itself only; no node budget)")
+    ap.add_argument("--frontier", type=int, default=3000)
+    ap.add_argument("--types-log", help="append each type flat found (JSON line) as it arrives")
     a = ap.parse_args()
     S = Search(a.k)
     t0 = time.time()
-    types, nodes, bad, complete = S.run(a.max_nodes, use_canon=a.canon)
+    tlog = open(a.types_log, "a") if a.types_log else None
+
+    def record(ts):
+        for b in ts:
+            if tlog:
+                tlog.write(json.dumps([[str(x) for x in r] for r in b]) + "\n")
+                tlog.flush()
+
+    if a.workers > 1:
+        types, nodes, bad, _, front = S.run(10 ** 15, use_canon=a.canon, frontier=a.frontier)
+        record(types)
+        print(f"frontier: {len(front)} flats after {nodes} nodes, {len(types)} type flats, {time.time() - t0:.0f} s", flush=True)
+        complete = True
+        mgr = mp.Manager()
+        shared = mgr.dict()
+        with mp.Pool(a.workers, _winit, (a.k, a.canon, shared)) as pool:
+            for i, (t, n, b) in enumerate(pool.imap_unordered(_wtask, front, chunksize=1), 1):
+                types += t
+                nodes += n
+                bad += b
+                record(t)
+                if t or i % 100 == 0 or i == len(front):
+                    print(f"  {i}/{len(front)} frontier flats done, {nodes} nodes, {bad} bad, {len(types)} type flats"
+                          f"{' (+' + str(len(t)) + ')' if t else ''}, {time.time() - t0:.0f} s", flush=True)
+    else:
+        types, nodes, bad, complete, _ = S.run(a.max_nodes, use_canon=a.canon)
+        record(types)
     # keep maximal flats only (a type flat inside another is a specialization of it)
     spans = [(len(b), b) for b in types]
     def inside(small, big):
