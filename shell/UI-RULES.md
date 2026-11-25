@@ -1,6 +1,11 @@
 # UI rules (standing; read before ANY UI work in shell/)
 
-The human's decision (2026-11-24): the UI follows **Blender's and Bitwig's** conventions, not ours. When a question comes up, check what those two do first; invent only where they are silent, and say so. Order of authority: the human's own words > Blender's Human Interface Guidelines (HIG) > Bitwig's user guide > our own conventions. A builder brief for UI says "read `shell/UI-RULES.md`" and adds only what is specific to the task.
+**Order of authority (the human, 2026-11-24).** When two sources disagree, the lower number wins:
+1. **Blender**: UI, terminology and data models (how the app is structured and named: editors, data-blocks, outliner, operators, modifiers).
+2. **Bitwig**: UI, tooltips and hover help, and audio decisions (how a music tool behaves: transport, timeline, piano roll, devices, audio). Bitwig's guide has no tooltips by that name: hover help is the footer, so for tooltip wording use Blender's `tooltips.md` and for where hover help appears use Bitwig's footer.
+3. **The human's own ideas**: where Blender and Bitwig are silent, or a deviation the human states on purpose.
+4. **Existing overrides and plans** in the repo (`DECISIONS.md`, arc plans, older conventions, the code as it stands): they yield to 1 to 3 and are revisited when they conflict.
+A live instruction from the human in the current conversation always wins; when it deviates from 1 or 2, it is recorded in `DECISIONS.md` as a deviation so it is not undone later. Check what Blender and Bitwig do first; invent only where they are silent, and say so. A builder brief for UI says "read `shell/UI-RULES.md`" and adds only what is specific to the task.
 
 Sources (quoted below; re-fetch when in doubt):
 - **Local clones (preferred: grep these first; read-only reference, outside the repo, refresh with `git pull`)**: `C:Usersapooreferencelender-developer-docs` (sparse: `docs/features`, includes the HIG under `docs/features/interface/human_interface_guidelines/` plus `outliner.md`, `views/tree_views.md`, `operators.md`, `preferences_and_defaults.md`) and `C:Usersapooreferencelender-manual` (sparse: `manual/editors/outliner`, `manual/scene_layout/collections`, `manual/interface`; Blender's actual user-facing behavior, e.g. `editors/outliner/editing.rst`: Delete versus Delete Hierarchy). Cloned 2026-11-24 with `git clone --filter=blob:none --no-checkout` then `git sparse-checkout set <dirs>`; widen the sparse set when a topic needs more.
