@@ -226,9 +226,12 @@ describe('state kept by the lab (rows 16 to 20)', () => {
     mount(major5());
     let dialog = await openLibrary();
     search(dialog, 'minor triad');
-    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Cardinality min' }), {
-      target: { value: '3' },
-    });
+    const cardMinSpin = within(dialog).getByRole('spinbutton', { name: 'Cardinality min' });
+    fireEvent.pointerDown(cardMinSpin, { button: 0, clientX: 0 });
+    fireEvent.pointerUp(cardMinSpin, { button: 0, clientX: 0 });
+    const cardMinInput = within(dialog).getByRole('textbox', { name: 'Cardinality min' });
+    fireEvent.change(cardMinInput, { target: { value: '3' } });
+    fireEvent.blur(cardMinInput);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Check all 3 of 10:12:15' }));
     expect(within(dialog).getByRole('button', { name: 'Clear checks (3)' })).toBeInTheDocument();
     await closeLibrary(dialog);
@@ -239,7 +242,7 @@ describe('state kept by the lab (rows 16 to 20)', () => {
     expect(within(dialog).getByRole('textbox', { name: 'Search chords' })).toHaveValue(
       'minor triad'
     );
-    expect(within(dialog).getByRole('textbox', { name: 'Cardinality min' })).toHaveValue('3');
+    expect(within(dialog).getByRole('spinbutton', { name: 'Cardinality min' })).toHaveValue(3);
     expect(head(dialog, '10:12:15 Minor Triad')).toHaveAttribute('aria-expanded', 'true');
     // the results are recomputed from the subset as it is now
     expect(within(dialog).getAllByTestId('check-line')[0]).toHaveTextContent('2 found');
@@ -446,8 +449,14 @@ describe('search and filters', () => {
   it('odd limit up to 9 with exactly 4 notes keeps the 18 entries of the scenario', async () => {
     mount();
     const dialog = await openLibrary();
-    const num = (name: string, v: string) =>
-      fireEvent.change(within(dialog).getByRole('textbox', { name }), { target: { value: v } });
+    const num = (name: string, v: string) => {
+      const spin = within(dialog).getByRole('spinbutton', { name });
+      fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+      fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
+      const input = within(dialog).getByRole('textbox', { name });
+      fireEvent.change(input, { target: { value: v } });
+      fireEvent.blur(input);
+    };
     num('Cardinality min', '4');
     num('Cardinality max', '4');
     num('Odd limit up to', '9');

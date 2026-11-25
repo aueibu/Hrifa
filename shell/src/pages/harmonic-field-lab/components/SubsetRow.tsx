@@ -5,7 +5,7 @@ import {
   Button,
   Checkbox,
   NativeSelect,
-  NumberInput,
+  ScrubNumber,
   SegmentedControl,
   ActionIcon,
 } from '../../../ui';
@@ -128,38 +128,22 @@ export function SubsetRow() {
             }
           />
           {isEd && (
-            <NumberInput
-              size="xs"
+            <ScrubNumber
               aria-label="Equal divisions"
               suffix="-ED"
-              min={1}
-              max={1000}
-              allowDecimal={false}
-              hideControls
+              range={[1, 1000]}
               value={pick.m}
-              onChange={(v) => {
-                if (typeof v === 'number') {
-                  dispatch({ type: 'pick/set', patch: { m: v } });
-                }
-              }}
+              onChange={(v) => dispatch({ type: 'pick/set', patch: { m: Math.trunc(v) } })}
             />
           )}
           {isOdd && (
             <Tip k="oddLimitPick" as="control">
-              <NumberInput
-                size="xs"
+              <ScrubNumber
                 aria-label="Max odd limit"
                 prefix="odd ≤ "
-                min={1}
-                max={255}
-                allowDecimal={false}
-                hideControls
+                range={[1, 255]}
                 value={pick.odd}
-                onChange={(v) => {
-                  if (typeof v === 'number') {
-                    dispatch({ type: 'pick/set', patch: { odd: v } });
-                  }
-                }}
+                onChange={(v) => dispatch({ type: 'pick/set', patch: { odd: Math.trunc(v) } })}
               />
             </Tip>
           )}

@@ -293,13 +293,15 @@ export function ScrubNumber({
   prefix = '',
   suffix = '',
   disabled = false,
+  placeholder,
+  onEmpty,
   label,
   description,
   style,
   className,
   'aria-label': ariaLabel,
 }: {
-  value: number;
+  value: number | null;
   onChange: (next: number) => void;
   /** Genuinely bounded `[min, max]` range: clamps values and draws the `--accent` progress fill bar. */
   range?: [number, number];
@@ -310,15 +312,18 @@ export function ScrubNumber({
   prefix?: string;
   suffix?: string;
   disabled?: boolean;
+  placeholder?: string;
+  onEmpty?: () => void;
   label?: ReactNode;
   description?: ReactNode;
   style?: React.CSSProperties;
   className?: string;
   'aria-label'?: string;
 }) {
+  const numValue = value ?? defaultValue ?? 0;
   const [editing, setEditing] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [draft, setDraft] = useState(String(value));
+  const [draft, setDraft] = useState(value === null ? '' : String(value));
   const inputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<{
     startX: number;
@@ -358,9 +363,14 @@ export function ScrubNumber({
   }, [editing]);
 
   const commitDraft = () => {
-    const parsed = Number(draft.trim());
-    if (Number.isFinite(parsed) && draft.trim() !== '') {
-      onChange(clampValue(parsed));
+    const trimmed = draft.trim();
+    if (trimmed === '' && onEmpty) {
+      onEmpty();
+    } else {
+      const parsed = Number(trimmed);
+      if (Number.isFinite(parsed) && trimmed !== '') {
+        onChange(clampValue(parsed));
+      }
     }
     setEditing(false);
   };
@@ -404,7 +414,7 @@ export function ScrubNumber({
   }
 
   let fillStyle: { left: string; width: string } | null = null;
-  if (range !== undefined && range[1] > range[0]) {
+  if (value !== null && range !== undefined && range[1] > range[0]) {
     const [rMin, rMax] = range;
     const span = rMax - rMin;
     const clamped = Math.max(rMin, Math.min(rMax, value));
@@ -428,7 +438,7 @@ export function ScrubNumber({
     <div
       role="spinbutton"
       tabIndex={disabled ? -1 : 0}
-      aria-valuenow={value}
+      aria-valuenow={value ?? undefined}
       aria-valuemin={min}
       aria-valuemax={max}
       aria-disabled={disabled || undefined}
@@ -442,7 +452,7 @@ export function ScrubNumber({
           return;
         }
         e.currentTarget.setPointerCapture?.(e.pointerId);
-        dragRef.current = { startX: e.clientX, startValue: value, moved: false };
+        dragRef.current = { startX: e.clientX, startValue: numValue, moved: false };
       }}
       onPointerMove={(e) => {
         const d = dragRef.current;
@@ -471,7 +481,7 @@ export function ScrubNumber({
           e.currentTarget.releasePointerCapture(e.pointerId);
         }
         if (!disabled && d && !d.moved && e.detail < 2) {
-          setDraft(String(value));
+          setDraft(value === null ? '' : String(value));
           setEditing(true);
         }
       }}
@@ -487,14 +497,14 @@ export function ScrubNumber({
         }
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          setDraft(String(value));
+          setDraft(value === null ? '' : String(value));
           setEditing(true);
         } else if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
           e.preventDefault();
-          onChange(clampValue(roundToStep(value + step * (e.shiftKey ? 0.1 : 1), e.shiftKey)));
+          onChange(clampValue(roundToStep(numValue + step * (e.shiftKey ? 0.1 : 1), e.shiftKey)));
         } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
           e.preventDefault();
-          onChange(clampValue(roundToStep(value - step * (e.shiftKey ? 0.1 : 1), e.shiftKey)));
+          onChange(clampValue(roundToStep(numValue - step * (e.shiftKey ? 0.1 : 1), e.shiftKey)));
         }
       }}
       {...labelProps}
@@ -503,9 +513,15 @@ export function ScrubNumber({
         <span className={classes.scrubFill} style={fillStyle} aria-hidden="true" />
       )}
       <span className={classes.scrubValue}>
-        {prefix}
-        {value}
-        {suffix}
+        {value === null ? (
+          <span className={classes.scrubPlaceholder}>{placeholder ?? ''}</span>
+        ) : (
+          <>
+            {prefix}
+            {value}
+            {suffix}
+          </>
+        )}
       </span>
     </div>
   );

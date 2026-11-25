@@ -14,7 +14,6 @@ import {
 import {
   Text,
   Tooltip,
-  type NumberInputProps,
   type TooltipProps,
   type TextareaProps,
   type TextInputProps,
@@ -383,7 +382,7 @@ export const SIGNED_BAND_LABELS = [
   '+30 c or more',
 ];
 
-import { Textarea, TextInput, NumberInput } from '../../../ui';
+import { Textarea, TextInput, ScrubNumber } from '../../../ui';
 import type { PreviewKind } from '../audio/plan';
 export { useLab, useViz } from '../state/context';
 
@@ -440,33 +439,55 @@ export function CommitNumber({
   onCommit,
   min,
   max,
-  ...rest
+  'aria-label': ariaLabel,
+  label,
+  prefix,
+  suffix,
+  placeholder,
+  disabled,
+  className,
+  allowDecimal,
+  w,
 }: {
   value: number;
   onCommit: (n: number) => void;
   min?: number;
   max?: number;
-} & Omit<NumberInputProps, 'value' | 'onChange' | 'min' | 'max' | 'onBlur'>) {
-  const f = useDebouncedField<string | number>(value, (v) => onCommit(v as number));
+  'aria-label'?: string;
+  label?: string;
+  prefix?: string;
+  suffix?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  size?: string;
+  hideControls?: boolean;
+  allowDecimal?: boolean;
+  decimalScale?: number;
+  w?: string | number;
+}) {
+  const bounds: [number, number] | undefined =
+    min !== undefined && max !== undefined ? [min, max] : undefined;
   return (
-    <NumberInput
-      allowDecimal={false}
-      {...rest}
-      min={min}
-      max={max}
-      value={f.local}
-      clampBehavior="strict"
-      onChange={(v) => f.change(v, typeof v === 'number' && Number.isFinite(v))}
-      onBlur={() => {
-        f.flush();
-        f.setLocal(value);
-      }}
+    <ScrubNumber
+      aria-label={ariaLabel}
+      label={label}
+      prefix={prefix}
+      suffix={suffix}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={className}
+      style={w !== undefined ? { width: w } : undefined}
+      step={allowDecimal ? 0.1 : 1}
+      clamp={bounds}
+      value={value}
+      onChange={(n) => onCommit(allowDecimal ? n : Math.trunc(n))}
     />
   );
 }
 
 /**
- * `CommitNumber` that may also be empty: clearing the box commits `null` (once typing pauses, or on blur), a valid number
+ * `CommitNumber` that may also be empty: clearing the box commits `null`, a valid number
  * commits as usual, and a number out of range is never accepted. For an optional setting such as the odd limit filter.
  */
 export function CommitOptionalNumber({
@@ -474,29 +495,50 @@ export function CommitOptionalNumber({
   onCommit,
   min,
   max,
-  ...rest
+  'aria-label': ariaLabel,
+  label,
+  prefix,
+  suffix,
+  placeholder,
+  disabled,
+  className,
+  allowDecimal,
+  w,
 }: {
   value: number | null;
   onCommit: (n: number | null) => void;
   min?: number;
   max?: number;
-} & Omit<NumberInputProps, 'value' | 'onChange' | 'min' | 'max' | 'onBlur'>) {
-  const f = useDebouncedField<string | number>(value ?? '', (v) =>
-    onCommit(v === '' ? null : (v as number))
-  );
+  'aria-label'?: string;
+  label?: string;
+  prefix?: string;
+  suffix?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  size?: string;
+  hideControls?: boolean;
+  allowDecimal?: boolean;
+  decimalScale?: number;
+  w?: string | number;
+}) {
+  const bounds: [number, number] | undefined =
+    min !== undefined && max !== undefined ? [min, max] : undefined;
   return (
-    <NumberInput
-      allowDecimal={false}
-      {...rest}
-      min={min}
-      max={max}
-      value={f.local}
-      clampBehavior="strict"
-      onChange={(v) => f.change(v, v === '' || (typeof v === 'number' && Number.isFinite(v)))}
-      onBlur={() => {
-        f.flush();
-        f.setLocal(value ?? '');
-      }}
+    <ScrubNumber
+      aria-label={ariaLabel}
+      label={label}
+      prefix={prefix}
+      suffix={suffix}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={className}
+      style={w !== undefined ? { width: w } : undefined}
+      step={allowDecimal ? 0.1 : 1}
+      clamp={bounds}
+      value={value}
+      onChange={(n) => onCommit(allowDecimal ? n : Math.trunc(n))}
+      onEmpty={() => onCommit(null)}
     />
   );
 }

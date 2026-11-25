@@ -225,6 +225,10 @@
   z-index: 1;
 }
 
+.scrubPlaceholder {
+  color: var(--text-subtle);
+}
+
 .scrub[data-disabled='true'] {
   cursor: not-allowed;
   opacity: 0.55;

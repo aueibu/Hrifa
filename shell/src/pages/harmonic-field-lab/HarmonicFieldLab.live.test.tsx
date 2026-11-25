@@ -61,27 +61,42 @@ describe('live generation', () => {
     expect(screen.getByRole('tab', { name: '19-EDO' })).toBeInTheDocument();
   });
 
+  const openScrub = (container: { getByRole: typeof screen.getByRole }, name: string) => {
+    const spin = container.getByRole('spinbutton', { name });
+    fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+    fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
+    return container.getByRole('textbox', { name });
+  };
+  const setScrub = async (name: string, v: string) => {
+    const box = openScrub(screen, name);
+    fireEvent.change(box, { target: { value: v } });
+    fireEvent.blur(box);
+    await settle();
+  };
+
   it('a generator that matches no preset has no owner: the control reads "(edited by hand)"', async () => {
     render(<HarmonicFieldLabPage />);
-    await typeSlow(screen.getByRole('textbox', { name: 'Starting harmonic' }), '17');
+    await setScrub('Starting harmonic', '17');
     expect(presetButton()).toHaveTextContent('(edited by hand)');
   });
 
   it('method tabs and their parameters rebuild the field: the starting harmonic, then EDO divisions', async () => {
     render(<HarmonicFieldLabPage />);
-    await typeSlow(screen.getByRole('textbox', { name: 'Starting harmonic' }), '16');
+    await setScrub('Starting harmonic', '16');
     expect(ringCount()[1]).toBe(16);
     expect(presetButton()).toHaveTextContent('Harmonics 16–31'); // the edit now equals another built-in
     fireEvent.click(screen.getByRole('radio', { name: 'EDO' }));
     expect(ringCount()).toEqual([12, 12]); // a new method selects everything
-    await typeSlow(screen.getByRole('textbox', { name: 'Divisions' }), '7');
+    await setScrub('Divisions', '7');
     // the selection follows its pitches (as in the prototype): only 1/1 is shared by 12-EDO and 7-EDO
     expect(ringCount()).toEqual([1, 7]);
     // the value can be cleared and retyped without the field snapping back
-    const div = screen.getByRole('textbox', { name: 'Divisions' });
-    await typeSlow(div, '');
+    const div = openScrub(screen, 'Divisions');
+    fireEvent.change(div, { target: { value: '' } });
     expect(div).toHaveValue('');
-    await typeSlow(div, '5');
+    fireEvent.change(div, { target: { value: '5' } });
+    fireEvent.blur(div);
+    await settle();
     expect(ringCount()[1]).toBe(5);
     fireEvent.click(screen.getByRole('button', { name: 'All' }));
     expect(ringCount()).toEqual([5, 5]);
@@ -120,7 +135,7 @@ describe('live generation', () => {
     expect(screen.queryByRole('alert')).toBeNull();
     // a MOS chip sets the count of axis 1
     fireEvent.click(screen.getByRole('button', { name: 'Use 7 notes on axis 1' }));
-    expect(screen.getByRole('textbox', { name: 'Axis 1 count' })).toHaveValue('7');
+    expect(screen.getByRole('spinbutton', { name: 'Axis 1 count' })).toHaveValue(7);
   });
 });
 
@@ -248,15 +263,29 @@ describe('live selection', () => {
     render(<HarmonicFieldLabPage />);
     const bar = within(screen.getByRole('group', { name: 'Note selection' }));
     // the odd limit is an entry of the scale menu; it shows its own number box and the one Select applies it
-    expect(bar.queryByRole('textbox', { name: 'Max odd limit' })).toBeNull();
+    expect(bar.queryByRole('spinbutton', { name: 'Max odd limit' })).toBeNull();
     type(bar.getByRole('combobox', { name: 'Scale to match' }), 'odd');
-    type(bar.getByRole('textbox', { name: 'Max odd limit' }), '5');
+    {
+      const spin = bar.getByRole('spinbutton', { name: 'Max odd limit' });
+      fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+      fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
+      const box = bar.getByRole('textbox', { name: 'Max odd limit' });
+      fireEvent.change(box, { target: { value: '5' } });
+      fireEvent.blur(box);
+    }
     fireEvent.click(bar.getByRole('button', { name: 'Select' }));
     expect(ringCount()).toEqual([3, 8]);
     expect(screen.getByRole('status')).toHaveTextContent(/Picked 3 notes with odd limit 5/);
     // nearest 3 equal divisions of the octave
     type(bar.getByRole('combobox', { name: 'Scale to match' }), 'ed');
-    type(bar.getByRole('textbox', { name: 'Equal divisions' }), '4');
+    {
+      const spin = bar.getByRole('spinbutton', { name: 'Equal divisions' });
+      fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+      fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
+      const box = bar.getByRole('textbox', { name: 'Equal divisions' });
+      fireEvent.change(box, { target: { value: '4' } });
+      fireEvent.blur(box);
+    }
     fireEvent.click(bar.getAllByRole('button', { name: 'Select' })[0]);
     expect(ringCount()).toEqual([4, 8]);
     expect(screen.getByRole('status')).toHaveTextContent(/Picked 4 notes/);
@@ -314,12 +343,28 @@ describe('live selection', () => {
       within(strip).getByRole('button', { name: /^5\/4, -13.7 cents from M3/ })
     ).toBeInTheDocument();
     type(compare, 'ji');
-    await typeSlow(within(strip).getByRole('textbox', { name: 'Odd limit' }), '5');
+    {
+      const spin = within(strip).getByRole('spinbutton', { name: 'Odd limit' });
+      fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+      fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
+      const box = within(strip).getByRole('textbox', { name: 'Odd limit' });
+      fireEvent.change(box, { target: { value: '5' } });
+      fireEvent.blur(box);
+      await settle();
+    }
     expect(
       within(strip).getByRole('button', { name: /^5\/4, 0.0 cents from 5\/4/ })
     ).toBeInTheDocument();
     type(compare, 'medo');
-    await typeSlow(within(strip).getByRole('textbox', { name: 'Divisions of the repeat' }), '19');
+    {
+      const spin = within(strip).getByRole('spinbutton', { name: 'Divisions of the repeat' });
+      fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+      fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
+      const box = within(strip).getByRole('textbox', { name: 'Divisions of the repeat' });
+      fireEvent.change(box, { target: { value: '19' } });
+      fireEvent.blur(box);
+      await settle();
+    }
     expect(await plotTip()).toContain('19-EDO');
     expect(within(compare).getByRole('option', { name: 'Picked scale' })).toBeDisabled();
     const bar = within(screen.getByRole('group', { name: 'Note selection' }));
@@ -676,7 +721,13 @@ describe('sound', () => {
     render(<HarmonicFieldLabPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Sound settings' }));
     type(await screen.findByRole('combobox', { name: 'Wave' }), 'harmonic');
-    await typeSlow(screen.getByRole('textbox', { name: '1/1 Hz' }), '220');
+    const hzSpin = screen.getByRole('spinbutton', { name: '1/1 Hz' });
+    fireEvent.pointerDown(hzSpin, { button: 0, clientX: 0 });
+    fireEvent.pointerUp(hzSpin, { button: 0, clientX: 0 });
+    const hzBox = screen.getByRole('textbox', { name: '1/1 Hz' });
+    fireEvent.change(hzBox, { target: { value: '220' } });
+    fireEvent.blur(hzBox);
+    await settle();
     key('z');
     expect(ctx().waves).toHaveLength(1);
     expect(live()[0].wave).toBe(ctx().waves[0]);
@@ -752,10 +803,14 @@ describe('typing, storage and other windows', () => {
 
   it('a number typed digit by digit commits once: 16 never passes through 1', async () => {
     render(<HarmonicFieldLabPage />);
+    const spin = screen.getByRole('spinbutton', { name: 'Starting harmonic' });
+    fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+    fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
     const h = screen.getByRole('textbox', { name: 'Starting harmonic' });
     type(h, '1');
     type(h, '16');
     expect(ringCount()[1]).toBe(8); // nothing yet
+    fireEvent.blur(h);
     await settle();
     expect(ringCount()[1]).toBe(16);
   });

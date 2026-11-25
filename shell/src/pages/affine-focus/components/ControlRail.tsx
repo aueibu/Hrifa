@@ -13,7 +13,7 @@ import {
   type TransformDomain,
   type TuningGamut,
 } from '../../../lib/affine-focus';
-import { NativeSelect, NumberInput, SegmentedControl, TextInput, Button } from '../../../ui';
+import { NativeSelect, ScrubNumber, SegmentedControl, TextInput, Button } from '../../../ui';
 import { SCENARIO_EXAMPLES, type AffineFocusPersistedState, type ScenarioExample } from '../state';
 import classes from '../AffineFocus.module.css';
 
@@ -383,14 +383,11 @@ export function ControlRail({
 
           {(state.rule === 'single-focus' || state.rule === 'perspective') && (
             <>
-              <NumberInput
-                size="xs"
+              <ScrubNumber
                 label="Multiplier (a)"
                 value={state.multiplier}
                 step={1}
-                allowDecimal
-                onChange={(val) => {
-                  const n = Number(val);
+                onChange={(n) => {
                   if (Number.isFinite(n)) {
                     onPatch({ multiplier: n });
                   }
@@ -424,23 +421,19 @@ export function ControlRail({
 
           {state.rule === 'bilateral' && (
             <div className={classes.fieldRow}>
-              <NumberInput
-                size="xs"
+              <ScrubNumber
                 label="Upper a₊ (d ≥ 0)"
                 value={state.multiplierPlus}
-                onChange={(val) => {
-                  const n = Number(val);
+                onChange={(n) => {
                   if (Number.isFinite(n)) {
                     onPatch({ multiplierPlus: n });
                   }
                 }}
               />
-              <NumberInput
-                size="xs"
+              <ScrubNumber
                 label="Lower a₋ (d < 0)"
                 value={state.multiplierMinus}
-                onChange={(val) => {
-                  const n = Number(val);
+                onChange={(n) => {
                   if (Number.isFinite(n)) {
                     onPatch({ multiplierMinus: n });
                   }

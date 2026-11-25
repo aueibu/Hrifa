@@ -200,7 +200,10 @@ describe('chord shelf UI', () => {
     expect(running()).toHaveLength(0);
     up('4');
     fireEvent.mouseEnter(a);
-    fireEvent.keyDown(screen.getAllByRole('textbox')[0], { key: '4' });
+    const spin = screen.getAllByRole('spinbutton')[0];
+    fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+    fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: '4' });
     expect(running()).toHaveLength(0);
     fireEvent.mouseLeave(a);
   });
@@ -438,7 +441,10 @@ describe('chord shelf UI', () => {
     fireEvent.keyDown(window, { key: '=', code: 'Equal', repeat: true });
     fireEvent.keyDown(window, { key: '=', code: 'Equal', ctrlKey: true });
     fireEvent.keyDown(window, { key: '=', code: 'Equal', altKey: true });
-    fireEvent.keyDown(screen.getAllByRole('textbox')[0], { key: '=', code: 'Equal' });
+    const spin = screen.getAllByRole('spinbutton')[0];
+    fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+    fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: '=', code: 'Equal' });
     expect(within(rail()).getByRole('tab', { name: /^Shelf/ }).textContent).toMatch(/2 chords/);
   });
 

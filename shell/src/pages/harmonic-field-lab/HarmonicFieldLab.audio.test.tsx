@@ -328,11 +328,14 @@ describe('the sound follows the Roughness Partials and Rolloff (Developer option
 });
 
 describe('Partials and Rolloff boxes in the Sound settings popover (A1b)', () => {
-  const box = (name: 'Partials' | 'Rolloff') =>
-    screen.getByRole('textbox', { name }) as HTMLInputElement;
+  const spin = (name: 'Partials' | 'Rolloff') => screen.getByRole('spinbutton', { name });
   const type = (name: 'Partials' | 'Rolloff', v: string) => {
-    fireEvent.change(box(name), { target: { value: v } });
-    fireEvent.blur(box(name));
+    const s = spin(name);
+    fireEvent.pointerDown(s, { button: 0, clientX: 0 });
+    fireEvent.pointerUp(s, { button: 0, clientX: 0 });
+    const input = screen.getByRole('textbox', { name });
+    fireEvent.change(input, { target: { value: v } });
+    fireEvent.blur(input);
   };
   const waveLabels = () =>
     [...(screen.getByRole('combobox', { name: 'Wave' }) as HTMLSelectElement).options].map(
@@ -346,33 +349,33 @@ describe('Partials and Rolloff boxes in the Sound settings popover (A1b)', () =>
 
   it('rows 1 and 2: the boxes show 7 and 0.88; typing Partials 3 changes the sound the Wave select names', () => {
     openHarmonic();
-    expect(box('Partials').value).toBe('7');
-    expect(box('Rolloff').value).toBe('0.88');
-    expect(box('Partials')).toBeEnabled();
+    expect(spin('Partials')).toHaveValue(7);
+    expect(spin('Rolloff')).toHaveValue(0.88);
+    expect(spin('Partials')).not.toHaveAttribute('aria-disabled', 'true');
     type('Partials', '3');
     expect(waveLabels()).toEqual(['Sine', 'Harmonic (3 partials)']);
-    expect(box('Partials').value).toBe('3');
+    expect(spin('Partials')).toHaveValue(3);
   });
 
-  it('row 5: a Partials value above 16 is not accepted', () => {
+  it('row 5: a Partials value above 16 is clamped to 16', () => {
     openHarmonic();
     type('Partials', '20');
-    expect(waveLabels()).toEqual(['Sine', 'Harmonic (7 partials)']);
+    expect(waveLabels()).toEqual(['Sine', 'Harmonic (16 partials)']);
   });
 
   it('D2: with the Sine wave the boxes are shown but disabled', () => {
     render(<HarmonicFieldLabPage />);
     openSound();
-    expect(box('Partials')).toBeDisabled();
-    expect(box('Rolloff')).toBeDisabled();
+    expect(spin('Partials')).toHaveAttribute('aria-disabled', 'true');
+    expect(spin('Rolloff')).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('D1: with the link off the boxes are disabled at 7 and 0.88 and a note says so', () => {
     writeDeveloperOptions({ soundFollowsRoughness: false });
     openHarmonic();
-    expect(box('Partials')).toBeDisabled();
-    expect(box('Partials').value).toBe('7');
-    expect(box('Rolloff').value).toBe('0.88');
+    expect(spin('Partials')).toHaveAttribute('aria-disabled', 'true');
+    expect(spin('Partials')).toHaveValue(7);
+    expect(spin('Rolloff')).toHaveValue(0.88);
     expect(screen.getByText(/Linked off in Developer: the sound uses 7 and 0\.88\./)).toBeTruthy();
   });
 
@@ -380,7 +383,7 @@ describe('Partials and Rolloff boxes in the Sound settings popover (A1b)', () =>
     openHarmonic();
     expect(screen.queryByText('The sound uses 0.5.')).toBeNull();
     type('Rolloff', '0.3');
-    expect(box('Rolloff').value).toBe('0.3');
+    expect(spin('Rolloff')).toHaveValue(0.3);
     expect(screen.getByText('The sound uses 0.5.')).toBeTruthy();
   });
 });

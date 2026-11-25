@@ -38,7 +38,7 @@ import {
   type LibraryEntry,
   type LibraryFilter,
 } from '../../../lib/harmonic-field';
-import { Button, NativeSelect, NumberInput, Switch, TextInput, ActionIcon } from '../../../ui';
+import { Button, NativeSelect, ScrubNumber, Switch, TextInput, ActionIcon } from '../../../ui';
 import type { PreviewTarget } from '../audio/plan';
 import type { SoundingSnap } from '../state/context';
 import { MAX_CHORDS, noteLabel } from '../state/derive';
@@ -453,9 +453,6 @@ const ShapeBlock = memo(
     shapeSignature(a) === shapeSignature(b)
 );
 
-const toNum = (v: string | number): number | null =>
-  typeof v === 'number' && Number.isFinite(v) ? v : null;
-
 function NumBox({
   label,
   value,
@@ -468,17 +465,14 @@ function NumBox({
   placeholder?: string;
 }) {
   return (
-    <NumberInput
-      size="xs"
+    <ScrubNumber
       className={classes.numBox}
       aria-label={label}
       placeholder={placeholder}
-      hideControls
-      allowDecimal={false}
-      allowNegative={false}
-      min={1}
-      value={value ?? ''}
-      onChange={(v) => onChange(toNum(v))}
+      clamp={[1, 999]}
+      value={value}
+      onChange={(v) => onChange(Math.max(1, Math.trunc(v)))}
+      onEmpty={() => onChange(null)}
     />
   );
 }

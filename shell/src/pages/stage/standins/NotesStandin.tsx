@@ -1,7 +1,7 @@
 /** Notes stand-in (throwaway): a small form-like panel with the lab's compact sizes; two columns when wide. */
 import { useState } from 'react';
 import { slotSizeAttr, type SlotSize } from '../../../lib/stage';
-import { NumberInput, TextInput, NativeSelect } from '../../../ui';
+import { ScrubNumber, TextInput, NativeSelect } from '../../../ui';
 import classes from './standins.module.css';
 
 export function NotesStandin({ size }: { size: SlotSize }) {
@@ -18,7 +18,13 @@ export function NotesStandin({ size }: { size: SlotSize }) {
           value={title}
           onChange={(e) => setTitle(e.currentTarget.value)}
         />
-        <NumberInput size="xs" label="Tempo" hideControls value={tempo} onChange={setTempo} />
+        <ScrubNumber
+          label="Tempo"
+          clamp={[20, 300]}
+          defaultValue={96}
+          value={Number(tempo) || 96}
+          onChange={setTempo}
+        />
         <NativeSelect size="xs" label="Mode" data={['Ionian', 'Dorian', 'Aeolian']} />
       </div>
     </div>

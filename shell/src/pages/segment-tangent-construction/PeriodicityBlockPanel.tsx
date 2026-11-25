@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Alert, Group, Stack, Text, Title } from '@mantine/core';
 import { Data } from '../../components/Data/Data';
 import { Surface } from '../../components/Surface/Surface';
-import { Button, NumberInput, Select } from '../../ui';
+import { Button, ScrubNumber, Select } from '../../ui';
 import { type EnvelopeType, usePeriodicityAudio } from './audio';
 import { LatticeDiagram } from './components/LatticeDiagram';
 import { ShiftMapDiagram } from './components/ShiftMapDiagram';
@@ -228,19 +228,19 @@ function PairCard({
             block ({block.length} notes): {block.map((p) => p.pitch.toFixed(3)).join(', ')}
           </Text>
           <Group gap="xs">
-            <NumberInput
+            <ScrubNumber
               label="shift i"
               value={ci}
-              onChange={(v) => setCi(Number(v) || 0)}
+              onChange={setCi}
               step={0.1}
-              w={90}
+              style={{ width: 90 }}
             />
-            <NumberInput
+            <ScrubNumber
               label="shift j"
               value={cj}
-              onChange={(v) => setCj(Number(v) || 0)}
+              onChange={setCj}
               step={0.1}
-              w={90}
+              style={{ width: 90 }}
             />
             <Button mt={22} size="xs" variant="default" onClick={() => setShowMap((v) => !v)}>
               {showMap ? 'hide map' : 'view map'}
@@ -335,49 +335,49 @@ export function PeriodicityBlockPanel({ segments, edo }: PeriodicityBlockPanelPr
         </Text>
         <Group align="flex-end" gap="sm" wrap="wrap">
           <Button onClick={generate}>Generate periodicity blocks</Button>
-          <NumberInput
+          <ScrubNumber
             label="step gen1"
             value={stepI}
-            onChange={(v) => setStepI(Number(v) || 0)}
-            w={90}
+            onChange={(v) => setStepI(Math.trunc(v))}
+            style={{ width: 90 }}
           />
-          <NumberInput
+          <ScrubNumber
             label="step gen2"
             value={stepJ}
-            onChange={(v) => setStepJ(Number(v) || 0)}
-            w={90}
+            onChange={(v) => setStepJ(Math.trunc(v))}
+            style={{ width: 90 }}
           />
-          <NumberInput
+          <ScrubNumber
             label="root Hz @ ratio 0.00"
             value={rootHz}
-            onChange={(v) => setRootHz(Number(v) || 220)}
-            min={20}
-            max={2000}
-            w={130}
+            onChange={setRootHz}
+            clamp={[20, 2000]}
+            defaultValue={220}
+            style={{ width: 130 }}
           />
-          <NumberInput
+          <ScrubNumber
             label="chord size"
             value={chordSize}
-            onChange={(v) => setChordSize(Number(v) || 2)}
-            min={2}
-            max={4}
-            w={100}
+            onChange={(v) => setChordSize(Math.trunc(v))}
+            range={[2, 4]}
+            defaultValue={3}
+            style={{ width: 100 }}
           />
-          <NumberInput
+          <ScrubNumber
             label="scale window"
             value={scaleWindow}
-            onChange={(v) => setScaleWindow(Number(v) || 7)}
-            min={2}
-            max={24}
-            w={110}
+            onChange={(v) => setScaleWindow(Math.trunc(v))}
+            range={[2, 24]}
+            defaultValue={7}
+            style={{ width: 110 }}
           />
-          <NumberInput
+          <ScrubNumber
             label="BPM"
             value={bpm}
-            onChange={(v) => setBpm(Number(v) || 120)}
-            min={20}
-            max={400}
-            w={90}
+            onChange={(v) => setBpm(Math.trunc(v))}
+            clamp={[20, 400]}
+            defaultValue={120}
+            style={{ width: 90 }}
           />
           <Select
             label="envelope"

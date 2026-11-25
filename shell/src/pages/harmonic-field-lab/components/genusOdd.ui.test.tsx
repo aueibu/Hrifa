@@ -60,10 +60,14 @@ const openGear = () => {
 };
 const oddBox = () => {
   openGear();
+  const spin = screen.getByRole('spinbutton', { name: 'Odd limit' });
+  fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+  fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
   return screen.getByRole('textbox', { name: 'Odd limit' });
 };
 const typeInto = async (box: HTMLElement, text: string) => {
   fireEvent.change(box, { target: { value: text } });
+  fireEvent.blur(box);
   await wait(200);
 };
 const pickLattice = () => fireEvent.click(screen.getByRole('radio', { name: 'Latt' }));
@@ -262,7 +266,8 @@ describe('the Odd limit box in the Field settings popover', () => {
     first.unmount();
     mount();
     expect(ratios()).toBe('1/1 9/8 5/4 3/2 7/4');
-    expect((oddBox() as HTMLInputElement).value).toBe('odd ≤ 9');
+    openGear();
+    expect(screen.getByRole('spinbutton', { name: 'Odd limit' })).toHaveTextContent('odd ≤ 9');
     expect(gear()).toHaveAttribute('data-filtering', 'true');
   });
 

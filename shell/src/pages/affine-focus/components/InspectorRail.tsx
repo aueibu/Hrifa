@@ -5,7 +5,7 @@ import type {
   TransformConfig,
   TransformResult,
 } from '../../../lib/affine-focus';
-import { Button, NativeSelect, NumberInput, SegmentedControl } from '../../../ui';
+import { Button, NativeSelect, ScrubNumber, SegmentedControl } from '../../../ui';
 import type { ArpeggioMode, AudioSettings, WaveType } from '../audio';
 import { formatSignedCents, signedErrorColorVar } from '../state';
 import classes from '../AffineFocus.module.css';
@@ -170,14 +170,12 @@ export function InspectorRail({
                 { value: 'sine', label: 'Pure Sine' },
               ]}
             />
-            <NumberInput
-              size="xs"
+            <ScrubNumber
               label="1/1 Base Hz"
-              min={55}
-              max={1760}
+              range={[55, 1760]}
+              defaultValue={261.63}
               value={audioSettings.baseHz}
-              onChange={(val) => {
-                const n = Number(val);
+              onChange={(n) => {
                 if (Number.isFinite(n) && n >= 20) {
                   onPatchAudio({ baseHz: n });
                 }

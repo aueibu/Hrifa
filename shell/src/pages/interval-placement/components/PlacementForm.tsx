@@ -3,7 +3,7 @@ import { Group, Slider, Stack, Text, Title, UnstyledButton } from '@mantine/core
 import { useDisclosure } from '@mantine/hooks';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
-import { NumberInput, Select, Switch, TextInput } from '../../../ui';
+import { ScrubNumber, Select, Switch, TextInput } from '../../../ui';
 import type { OddBiasDirection } from '../engine';
 import { parseIntervalsText, type Settings } from '../settings';
 
@@ -144,17 +144,19 @@ export function PlacementForm({ settings: s, set }: PlacementFormProps) {
               )}
 
               <Group grow>
-                <NumberInput
+                <ScrubNumber
                   label="N-EDO"
                   value={s.edoSteps}
-                  onChange={(v) => set('edoSteps', Number(v) || 12)}
-                  min={1}
+                  onChange={(v) => set('edoSteps', Math.max(1, Math.trunc(v)))}
+                  clamp={[1, 240]}
+                  defaultValue={12}
                 />
-                <NumberInput
+                <ScrubNumber
                   label="Window (octaves)"
                   value={s.windowOctaves}
-                  onChange={(v) => set('windowOctaves', Number(v) || 1)}
-                  min={1}
+                  onChange={(v) => set('windowOctaves', Math.max(1, Math.trunc(v)))}
+                  clamp={[1, 10]}
+                  defaultValue={1}
                 />
               </Group>
 
@@ -166,10 +168,12 @@ export function PlacementForm({ settings: s, set }: PlacementFormProps) {
                   onChange={(v) => set('baseNote', Number(v) || 0)}
                   allowDeselect={false}
                 />
-                <NumberInput
+                <ScrubNumber
                   label="Base octave"
                   value={s.baseOctave}
-                  onChange={(v) => set('baseOctave', Number(v) || 0)}
+                  onChange={(v) => set('baseOctave', Math.trunc(v))}
+                  range={[-1, 9]}
+                  defaultValue={4}
                 />
               </Group>
 
@@ -270,11 +274,11 @@ export function PlacementForm({ settings: s, set }: PlacementFormProps) {
                     max={1}
                     step={0.05}
                   />
-                  <NumberInput
+                  <ScrubNumber
                     label="Repulse iterations"
                     value={s.repulseIterations}
-                    onChange={(v) => set('repulseIterations', Number(v) || 1)}
-                    min={1}
+                    onChange={(v) => set('repulseIterations', Math.max(1, Math.trunc(v)))}
+                    clamp={[1, 1000]}
                   />
                 </>
               )}

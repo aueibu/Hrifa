@@ -6,7 +6,6 @@ import {
   SHARP_HUE,
   SOLID_DARK,
   SOLID_LIGHT,
-  TILE,
   hueStep,
   solidStep,
   solidTextIsDark,

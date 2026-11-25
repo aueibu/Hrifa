@@ -1,5 +1,5 @@
 import { Divider, Group, Slider, Stack, Text } from '@mantine/core';
-import { ActionIcon, NumberInput, Select, Switch } from '../../../ui';
+import { ActionIcon, ScrubNumber, Select, Switch } from '../../../ui';
 import { COMMON_TONICS, MELODY_INSTRUMENTS, SARGAM_DEGREES, type Settings } from '../settings';
 import { TanpuraSequenceEditor } from './TanpuraSequenceEditor';
 
@@ -86,13 +86,13 @@ export function PlaybackControls({
             label={null}
           />
         </div>
-        <NumberInput
+        <ScrubNumber
           label="Gap (ms)"
-          min={0}
-          max={300}
+          range={[0, 300]}
           step={10}
+          defaultValue={0}
           value={settings.gapMs}
-          onChange={(v) => set('gapMs', Number(v) || 0)}
+          onChange={(v) => set('gapMs', v)}
         />
       </Group>
 

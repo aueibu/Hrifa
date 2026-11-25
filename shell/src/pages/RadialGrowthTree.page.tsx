@@ -20,7 +20,7 @@ import { Data } from '../components/Data/Data';
 import { Surface } from '../components/Surface/Surface';
 import { SOLIDS, type SolidClass, solidClasses, solidsForClass } from '../data/polyhedra';
 import { resolveGrowthTreeStyle, resolveSolidViewStyle } from '../theme/diagram';
-import { Button, NumberInput, Select, Switch } from '../ui';
+import { Button, ScrubNumber, Select, Switch } from '../ui';
 import {
   type ChildFormula,
   type GrowthParams,
@@ -418,29 +418,25 @@ export function RadialGrowthTreePage() {
                   </SliderField>
                   <Text size="sm">Mixing matrix</Text>
                   <SimpleGrid cols={2}>
-                    <NumberInput
+                    <ScrubNumber
                       label="a"
                       value={s.matA}
-                      onChange={(v) => set('matA', Math.round(Number(v) || 0))}
-                      allowDecimal={false}
+                      onChange={(v) => set('matA', Math.round(v))}
                     />
-                    <NumberInput
+                    <ScrubNumber
                       label="b"
                       value={s.matB}
-                      onChange={(v) => set('matB', Math.round(Number(v) || 0))}
-                      allowDecimal={false}
+                      onChange={(v) => set('matB', Math.round(v))}
                     />
-                    <NumberInput
+                    <ScrubNumber
                       label="c"
                       value={s.matC}
-                      onChange={(v) => set('matC', Math.round(Number(v) || 0))}
-                      allowDecimal={false}
+                      onChange={(v) => set('matC', Math.round(v))}
                     />
-                    <NumberInput
+                    <ScrubNumber
                       label="d"
                       value={s.matD}
-                      onChange={(v) => set('matD', Math.round(Number(v) || 0))}
-                      allowDecimal={false}
+                      onChange={(v) => set('matD', Math.round(v))}
                     />
                   </SimpleGrid>
                   <Button
@@ -530,36 +526,32 @@ export function RadialGrowthTreePage() {
                   />
                   {s.searchMode === 'widen' ? (
                     <SimpleGrid cols={2}>
-                      <NumberInput
+                      <ScrubNumber
                         label="Step °"
                         value={s.stepDeg}
-                        onChange={(v) => set('stepDeg', Number(v) || 1)}
-                        min={1}
-                        max={45}
+                        onChange={(v) => set('stepDeg', Math.trunc(v))}
+                        range={[1, 45]}
                       />
-                      <NumberInput
+                      <ScrubNumber
                         label="Max °"
                         value={s.maxDeg}
-                        onChange={(v) => set('maxDeg', Number(v) || 1)}
-                        min={1}
-                        max={180}
+                        onChange={(v) => set('maxDeg', Math.trunc(v))}
+                        range={[1, 180]}
                       />
                     </SimpleGrid>
                   ) : (
                     <SimpleGrid cols={2}>
-                      <NumberInput
+                      <ScrubNumber
                         label="Exclude ± °"
                         value={s.excludeDeg}
-                        onChange={(v) => set('excludeDeg', Number(v) || 0)}
-                        min={0}
-                        max={90}
+                        onChange={(v) => set('excludeDeg', Math.trunc(v))}
+                        range={[0, 90]}
                       />
-                      <NumberInput
+                      <ScrubNumber
                         label="Span °"
                         value={s.spanDeg}
-                        onChange={(v) => set('spanDeg', Number(v) || 1)}
-                        min={1}
-                        max={180}
+                        onChange={(v) => set('spanDeg', Math.trunc(v))}
+                        range={[1, 180]}
                       />
                     </SimpleGrid>
                   )}

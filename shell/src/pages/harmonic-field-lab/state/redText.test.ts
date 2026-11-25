@@ -43,7 +43,7 @@ describe('red text role', () => {
       const css = readFileSync(new URL(`../components/${f}.module.css`, import.meta.url), 'utf8');
       expect(css).not.toMatch(/errorScope/);
       expect(css).not.toMatch(/--tint-red-text/);
-      expect(css).toMatch(/p\.inputError\s*\{[^}]*font-size:\s*var\(--lab-fs-small\)/);
+      expect(css).toMatch(/p\.inputError\s*\{[^}]*font-size:\s*var\(--mantine-font-size-sm\)/);
     }
     const lab = readFileSync(new URL('../components/lab.module.css', import.meta.url), 'utf8');
     const panels = readFileSync(

@@ -28,7 +28,7 @@ import {
   TipDelayContext,
   Button,
   Checkbox,
-  NumberInput,
+  ScrubNumber,
   SegmentedControl,
 } from '../../ui';
 import {
@@ -79,7 +79,6 @@ export function StageApp({
   );
   const [showSizes, setShowSizes] = useState(false);
   const [tipDelay, setTipDelay] = useState(() => loadTipDelay(store));
-  const [tipDelayText, setTipDelayText] = useState(() => String(tipDelay));
   const widthRem = useWidthRem();
 
   useEffect(() => {
@@ -208,22 +207,13 @@ export function StageApp({
                 </Button>
               </Popover.Target>
               <Popover.Dropdown>
-                <NumberInput
-                  size="xs"
+                <ScrubNumber
                   label="Tooltip delay (ms)"
                   description="Per viewer, default 330"
-                  hideControls
-                  min={0}
-                  max={MAX_TIP_DELAY}
-                  allowDecimal={false}
-                  data-autofocus
-                  value={tipDelayText}
-                  onChange={(v) => setTipDelayText(String(v))}
-                  onBlur={() => {
-                    const next = parseTipDelay(tipDelayText);
-                    setTipDelay(next);
-                    setTipDelayText(String(next));
-                  }}
+                  range={[0, MAX_TIP_DELAY]}
+                  defaultValue={330}
+                  value={tipDelay}
+                  onChange={(next) => setTipDelay(parseTipDelay(next))}
                 />
               </Popover.Dropdown>
             </Popover>

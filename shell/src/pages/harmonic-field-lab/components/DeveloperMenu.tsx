@@ -14,7 +14,7 @@ import {
   formatBuildMs,
   type HeLimit,
 } from '../../../lib/harmonic-field';
-import { NativeSelect, NumberInput, SegmentedControl, Switch, Button } from '../../../ui';
+import { NativeSelect, ScrubNumber, SegmentedControl, Switch, Button } from '../../../ui';
 import {
   TOOLTIP_DELAY_MAX,
   sanitizeTileLook,
@@ -58,18 +58,14 @@ export function DeveloperMenu() {
                 />
               </Tip>
               <Tip k="tooltipDelay" as="control" block>
-                <NumberInput
-                  size="xs"
+                <ScrubNumber
                   label="Tooltip delay (ms)"
-                  min={0}
-                  max={TOOLTIP_DELAY_MAX}
+                  range={[0, TOOLTIP_DELAY_MAX]}
                   step={50}
-                  allowDecimal={false}
-                  allowNegative={false}
-                  clampBehavior="strict"
+                  defaultValue={250}
                   disabled={!options.tooltips}
                   value={options.tooltipDelay}
-                  onChange={(v) => update({ tooltipDelay: typeof v === 'number' ? v : 250 })}
+                  onChange={(v) => update({ tooltipDelay: Math.trunc(v) })}
                 />
               </Tip>
             </Section>
@@ -169,18 +165,14 @@ export function DeveloperMenu() {
                 />
               </Tip>
               <Tip k="beatPartialLimit" as="control" block>
-                <NumberInput
-                  size="xs"
+                <ScrubNumber
                   label="Beat partial limit"
                   placeholder="Off"
-                  min={1}
-                  max={BEAT_PARTIAL_LIMIT_MAX}
+                  range={[1, BEAT_PARTIAL_LIMIT_MAX]}
                   step={1}
-                  allowDecimal={false}
-                  allowNegative={false}
-                  clampBehavior="strict"
-                  value={options.beatPartialLimit ?? ''}
-                  onChange={(v) => update({ beatPartialLimit: typeof v === 'number' ? v : null })}
+                  value={options.beatPartialLimit}
+                  onChange={(v) => update({ beatPartialLimit: Math.trunc(v) })}
+                  onEmpty={() => update({ beatPartialLimit: null })}
                 />
               </Tip>
             </Section>
@@ -255,19 +247,13 @@ export function DeveloperMenu() {
             </Section>
             <Section title="Composites">
               <Tip k="mergeTolerance" as="control" block>
-                <NumberInput
-                  size="xs"
+                <ScrubNumber
                   label="Merge tolerance (c)"
-                  min={0}
-                  max={MERGE_TOL_MAX}
+                  range={[0, MERGE_TOL_MAX]}
                   step={1}
-                  decimalScale={1}
-                  allowNegative={false}
-                  clampBehavior="strict"
+                  defaultValue={MERGE_TOL_DEFAULT}
                   value={options.mergeTolerance}
-                  onChange={(v) =>
-                    update({ mergeTolerance: typeof v === 'number' ? v : MERGE_TOL_DEFAULT })
-                  }
+                  onChange={(v) => update({ mergeTolerance: v })}
                 />
               </Tip>
               <Tip k="mergeKeeps" as="control" block>

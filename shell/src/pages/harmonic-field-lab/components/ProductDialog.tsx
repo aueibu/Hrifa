@@ -27,7 +27,7 @@ import {
   type ProductDirection,
   type ProductKind,
 } from '../../../lib/harmonic-field';
-import { Button, NativeSelect, NumberInput, SegmentedControl, ActionIcon } from '../../../ui';
+import { Button, NativeSelect, ScrubNumber, SegmentedControl, ActionIcon } from '../../../ui';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { ownerLabel } from '../state/generatorLibrary';
 import { MAX_TABS } from '../state/labState';
@@ -449,20 +449,13 @@ export function ProductPanel({ onClose }: { onClose: () => void }) {
           <div className={classes.field}>
             <span className={labClasses.pickHead}>Merge within</span>
             <Tip k="productMerge" as="control">
-              <NumberInput
-                size="xs"
+              <ScrubNumber
                 aria-label="Merge within"
                 suffix=" c"
-                min={0}
-                max={50}
-                hideControls
-                w="6rem"
+                range={[0, 50]}
+                style={{ width: '6rem' }}
                 value={tol}
-                onChange={(v) => {
-                  if (typeof v === 'number') {
-                    setTol(v);
-                  }
-                }}
+                onChange={setTol}
               />
             </Tip>
           </div>

@@ -113,7 +113,9 @@
   flex-direction: column;
   gap: 0.125rem;
   justify-content: flex-start;
-  min-height: calc(2 * 1.2 * var(--mantine-font-size-md) + 0.125rem + 1.2 * var(--mantine-font-size-sm));
+  min-height: calc(
+    2 * 1.2 * var(--mantine-font-size-md) + 0.125rem + 1.2 * var(--mantine-font-size-sm)
+  );
 }
 
 .titleName {

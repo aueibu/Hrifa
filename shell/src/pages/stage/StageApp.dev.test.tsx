@@ -22,14 +22,16 @@ describe('Developer option', () => {
       />
     );
     await user.click(screen.getByRole('button', { name: 'Developer' }));
-    const field = await screen.findByLabelText('Tooltip delay (ms)');
-    expect(field).toHaveValue('330');
+    const spin = await screen.findByRole('spinbutton', { name: 'Tooltip delay (ms)' });
+    expect(spin).toHaveValue(330);
+    await user.click(spin);
+    const field = await screen.findByRole('textbox', { name: 'Tooltip delay (ms)' });
     await user.clear(field);
     expect(field).toHaveValue('');
     await user.type(field, '9999');
     expect(field).toHaveValue('9999');
     fireEvent.blur(field);
-    expect(field).toHaveValue('2000');
+    expect(await screen.findByRole('spinbutton', { name: 'Tooltip delay (ms)' })).toHaveValue(2000);
     expect(data.get(TIP_DELAY_KEY)).toBe('2000');
   });
 });

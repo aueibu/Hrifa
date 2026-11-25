@@ -29,7 +29,15 @@ const rowNames = () =>
     .queryAllByRole('button', { name: /^Rename / })
     .map((b) => b.getAttribute('aria-label')!.replace(/^Rename /, ''));
 /** Divisions box of the EDO method. */
-const divisions = () => screen.getByRole('textbox', { name: 'Divisions' });
+const setDivisions = async (v: string) => {
+  const spin = screen.getByRole('spinbutton', { name: 'Divisions' });
+  fireEvent.pointerDown(spin, { button: 0, clientX: 0 });
+  fireEvent.pointerUp(spin, { button: 0, clientX: 0 });
+  const box = screen.getByRole('textbox', { name: 'Divisions' });
+  fireEvent.change(box, { target: { value: v } });
+  fireEvent.blur(box);
+  await settle();
+};
 const addButton = () => screen.getByRole('button', { name: 'Add subset' });
 /** The full path line under the Preset control (the control itself shows only the name). */
 const crumb = () => screen.getByTestId('preset-path');
@@ -122,7 +130,7 @@ describe('preset browser', () => {
     expect(crumb()).toHaveTextContent('Equal divisions > Small (5 to 12) > 12-EDO');
     expect(presetButton()).toHaveTextContent('12-EDO');
     expect(presetButton().querySelector('[data-modified]')).toBeNull();
-    await typeSlow(divisions(), '13'); // no 13-EDO preset
+    await setDivisions('13'); // no 13-EDO preset
     expect(presetButton()).toHaveTextContent('12-EDO');
     expect(presetButton().querySelector('[data-modified]')).not.toBeNull();
     // the dot comes first, before the name
@@ -137,7 +145,7 @@ describe('Update preset and Save as new', () => {
   it('Update is disabled for a built-in, with the reason as its tooltip', async () => {
     render(<HarmonicFieldLabPage />);
     await pickPreset('12-EDO');
-    await typeSlow(divisions(), '13');
+    await setDivisions('13');
     const update = screen.getByRole('button', { name: 'Update preset' });
     expect(update).toBeDisabled();
     fireEvent.mouseEnter(update.parentElement!);
@@ -163,7 +171,7 @@ describe('Update preset and Save as new', () => {
     await pickPreset('12-EDO');
     fireEvent.click(addButton());
     expect(rowNames()).toEqual(['Subset 1']);
-    await typeSlow(divisions(), '24');
+    await setDivisions('24');
     // plain: no subsets, a folder path creates folders
     openSave();
     expect(screen.getByText('Starts with no subsets.')).toBeInTheDocument();
@@ -174,7 +182,7 @@ describe('Update preset and Save as new', () => {
     expect(screen.queryByText(/copied subset/)).toBeNull();
     // Shift+click: the form says it copies, and the copy notice has no Undo
     await pickPreset('12-EDO');
-    await typeSlow(divisions(), '24');
+    await setDivisions('24');
     openSave(true);
     expect(screen.getByText(/Copies 1 subset/)).toBeInTheDocument();
     saveForm('Copy', 'Pools');
@@ -192,7 +200,7 @@ describe('Update preset and Save as new', () => {
   it('Add on an edited generator says it was kept under Auto-saved; the line can be dismissed and ends on the next edit', async () => {
     render(<HarmonicFieldLabPage />);
     await pickPreset('12-EDO');
-    await typeSlow(divisions(), '13'); // edited
+    await setDivisions('13'); // edited
     fireEvent.click(addButton());
     const note = screen.getByText(
       /^Kept automatically as '.+' under Auto-saved\. Use Save as new to name it and move it to My presets\./
@@ -213,7 +221,7 @@ describe('Update preset and Save as new', () => {
     openSave();
     saveForm('Twelve', '');
     fireEvent.click(addButton());
-    await typeSlow(divisions(), '7'); // shares only 1/1 with 12-EDO
+    await setDivisions('7'); // shares only 1/1 with 12-EDO
     const update = screen.getByRole('button', { name: 'Update preset' });
     expect(update).toBeEnabled();
     fireEvent.click(update);

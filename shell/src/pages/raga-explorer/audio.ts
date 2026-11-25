@@ -201,7 +201,9 @@ export class RagaAudioEngine {
       clearInterval(this.melodyTimer);
       this.melodyTimer = null;
     }
-    for (const inst of this.melodyInstruments.values()) {inst.stop();}
+    for (const inst of this.melodyInstruments.values()) {
+      inst.stop();
+    }
   }
 
   /** Plays `plan.semitones` in order on the chosen instrument voice, optionally looping with a short breath
@@ -221,7 +223,9 @@ export class RagaAudioEngine {
     void (async () => {
       const { ctx, melody } = this.ensureGraph();
       const instrument = gmName ? await this.getMelodyInstrument(gmName) : null;
-      if (generation !== this.melodyGeneration) {return;} // stopped while the instrument was still loading
+      if (generation !== this.melodyGeneration) {
+        return;
+      } // stopped while the instrument was still loading
 
       let nextNoteTime = ctx.currentTime + 0.08;
       let noteCursor = 0; // index within plan.semitones, wraps if looping
@@ -339,7 +343,9 @@ export class RagaAudioEngine {
     void (async () => {
       const { ctx } = this.ensureGraph();
       const instrument = await this.getTanpuraInstrument();
-      if (generation !== this.tanpuraGeneration) {return;}
+      if (generation !== this.tanpuraGeneration) {
+        return;
+      }
 
       let cursor = 0;
       let nextTime = ctx.currentTime + 0.05;
@@ -369,7 +375,9 @@ export class RagaAudioEngine {
   dispose() {
     this.stopMelody();
     this.stopTanpura();
-    for (const inst of this.melodyInstruments.values()) {inst.dispose();}
+    for (const inst of this.melodyInstruments.values()) {
+      inst.dispose();
+    }
     this.melodyInstruments.clear();
     this.tanpuraInstrument?.dispose();
     this.tanpuraInstrument = null;
