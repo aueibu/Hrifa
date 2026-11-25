@@ -13,12 +13,15 @@ import { createContext, useContext, type ReactNode } from 'react';
 import type { PanelKind } from '../../../components/Stage/dock';
 import { HEIGHT_CLASSES, WIDTH_CLASSES, type SlotSize } from '../../../lib/stage';
 import { ChordsPanel } from '../chordInput/ChordsPanel';
+import { OutlinerPanel, PropertiesPanel } from '../components/ScenePanels';
 import {
   CANVAS_PANEL,
   CHORDS_PANEL,
   DATA_BLOCK_EDITOR_PANEL,
   DESK_PANEL,
   NODE_DETAIL_PANEL,
+  OUTLINER_PANEL,
+  PROPERTIES_PANEL,
 } from './workbenchWorkspaces';
 import classes from '../CompositionWorkbench.module.css';
 
@@ -92,5 +95,21 @@ export const WORKBENCH_KINDS: readonly PanelKind[] = [
     minSize: MIN_SIZE,
     home: 'Tools',
     render: () => <ChordsPanel />,
+  },
+  {
+    id: OUTLINER_PANEL,
+    title: 'Outliner',
+    sizes: SIZES,
+    minSize: MIN_SIZE,
+    home: 'Tools',
+    render: () => <OutlinerPanel />,
+  },
+  {
+    id: PROPERTIES_PANEL,
+    title: 'Properties',
+    sizes: SIZES,
+    minSize: MIN_SIZE,
+    home: 'Detail',
+    render: () => <PropertiesPanel />,
   },
 ];

@@ -1,0 +1,176 @@
+/*
+ * The Outliner and Properties panels (O2a). Tier fills, no lines (THEMING.md rule 1): the panel is
+ * --panel, the tree and the property fields sit on --panel-slot. Every row, bar and line has a fixed
+ * height, so selecting, adding, deleting or an error never moves anything: the tree scrolls inside.
+ */
+.panel {
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 100%;
+  min-height: 0;
+  padding: 0.5rem;
+}
+
+.bar {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.25rem;
+  height: 1.6rem;
+}
+
+.sceneName {
+  color: var(--text-muted);
+  flex: 1 1 0;
+  font-size: 0.75rem;
+  min-width: 0;
+}
+
+.picker {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.line {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.68rem;
+  height: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree {
+  background: var(--panel-slot);
+  border-radius: var(--radius-hairline);
+  flex: 1 1 0;
+  min-height: 0;
+  outline: none;
+  overflow: auto;
+}
+
+.tree:focus-visible {
+  outline: 1px solid var(--accent);
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 0.5rem;
+}
+
+.row {
+  align-items: center;
+  color: var(--text);
+  cursor: default;
+  display: flex;
+  font-size: 0.78rem;
+  gap: 0.25rem;
+  height: 1.5rem;
+  padding-right: 0.25rem;
+}
+
+.row:hover {
+  background: var(--panel-body);
+}
+
+.row[aria-selected='true'] {
+  background: var(--panel-header);
+}
+
+.rowMuted .rowName {
+  color: var(--text-muted);
+}
+
+.toggle {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex: 0 0 1rem;
+  font-size: 0.7rem;
+  height: 1.5rem;
+  padding: 0;
+  width: 1rem;
+}
+
+.toggle:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.toggle:disabled {
+  cursor: default;
+}
+
+.glyph {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+}
+
+.rowName {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowInput {
+  background: var(--panel-well);
+  border: 0;
+  border-radius: var(--radius-hairline);
+  color: var(--text);
+  flex: 1 1 0;
+  font: inherit;
+  height: 1.2rem;
+  min-width: 0;
+  padding: 0 0.25rem;
+}
+
+.rowData {
+  color: var(--text-muted);
+  flex: 0 0 5rem;
+  font-size: 0.68rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mute[aria-pressed='true'] {
+  color: var(--accent);
+}
+
+.field {
+  align-items: center;
+  display: grid;
+  flex: 0 0 auto;
+  gap: 0.4rem;
+  grid-template-columns: 4.5rem 1fr;
+  height: 1.9rem;
+}
+
+.fieldLabel {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.controls {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.mono input {
+  font-family: var(--mantine-font-family-monospace);
+}
+
+.grow {
+  flex: 1 1 0;
+  min-width: 0;
+}

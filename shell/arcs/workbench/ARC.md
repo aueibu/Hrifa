@@ -140,7 +140,7 @@ Scenarios first: `SCENARIOS.objects.md` (confirmed by the human 2026-11-24). Obj
 - Human checkpoint after: no
 
 ### O2a: Outliner, Properties and Play (thin slice)
-- Scope: three or four panels on the Stage (Outliner: tree of the scene with mute, user counts, Add Empty and Add Object; Properties: name, parent, time span, register span, data-block picker through the shared data-block menu, Loop | Stretch | One-shot, modifier list shell); a scene Play on the transport. No Arranger. Smallest version to try, then stop.
+- **DONE 2026-11-24 (W-70; the human tried it and approved the look).** Scope as built: three or four panels on the Stage (Outliner: tree of the scene with mute, user counts, Add Empty and Add Object; Properties: name, parent, time span, register span, data-block picker through the shared data-block menu, Loop | Stretch | One-shot, modifier list shell); a scene Play on the transport. No Arranger. Smallest version to try, then stop.
 - Acceptance: [ ] `check:workbench` passes [ ] one page test [ ] no layout shift on select, add or delete (measured in a browser)
 - Human checkpoint after: **yes** (look, feel and sound; no reviewer polish or commit of polish before the human has tried it)
 

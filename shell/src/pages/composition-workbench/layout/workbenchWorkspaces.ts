@@ -20,6 +20,9 @@ export const NODE_DETAIL_PANEL = 'node-detail';
 export const DATA_BLOCK_EDITOR_PANEL = 'data-block-editor';
 /** The chord picker panel; its home is the `Tools` docker. */
 export const CHORDS_PANEL = 'chords';
+/** The scene Outliner and Properties panels (O2a). Reachable from the Panels menu; not in a default workspace. */
+export const OUTLINER_PANEL = 'outliner';
+export const PROPERTIES_PANEL = 'properties';
 
 /** The panels the workbench page registers. */
 export const WORKBENCH_PANEL_IDS = [
@@ -28,6 +31,8 @@ export const WORKBENCH_PANEL_IDS = [
   NODE_DETAIL_PANEL,
   DATA_BLOCK_EDITOR_PANEL,
   CHORDS_PANEL,
+  OUTLINER_PANEL,
+  PROPERTIES_PANEL,
 ] as const;
 
 /** Ids a stored workspace may name (a place or a tab for an id outside this set is dropped on every parse). */
