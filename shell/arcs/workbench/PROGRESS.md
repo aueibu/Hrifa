@@ -72,6 +72,8 @@ None yet.
 - None open. The re-plan (2026-11-24) is confirmed: SCENARIOS.objects.md rows 1 to 7 approved.
 
 ## Next action
+**U6 COMMITTED 2026-11-25 (human OK to go ahead; `check:workbench` 136 files / 2,036 tests green; fixed 2 stylelint errors and a load-flaky `findByRole` timeout in `ArrangerPanel.test.tsx`)** (new `components/PropertiesTabs.tsx` + `.module.css`; edited `ScenePanels.tsx`, `ScenePanels.test.tsx`, `CompositionSettingsPanel.tsx` (extracted `CompositionSettingsSections`), `scene/sceneSession.ts`). No locks needed. typecheck 0, `ScenePanels.test.tsx` 18/18 (re-run by the orchestrator). Builder overran its budget (156k tokens, 60 calls vs 100k/50). Open from builder: "New" on the Data row does the same op as Make Single User (no separate duplicate-data-block op); Modifiers tab has no id row (as mock); Duplicate folds via a caret button; Unlink disabled on an Empty. After the human's look: `check:workbench` once, path-scoped commit, then U7.
+
 **U2 + U3 COMMITTED (738cdb0, 2026-11-25; human looked: good; `check:workbench` 136 files / 2,031 tests and `check:stage` 30 / 386 green; both locks released). Next: U6 implementation. Ignore the "uncommitted" wording below; it is history.**
 
 **HANDOFF (2026-11-25 end of session; read this first, the human is angry about wasted cycles).**

@@ -14,7 +14,43 @@ export interface SceneSession {
   rowHeights: Record<string, number>;
   /** Properties "Used by" table open (L5): the viewer's, default folded. */
   usersOpen: boolean;
+  /** The open Properties tab (U6): the viewer's. A tab that does not apply to the selection is not shown (see `resolvePropertiesTab`). */
+  propertiesTab: PropertiesTab;
+  /** The last tab chosen while an object, and while a collection, was selected (U6). */
+  lastObjectTab: PropertiesTab;
+  lastCollectionTab: PropertiesTab;
 }
+
+export const PROPERTIES_TABS = ['scene', 'collection', 'object', 'modifiers', 'data'] as const;
+export type PropertiesTab = (typeof PROPERTIES_TABS)[number];
+export type PropertiesKind = 'object' | 'collection' | 'none';
+
+/** The tabs that apply to a selection: Scene always; the rest follow what is selected. */
+export function liveTabs(kind: PropertiesKind): readonly PropertiesTab[] {
+  if (kind === 'object') {
+    return ['scene', 'object', 'modifiers', 'data'];
+  }
+  return kind === 'collection' ? ['scene', 'collection'] : ['scene'];
+}
+
+/**
+ * The tab to show: the open one when it applies, else the last one used for this kind of selection
+ * when that applies, else the kind's own tab (Collection, Object) or Scene for nothing.
+ */
+export function resolvePropertiesTab(session: SceneSession, kind: PropertiesKind): PropertiesTab {
+  const live = liveTabs(kind);
+  if (live.includes(session.propertiesTab)) {
+    return session.propertiesTab;
+  }
+  const last = kind === 'object' ? session.lastObjectTab : session.lastCollectionTab;
+  if (kind !== 'none' && live.includes(last)) {
+    return last;
+  }
+  return kind === 'none' ? 'scene' : kind;
+}
+
+const tabOr = (value: unknown, fallback: PropertiesTab): PropertiesTab =>
+  PROPERTIES_TABS.find((tab) => tab === value) ?? fallback;
 
 export const ROW_HEIGHT_MIN_REM = 1.5;
 export const ROW_HEIGHT_MAX_REM = 8;
@@ -25,6 +61,9 @@ const EMPTY: SceneSession = {
   selectedId: null,
   rowHeights: {},
   usersOpen: false,
+  propertiesTab: 'object',
+  lastObjectTab: 'object',
+  lastCollectionTab: 'collection',
 };
 
 /** A row's height in rem: the remembered one (kept within the limits) or the default. */
@@ -72,6 +111,9 @@ export function readSceneSession(): SceneSession {
       selectedId: idOrNull(parsed.selectedId),
       rowHeights: heightsOrEmpty(parsed.rowHeights),
       usersOpen: parsed.usersOpen === true,
+      propertiesTab: tabOr(parsed.propertiesTab, 'object'),
+      lastObjectTab: tabOr(parsed.lastObjectTab, 'object'),
+      lastCollectionTab: tabOr(parsed.lastCollectionTab, 'collection'),
     };
   } catch {
     // A damaged value reads as empty.

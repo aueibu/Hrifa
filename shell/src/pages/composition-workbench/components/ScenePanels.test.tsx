@@ -42,6 +42,7 @@ async function renderPanels() {
 }
 
 const click = (name: string) => userEvent.click(screen.getByRole('button', { name }));
+const openTab = (name: string) => userEvent.click(screen.getByRole('tab', { name }));
 const playButton = () => screen.getByRole('button', { name: /Play|Stop/ });
 const names = () => screen.queryAllByRole('treeitem').map((item) => item.textContent);
 
@@ -73,6 +74,8 @@ describe('the Outliner and Properties panels (O2a)', () => {
     await waitFor(() => expect(names()[0]).toContain('Bass'));
 
     await userEvent.click(screen.getByText('Stretch'));
+    // Data moved to its own tab (U6): open it first.
+    await openTab('Data');
     await userEvent.click(screen.getByRole('button', { name: 'Data' }));
     await userEvent.click(await screen.findByRole('button', { name: /Clave/ }));
     await waitFor(() => expect(playButton()).toBeEnabled());
@@ -163,6 +166,8 @@ describe('Duplicate Object and Duplicate Linked in Properties (W-77)', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add Empty' })).toBeEnabled());
     await click('Add Empty');
     await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(1));
+    // Duplicate is a folded section of the Object tab (U6).
+    await click('Duplicate section');
     await click('Duplicate Object');
     await waitFor(() => expect(names()).toHaveLength(2));
     expect(screen.getByLabelText('Name')).toHaveValue('Empty.001');
@@ -186,7 +191,12 @@ describe('the Used by table in Properties (L5)', () => {
       collectionBlock('root', ['verse', 'chorus']),
       sceneBlock('s', 'root'),
     ]);
-    writeSceneSession({ activeSceneId: 's', selectedId: 'a', usersOpen: false });
+    writeSceneSession({
+      activeSceneId: 's',
+      selectedId: 'a',
+      usersOpen: false,
+      propertiesTab: 'data',
+    });
     render(
       <CompositionSettingsProvider>
         <DeskProvider>
@@ -205,7 +215,11 @@ describe('the Used by table in Properties (L5)', () => {
       'Late (this one)Verse' + 'bar 5 beat 1' + '1 bar 2 beats',
     ]);
     await userEvent.click(within(body[0]).getByRole('button', { name: 'First' }));
-    await waitFor(() => expect(screen.getByLabelText('Name')).toHaveValue('First'));
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem('hrifa.scene-session.v1') ?? '{}').selectedId).toBe(
+        'b'
+      )
+    );
     // The fold state is the viewer's session state.
     expect(JSON.parse(localStorage.getItem('hrifa.scene-session.v1') ?? '{}').usersOpen).toBe(true);
   });
@@ -220,7 +234,7 @@ describe('the Modifiers section of Properties (O3-ii)', () => {
       collectionBlock('c', ['o']),
       sceneBlock('s', 'c'),
     ]);
-    writeSceneSession({ activeSceneId: 's', selectedId: 'o' });
+    writeSceneSession({ activeSceneId: 's', selectedId: 'o', propertiesTab: 'modifiers' });
     render(
       <CompositionSettingsProvider>
         <DeskProvider>
@@ -262,7 +276,8 @@ describe('the Modifiers section of Properties (O3-ii)', () => {
     ]);
     await click('Apply Melodicize');
     await waitFor(() => expect(stack()).toEqual(['Remove Harmonize']));
-    expect(screen.getByRole('button', { name: 'Data' })).toHaveTextContent('Clave (applied)');
+    await openTab('Data');
+    expect(screen.getByLabelText('Name')).toHaveValue('Clave (applied)');
   });
 
   it('Apply All clears the stack and is disabled with no modifiers', async () => {
@@ -272,8 +287,9 @@ describe('the Modifiers section of Properties (O3-ii)', () => {
     ]);
     await click('Apply All');
     await waitFor(() => expect(stack()).toEqual([]));
-    expect(screen.getByRole('button', { name: 'Data' })).toHaveTextContent('Clave (applied)');
     expect(screen.getByRole('button', { name: 'Apply All' })).toBeDisabled();
+    await openTab('Data');
+    expect(screen.getByLabelText('Name')).toHaveValue('Clave (applied)');
   });
 
   it('a deleted pitch set shows the missing line inside its card', async () => {
@@ -310,5 +326,108 @@ describe('the Modifiers section of Properties (O3-ii)', () => {
     await waitFor(() =>
       expect(screen.getByLabelText('Period of Snap to Pitch Set')).toHaveValue('1300')
     );
+  });
+});
+
+describe('the tabs of Properties (U6)', () => {
+  async function renderTabs(session: Parameters<typeof writeSceneSession>[0]) {
+    await seedDesk([
+      claveBlock(),
+      objectBlock('a', { primaryDataRef: { id: 'clave' }, start: 0 }, 'First'),
+      objectBlock('b', { primaryDataRef: { id: 'clave' }, start: 4 }, 'Second'),
+      collectionBlock('verse', ['a', 'b'], {}, 'Verse'),
+      collectionBlock('root', ['verse']),
+      sceneBlock('s', 'root'),
+    ]);
+    writeSceneSession({ activeSceneId: 's', ...session });
+    render(
+      <CompositionSettingsProvider>
+        <DeskProvider>
+          <PropertiesPanel />
+        </DeskProvider>
+      </CompositionSettingsProvider>
+    );
+    await screen.findByRole('tablist');
+    // The desk loads asynchronously: wait until the selection is found.
+    const first = session.selectedId === 'a' ? 'First' : '';
+    await waitFor(() => expect(screen.getByLabelText('Path').textContent).toContain(first));
+  }
+  const tab = (name: string) => screen.getByRole('tab', { name });
+  const dimmed = () =>
+    screen
+      .getAllByRole('tab')
+      .filter((item) => item.getAttribute('aria-disabled') === 'true')
+      .map((item) => item.getAttribute('aria-label'));
+
+  it('dims the tabs that do not apply, with the reason on hover, and the rail never changes', async () => {
+    await renderTabs({ selectedId: 'a' });
+    expect(screen.getAllByRole('tab').map((item) => item.getAttribute('aria-label'))).toEqual([
+      'Scene',
+      'Collection',
+      'Object',
+      'Modifiers',
+      'Data',
+    ]);
+    expect(screen.getByRole('tablist')).toHaveAttribute('aria-orientation', 'vertical');
+    expect(dimmed()).toEqual(['Collection']);
+    expect(tab('Collection')).toHaveAttribute(
+      'title',
+      'Collection: select a collection in the Outliner'
+    );
+    act(() => writeSceneSession({ selectedId: 'verse' }));
+    await waitFor(() => expect(dimmed()).toEqual(['Object', 'Modifiers', 'Data']));
+    expect(tab('Object')).toHaveAttribute('title', 'Object: select an object in the Outliner');
+    act(() => writeSceneSession({ selectedId: null }));
+    await waitFor(() => expect(dimmed()).toEqual(['Collection', 'Object', 'Modifiers', 'Data']));
+    expect(tab('Scene')).toHaveAttribute('aria-selected', 'true');
+    expect(
+      screen.getByText('Select an object or a collection in the Outliner.')
+    ).toBeInTheDocument();
+  });
+
+  it('falls back to the tab that applies, and remembers the last tab for an object', async () => {
+    await renderTabs({ selectedId: 'a' });
+    await openTab('Modifiers');
+    expect(tab('Modifiers')).toHaveAttribute('aria-selected', 'true');
+    act(() => writeSceneSession({ selectedId: 'verse' }));
+    await waitFor(() => expect(tab('Collection')).toHaveAttribute('aria-selected', 'true'));
+    expect(screen.getByLabelText('Mute')).toBeInTheDocument();
+    // A dimmed tab does not open.
+    await openTab('Data');
+    expect(tab('Collection')).toHaveAttribute('aria-selected', 'true');
+    act(() => writeSceneSession({ selectedId: 'b' }));
+    await waitFor(() => expect(tab('Modifiers')).toHaveAttribute('aria-selected', 'true'));
+    expect(JSON.parse(localStorage.getItem('hrifa.scene-session.v1') ?? '{}').lastObjectTab).toBe(
+      'modifiers'
+    );
+  });
+
+  it('the Scene tab shows the settings', async () => {
+    await renderTabs({ selectedId: 'a' });
+    await openTab('Scene');
+    expect(screen.getByRole('group', { name: 'Pitches in the set' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Name')).toHaveValue('s');
+  });
+
+  it('the Data row shows the user count, makes a single user copy, and unlinks', async () => {
+    await renderTabs({ selectedId: 'a', propertiesTab: 'data' });
+    const count = await screen.findByRole('button', { name: 'Make single user' });
+    expect(count).toHaveTextContent('2');
+    await waitFor(() => expect(count).toBeEnabled());
+    await userEvent.click(count);
+    await waitFor(() => expect(screen.getByLabelText('Name')).not.toHaveValue('Clave'));
+    expect(screen.getByRole('button', { name: 'Make single user' })).toHaveTextContent('1');
+    expect(screen.getByRole('button', { name: 'Make single user' })).toBeDisabled();
+    await click('Unlink');
+    await waitFor(() => expect(screen.getByLabelText('Name')).toHaveValue(''));
+    expect(screen.getByRole('button', { name: 'Unlink' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'New' })).toBeDisabled();
+  });
+
+  it('New copies the data-block for this object', async () => {
+    await renderTabs({ selectedId: 'a', propertiesTab: 'data' });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New' })).toBeEnabled());
+    await click('New');
+    await waitFor(() => expect(screen.getByLabelText('Name')).not.toHaveValue('Clave'));
   });
 });

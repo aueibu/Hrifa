@@ -89,8 +89,6 @@ function PitchSetControl() {
  * side, so it can stay open while you work. The status bar opens and closes it.
  */
 export function CompositionSettingsPanel({ onClose }: { onClose(): void }) {
-  const { settings, updateSettings } = useCompositionSettings();
-
   return (
     <KitScope fill className={classes.root}>
       <Panel
@@ -111,101 +109,106 @@ export function CompositionSettingsPanel({ onClose }: { onClose(): void }) {
           </StripTool>
         }
       >
-        <>
-          <Section heading="Pitch">
-            <Row
-              name={
-                <Tip
-                  term="EDO (steps per octave)"
-                  text={`Applies to pitch-class material: Scale Construction, Scale Evolution, Pitch List's pitch-class format, Arithmetic, and pitch-class route treatments. Concrete MIDI and note-name pitch stays 12-tone.${
-                    settings.edo !== 12
-                      ? ` At ${settings.edo}-EDO, pitch classes display as plain step numbers (0 to ${settings.edo - 1}) rather than letter names; there is no standard note-name convention outside 12-EDO.`
-                      : ''
-                  }`}
-                >
-                  EDO
-                </Tip>
-              }
-            >
-              <NumberField
-                min={1}
-                max={96}
-                value={settings.edo}
-                onChange={(value) =>
-                  typeof value === 'number' &&
-                  updateSettings({ edo: Math.max(1, Math.round(value)) })
-                }
-              />
-            </Row>
-          </Section>
-          <Section
-            heading={
-              <Tip
-                term="Pitch set (key)"
-                text={`Chord input offers chords whose notes all lie in this set. Presets fill it; toggle pitches for anything else.${
-                  settings.edo !== 12
-                    ? ` At ${settings.edo}-EDO only the chromatic preset is defined; build the set by hand.`
-                    : ''
-                }`}
-              >
-                Pitch set (key)
-              </Tip>
-            }
-          >
-            <PitchSetControl />
-          </Section>
-          <Section heading="Note editor">
-            <Row name="Note colors">
-              <Tip
-                as="control"
-                term="Scale degree"
-                text="Each note takes a color from its scale degree, counted from C and repeating every octave (steps follow the EDO above). Off uses one color for every note."
-              >
-                <Toggle
-                  pressed={settings.colorByScaleDegree}
-                  onPressedChange={(next) => updateSettings({ colorByScaleDegree: next })}
-                >
-                  Scale degree
-                </Toggle>
-              </Tip>
-            </Row>
-          </Section>
-          <Section
-            heading={
-              <Tip
-                term="Rhythm sounds"
-                text="Nodes play their layers on these voices in order (Interference's generators 1, 2, 3; Rhythm Householder's input and candidate) unless a node sets its own sound. Clicks and woodblocks sound two to three octaves above the written pitch and drums two below, so one pitch suits every sound."
-              >
-                Rhythm sounds
-              </Tip>
-            }
-          >
-            <SoundSetEditor
-              name="Rhythm"
-              set={settings.sounds.rhythm}
-              onChange={(rhythm) => updateSettings({ sounds: { ...settings.sounds, rhythm } })}
-            />
-          </Section>
-          <Section
-            heading={
-              <Tip
-                term="Metronome sounds"
-                text="Primary marks each downbeat, secondary the other beats, tertiary Interference's grouping click."
-              >
-                Metronome sounds
-              </Tip>
-            }
-          >
-            <SoundSetEditor
-              name="Metronome"
-              set={settings.sounds.metronome}
-              onChange={(metronome) =>
-                updateSettings({ sounds: { ...settings.sounds, metronome } })
-              }
-            />
-          </Section>
-        </>
+        <CompositionSettingsSections />
       </Panel>
     </KitScope>
+  );
+}
+
+/** The settings sections alone (no panel chrome): the right pull-up panel and Properties' Scene tab render these. */
+export function CompositionSettingsSections() {
+  const { settings, updateSettings } = useCompositionSettings();
+  return (
+    <>
+      <Section heading="Pitch">
+        <Row
+          name={
+            <Tip
+              term="EDO (steps per octave)"
+              text={`Applies to pitch-class material: Scale Construction, Scale Evolution, Pitch List's pitch-class format, Arithmetic, and pitch-class route treatments. Concrete MIDI and note-name pitch stays 12-tone.${
+                settings.edo !== 12
+                  ? ` At ${settings.edo}-EDO, pitch classes display as plain step numbers (0 to ${settings.edo - 1}) rather than letter names; there is no standard note-name convention outside 12-EDO.`
+                  : ''
+              }`}
+            >
+              EDO
+            </Tip>
+          }
+        >
+          <NumberField
+            min={1}
+            max={96}
+            value={settings.edo}
+            onChange={(value) =>
+              typeof value === 'number' && updateSettings({ edo: Math.max(1, Math.round(value)) })
+            }
+          />
+        </Row>
+      </Section>
+      <Section
+        heading={
+          <Tip
+            term="Pitch set (key)"
+            text={`Chord input offers chords whose notes all lie in this set. Presets fill it; toggle pitches for anything else.${
+              settings.edo !== 12
+                ? ` At ${settings.edo}-EDO only the chromatic preset is defined; build the set by hand.`
+                : ''
+            }`}
+          >
+            Pitch set (key)
+          </Tip>
+        }
+      >
+        <PitchSetControl />
+      </Section>
+      <Section heading="Note editor">
+        <Row name="Note colors">
+          <Tip
+            as="control"
+            term="Scale degree"
+            text="Each note takes a color from its scale degree, counted from C and repeating every octave (steps follow the EDO above). Off uses one color for every note."
+          >
+            <Toggle
+              pressed={settings.colorByScaleDegree}
+              onPressedChange={(next) => updateSettings({ colorByScaleDegree: next })}
+            >
+              Scale degree
+            </Toggle>
+          </Tip>
+        </Row>
+      </Section>
+      <Section
+        heading={
+          <Tip
+            term="Rhythm sounds"
+            text="Nodes play their layers on these voices in order (Interference's generators 1, 2, 3; Rhythm Householder's input and candidate) unless a node sets its own sound. Clicks and woodblocks sound two to three octaves above the written pitch and drums two below, so one pitch suits every sound."
+          >
+            Rhythm sounds
+          </Tip>
+        }
+      >
+        <SoundSetEditor
+          name="Rhythm"
+          set={settings.sounds.rhythm}
+          onChange={(rhythm) => updateSettings({ sounds: { ...settings.sounds, rhythm } })}
+        />
+      </Section>
+      <Section
+        heading={
+          <Tip
+            term="Metronome sounds"
+            text="Primary marks each downbeat, secondary the other beats, tertiary Interference's grouping click."
+          >
+            Metronome sounds
+          </Tip>
+        }
+      >
+        <SoundSetEditor
+          name="Metronome"
+          set={settings.sounds.metronome}
+          onChange={(metronome) => updateSettings({ sounds: { ...settings.sounds, metronome } })}
+        />
+      </Section>
+    </>
   );
 }

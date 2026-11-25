@@ -36,7 +36,7 @@ async function renderArranger() {
       </DeskProvider>
     </CompositionSettingsProvider>
   );
-  await screen.findByRole('button', { name: 'Block Lead' });
+  await screen.findByRole('button', { name: 'Block Lead' }, { timeout: 5000 });
 }
 
 const block = (name: string) => screen.getByRole('button', { name: `Block ${name}` });

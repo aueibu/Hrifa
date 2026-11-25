@@ -11,6 +11,7 @@ import {
   TextInput,
   UnstyledButton,
 } from '@mantine/core';
+import { KitScope, Section } from '../../../components/InspectorKit';
 import { useCompositionSettings } from '../compositionSettings';
 import { EnsureDataBlockOps, useDataBlockOps } from '../dataBlockOps';
 import { dataBlockUsers } from '../dataBlocks/dataBlockRefs';
@@ -53,7 +54,12 @@ import {
   setTimeSpan,
   type SceneOpResult,
 } from '../scene/sceneOps';
-import { useSceneSession } from '../scene/sceneSession';
+import {
+  resolvePropertiesTab,
+  useSceneSession,
+  type PropertiesKind,
+  type PropertiesTab,
+} from '../scene/sceneSession';
 import {
   collectionDataOf,
   objectDataOf,
@@ -64,9 +70,11 @@ import {
 import { sharedUsersTable } from '../scene/sharedUsersTable';
 import { useSceneEvaluation, useScenePlayback } from '../scene/useScenePlayback';
 import { layerSound } from '../sounds';
+import { CompositionSettingsSections } from './CompositionSettingsPanel';
 import { DataBlockMenu } from './DataBlockMenu';
-import { MakeSingleUserButton } from './MakeSingleUserButton';
+import { IdRow, PathLine, PropertiesRail, TabIcon } from './PropertiesTabs';
 import { UsersTable } from './UsersTable';
+import tabsClasses from './PropertiesTabs.module.css';
 import classes from './ScenePanels.module.css';
 
 /**
@@ -647,7 +655,7 @@ export function PropertiesPanel() {
 
 function PropertiesBody() {
   const editor = useSceneEditor();
-  const { selectedRow, selected, rows, blocks, writable, project } = editor;
+  const { selectedRow, selected, rows, blocks, writable, project, scene } = editor;
   const { settings } = useCompositionSettings();
   const ops = useDataBlockOps();
   const [message, setMessage] = useState('');
@@ -660,6 +668,21 @@ function PropertiesBody() {
   const object = objectDataOf(selected);
   const collection = collectionDataOf(selected);
   const isObject = object !== null;
+  const hasSelection = !!selected && !!selectedRow && (object !== null || collection !== null);
+  const kind: PropertiesKind = !hasSelection ? 'none' : isObject ? 'object' : 'collection';
+  const { session, updateSession } = editor;
+  const tab = resolvePropertiesTab(session, kind);
+
+  function selectTab(next: PropertiesTab) {
+    updateSession({
+      propertiesTab: next,
+      ...(kind === 'object'
+        ? { lastObjectTab: next }
+        : kind === 'collection'
+          ? { lastCollectionTab: next }
+          : {}),
+    });
+  }
 
   function apply(run: (list: readonly StoredDataBlock[]) => SceneOpResult): string | null {
     const result = editor.commit(run);
@@ -667,15 +690,7 @@ function PropertiesBody() {
     return result.ok ? null : result.error;
   }
 
-  if (!selected || !selectedRow || (!object && !collection)) {
-    return (
-      <section className={classes.panel} aria-label="Properties">
-        <Text className={classes.empty}>Select an object or a collection in the Outliner.</Text>
-      </section>
-    );
-  }
-
-  const id = selected.id;
+  const id = selected?.id ?? '';
   const deskReason = writable ? null : NO_DESK;
   const objectOnly = (what: string) => (isObject ? null : `A collection has no ${what}.`);
   const lock = (what: string) => deskReason ?? objectOnly(what);
@@ -686,7 +701,6 @@ function PropertiesBody() {
   const users = primary ? dataBlockUsers(project, primary.id) : [];
   const mine = users.find((user) => user.ownerId === id && user.slot === 'data');
   const heardRefusal = primary ? auditionRefusal(primary) : null;
-  const { session, updateSession } = editor;
   const userRows =
     primary && editor.scene ? sharedUsersTable(project, primary.id, editor.scene.id) : [];
 
@@ -707,18 +721,73 @@ function PropertiesBody() {
       .map((row) => ({ value: row.id, label: row.name })),
   ];
 
-  return (
-    <section className={classes.panel} aria-label="Properties">
-      <Field label="Name">
-        <CommitField
-          ariaLabel="Name"
-          value={selected.name}
-          disabled={deskReason !== null}
-          onCommit={(text) => apply((list) => renameBlock(list, id, text))}
-        />
-      </Field>
-      {object && (
-        <>
+  /** Scene, then the rows the selection is listed under, then the selection itself. */
+  const pathSteps: { tab: PropertiesTab; name: string }[] = [];
+  if (scene) {
+    pathSteps.push({ tab: 'scene', name: scene.name });
+  }
+  if (selectedRow) {
+    const chain: OutlinerRow[] = [];
+    for (
+      let row: OutlinerRow | undefined = selectedRow;
+      row;
+      row = rows.find((entry) => entry.id === row?.parentRowId)
+    ) {
+      chain.unshift(row);
+    }
+    for (const row of chain) {
+      pathSteps.push({ tab: row.kind, name: row.name });
+    }
+  }
+
+  const renameField = (target: StoredDataBlock | undefined, disabled: string | null) => (
+    <CommitField
+      ariaLabel="Name"
+      value={target?.name ?? ''}
+      disabled={disabled !== null || !target}
+      onCommit={(text) => (target ? apply((list) => renameBlock(list, target.id, text)) : null)}
+    />
+  );
+
+  function sceneTab() {
+    return (
+      <>
+        <PathLine steps={pathSteps.slice(0, 1)} />
+        {scene && <IdRow tab="scene">{renameField(scene, deskReason)}</IdRow>}
+        {!hasSelection && (
+          <Text className={classes.empty}>Select an object or a collection in the Outliner.</Text>
+        )}
+        <CompositionSettingsSections />
+      </>
+    );
+  }
+
+  function collectionTab() {
+    return (
+      <>
+        <PathLine steps={pathSteps} />
+        <IdRow tab="collection">{renameField(selected, deskReason)}</IdRow>
+        <Section heading="Playback">
+          <Field label="Mute">
+            <Switch
+              size="xs"
+              aria-label="Mute"
+              checked={collection?.mute ?? false}
+              disabled={deskReason !== null}
+              onChange={(event) => apply((list) => setMute(list, id, event.currentTarget.checked))}
+            />
+          </Field>
+        </Section>
+      </>
+    );
+  }
+
+  function objectTab() {
+    return (
+      <>
+        <PathLine steps={pathSteps} />
+        <IdRow tab="object">{renameField(selected, deskReason)}</IdRow>
+        <Section heading="Placement">
           <Field label="Parent">
             <Select
               className={classes.grow}
@@ -779,32 +848,135 @@ function PropertiesBody() {
               }}
             />
           </Field>
-          <Field label="Data">
+          <Field label="Mapping">
+            <SegmentedControl
+              size="xs"
+              aria-label="Mapping"
+              data={MAPPING_OPTIONS}
+              value={object?.mapping ?? 'loop'}
+              disabled={lock('mapping') !== null}
+              data-info={
+                lock('mapping') ??
+                'Loop repeats the data across the span. Stretch fits one cycle to it. One-shot plays it once.'
+              }
+              onChange={(value) => apply((list) => setMapping(list, id, value as ObjectMapping))}
+            />
+          </Field>
+        </Section>
+        <Section heading="Playback">
+          <Field label="Mute">
+            <Switch
+              size="xs"
+              aria-label="Mute"
+              checked={object?.mute ?? false}
+              disabled={deskReason !== null}
+              onChange={(event) => apply((list) => setMute(list, id, event.currentTarget.checked))}
+            />
+          </Field>
+        </Section>
+        <DuplicateSection objectId={id} deskReason={deskReason} />
+      </>
+    );
+  }
+
+  function modifiersTab() {
+    return (
+      <>
+        <PathLine
+          steps={[
+            { tab: 'object', name: selected?.name ?? '' },
+            { tab: 'modifiers', name: 'Modifiers' },
+          ]}
+        />
+        {object && (
+          <ModifiersSection
+            objectId={id}
+            modifiers={object.modifiers}
+            blocks={blocks}
+            deskReason={deskReason}
+            apply={apply}
+          />
+        )}
+      </>
+    );
+  }
+
+  function dataTab() {
+    const unlinkReason = lock('data') ?? (object?.primaryDataRef ? null : 'Already an Empty.');
+    return (
+      <>
+        <PathLine
+          steps={[
+            { tab: 'object', name: selected?.name ?? '' },
+            { tab: 'data', name: primary?.name ?? 'None' },
+          ]}
+        />
+        <IdRow
+          tab="data"
+          picker={
             <DataBlockMenu
               spec={{ accepts: PACKET_TYPE_IDS() }}
-              label={primary?.name ?? 'None'}
+              label={<TabIcon tab="data" />}
               ariaLabel="Data"
-              info="The data-block this object plays. None is an Empty: silent."
+              info="Browse data to be linked. None is an Empty: silent."
               selectedId={primary?.id ?? null}
               disabledReason={lock('data')}
               onPick={(row) => apply((list) => setPrimaryData(list, id, row.block.id))}
             />
-            <Button
-              size="compact-xs"
-              variant="default"
-              disabled={lock('data') !== null || !object?.primaryDataRef}
-              data-info={
-                lock('data') ??
-                (object?.primaryDataRef
-                  ? 'Clear the data: the object becomes an Empty.'
-                  : 'Already an Empty.')
+          }
+        >
+          <div className={tabsClasses.idname}>{renameField(primary, deskReason)}</div>
+          <Button
+            size="compact-xs"
+            variant="default"
+            aria-label="Make single user"
+            disabled={!primary || !mine || deskReason !== null || users.length < 2}
+            data-info={
+              users.length < 2
+                ? 'Only one place uses this data-block, so it is already single user.'
+                : 'Make single user: give this object its own copy, named as a variation. The other places keep the original.'
+            }
+            onClick={() => {
+              if (primary && mine) {
+                const result = ops.makeSingleUser(primary.id, mine);
+                setMessage(result.ok ? '' : result.error);
               }
-              onClick={() => apply((list) => setPrimaryData(list, id, null))}
-            >
-              None
-            </Button>
-          </Field>
-          <Field label="Users">
+            }}
+          >
+            {primary ? users.length : 0}
+          </Button>
+          <Button
+            size="compact-xs"
+            variant="default"
+            aria-label="New"
+            disabled={!primary || !mine || deskReason !== null}
+            data-info={
+              !primary
+                ? 'There is no data to copy.'
+                : 'Duplicate this data-block and use the copy here. The other places keep the original.'
+            }
+            onClick={() => {
+              if (primary && mine) {
+                const result = ops.makeSingleUser(primary.id, mine);
+                setMessage(result.ok ? '' : result.error);
+              }
+            }}
+          >
+            +
+          </Button>
+          <Button
+            size="compact-xs"
+            variant="default"
+            aria-label="Unlink"
+            disabled={unlinkReason !== null}
+            data-info={unlinkReason ?? 'Unlink: the object becomes an Empty.'}
+            onClick={() => apply((list) => setPrimaryData(list, id, null))}
+          >
+            ×
+          </Button>
+        </IdRow>
+        <Section heading="Users">
+          <Field label="Used by">
             {primary ? (
               <UnstyledButton
                 className={`${classes.grow} ${classes.usersToggle}`}
@@ -827,19 +999,6 @@ function PropertiesBody() {
                 No data
               </Text>
             )}
-            {primary && (
-              <MakeSingleUserButton
-                users={users.length}
-                who="this object"
-                disabled={!mine || deskReason !== null}
-                onClick={() => {
-                  if (mine) {
-                    const result = ops.makeSingleUser(primary.id, mine);
-                    setMessage(result.ok ? '' : result.error);
-                  }
-                }}
-              />
-            )}
           </Field>
           {primary && (
             <Collapse expanded={session.usersOpen} transitionDuration={0}>
@@ -852,45 +1011,58 @@ function PropertiesBody() {
               />
             </Collapse>
           )}
-          <Field label="Mapping">
-            <SegmentedControl
-              size="xs"
-              aria-label="Mapping"
-              data={MAPPING_OPTIONS}
-              value={object?.mapping ?? 'loop'}
-              disabled={lock('mapping') !== null}
-              data-info={
-                lock('mapping') ??
-                'Loop repeats the data across the span. Stretch fits one cycle to it. One-shot plays it once.'
-              }
-              onChange={(value) => apply((list) => setMapping(list, id, value as ObjectMapping))}
-            />
-          </Field>
-        </>
-      )}
-      <Field label="Mute">
-        <Switch
-          size="xs"
-          aria-label="Mute"
-          checked={object?.mute ?? collection?.mute ?? false}
-          disabled={deskReason !== null}
-          onChange={(event) => apply((list) => setMute(list, id, event.currentTarget.checked))}
-        />
-      </Field>
-      {object && <DuplicateButtons objectId={id} deskReason={deskReason} />}
-      {object && (
-        <ModifiersSection
-          objectId={id}
-          modifiers={object.modifiers}
-          blocks={blocks}
-          deskReason={deskReason}
-          apply={apply}
-        />
-      )}
-      <div className={classes.line} title={message || heardRefusal || ''} role="status">
-        {message || heardRefusal || ''}
-      </div>
-    </section>
+        </Section>
+      </>
+    );
+  }
+
+  return (
+    <KitScope fill>
+      <section className={tabsClasses.tabs} aria-label="Properties">
+        <PropertiesRail kind={kind} active={tab} onSelect={selectTab} />
+        <div className={tabsClasses.body} role="tabpanel" aria-label={`${tab} properties`}>
+          {tab === 'scene' && sceneTab()}
+          {tab === 'collection' && collectionTab()}
+          {tab === 'object' && objectTab()}
+          {tab === 'modifiers' && modifiersTab()}
+          {tab === 'data' && dataTab()}
+          <div className={classes.line} title={message || heardRefusal || ''} role="status">
+            {message || heardRefusal || ''}
+          </div>
+        </div>
+      </section>
+    </KitScope>
+  );
+}
+
+/** Duplicate Object and Duplicate Linked in a Section that is folded until opened. */
+function DuplicateSection({
+  objectId,
+  deskReason,
+}: {
+  objectId: string;
+  deskReason: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Section
+      heading="Duplicate"
+      aside={
+        <UnstyledButton
+          className={tabsClasses.foldToggle}
+          aria-expanded={open}
+          aria-label="Duplicate section"
+          data-info={open ? 'Hide the duplicate buttons.' : 'Show the duplicate buttons.'}
+          onClick={() => setOpen(!open)}
+        >
+          {open ? '▾' : '▸'}
+        </UnstyledButton>
+      }
+    >
+      <Collapse expanded={open} transitionDuration={0}>
+        <DuplicateButtons objectId={objectId} deskReason={deskReason} />
+      </Collapse>
+    </Section>
   );
 }
 
