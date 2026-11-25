@@ -59,6 +59,14 @@ ROUND2 = [
     (13, 1215, 7, True),
 ]
 
+# round 3 (2026-11-25 evening, human chose "hunt for new shapes"): finish the paused 13-limit 7-note run, then
+# 13-limit 6 notes at q 3,185 (= 5 * 7^2 * 13, the highest 13-limit q under the 2,048-interval ceiling): tests
+# whether every 6-note pair is still the one known shape (zgen type 1) past the proven q 2,187
+ROUND3 = [
+    (13, 1215, 7, True),
+    (13, 3185, 6, True),
+]
+
 
 def log(msg):
     line = f"{datetime.datetime.now(datetime.timezone.utc):%H:%M}Z {msg}"
@@ -106,10 +114,13 @@ def main():
     ap.add_argument("--rate6", type=float, default=40e6, help="the same for 6 notes")
     ap.add_argument("--forecast-only", action="store_true")
     ap.add_argument("--round2", action="store_true", help="run ROUND2 instead of JOBS")
+    ap.add_argument("--round3", action="store_true", help="run ROUND3 instead of JOBS")
     a = ap.parse_args()
     global JOBS
     if a.round2:
         JOBS = ROUND2
+    if a.round3:
+        JOBS = ROUND3
     rate = lambda k: a.rate6 if k == 6 else a.rate
     stop = datetime.datetime.fromisoformat(a.stop.replace("Z", "+00:00")).timestamp()
     log(f"night queue start: stop {a.stop}, rate {a.rate:.3g}/s (6 notes {a.rate6:.3g}/s), bin {RS}, mem {MEMGB} GB")
