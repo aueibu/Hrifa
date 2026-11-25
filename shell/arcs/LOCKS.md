@@ -17,3 +17,5 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
+| .claude/agents/builder.md | workbench | 2026-11-25 | step 1 reads DIGEST + milestone only |
+| CLAUDE.md | workbench | 2026-11-25 | rule 4: refresh DIGEST at milestone end; digest guardrails |
