@@ -8,6 +8,9 @@
 //! usage: zprod-rs --primes 3 5 7 --q 99 --k 6 7 8 --shapes 3,1 4,1 [--ucoeffs 0 1 2] [--max-neg 1]
 //!                 [--max-nodes 2000000] [--threads 16] [--count-only] [--vminus2] --out products.jsonl
 //! --vminus2: also emit each factor with one of its minus points at -2 (residue families, THEORY 6.8).
+//! --enum [--mem-gb G] [--count-only | --resume]: shape-free enumeration (see `enumerate`); --count-only prints
+//! the set counts and the work forecast per k without enumerating; --resume continues a stopped run from
+//! OUT.progress (same arguments otherwise).
 
 use std::collections::{HashMap, HashSet};
 use std::io::{BufWriter, Write};
@@ -36,6 +39,7 @@ struct Args {
     cliques: usize,
     enumerate: bool,
     mem_gb: f64,
+    resume: bool, // with --enum: skip the batches (and slices) OUT.progress lists as done, append to OUT
 }
 
 fn parse_args() -> Args {
@@ -56,6 +60,7 @@ fn parse_args() -> Args {
         cliques: 0,
         enumerate: false,
         mem_gb: 6.0,
+        resume: false,
     };
     let mut i = 0;
     let vals = |i: &mut usize| -> Vec<String> {
@@ -101,6 +106,7 @@ fn parse_args() -> Args {
             "--cliques" => a.cliques = vals(&mut i)[0].parse().unwrap(),
             "--enum" => a.enumerate = true,
             "--mem-gb" => a.mem_gb = vals(&mut i)[0].parse().unwrap(),
+            "--resume" => a.resume = true,
             _ => panic!("unknown argument {key}"),
         }
         i += 1;
@@ -1745,12 +1751,80 @@ fn enumerate(g: &GenCtx, args: &Args) {
     let eg = Arc::new(EnumG::new(g));
     let n = eg.n;
     let t0 = Instant::now();
-    let mut w = BufWriter::new(std::fs::File::create(&args.out).unwrap());
     let budget = (args.mem_gb * 1e9) as u64;
     const ENTRY: u64 = std::mem::size_of::<EEntry>() as u64;
+    // Checkpoints (2026-11-25): OUT.progress gets one line per finished batch slice ("S k batch pass families
+    // bytes", bytes = length of OUT after that slice) and one per finished k ("K k <log line>"). Batches are fixed
+    // by the group counts and --mem-gb, so a resumed run (same arguments + --resume) rebuilds the same batches,
+    // cuts OUT back to the last checkpointed length and skips every slice already done. Families never span
+    // batches (partners share their top note), so the result equals an uninterrupted run.
+    let ppath = format!("{}.progress", args.out);
+    let header = format!("H primes {:?} q {} mem_gb {} k {:?}", args.primes, args.q, args.mem_gb, args.k);
+    let mut done_slices: HashMap<(usize, usize, u64), u64> = HashMap::new();
+    let mut done_k: HashMap<usize, String> = HashMap::new();
+    let mut keep_bytes = 0u64;
+    let resuming = args.resume && !args.count_only && std::path::Path::new(&ppath).exists();
+    if resuming {
+        let txt = std::fs::read_to_string(&ppath).unwrap();
+        // only whole lines count: a line without its newline was cut off by the stop
+        let mut lines = txt.split_inclusive('\n').filter(|l| l.ends_with('\n')).map(|l| l.trim_end_matches('\n'));
+        let h = lines.next().unwrap_or("");
+        assert!(h == header, "--resume: {ppath} was written by another command ({h}), expected ({header})");
+        for l in lines {
+            let f: Vec<&str> = l.splitn(3, ' ').collect();
+            match f[0] {
+                "S" => {
+                    let v: Vec<u64> = l[2..].split(' ').filter_map(|x| x.parse().ok()).collect();
+                    if v.len() != 5 {
+                        break;
+                    }
+                    done_slices.insert((v[0] as usize, v[1] as usize, v[2]), v[3]);
+                    keep_bytes = v[4];
+                }
+                "K" if f.len() == 3 => {
+                    done_k.insert(f[1].parse().unwrap(), f[2].to_string());
+                }
+                _ => break,
+            }
+        }
+        eprintln!("resume: {} slices and {} sizes already done, keeping {keep_bytes} bytes of {}", done_slices.len(), done_k.len(), args.out);
+    }
+    let file = if resuming {
+        use std::io::{Seek, SeekFrom};
+        let mut f = std::fs::OpenOptions::new().write(true).create(true).open(&args.out).unwrap();
+        f.set_len(keep_bytes).unwrap();
+        f.seek(SeekFrom::End(0)).unwrap();
+        f
+    } else if args.count_only {
+        // never touch OUT (it may hold a stopped run's products); nothing is written in this mode
+        std::fs::File::create(format!("{}.countonly", args.out)).unwrap()
+    } else {
+        std::fs::File::create(&args.out).unwrap()
+    };
+    let mut w = BufWriter::new(file);
+    let mut prog = if args.count_only {
+        None
+    } else {
+        if !resuming {
+            std::fs::write(&ppath, format!("{header}\n")).unwrap();
+        }
+        Some(std::fs::OpenOptions::new().append(true).open(&ppath).unwrap())
+    };
+    let mut checkpoint = |w: &mut BufWriter<std::fs::File>, line: String| {
+        w.flush().unwrap();
+        w.get_ref().sync_data().unwrap();
+        if let Some(p) = prog.as_mut() {
+            writeln!(p, "{line}").unwrap();
+            p.sync_data().unwrap();
+        }
+    };
     for &k in &args.k {
         let k = k as usize;
         assert!((3..=16).contains(&k), "k from 3 to 16");
+        if let Some(line) = done_k.get(&k) {
+            eprintln!("{line} [done before resume]");
+            continue;
+        }
         let need = k - 2; // notes besides 0 and the top note
         let tk = Instant::now();
         // roots of every group, and the size of every group (one parallel count)
@@ -1818,36 +1892,86 @@ fn enumerate(g: &GenCtx, args: &Args) {
         if !cur.is_empty() {
             batches.push((cur, 1));
         }
+        let is_big = |groups: &Vec<usize>| groups.len() == 1 && (counts[groups[0]] / 2 + 1) * ENTRY > budget;
+        if args.count_only {
+            // forecast: sets enumerated = each normal batch once, each big group twice per slice
+            let mut work = 0u64;
+            let (mut bg, mut sl) = (0u64, 0u64);
+            for (groups, passes) in &batches {
+                let c: u64 = groups.iter().map(|&m| counts[m]).sum();
+                if is_big(groups) {
+                    bg += 1;
+                    sl += passes - 1;
+                    work += 2 * passes * c;
+                } else {
+                    work += c;
+                }
+            }
+            eprintln!(
+                "  k={k}: {total} sets (both orientations), largest top-note group {biggest}, {} batches ({bg} big groups in hash mode, {sl} extra slices), work {work} sets enumerated, counted in {:.1}s [count only]",
+                batches.len(),
+                tk.elapsed().as_secs_f64()
+            );
+            continue;
+        }
         let mut families = 0u64;
         let mut sliced = 0u64;
         let mut big_groups = 0u64;
-        for (groups, passes) in &batches {
-            let roots: Arc<Vec<ERoot>> = Arc::new(groups.iter().flat_map(|&m| roots_by_m[m].iter().copied()).collect());
-            let big = groups.len() == 1 && (counts[groups[0]] / 2 + 1) * ENTRY > budget;
+        let mut skipped = 0u64;
+        for (bi, (groups, passes)) in batches.iter().enumerate() {
+            let big = is_big(groups);
             if big {
-                // hash-only first pass per slice, then fetch just the repeated sets
                 big_groups += 1;
                 sliced += passes - 1;
-                for pass in 0..*passes {
-                    let rep = repeated_hashes(&eg, need, roots.clone(), args.threads, *passes, pass);
-                    if rep.is_empty() {
-                        continue;
+            }
+            let todo: Vec<u64> = (0..*passes)
+                .filter(|&pass| match done_slices.get(&(k, bi, pass)) {
+                    Some(&f) => {
+                        families += f;
+                        skipped += 1;
+                        false
                     }
-                    let parts = collect_roots(&eg, need, roots.clone(), args.threads, *passes, pass, Some(Arc::new(rep)));
-                    let reps = repeated(parts, need + 1);
-                    families += check_groups(&eg, g, reps, &mut w);
+                    None => true,
+                })
+                .collect();
+            if todo.is_empty() {
+                continue;
+            }
+            let roots: Arc<Vec<ERoot>> = Arc::new(groups.iter().flat_map(|&m| roots_by_m[m].iter().copied()).collect());
+            if big {
+                // hash-only first pass per slice, then fetch just the repeated sets
+                for pass in todo {
+                    let rep = repeated_hashes(&eg, need, roots.clone(), args.threads, *passes, pass);
+                    let mut f = 0;
+                    if !rep.is_empty() {
+                        let parts = collect_roots(&eg, need, roots.clone(), args.threads, *passes, pass, Some(Arc::new(rep)));
+                        let reps = repeated(parts, need + 1);
+                        f = check_groups(&eg, g, reps, &mut w);
+                    }
+                    families += f;
+                    let bytes = { w.flush().unwrap(); w.get_ref().metadata().unwrap().len() };
+                    checkpoint(&mut w, format!("S {k} {bi} {pass} {f} {bytes}"));
                 }
                 continue;
             }
             let parts = collect_roots(&eg, need, roots.clone(), args.threads, 1, 0, None);
             let reps = repeated(parts, need + 1);
-            families += check_groups(&eg, g, reps, &mut w);
+            let f = check_groups(&eg, g, reps, &mut w);
+            families += f;
+            let bytes = { w.flush().unwrap(); w.get_ref().metadata().unwrap().len() };
+            checkpoint(&mut w, format!("S {k} {bi} 0 {f} {bytes}"));
         }
-        eprintln!(
+        let line = format!(
             "  k={k}: {total} sets (both orientations), largest top-note group {biggest}, {} batches ({big_groups} big groups in hash mode, {sliced} extra slices), {families} families with equal interval content, {:.1}s",
             batches.len(),
             tk.elapsed().as_secs_f64()
         );
+        if skipped > 0 {
+            eprintln!("{line} (this session; {skipped} slices done before resume)");
+        } else {
+            eprintln!("{line}");
+        }
+        checkpoint(&mut w, format!("K {k} {line}"));
     }
     w.flush().unwrap();
     eprintln!("zprod-rs enum: done in {:.1}s ({n} positive intervals)", t0.elapsed().as_secs_f64());

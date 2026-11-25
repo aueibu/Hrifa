@@ -53,6 +53,8 @@ def main():
     ap.add_argument("--enumerate", action="store_true",
                     help="shape-free: every set whose pairwise differences are allowed, grouped by interval content")
     ap.add_argument("--mem-gb", type=float, default=6.0, help="with --enumerate: memory per pass (sets the pass count)")
+    ap.add_argument("--resume", action="store_true",
+                    help="with --enumerate: continue a stopped run in --out from its products.jsonl.progress")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     if not a.fast or a.vmax:
@@ -70,6 +72,8 @@ def main():
         cmd.append("--vminus2")
     if a.enumerate:
         cmd += ["--enum", "--mem-gb", str(a.mem_gb)]
+        if a.resume:
+            cmd.append("--resume")
     t0 = time.time()
     p = subprocess.Popen(cmd, stderr=subprocess.PIPE, text=True)
     for line in p.stderr:
