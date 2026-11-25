@@ -196,6 +196,15 @@ class Search:
                 return types, nodes, bad, False, list(stack)
             basis = stack.popleft() if frontier else stack.pop()
             nodes += 1
+            if nodes % 1000 == 0 and getattr(self, "ctr", None) is not None:
+                with self.ctr.get_lock():
+                    self.ctr.value += 1000
+                if self.freeze.value and not getattr(self, "frozen", False):
+                    # low memory (set by the main process): stop growing the dedup tables. Dedup is only a
+                    # speed-up, so the result stays complete; some flats may be expanded twice.
+                    self.frozen = True
+                    seen.clear()
+                    canon_seen.clear()
             if nodes > max_nodes:
                 log.write(f"node budget {max_nodes} reached; INCOMPLETE\n")
                 return types, nodes, bad, False, []
@@ -209,11 +218,16 @@ class Search:
                 if key in canon_seen:
                     dup += 1
                     continue
-                canon_seen.add(key)
                 shared = getattr(self, "shared", None)
-                if shared is not None and shared.setdefault(key, self.wid) != self.wid:
-                    dup += 1  # another worker already expands this class (setdefault is one atomic call)
-                    continue
+                if getattr(self, "frozen", False):
+                    if shared is not None and key in shared:
+                        dup += 1  # claimed before the freeze: its subtree is (being) searched
+                        continue
+                else:
+                    canon_seen.add(key)
+                    if shared is not None and shared.setdefault(key, self.wid) != self.wid:
+                        dup += 1  # another worker already expands this class (setdefault is one atomic call)
+                        continue
             mP, mQ = self.matching(adj)
             if -1 not in mP:
                 types.append(basis)
@@ -238,7 +252,8 @@ class Search:
                     continue
                 h = hashlib.blake2b(repr(child).encode(), digest_size=16).digest()
                 if h not in seen:
-                    seen.add(h)
+                    if not getattr(self, "frozen", False):
+                        seen.add(h)
                     stack.append(child)
             if nodes % 20000 == 0:
                 log.write(f"  {nodes} nodes, {len(seen)} flats seen, {bad} bad, {dup} symmetric dups, "
@@ -251,18 +266,39 @@ class Search:
 _W = None
 
 
-def _winit(k, use_canon, shared):
+def _winit(k, use_canon, shared, ctr, freeze):
     global _W
     _W = Search(k)
     _W.use_canon = use_canon
     _W.shared = shared  # Manager dict: canonical keys claimed by any worker
+    _W.ctr = ctr  # shared node counter (progress)
+    _W.freeze = freeze  # set by the main process when memory runs low
     _W.wid = os.getpid()
     _W.devnull = open(os.devnull, "w")
 
 
-def _wtask(basis):
+def _wtask(item):
+    i, basis = item
     t, n, b, _, _ = _W.run(10 ** 15, log=_W.devnull, use_canon=_W.use_canon, starts=[basis])
-    return t, n, b
+    return i, t, n, b
+
+
+def mem_available_gb():
+    try:
+        for line in open("/proc/meminfo"):
+            if line.startswith("MemAvailable:"):
+                return int(line.split()[1]) / 2 ** 20
+    except OSError:
+        pass
+    return None
+
+
+def b2s(b):
+    return [[str(x) for x in r] for r in b]
+
+
+def s2b(s):
+    return tuple(tuple(F(x) for x in r) for r in s)
 
 
 def main():
@@ -275,6 +311,9 @@ def main():
                     "(each worker dedups within itself only; no node budget)")
     ap.add_argument("--frontier", type=int, default=3000)
     ap.add_argument("--types-log", help="append each type flat found (JSON line) as it arrives")
+    ap.add_argument("--state", help="parallel runs: folder for the saved frontier and the finished-task log; a rerun "
+                    "with the same folder skips finished frontier flats")
+    ap.add_argument("--min-free-gb", type=float, default=4.0, help="freeze the dedup tables below this much free memory")
     a = ap.parse_args()
     S = Search(a.k)
     t0 = time.time()
@@ -287,21 +326,70 @@ def main():
                 tlog.flush()
 
     if a.workers > 1:
-        types, nodes, bad, _, front = S.run(10 ** 15, use_canon=a.canon, frontier=a.frontier)
-        record(types)
+        fpath = os.path.join(a.state, "frontier.json") if a.state else None
+        dpath = os.path.join(a.state, "done.jsonl") if a.state else None
+        if fpath and os.path.exists(fpath):
+            fr = json.load(open(fpath))
+            types, nodes, bad = [s2b(b) for b in fr["types"]], fr["nodes"], fr["bad"]
+            front = [s2b(b) for b in fr["front"]]
+            print(f"frontier loaded: {len(front)} flats", flush=True)
+        else:
+            types, nodes, bad, _, front = S.run(10 ** 15, use_canon=a.canon, frontier=a.frontier)
+            record(types)
+            if fpath:
+                os.makedirs(a.state, exist_ok=True)
+                json.dump({"types": [b2s(b) for b in types], "nodes": nodes, "bad": bad,
+                           "front": [b2s(b) for b in front]}, open(fpath + ".tmp", "w"))
+                os.replace(fpath + ".tmp", fpath)
         print(f"frontier: {len(front)} flats after {nodes} nodes, {len(types)} type flats, {time.time() - t0:.0f} s", flush=True)
+        done = set()
+        if dpath and os.path.exists(dpath):
+            for line in open(dpath):
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue  # a line cut by a kill
+                done.add(r["i"])
+                types += [s2b(b) for b in r["types"]]
+                nodes += r["nodes"]
+                bad += r["bad"]
+            print(f"resume: {len(done)} frontier flats already done, {nodes} nodes, {len(types)} type flats", flush=True)
+        dlog = open(dpath, "a") if dpath else None
+        todo = [(i, b) for i, b in enumerate(front) if i not in done]
         complete = True
         mgr = mp.Manager()
         shared = mgr.dict()
-        with mp.Pool(a.workers, _winit, (a.k, a.canon, shared)) as pool:
-            for i, (t, n, b) in enumerate(pool.imap_unordered(_wtask, front, chunksize=1), 1):
-                types += t
-                nodes += n
-                bad += b
-                record(t)
-                if t or i % 100 == 0 or i == len(front):
-                    print(f"  {i}/{len(front)} frontier flats done, {nodes} nodes, {bad} bad, {len(types)} type flats"
-                          f"{' (+' + str(len(t)) + ')' if t else ''}, {time.time() - t0:.0f} s", flush=True)
+        ctr = mp.Value("q", 0)
+        freeze = mp.Value("b", 1 if a.min_free_gb >= 1e6 else 0)  # test hook: --min-free-gb 1e6 freezes at once
+        last = time.time()
+        with mp.Pool(a.workers, _winit, (a.k, a.canon, shared, ctr, freeze)) as pool:
+            it = pool.imap_unordered(_wtask, todo, chunksize=1)
+            ndone = len(done)
+            while ndone < len(front):
+                try:
+                    i, t, n, b = it.next(timeout=60)
+                except mp.TimeoutError:
+                    i = None
+                if i is not None:
+                    ndone += 1
+                    types += t
+                    nodes += n
+                    bad += b
+                    record(t)
+                    if dlog:
+                        dlog.write(json.dumps({"i": i, "types": [b2s(x) for x in t], "nodes": n, "bad": b}) + "\n")
+                        dlog.flush()
+                    if t:
+                        print(f"  +{len(t)} type flats from frontier flat {i} ({len(types)} total)", flush=True)
+                if time.time() - last >= 60 or ndone == len(front):
+                    last = time.time()
+                    free = mem_available_gb()
+                    if free is not None and free < a.min_free_gb and not freeze.value:
+                        freeze.value = 1
+                        print(f"  MEMORY LOW ({free:.1f} GB free): dedup tables frozen (result stays complete)", flush=True)
+                    print(f"  {ndone}/{len(front)} frontier flats done, {nodes} nodes in done flats, {ctr.value} nodes "
+                          f"this session, {len(types)} type flats, free {free if free is None else round(free, 1)} GB"
+                          f"{', FROZEN' if freeze.value else ''}, {time.time() - t0:.0f} s", flush=True)
     else:
         types, nodes, bad, complete, _ = S.run(a.max_nodes, use_canon=a.canon)
         record(types)
