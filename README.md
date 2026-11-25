@@ -1,11 +1,15 @@
 # Hrifa
 
-Hrifa is a collection of small visual tools and experiments. The root `index.html` is a portal to each applet.
+Hrifa is a collection of visual and musical tools and experiments.
 
-## Add an applet
-
-Add its files to a folder, then add an object to the `applets` array in `applets.js`. The catalogue entry is the portal's source of truth and must include its title, relative `href`, category, status, runtime, mark, and description. Follow [APPLET_CONVENTIONS.md](APPLET_CONVENTIONS.md) for the shared project contract.
+- `shell/`: the app everything new is built in (React + Vite + Mantine). Run
+  `corepack yarn dev` from inside `shell/`.
+- `research/` and `_Ideas/`: research code and notes the shell work draws on.
+- `legacy/`: the archived vanilla-JS portal and standalone applets (see
+  `legacy/README.md`).
 
 ## Publishing
 
-For GitHub Pages, use **Settings → Pages**, choose **Deploy from a branch**, and select `main` with `/(root)`.
+GitHub Pages deploys from `.github/workflows/deploy-pages.yml` on every push to
+`main`: it copies `legacy/` to the site root and layers the shell build on top,
+so the old applet URLs keep working.

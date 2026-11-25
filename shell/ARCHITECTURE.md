@@ -4,7 +4,7 @@ A map of `shell/` for anyone starting an arc: what exists, what is shared, and w
 
 ## What shell/ is
 
-`shell/` is a React + Vite + Mantine app (TypeScript, Yarn Berry), the foundation new features are built on. The repo root holds a second, unrelated system: the legacy portal and standalone vanilla-JS applets, catalogued in the root `applets.js` and styled by `design-tokens/`. The two share no code and no conventions (see the repo-root `CLAUDE.md`). The only link is `shell/src/data/applets.ts`: it lists shell pages with an absolute route `href` such as `/composition-workbench`, and also lists legacy applets with relative `href`s such as `color-checker/` or `hrifa-edel/` (the real link to the legacy portal), and `src/pages/Home.page.tsx` renders that list. Legacy applets are ported into `shell/` one at a time (the `port-applet` skill); until then they are untouched.
+`shell/` is a React + Vite + Mantine app (TypeScript, Yarn Berry), the foundation new features are built on. The repo's `legacy/` folder holds a second, unrelated system, archived: the old portal and standalone vanilla-JS applets, catalogued in `legacy/applets.js` and styled by `legacy/design-tokens/`. The two share no code and no conventions (see the repo-root `CLAUDE.md`). The only link is `shell/src/data/applets.ts`: it lists shell pages with an absolute route `href` such as `/composition-workbench`, and also lists legacy applets with relative `href`s such as `color-checker/` or `hrifa-edel/` (the real link to the legacy portal: the Pages deploy copies `legacy/` to the site root), and `src/pages/Home.page.tsx` renders that list. Legacy applets are ported into `shell/` one at a time (the `port-applet` skill); until then they are untouched.
 
 ## Layers
 
@@ -124,6 +124,6 @@ The standing record of this assumption is the `[shared]` item in `BACKLOG.md` ("
 - The `edo` reader list comes from a case-sensitive `\bedo\b` grep over non-test `src/` plus a scan for other `Edo` spellings (the workbench readers are the listed files; the page-local `edoSteps` of Interval Placement and `pcOf(v, edo)` of Segment Tangent Construction are separate, unrelated maths, listed in their own rows). It is a text match, not a type-aware reference search: a reader that receives the whole `settings` object and reads it under another name was not traced. An earlier version of this file omitted `RhythmEditModule`, `ScaleConstructionModule`, `ScaleEvolutionModule` and several library files, so treat the list as complete only as far as that grep.
 - Scale Explorer's mod-12 assumption was seen in `pitchSets.ts` only; other files (`chords.ts`, `spaces.ts`, `ringGeometry.ts`) were not read.
 - Which EDOs `meantoneSpellingFor` accepts (it returns undefined for the rest, giving step numbers) was not worked out; only the call site in `pitchClassName` was read.
-- Legacy portal details (`applets.js`, `design-tokens/`) come from the repo-root `CLAUDE.md`; the legacy files were not opened.
+- Legacy portal details (`legacy/applets.js`, `legacy/design-tokens/`) come from the repo-root `CLAUDE.md`; the legacy files were not opened.
 - The lock-and-script procedure for a new page follows `CLAUDE.md` rules 4, 10, 13 and 16; it has not been exercised by a real second arc yet.
 - Whether `Home.page.tsx` shows every `applets.ts` entry (filters, status) was not checked beyond the import.

@@ -36,14 +36,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: custom-reader/package-lock.json
+          cache-dependency-path: legacy/custom-reader/package-lock.json
 
       # The deployed digest carries each feed's ETag/Last-Modified validators.
       # Restore it before a refresh so unchanged sources can reply 304 and we
       # can reuse their existing items instead of downloading them again.
       - name: Restore the latest reader digest for conditional refreshes
         if: github.event_name != 'push'
-        working-directory: custom-reader
+        working-directory: legacy/custom-reader
         run: |
           if curl --fail --location --retry 3 --max-time 30 \
             "https://aueibu.github.io/Hrifa/custom-reader/feed-data.json?run=${{ github.run_id }}" \
@@ -55,7 +55,7 @@ jobs:
 
       - name: Build the current reader digest
         if: github.event_name != 'push'
-        working-directory: custom-reader
+        working-directory: legacy/custom-reader
         run: |
           npm ci
           node build.js
@@ -65,7 +65,7 @@ jobs:
       # crawl any publisher feeds. The query value bypasses the short CDN cache.
       - name: Reuse the latest deployed digest
         if: github.event_name == 'push'
-        working-directory: custom-reader
+        working-directory: legacy/custom-reader
         run: |
           curl --fail --location --retry 3 --max-time 30 \
             "https://aueibu.github.io/Hrifa/custom-reader/feed-data.json?run=${{ github.run_id }}" \
@@ -82,20 +82,20 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      # The site is still authored from the repository root, but the generated
-      # feed data is deployed as an artifact rather than committed to main.
+      # The archived legacy applets live under legacy/ and are copied to the
+      # site root, so their URLs (/Hrifa/color-checker/ ...) are unchanged.
+      # The shell build is layered on top and owns index.html and its routes
+      # (point-construction and raga-explorer are shell pages now). The
+      # generated feed data is deployed as an artifact, never committed.
       - name: Assemble Pages artifact
         run: |
           site_dir="$RUNNER_TEMP/hrifa-pages"
           mkdir -p "$site_dir"
           rsync -a --delete \
-            --exclude '.git' \
-            --exclude '.github' \
             --exclude 'custom-reader/node_modules' \
-            --exclude 'point-construction' \
-            --exclude 'shell' \
+            --exclude '/point-construction/' \
             --exclude '/raga-explorer/' \
-            ./ "$site_dir/"
+            legacy/ "$site_dir/"
           rsync -a shell/dist/ "$site_dir/"
           cp shell/dist/index.html "$site_dir/404.html"
 
