@@ -9,6 +9,7 @@ All active work happens in `shell/`. Start there.
 | `shell/` | React + Vite + Mantine app: the foundation everything new is built on | **Active** |
 | `research/` | Python research read by shell arcs (`research/ji-z-partners/`: JI Z-relation search, see its `HANDOFF.md`) | Active |
 | `_Ideas/` | Idea notes, handoffs and research write-ups (`Rhythm-As-Pitch/` holds the ratio-rhythm canon) | Active |
+| `raga-explorer/` | Raga data, review CSVs (`raga lists/`) and the Python pipeline; `scripts/export_raga_explorer_data.py` writes `shell/public/raga-explorer/ragas.json` for the shell Raga Explorer page | Active (data only, no applet) |
 | `legacy/` | The old vanilla-JS portal and standalone applets, plus their docs | **Archived** |
 
 ## `shell/`

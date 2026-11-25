@@ -85,8 +85,9 @@ jobs:
       # The archived legacy applets live under legacy/ and are copied to the
       # site root, so their URLs (/Hrifa/color-checker/ ...) are unchanged.
       # The shell build is layered on top and owns index.html and its routes
-      # (point-construction and raga-explorer are shell pages now). The
-      # generated feed data is deployed as an artifact, never committed.
+      # (point-construction is a shell page now, so its legacy copy is
+      # skipped). The generated feed data is deployed as an artifact, never
+      # committed.
       - name: Assemble Pages artifact
         run: |
           site_dir="$RUNNER_TEMP/hrifa-pages"
@@ -94,7 +95,6 @@ jobs:
           rsync -a --delete \
             --exclude 'custom-reader/node_modules' \
             --exclude '/point-construction/' \
-            --exclude '/raga-explorer/' \
             legacy/ "$site_dir/"
           rsync -a shell/dist/ "$site_dir/"
           cp shell/dist/index.html "$site_dir/404.html"
