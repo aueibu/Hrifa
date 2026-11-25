@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { SOLIDS } from '../../data/polyhedra';
 import type { SolidViewStyle } from '../../theme/diagram';
+import { defaultThemeTokens } from '../../theme/tokens';
 import { projectSourcePoints, type SourceOpts } from './pointPlacement';
 
 /**
@@ -12,6 +13,9 @@ import { projectSourcePoints, type SourceOpts } from './pointPlacement';
  * canvas.
  */
 
+const FALLBACK_NEUTRAL = defaultThemeTokens.dark[4];
+const FALLBACK_HEX = Number.parseInt(FALLBACK_NEUTRAL.slice(1), 16);
+
 let colorProbe: CanvasRenderingContext2D | null = null;
 /** Convert any CSS color string (oklch/rgb/hex/named) to a THREE-friendly 0xRRGGBB. */
 function toHex(color: string): number {
@@ -19,12 +23,12 @@ function toHex(color: string): number {
     colorProbe = document.createElement('canvas').getContext('2d');
   }
   if (!colorProbe) {
-    return 0x808080;
+    return FALLBACK_HEX;
   }
   colorProbe.canvas.width = 1;
   colorProbe.canvas.height = 1;
   colorProbe.clearRect(0, 0, 1, 1);
-  colorProbe.fillStyle = '#808080';
+  colorProbe.fillStyle = FALLBACK_NEUTRAL;
   colorProbe.fillStyle = color;
   colorProbe.fillRect(0, 0, 1, 1);
   const [r, g, b] = colorProbe.getImageData(0, 0, 1, 1).data;
