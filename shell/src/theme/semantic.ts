@@ -46,7 +46,8 @@ function markerVariables(tokens: ThemeTokens, scheme: MarkScheme): Variables {
 
 /**
  * `--rx-<hue>-<step>`: the Radix Colors step for the scheme (see radix.ts), for the colored tiles of the Modes and
- * Pairs panels. Only the steps the tiles use are emitted.
+ * Pairs panels. Also drives `--mark-<hue>` (step 11: high-contrast mark/line/dot) and `--tint-<hue>-*` (steps 3/4/12)
+ * for the eight core Radix hues so all marks, lines, polygons, chips, and tiles share one Radix standard.
  */
 function radixVariables(scheme: RadixScheme): Variables {
   const variables: Variables = {};
@@ -54,6 +55,21 @@ function radixVariables(scheme: RadixScheme): Variables {
     for (const step of RADIX_STEPS_USED) {
       variables[`--rx-${hue}-${step}`] = radixHex(scheme, hue, step);
     }
+    const bg = radixHex(scheme, hue, 3);
+    const bgHover = radixHex(scheme, hue, 4);
+    const text = radixHex(scheme, hue, 12);
+    variables[`--mark-${hue}`] = radixHex(scheme, hue, 11);
+    variables[`--tint-${hue}-bg`] = bg;
+    variables[`--tint-${hue}-bg-hover`] = bgHover;
+    variables[`--tint-${hue}-text`] = text;
+    variables[`--mantine-color-${hue}-light`] = bg;
+    variables[`--mantine-color-${hue}-light-hover`] = bgHover;
+    variables[`--mantine-color-${hue}-light-color`] = text;
+  }
+  // Primary light variants track Radix blue.
+  for (const suffix of ['light', 'light-hover', 'light-color']) {
+    variables[`--mantine-primary-color-${suffix}`] = variables[`--mantine-color-blue-${suffix}`];
+    variables[`--mantine-color-primary-${suffix}`] = variables[`--mantine-color-blue-${suffix}`];
   }
   return variables;
 }
@@ -122,8 +138,8 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--mantine-color-error': 'var(--text-danger)',
       '--mantine-color-default-border': 'var(--mantine-color-gray-2)',
       '--mantine-color-default-hover': 'var(--mantine-color-gray-1)',
-      ...radixVariables('light'),
       ...markerVariables(tokens, 'light'),
+      ...radixVariables('light'),
     },
     dark: {
       '--surface': 'var(--mantine-color-dark-8)',
@@ -141,8 +157,8 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--text-danger': 'var(--tint-red-text)',
       '--mantine-color-error': 'var(--text-danger)',
       '--mantine-color-default-border': 'var(--mantine-color-dark-5)',
-      ...radixVariables('dark'),
       ...markerVariables(tokens, 'dark'),
+      ...radixVariables('dark'),
     },
   });
 }
