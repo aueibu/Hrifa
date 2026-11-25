@@ -216,9 +216,9 @@
 }
 
 .note[data-active] {
-  background: var(--mantine-color-orange-filled);
-  border-color: var(--mantine-color-orange-8);
-  box-shadow: 0 0 0 1px var(--mantine-color-orange-3);
+  background: var(--rx-orange-9);
+  border-color: var(--rx-orange-11);
+  box-shadow: 0 0 0 1px var(--rx-orange-6);
   z-index: 2;
 }
 

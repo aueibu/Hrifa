@@ -36,10 +36,10 @@
 
 .key {
   align-items: center;
-  background: var(--mantine-color-gray-1);
-  border: 1px solid var(--mantine-color-gray-4);
+  background: var(--piano-key-white);
+  border: 1px solid var(--piano-key-white-border);
   border-radius: 0 0 var(--radius-control) var(--radius-control);
-  color: var(--mantine-color-dark-7);
+  color: var(--piano-key-white-text);
   cursor: pointer;
   display: flex;
   flex: 1;
@@ -50,9 +50,9 @@
 }
 
 .key[data-black='true'] {
-  background: var(--mantine-color-dark-8);
-  border-color: var(--mantine-color-dark-9);
-  color: var(--mantine-color-gray-3);
+  background: var(--piano-key-black);
+  border-color: var(--piano-key-black-border);
+  color: var(--piano-key-black-text);
   height: 60%;
   padding-bottom: var(--mantine-spacing-xs);
   position: absolute;

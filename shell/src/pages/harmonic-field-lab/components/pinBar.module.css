@@ -74,7 +74,7 @@
   font: inherit;
   font-size: var(--mantine-font-size-sm);
   font-variant-numeric: tabular-nums;
-  height: 1.625rem;
+  height: var(--ui-strip-height);
   overflow: hidden;
   padding: 0 1.25rem 0 0.375rem;
   text-align: left;

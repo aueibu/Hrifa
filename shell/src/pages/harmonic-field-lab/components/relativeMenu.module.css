@@ -24,7 +24,7 @@
   align-items: center;
   display: flex;
   gap: 0.5rem;
-  height: 26px;
+  height: var(--ui-strip-height);
   justify-content: space-between;
 }
 
@@ -148,7 +148,7 @@
   color: var(--text-muted);
   font-size: var(--mantine-font-size-sm);
   box-sizing: border-box;
-  height: 26px;
+  height: var(--ui-strip-height);
   line-height: 20px;
   overflow: hidden;
   padding: 2px 8px;

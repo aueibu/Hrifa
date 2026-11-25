@@ -111,7 +111,7 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--ai-size-sm': '1.375rem',
       '--ui-row-height': 'var(--input-height-sm)',
       '--ui-strip-height': '1.625rem',
-      '--input-bg': 'var(--panel-well)',
+      '--input-bg': 'var(--surface)',
       '--input-bd': 'var(--grid)',
       '--input-bd-focus': 'var(--focus-ring)',
       '--piano-key-white': 'var(--mantine-color-gray-1)',

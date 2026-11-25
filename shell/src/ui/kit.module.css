@@ -226,7 +226,7 @@
 }
 
 .scrubInput {
-  background: var(--panel-well);
+  background: var(--input-bg);
   border: 1px solid var(--focus-ring);
   border-radius: var(--radius-control);
   color: var(--text);
