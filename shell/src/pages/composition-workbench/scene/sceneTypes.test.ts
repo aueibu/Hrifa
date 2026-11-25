@@ -77,9 +77,23 @@ describe('the three record types', () => {
     expect(bad({ ...good, registerSpan: { lowMc: 5, highMc: 1 } })).not.toBeNull();
     expect(bad({ ...good, mapping: 'bounce' })).not.toBeNull();
     expect(bad({ ...good, modifiers: 'x' })).not.toBeNull();
+    // An object saved before modifiers had references (an empty list) stays valid.
+    expect(bad({ ...good, modifiers: [] })).toBeNull();
     expect(
-      bad({ ...good, modifiers: [{ id: 'm', type: 't', mute: false, params: {} }] })
+      bad({ ...good, modifiers: [{ id: 'm', type: 't', mute: false, params: {}, refs: {} }] })
     ).toBeNull();
+    expect(
+      bad({
+        ...good,
+        modifiers: [{ id: 'm', type: 't', mute: false, params: {}, refs: { set: { id: 'p' } } }],
+      })
+    ).toBeNull();
+    expect(
+      bad({
+        ...good,
+        modifiers: [{ id: 'm', type: 't', mute: false, params: {}, refs: { set: 3 } }],
+      })
+    ).not.toBeNull();
     const collection = (data: unknown) =>
       validateBlock({ ...createBlankCollection(request), payload: { kind: 'record', data } });
     expect(collection({ memberRefs: [{ id: 'a' }, { id: 'a' }], mute: false })).not.toBeNull();

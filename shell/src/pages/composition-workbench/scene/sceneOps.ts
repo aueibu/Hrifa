@@ -1,6 +1,18 @@
+import { derivation, derivedLineage } from '../dataBlock';
+import { defaultAuditionContext } from '../dataBlocks/auditionPlans';
 import { deleteBlockFromProject, type RefsProject } from '../dataBlocks/dataBlockRefs';
-import type { Ref, StoredDataBlock } from '../dataBlocks/registry';
+import {
+  chooseTypeId,
+  getDataBlockType,
+  isPacketBlock,
+  type AuditionContext,
+  type PacketBlock,
+  type Ref,
+  type StoredDataBlock,
+} from '../dataBlocks/registry';
+import { NOTES_TYPE_ID } from '../dataBlocks/types/notes';
 import { rational, type Rational } from '../musicalTime';
+import { getModifierDef, runModifierStack } from './modifiers';
 import {
   collectionDataOf,
   createBlankCollection,
@@ -10,6 +22,7 @@ import {
   objectDataOf,
   sceneDataOf,
   type CollectionData,
+  type ModifierInstance,
   type ObjectData,
   type ObjectMapping,
 } from './sceneTypes';
@@ -415,4 +428,254 @@ export function deleteSelected(project: RefsProject, id: string): RefsProject {
     };
   }
   return deleteBlockFromProject(next, id);
+}
+
+// ---- Modifiers (O3, W-72) ----
+
+function editModifier(
+  blocks: Blocks,
+  objectId: string,
+  modifierId: string,
+  change: (modifier: ModifierInstance, all: ModifierInstance[]) => ModifierInstance[] | string
+): SceneOpResult {
+  const data = objectDataOf(blocks.find((block) => block.id === objectId));
+  if (!data) {
+    return fail('Select an object first.');
+  }
+  const target = data.modifiers.find((modifier) => modifier.id === modifierId);
+  if (!target) {
+    return fail('That modifier is gone.');
+  }
+  const next = change(target, data.modifiers);
+  if (typeof next === 'string') {
+    return fail(next);
+  }
+  return editObject(blocks, objectId, (object) => ({ ...object, modifiers: next }));
+}
+
+/** A new modifier at the BOTTOM of the stack (it runs last), with its defaults and empty references. */
+export function addModifier(
+  blocks: Blocks,
+  env: OpEnv,
+  objectId: string,
+  type: string
+): SceneOpResult {
+  const def = getModifierDef(type);
+  if (!def) {
+    return fail('That modifier does not exist.');
+  }
+  const id = env.newId();
+  const modifier: ModifierInstance = {
+    id,
+    type,
+    mute: false,
+    params: def.defaults(),
+    refs: Object.fromEntries(def.refSlots.map((slot) => [slot.slot, null])),
+  };
+  const result = editObject(blocks, objectId, (object) => ({
+    ...object,
+    modifiers: [...object.modifiers, modifier],
+  }));
+  return result.ok ? { ...result, created: [id] } : result;
+}
+
+export function removeModifier(
+  blocks: Blocks,
+  objectId: string,
+  modifierId: string
+): SceneOpResult {
+  return editModifier(blocks, objectId, modifierId, (_modifier, all) =>
+    all.filter((modifier) => modifier.id !== modifierId)
+  );
+}
+
+/** One place up or down in the stack. */
+export function moveModifier(
+  blocks: Blocks,
+  objectId: string,
+  modifierId: string,
+  direction: 'up' | 'down'
+): SceneOpResult {
+  return editModifier(blocks, objectId, modifierId, (_modifier, all) => {
+    const index = all.findIndex((modifier) => modifier.id === modifierId);
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= all.length) {
+      return direction === 'up' ? 'It is already at the top.' : 'It is already at the bottom.';
+    }
+    const next = [...all];
+    [next[index], next[target]] = [next[target], next[index]];
+    return next;
+  });
+}
+
+export function setModifierMute(
+  blocks: Blocks,
+  objectId: string,
+  modifierId: string,
+  mute: boolean
+): SceneOpResult {
+  return editModifier(blocks, objectId, modifierId, (_modifier, all) =>
+    all.map((modifier) => (modifier.id === modifierId ? { ...modifier, mute } : modifier))
+  );
+}
+
+/** One setting of a modifier; the result must pass the modifier's own validation, else the reason. */
+export function setModifierParam(
+  blocks: Blocks,
+  objectId: string,
+  modifierId: string,
+  key: string,
+  value: unknown
+): SceneOpResult {
+  return editModifier(blocks, objectId, modifierId, (modifier, all) => {
+    const def = getModifierDef(modifier.type);
+    if (!def) {
+      return 'That modifier does not exist.';
+    }
+    if (!(key in def.defaults())) {
+      return 'That modifier has no such setting.';
+    }
+    const params = { ...modifier.params, [key]: value };
+    const problem = def.validateParams(params);
+    if (problem !== null) {
+      return problem;
+    }
+    return all.map((other) => (other.id === modifierId ? { ...other, params } : other));
+  });
+}
+
+/** Points a modifier's reference slot at a block of an accepted type (null blanks it). */
+export function setModifierRef(
+  blocks: Blocks,
+  objectId: string,
+  modifierId: string,
+  slotName: string,
+  blockId: string | null
+): SceneOpResult {
+  return editModifier(blocks, objectId, modifierId, (modifier, all) => {
+    const slot = getModifierDef(modifier.type)?.refSlots.find((entry) => entry.slot === slotName);
+    if (!slot) {
+      return 'That modifier has no such reference.';
+    }
+    if (blockId !== null) {
+      const target = blocks.find((block) => block.id === blockId);
+      if (!target) {
+        return 'That data-block is gone.';
+      }
+      if (!slot.accepts.includes(target.typeId)) {
+        const labels = slot.accepts.map((id) => getDataBlockType(id)?.label ?? id).join(' or ');
+        return `${slot.label} must be a ${labels} data-block.`;
+      }
+    }
+    return all.map((other) =>
+      other.id === modifierId
+        ? { ...other, refs: { ...other.refs, [slotName]: blockId === null ? null : ref(blockId) } }
+        : other
+    );
+  });
+}
+
+/**
+ * Bakes ONE cycle of `toRun` over the object's primary data into a new Notes data-block named
+ * "<data name> (applied)" (unique per type), placed after the data it came from, and points the
+ * object at it. The baked packet is the stack's own packet (not the audible plan). The original
+ * data-blocks stay untouched. `remaining` is what is left in the stack.
+ */
+function bake(
+  blocks: Blocks,
+  env: OpEnv,
+  objectId: string,
+  toRun: ModifierInstance[],
+  remaining: ModifierInstance[],
+  context: Pick<AuditionContext, 'pulseUnit'>
+): SceneOpResult {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const object = objectDataOf(byId.get(objectId));
+  const primary = object?.primaryDataRef ? byId.get(object.primaryDataRef.id) : undefined;
+  if (!object || !primary) {
+    return fail('This object has no data to apply the modifiers to.');
+  }
+  const result = runModifierStack(primary, toRun, byId, context);
+  if (!result.ok) {
+    return fail(result.problems[0].text);
+  }
+  const packet = structuredClone(result.packet);
+  const typeId = chooseTypeId(packet);
+  const def = typeId === undefined ? undefined : getDataBlockType(typeId);
+  if (typeId !== NOTES_TYPE_ID || !def) {
+    return fail('The modifiers did not produce Notes, so nothing was baked.');
+  }
+  const id = env.newId();
+  const blank = def.createBlank({
+    id,
+    name: uniqueName(blocks, typeId, `${primary.name} (applied)`),
+    createdAt: env.now,
+    length: rational(4),
+  });
+  if (!isPacketBlock(blank) || !isPacketBlock(primary)) {
+    return fail('The modifiers did not produce Notes, so nothing was baked.');
+  }
+  const baked: PacketBlock = {
+    ...blank,
+    payload: { kind: 'packet', packet },
+    origin: { nodeInstance: objectId },
+    lineage: derivedLineage(id, env.now, 'apply-modifiers', derivation(primary, 'apply-modifiers')),
+  };
+  const at = blocks.findIndex((block) => block.id === primary.id);
+  const withBaked = [...blocks.slice(0, at + 1), baked, ...blocks.slice(at + 1)];
+  const pointed = editObject(withBaked, objectId, (data) => ({
+    ...data,
+    primaryDataRef: ref(id),
+    modifiers: remaining,
+  }));
+  return pointed.ok ? { ...pointed, created: [id] } : pointed;
+}
+
+/**
+ * Apply (Blender: applying a modifier that is not first ignores the stack order), allowed only on the
+ * TOP modifier. A muted top modifier is refused (turn it on first). The mapping and the rest of the stack stay.
+ */
+export function applyModifier(
+  blocks: Blocks,
+  env: OpEnv,
+  objectId: string,
+  modifierId: string,
+  context: Pick<AuditionContext, 'pulseUnit'> = defaultAuditionContext
+): SceneOpResult {
+  const data = objectDataOf(blocks.find((block) => block.id === objectId));
+  if (!data) {
+    return fail('Select an object first.');
+  }
+  if (!data.modifiers.some((modifier) => modifier.id === modifierId)) {
+    return fail('That modifier is gone.');
+  }
+  const top = data.modifiers[0];
+  if (top.id !== modifierId) {
+    return fail('Apply the modifiers above it first.');
+  }
+  if (top.mute) {
+    return fail('Turn the modifier on to apply it.');
+  }
+  return bake(blocks, env, objectId, [top], data.modifiers.slice(1), context);
+}
+
+/** Apply All: bakes the whole unmuted stack (muted ones are dropped) and clears the modifiers. */
+export function applyAll(
+  blocks: Blocks,
+  env: OpEnv,
+  objectId: string,
+  context: Pick<AuditionContext, 'pulseUnit'> = defaultAuditionContext
+): SceneOpResult {
+  const data = objectDataOf(blocks.find((block) => block.id === objectId));
+  if (!data) {
+    return fail('Select an object first.');
+  }
+  if (data.modifiers.length === 0) {
+    return fail('There are no modifiers to apply.');
+  }
+  const active = data.modifiers.filter((modifier) => !modifier.mute);
+  if (active.length === 0) {
+    return editObject(blocks, objectId, (object) => ({ ...object, modifiers: [] }));
+  }
+  return bake(blocks, env, objectId, active, [], context);
 }

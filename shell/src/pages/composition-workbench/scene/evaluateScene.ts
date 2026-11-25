@@ -2,6 +2,8 @@ import type { MusicalPerformanceEvent, MusicalPerformancePlan } from '../audio/t
 import { auditionBlock, type AuditionResult } from '../dataBlocks/audition';
 import { defaultAuditionContext } from '../dataBlocks/auditionPlans';
 import {
+  DATA_BLOCK_SCHEMA_VERSION,
+  chooseTypeId,
   defaultAuditionSettings,
   isBlockEmpty,
   type AuditionContext,
@@ -18,12 +20,14 @@ import {
   type MusicalTimeline,
   type Rational,
 } from '../musicalTime';
+import { runModifierStack, type StackProblem } from './modifiers';
 import {
   chainPlacement,
   collectionDataOf,
   objectChain,
   objectDataOf,
   sceneDataOf,
+  type ModifierInstance,
   type ObjectData,
 } from './sceneTypes';
 
@@ -33,7 +37,13 @@ import {
  *
  * Per object, in order: world start (parent chain of relative starts) -> the primary data's ONE cycle
  * (`auditionBlock`) -> mapping (Loop tiles it, Stretch scales it to the span, One-shot plays it once)
- * -> the end bound -> merge. `modifiers` and `registerSpan` are stored but IGNORED here (O3, undecided).
+ * -> the end bound -> merge. `registerSpan` is stored but IGNORED here (undecided).
+ *
+ * Modifiers (O3, W-72): the primary data's PACKET goes through the unmuted modifiers top to bottom on
+ * one cycle (`runModifierStack`), and the resulting packet is made audible by the same audition build
+ * as any block (wrapped in an in-memory block of the type `chooseTypeId` picks), so the mapping and
+ * the end bound below do not change. A stack with a problem makes the object silent and adds a
+ * warning naming the object, the modifier and the problem.
  *
  * End bound (row 7, decided): an object ends at `min(its own end, every ancestor's end)`. An event
  * starting at or after the bound is dropped; one that crosses it is shortened to end exactly there.
@@ -43,6 +53,31 @@ import {
  * warns. The plan's duration is the latest END of every object reachable from the root collection,
  * muted and empty ones included (the form's length, row 5), so a silent tail is kept.
  */
+
+/** The problems of an object's modifier stack, for Properties; empty when it is sound or has none. */
+export function modifierProblems(
+  blocks: readonly StoredDataBlock[],
+  objectId: string,
+  context: AuditionContext = defaultAuditionContext
+): StackProblem[] {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const data = objectDataOf(byId.get(objectId));
+  const primary = data?.primaryDataRef ? byId.get(data.primaryDataRef.id) : undefined;
+  if (!data || !primary || isBlockEmpty(primary) || data.modifiers.every((m) => m.mute)) {
+    return [];
+  }
+  const result = runModifierStack(primary, data.modifiers, byId, context);
+  return result.ok ? [] : result.problems;
+}
+
+/**
+ * One object's base cycle: what stage 1 remembers. `built` plays; the others are why not (a refusal
+ * of the audition core, or the stack's problems).
+ */
+type CycleOutcome =
+  | { kind: 'built'; built: Extract<AuditionResult, { ok: true }> }
+  | { kind: 'refused'; reason: string }
+  | { kind: 'problems'; texts: string[] };
 
 export interface SceneEvaluation {
   plan: MusicalPerformancePlan;
@@ -148,6 +183,13 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
   const buildCycle = options.buildCycle ?? auditionBlock;
   // Stage 1: a block's base cycle. Edits make new block objects, so the object itself is the key.
   const cycles = new WeakMap<StoredDataBlock, AuditionResult>();
+  // Stage 1 with modifiers: per primary block, per modifier list (order, mute, params, reference ids),
+  // remembered with the referenced block objects it was built from (an edit to a pitch set makes a new
+  // block object, so it recomputes). Start, duration and mapping are not part of the key.
+  const stacks = new WeakMap<
+    StoredDataBlock,
+    Map<string, { deps: StoredDataBlock[]; outcome: CycleOutcome }>
+  >();
   // Stage 2: mapping and placement, per cycle result.
   const placements = new WeakMap<AuditionResult, Map<string, MusicalPerformanceEvent[]>>();
 
@@ -158,6 +200,62 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
       cycles.set(block, result);
     }
     return result;
+  };
+
+  const stackCycleOf = (
+    primary: StoredDataBlock,
+    modifiers: readonly ModifierInstance[],
+    byId: ReadonlyMap<string, StoredDataBlock>
+  ): CycleOutcome => {
+    const key = JSON.stringify(modifiers);
+    const deps = modifiers
+      .filter((modifier) => !modifier.mute)
+      .flatMap((modifier) => Object.values(modifier.refs))
+      .flatMap((ref) => {
+        const block = ref === null ? undefined : byId.get(ref.id);
+        return block ? [block] : [];
+      });
+    let memory = stacks.get(primary);
+    if (!memory) {
+      memory = new Map();
+      stacks.set(primary, memory);
+    }
+    const hit = memory.get(key);
+    if (hit && hit.deps.length === deps.length && hit.deps.every((dep, i) => dep === deps[i])) {
+      return hit.outcome;
+    }
+    const outcome = computeStackCycle(primary, modifiers, byId);
+    if (memory.size >= PLACEMENT_MEMORY) {
+      memory.clear();
+    }
+    memory.set(key, { deps, outcome });
+    return outcome;
+  };
+
+  const computeStackCycle = (
+    primary: StoredDataBlock,
+    modifiers: readonly ModifierInstance[],
+    byId: ReadonlyMap<string, StoredDataBlock>
+  ): CycleOutcome => {
+    const stack = runModifierStack(primary, modifiers, byId, context);
+    if (!stack.ok) {
+      return { kind: 'problems', texts: stack.problems.map((problem) => problem.text) };
+    }
+    const typeId = chooseTypeId(stack.packet);
+    if (typeId === undefined) {
+      return { kind: 'refused', reason: 'No data-block type holds the result of the modifiers.' };
+    }
+    // The existing audition build makes the result audible: no second realization path.
+    const wrapped: StoredDataBlock = {
+      schemaVersion: DATA_BLOCK_SCHEMA_VERSION,
+      id: `${primary.id}:modifiers`,
+      typeId,
+      name: primary.name,
+      createdAt: primary.createdAt,
+      payload: { kind: 'packet', packet: stack.packet },
+    };
+    const built = buildCycle(wrapped, settings, undefined, context);
+    return built.ok ? { kind: 'built', built } : { kind: 'refused', reason: built.reason };
   };
 
   const placedEvents = (
@@ -262,13 +360,27 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
       if (!primary) {
         continue;
       }
-      const built = cycleOf(primary);
-      if (!built.ok) {
+      const outcome: CycleOutcome = data.modifiers.some((modifier) => !modifier.mute)
+        ? isBlockEmpty(primary)
+          ? { kind: 'refused', reason: '' }
+          : stackCycleOf(primary, data.modifiers, byId)
+        : (() => {
+            const base = cycleOf(primary);
+            return base.ok
+              ? ({ kind: 'built', built: base } as const)
+              : ({ kind: 'refused', reason: base.reason } as const);
+          })();
+      if (outcome.kind === 'problems') {
+        outcome.texts.forEach((text) => warnings.push(`Object "${block.name}": ${text}`));
+        continue;
+      }
+      if (outcome.kind === 'refused') {
         if (!isBlockEmpty(primary)) {
-          warnings.push(`Object "${block.name}" is silent: ${built.reason}`);
+          warnings.push(`Object "${block.name}" is silent: ${outcome.reason}`);
         }
         continue;
       }
+      const built = outcome.built;
       built.plan.warnings.forEach((warning) => warnings.push(`Object "${block.name}": ${warning}`));
       events.push(
         ...placedEvents(built, block.id, start, data.timeSpan.duration, data.mapping, bound)

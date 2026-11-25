@@ -27,7 +27,7 @@ export const RHYTHM_TYPE_ID = 'rhythm';
  * How long one pulse of the rhythm is: the frame's own size when it has one (unit quarterNote, or
  * `musicalExtent / extent`), else the transport's pulse from the context.
  */
-function pulseLength(source: DataPacket, fallback: MusicalDuration): MusicalDuration {
+export function rhythmPulseLength(source: DataPacket, fallback: MusicalDuration): MusicalDuration {
   const frame = source.frame;
   if (frame?.unit === 'quarterNote') {
     return musicalDuration(1);
@@ -70,7 +70,7 @@ function buildRhythm(
     throw new Error('A Rhythm holds a packet.');
   }
   const source = block.payload.packet;
-  const pulse = pulseLength(source, context.pulseUnit);
+  const pulse = rhythmPulseLength(source, context.pulseUnit);
   const cyclic = source.frame?.topology === 'cyclic';
   // The existing realization (rests, ties, gate, exact fractions), never a second copy.
   const realized = realizeRhythm({

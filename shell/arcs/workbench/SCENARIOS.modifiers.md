@@ -17,3 +17,9 @@ Example used throughout: the son clave (attacks at quarters 0, 0.75, 1.5, 2.5, 3
 Also: a modifier's pitch set is a reference (counts as a user; deleting the pitch set blanks it and the object goes silent with "Pitch set: missing"); inputs accepted: Pitch set (exact midicents) and Pitch classes (placed as the audition does: base octave 4, EDO from the block); naming: **Snap to Pitch Set** (not "Transpose to pitch set": a transpose shifts every note by the same amount).
 
 Not in this milestone: arpeggio or spread for Harmonize, per-modifier amplitude, the node tree modifier (O4), the look of the modifier list (judged on the first thin slice).
+
+## Answers after the O3-i review (human, 2026-11-24)
+- Melodicize keeps the rhythm's OWN pulse when its frame has one (else the transport pulse): adding the modifier never changes when notes fall.
+- Pitch classes always repeat at their own octave (1200); the Period field applies to a Pitch set only.
+- Apply on a muted top modifier is refused: "Turn the modifier on to apply it."
+- A deleted pitch set reads "Melodicize: Pitch set is missing" (the specific wording, not "Pitch set: missing").

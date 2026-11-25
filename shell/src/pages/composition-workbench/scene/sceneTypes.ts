@@ -22,15 +22,23 @@ export const COLLECTION_TYPE_ID = 'collection';
 export type ObjectMapping = 'loop' | 'stretch' | 'one-shot';
 
 /**
- * A modifier on an object. O3 defines the types; in O1 the list must be an array and evaluation
- * IGNORES it (every object plays its primary data as is).
+ * A modifier on an object (O3, W-72). `type` is a registered modifier id (`scene/modifiers`),
+ * `params` its settings, and `refs` its references to other data-blocks by slot name (a Pitch set
+ * for Snap, Harmonize and Melodicize); a blank slot is null. The slot is the key
+ * `modifier:<id>:<slot>` in the object's references, so a referenced block counts the object as a
+ * user and a delete blanks just that slot (the modifier stays).
  */
 export interface ModifierInstance {
   id: string;
   type: string;
   mute: boolean;
   params: Record<string, unknown>;
+  refs: Record<string, Ref | null>;
 }
+
+const MODIFIER_SLOT_PREFIX = 'modifier:';
+const modifierSlot = (modifierId: string, slot: string) =>
+  `${MODIFIER_SLOT_PREFIX}${modifierId}:${slot}`;
 
 export interface SceneData {
   rootCollectionRef: Ref | null;
@@ -247,8 +255,11 @@ function validateObjectData(data: unknown): string | null {
         typeof modifier.id === 'string' &&
         typeof modifier.type === 'string' &&
         typeof modifier.mute === 'boolean' &&
-        isRecordOf(modifier.params)
-    )
+        isRecordOf(modifier.params) &&
+        isRecordOf(modifier.refs) &&
+        Object.values(modifier.refs).every(isNullableRef)
+    ) ||
+    new Set(modifiers.map((modifier: { id: string }) => modifier.id)).size !== modifiers.length
   ) {
     return 'An object holds a list of modifiers.';
   }
@@ -351,6 +362,11 @@ export function registerSceneTypes(): () => void {
         return [
           ...(object.parentRef === null ? [] : [{ slot: 'parent', ref: object.parentRef }]),
           ...(object.primaryDataRef === null ? [] : [{ slot: 'data', ref: object.primaryDataRef }]),
+          ...object.modifiers.flatMap((modifier) =>
+            Object.entries(modifier.refs).flatMap(([slot, ref]) =>
+              ref === null ? [] : [{ slot: modifierSlot(modifier.id, slot), ref }]
+            )
+          ),
         ];
       },
       mapRefs: (data, fn) => {
@@ -359,6 +375,16 @@ export function registerSceneTypes(): () => void {
           ...object,
           parentRef: object.parentRef === null ? null : fn('parent', object.parentRef),
           primaryDataRef: object.primaryDataRef === null ? null : fn('data', object.primaryDataRef),
+          // A mapped null clears the slot; the modifier itself stays.
+          modifiers: object.modifiers.map((modifier) => ({
+            ...modifier,
+            refs: Object.fromEntries(
+              Object.entries(modifier.refs).map(([slot, ref]) => [
+                slot,
+                ref === null ? null : fn(modifierSlot(modifier.id, slot), ref),
+              ])
+            ),
+          })),
         };
       },
       onRefDeleted: objectRefDeleted,

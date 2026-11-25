@@ -448,7 +448,7 @@ export function pruneLineage(
 }
 
 /** Lineage for a data-block that is born derived (duplicate, conversion, create-from-version): a lone root head. */
-function derivedLineage(
+export function derivedLineage(
   dataBlockId: string,
   at: string,
   operation: string,
@@ -459,7 +459,7 @@ function derivedLineage(
 }
 
 /** Where a new data-block was derived from: the source head version, or null when the source had no lineage. */
-function derivation(source: PacketBlock, operation: string): DataBlockDerivation {
+export function derivation(source: PacketBlock, operation: string): DataBlockDerivation {
   return { dataBlockId: source.id, versionId: source.lineage?.head ?? null, operation };
 }
 
