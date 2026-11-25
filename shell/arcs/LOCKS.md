@@ -17,5 +17,3 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
-| .claude/agents/builder.md | workbench | 2026-11-25 | workflow changes: digest reading, 300-word report, test cadence (human OK via Gemini proposals) |
-| CLAUDE.md | workbench | 2026-11-25 | workflow rules: consumer check, static mock, split schema milestones, one verification pass |
