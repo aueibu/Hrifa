@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { ActionIcon, Text } from '@mantine/core';
-import { WorkspaceTabs, type WorkspaceTabsProps } from '../../../components/Stage/dock';
 import { useHoverInfo } from './hoverInfo';
 import classes from './WorkbenchStatusBar.module.css';
 
@@ -8,27 +7,24 @@ import classes from './WorkbenchStatusBar.module.css';
 const idleText = 'Hover over a control, a note or a line for details.';
 
 /**
- * The strip along the bottom of the workbench, after Bitwig's: the inspector toggle and the workspace
- * meta-tabs (Canvas, Desk, Edit and the person's own) at the left, the explanation of whatever the
- * pointer is on in the middle, and the Panels menu and settings toggle at the right. The middle is
- * driven by `data-info` attributes (see `useHoverInfo`), so only this component updates as the
- * pointer moves.
+ * The strip along the bottom of the workbench, after Bitwig's: the inspector toggle and the Panels menu at
+ * the left, the explanation of whatever the pointer is on in the middle, and the settings toggle at the
+ * right. The middle is driven by `data-info` attributes (see `useHoverInfo`), so only this
+ * component updates as the pointer moves. The workspace tabs live in the top header (Blender), not here.
+ * The two toggles are view toggles: no fill, an accent icon while the panel is open (THEMING.md).
  */
 export function WorkbenchStatusBar({
   inspectorOpen,
   onToggleInspector,
   settingsOpen,
   onToggleSettings,
-  workspaces: workspaces,
   panelsMenu,
 }: {
   inspectorOpen: boolean;
   onToggleInspector(): void;
   settingsOpen: boolean;
   onToggleSettings(): void;
-  /** The workspace store and its operations (the Stage's `WorkspaceTabs`). */
-  workspaces: WorkspaceTabsProps;
-  /** The Panels menu, placed before the settings toggle. */
+  /** The Panels menu, placed after the inspector toggle at the left. */
   panelsMenu?: ReactNode;
 }) {
   const info = useHoverInfo();
@@ -36,7 +32,8 @@ export function WorkbenchStatusBar({
     <div className={classes.bar}>
       <div className={classes.side}>
         <ActionIcon
-          variant={inspectorOpen ? 'light' : 'subtle'}
+          variant="subtle"
+          color={inspectorOpen ? 'var(--accent)' : undefined}
           size={32}
           aria-label={inspectorOpen ? 'Hide inspector' : 'Show inspector'}
           aria-pressed={inspectorOpen}
@@ -60,12 +57,7 @@ export function WorkbenchStatusBar({
             <path d="M9 4v16" />
           </svg>
         </ActionIcon>
-        <div
-          className={classes.workspaces}
-          data-info="Workspaces: arrangements of the canvas, desk, nodes and data-block editor. Switch, add, rename or duplicate them."
-        >
-          <WorkspaceTabs {...workspaces} />
-        </div>
+        {panelsMenu}
       </div>
       <Text
         className={classes.info}
@@ -77,9 +69,9 @@ export function WorkbenchStatusBar({
         {info || idleText}
       </Text>
       <div className={classes.side} data-end="true">
-        {panelsMenu}
         <ActionIcon
-          variant={settingsOpen ? 'light' : 'subtle'}
+          variant="subtle"
+          color={settingsOpen ? 'var(--accent)' : undefined}
           size={32}
           aria-label={settingsOpen ? 'Hide settings' : 'Show settings'}
           aria-pressed={settingsOpen}

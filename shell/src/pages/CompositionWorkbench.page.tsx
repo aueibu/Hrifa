@@ -1,15 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  ActionIcon,
-  AppShell,
-  Group,
-  MantineThemeProvider,
-  Stack,
-  Text,
-  Title,
-  Tooltip,
-} from '@mantine/core';
+import { AppShell, Group, MantineThemeProvider, Stack, Text, Title } from '@mantine/core';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import {
   addWorkspace,
@@ -21,6 +11,7 @@ import {
   renameWorkspace,
   setActiveWorkspace,
   type StageApi,
+  WorkspaceTabs,
 } from '../components/Stage/dock';
 import { Surface } from '../components/Surface/Surface';
 import type { Workspace } from '../lib/stage';
@@ -577,38 +568,38 @@ export function CompositionWorkbenchPage() {
                       {/* Shows the Chords panel while the Chords tool wants it, and reports the person closing it. */}
                       <ChordPanelBridge workspace={workspace} api={stageApi} />
                       <AppShell
-                        header={{ height: 56 }}
+                        header={{ height: 40 }}
                         footer={{ height: 39 }}
-                        padding="md"
+                        padding={0}
                         className={classes.workbench}
                       >
                         <AppShell.Header>
                           <div className={classes.headerBar}>
                             <Group gap="xs" wrap="nowrap">
-                              <Tooltip label="Back to Workbench">
-                                <ActionIcon
-                                  component={Link}
-                                  to="/"
-                                  variant="subtle"
-                                  size="lg"
-                                  aria-label="Back to Workbench"
-                                >
-                                  <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    aria-hidden
-                                  >
-                                    <path d="M15 18l-6-6 6-6" />
-                                  </svg>
-                                </ActionIcon>
-                              </Tooltip>
                               <Title order={1} className={classes.visuallyHidden}>
                                 Composition Workbench
                               </Title>
+                              <div
+                                className={classes.headerTabs}
+                                data-info="Workspaces: arrangements of the canvas, desk, nodes and data-block editor. Switch, add, rename or duplicate them."
+                              >
+                                <WorkspaceTabs
+                                  store={workspaceStore}
+                                  onActivate={(id) =>
+                                    setWorkspaceStore((st) => setActiveWorkspace(st, id))
+                                  }
+                                  onAdd={() => setWorkspaceStore((st) => addWorkspace(st))}
+                                  onRename={(id, name) =>
+                                    setWorkspaceStore((st) => renameWorkspace(st, id, name))
+                                  }
+                                  onDuplicate={(id) =>
+                                    setWorkspaceStore((st) => duplicateWorkspace(st, id))
+                                  }
+                                  onDelete={(id) =>
+                                    setWorkspaceStore((st) => deleteWorkspace(st, id))
+                                  }
+                                />
+                              </div>
                             </Group>
                             <TransportBar selectedInstanceId={shownInstanceId} />
                             <Group gap="xs" wrap="nowrap" justify="flex-end">
@@ -674,17 +665,6 @@ export function CompositionWorkbenchPage() {
                             onToggleInspector={() => setInspectorOpen((open) => !open)}
                             settingsOpen={settingsOpened}
                             onToggleSettings={() => setSettingsOpened((open) => !open)}
-                            workspaces={{
-                              store: workspaceStore,
-                              onActivate: (id) =>
-                                setWorkspaceStore((st) => setActiveWorkspace(st, id)),
-                              onAdd: () => setWorkspaceStore((st) => addWorkspace(st)),
-                              onRename: (id, name) =>
-                                setWorkspaceStore((st) => renameWorkspace(st, id, name)),
-                              onDuplicate: (id) =>
-                                setWorkspaceStore((st) => duplicateWorkspace(st, id)),
-                              onDelete: (id) => setWorkspaceStore((st) => deleteWorkspace(st, id)),
-                            }}
                             panelsMenu={
                               <PanelsMenu
                                 registry={WORKBENCH_REGISTRY.meta}

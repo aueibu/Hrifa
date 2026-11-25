@@ -149,6 +149,13 @@
   flex: none;
 }
 
+/* The right end of the strip: the Maximize button (outside the tablist). */
+.headerEnd {
+  align-items: center;
+  display: flex;
+  flex: none;
+}
+
 /* the body holds the hosts of ALL tabs in one grid cell; the inactive ones are parked in place (parking.ts) */
 .body {
   box-sizing: border-box;

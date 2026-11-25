@@ -19,7 +19,7 @@ import {
 import { Menu, TextInput } from '@mantine/core';
 import { pxToRem, type DockerId, type Edge, type PanelId } from '../../../lib/stage';
 import { StripTool } from '../../InspectorKit';
-import { CloseIcon, DownIcon } from '../icons';
+import { CloseIcon, DownIcon, MaximizeIcon, MenuIcon, RestoreIcon } from '../icons';
 import type { DockerPlacement } from './dockLayout';
 import type { FocusReq } from './focusRequest';
 import { isRoveKey, roveFocus } from './tabKeys';
@@ -72,6 +72,10 @@ export interface DockerProps {
   showSize?: boolean;
   /** The panel whose tab is being dragged (its tab shows a grabbing cursor). */
   draggingPanel?: PanelId | null;
+  /** This docker fills the whole stage (a view state; nothing is saved). */
+  maximized?: boolean;
+  /** Maximize this docker, or restore it when it already is; absent = no button. */
+  onToggleMaximize?(): void;
 }
 
 export const EDGES: readonly { edge: Edge; label: string }[] = [
@@ -160,7 +164,7 @@ export function Docker(props: DockerProps) {
     <Menu position="bottom-end" withinPortal returnFocus={false}>
       <Menu.Target>
         <StripTool label={`Docker menu for ${docker.name}`} data-docker-menu={docker.id}>
-          <DownIcon />
+          <MenuIcon />
         </StripTool>
       </Menu.Target>
       <Menu.Dropdown>
@@ -413,6 +417,22 @@ export function Docker(props: DockerProps) {
               })}
             </Menu.Dropdown>
           </Menu>
+        )}
+        {props.onToggleMaximize && (
+          <div className={classes.headerEnd}>
+            <StripTool
+              label={props.maximized ? `Restore ${docker.name}` : `Maximize ${docker.name}`}
+              data-docker-maximize={docker.id}
+              data-info={
+                props.maximized
+                  ? 'Return this docker to its place in the layout (Esc).'
+                  : 'Fill the whole stage with this docker. Nothing is saved; Esc returns.'
+              }
+              onClick={props.onToggleMaximize}
+            >
+              {props.maximized ? <RestoreIcon /> : <MaximizeIcon />}
+            </StripTool>
+          </div>
         )}
       </div>
       <Body {...props} />

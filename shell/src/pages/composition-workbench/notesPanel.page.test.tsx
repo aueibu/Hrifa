@@ -32,9 +32,8 @@ function dataBlock(id: string, name: string) {
 // The dock keeps its own permanent role="status" notice, so the data-block editor's status is found by its text.
 const dataBlockStatus = () =>
   screen.getByText('No editor for this data-block yet.').closest('[role="status"]') as HTMLElement;
-// The workspace meta-tabs in the footer (the docker tabs have their own, same-named, tabs).
-const footerTab = (name: string) =>
-  within(screen.getByRole('contentinfo')).getByRole('tab', { name });
+// The workspace meta-tabs in the header (the docker tabs have their own, same-named, tabs).
+const footerTab = (name: string) => within(screen.getByRole('banner')).getByRole('tab', { name });
 
 async function seed(options: { view?: 'canvas' | 'desk'; collapsed?: boolean } = {}) {
   await seedDesk([dataBlock('block-a', 'Alpha'), dataBlock('block-b', 'Beta')]);

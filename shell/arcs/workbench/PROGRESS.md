@@ -4,7 +4,7 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 ## Status
 - Arc: Timeline (`arcs/workbench`), APPROVED 2026-11-23 (human), committed a836990
-- Current milestone: L0 to L5b done, reviewed, gate green and committed (L2). Next: the modifiers tuning by ear (Harmonize), then O4a to O4c.
+- Current milestone: L0 to L5b committed (`1313c37`); U1 and U4 committed (gate green); `U*` refined (`U2`/`U3` Inspector on `InspectorKit` + `DockStage`, `U6` Blender-style tabbed `Properties`, `U7` `RegisterSpan`). Next: `U6` static wireframe mock (`mock-properties-tabs.html`) and/or `U2` (`InspectorKit` port).
 - State: see "Next action" below (the single source of truth). One-page builder summary: `DIGEST.md`.
 
 ## Where to look
@@ -61,6 +61,10 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 
 | Make single user icon (2026-11-25, orchestrator) | UNCOMMITTED, not yet tried by the human | typecheck exit 0; oxfmt check ok; `DataBlockUsage.test.tsx` 8, `ScenePanels.test.tsx` 13 | Human, after asking what Blender does (its user count is the button): `components/MakeSingleUserButton.tsx`, a small copy-icon `ActionIcon` (aria-label "Make single user", disabled below 2 users, tooltip names who gets the copy), used in Properties (only when the object has data) and in the Desk popover rows. The `oxlint` yarn script already carries its config: pass no `-c` to it (`oxfmt` needs `-c oxfmt.config.mjs`). |
 
+| U1 (2026-11-25, orchestrator, from `HANDOFF.ui-precision.md`) | thin slice built, UNCOMMITTED, not yet tried by the human; no reviewer, no gate | typecheck exit 0, stylelint 0, `WorkbenchStatusBar.test.tsx` 6, `CompositionWorkbench.page.test.tsx` 22 | Slice 1 of the handoff (claims verified first): padding removed, header 40 px, workspace tabs in the header, view toggles accent not filled. Lock row on the entry file (release after commit). U2 to U5 planned in ARC.md; U4 and U5 touch shared Stage and InspectorKit (lock, `check:stage`, consumer table). |
+
+| U1 look and U4 (2026-11-25, orchestrator) | committed | `check:workbench` green (136 files, 2,031 tests); `check:stage` green (30 files, 386 tests); page test 22/22 | Human on U1: looks good; remove the back button (done), Panels menu to the footer's left (done). U4 (W-81): per-docker Maximize button (header right end), Esc and Restore return, other dockers inert, nothing saved; docker menu icon now three lines. Skipped: default workspace, Swap, Join, Focus. Updated 3 page test files (`notesPanel`, `chordPanel`, `workbenchLayout`) to query header `banner` instead of footer `contentinfo` for `WorkspaceTabs`. Refined `ARC.md` `U*` section with `U6` (Blender-style vertical icon + colored-tab `Properties`) and `U7` (`RegisterSpan`). Locks released after commit. |
+
 ## Shared touches (locks taken)
 None yet.
 
@@ -68,11 +72,16 @@ None yet.
 - None open. The re-plan (2026-11-24) is confirmed: SCENARIOS.objects.md rows 1 to 7 approved.
 
 ## Next action
-**RESUME HERE (2026-11-25, after the L2 commit).**
-- **State.** L0 to L5b and the Make single user icon are committed after the L2 review (one important finding fixed: an ancestor now blocks a child dropped on its parent's sub-lane; nits logged in BACKLOG "L2 review leftovers") and the gate (`check:workbench`: 136 files, 2,031 tests, exit 0). Decisions W-77 to W-80 are done; W-79 supersedes the parent-end cut of W-66/W-67/W-69/W-71. The human has tried L1 to L5 in the browser and approved the look (Make single user icon and the Desk popover table not yet seen).
-- **Next, in order.** (1) The human looks at the Make single user icon and the Desk popover table (L5b) and says what to change. (2) The modifiers tuning by ear (Harmonize); nothing sounds without asking. (3) O4a to O4c (node trees as modifiers) per ARC.md.
-- **Gotchas.** (a) Stale Vite cache can serve an EMPTY module after git restores or renames (white screen, "does not provide an export named X"): touch the file's LastWriteTime or restart the dev server at http://127.0.0.1:5174; never clear the human's storage. (b) `oxfmt` needs `-c oxfmt.config.mjs` (without it files are rewritten in double quotes); the `oxlint` yarn script already carries its config (pass no `-c`). (c) Leftover scratch edit scripts at `C:/Users/apoor/opsparts` are safe to delete.
-- **Process (adopted 2026-11-25).** Builders read `DIGEST.md` plus the active milestone only; reports at most about 300 words; schema milestones split; the orchestrator runs the gate once per milestone; consumer table before a record change; static mock first for structure. Small changes the human asks for are done by the orchestrator directly (no 100k-token builder).
+**RESUME HERE (2026-11-25, U1 + U4 committed, `U*` refined).**
+- **State.** U1 (edge-to-edge dock, 40 px header, workspace tabs in header, accent view toggles, Panels menu on footer left) and U4 (`W-81`: per-docker Maximize button, `Esc`/Restore, 3-line docker menu icon) are committed and gated (`check:workbench` 136 files / 2,031 tests, `check:stage` 30 files / 386 tests, `CompositionWorkbench.page.test.tsx` 22/22). Both locks in `arcs/LOCKS.md` are released.
+- **Next, in order.**
+  1. **U6 static wireframe mock (`mock-properties-tabs.html`):** Blender-style vertical icon + colored tab rail (`Object | Modifiers | Data | Scene`, plus `Collection` state) using `THEMING.md` semantic mark roles, and `Inspector` accordion layout (`InspectorKit`), for human approval before `Properties` tab code.
+  2. **U2 + U3:** Restyle `CompositionInspector` and `CompositionSettingsPanel` on `InspectorKit` (`KitScope`, `Strip`, `Section` accordion menus with `Ctrl+click` solo-accordion, `data-info`/`Tip`, compact Remove), then move ONLY `CompositionInspector` into `DockStage` (`keepMounted: true` for `#nodeInspectorSlot`; entry-file lock). Settings stays the right pull-up panel.
+  3. **U6 implementation + U7:** Tabbed `Properties` in `ScenePanels.tsx`, then expose `RegisterSpan` in `Properties → Object`.
+  4. Then modifiers tuning by ear (`Harmonize`) and `O4a–O4c` (`NodeTree` data-blocks).
+- **Open leftovers:** `BACKLOG.md` "L2 review leftovers".
+- **Gotchas.** (a) `oxfmt` needs `-c oxfmt.config.mjs` and EXACT file names (a hook blocks globs and splatted lists; a formatted file can change text your next Edit expects: re-read it); the `oxlint` yarn script already carries its config (no `-c`). (b) Stale Vite cache can serve an empty module (white screen): touch the file or restart the dev server at http://127.0.0.1:5174; never clear the human's storage. (c) Python or shell with backslashed Windows paths breaks: use forward slashes and script files. (d) Small look tweaks the human asks for are done by the orchestrator directly; builders only for real milestones.
+- **Process (adopted 2026-11-25).** Builders read `DIGEST.md` plus the active milestone only; reports at most about 300 words; schema milestones split; the orchestrator runs the gate once per milestone; consumer table before a record change; static mock first for structure.
 
 ## Standing procedure (kept from earlier sessions)
 - Gate: `corepack yarn check:workbench` in PowerShell with Node 24 on PATH and `VITEST_MAX_WORKERS=4`, output saved to a file, read the REAL exit code (a filtered pipe hides it; 6 workers time out page tests).

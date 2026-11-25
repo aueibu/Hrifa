@@ -1,17 +1,8 @@
 import { fireEvent, render, screen } from '@test-utils';
-import { defaultWorkbenchWorkspaces } from '../layout/workbenchWorkspaces';
 import { InfoBarActiveContext, InfoTooltip } from './hoverInfo';
 import { WorkbenchStatusBar } from './WorkbenchStatusBar';
 
-function Harness({
-  onToggle = vi.fn(),
-  onSettings = vi.fn(),
-  open = false,
-  settingsOpen = false,
-  active = 'canvas',
-  onActivate = vi.fn(),
-}) {
-  const store = { ...defaultWorkbenchWorkspaces(), active };
+function Harness({ onToggle = vi.fn(), onSettings = vi.fn(), open = false, settingsOpen = false }) {
   return (
     <InfoBarActiveContext.Provider value>
       <div>
@@ -26,29 +17,15 @@ function Harness({
         onToggleInspector={onToggle}
         settingsOpen={settingsOpen}
         onToggleSettings={onSettings}
-        workspaces={{
-          store,
-          onActivate,
-          onAdd: vi.fn(),
-          onRename: vi.fn(),
-          onDuplicate: vi.fn(),
-          onDelete: vi.fn(),
-        }}
       />
     </InfoBarActiveContext.Provider>
   );
 }
 
 describe('workbench status bar', () => {
-  it('shows the workspaces as meta-tabs and switches between them, marking the current one', () => {
-    const onActivate = vi.fn();
-    render(<Harness active="canvas" onActivate={onActivate} />);
-    const tabs = screen.getAllByRole('tab').map((tab) => tab.textContent);
-    expect(tabs).toEqual(['Canvas', 'Desk', 'Edit']);
-    expect(screen.getByRole('tab', { name: 'Canvas' }).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByRole('tab', { name: 'Desk' }).getAttribute('aria-selected')).toBe('false');
-    fireEvent.click(screen.getByRole('tab', { name: 'Desk' }));
-    expect(onActivate).toHaveBeenCalledWith('desk');
+  it('has no workspace tabs: they are in the top header', () => {
+    render(<Harness />);
+    expect(screen.queryAllByRole('tab')).toHaveLength(0);
   });
 
   it('shows what the pointer is on, found from the nearest element with data-info', () => {

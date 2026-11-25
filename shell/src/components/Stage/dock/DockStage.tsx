@@ -134,6 +134,15 @@ const DRAG_THRESHOLD_PX = 4;
 const CLICK_EAT_MS = 250;
 const STAGE_MIN = { w: SIZE_MIN_WIDTH_REM, h: SIZE_MIN_HEIGHT_REM };
 
+/** A maximized docker: the whole stage, above the other dockers (they keep their layout underneath). */
+const MAXIMIZED_STYLE: CSSProperties = {
+  left: 0,
+  top: 0,
+  width: '100%',
+  height: '100%',
+  zIndex: 5,
+};
+
 const rectStyle = (r: DockRect): CSSProperties => ({
   left: `${r.x}rem`,
   top: `${r.y}rem`,
@@ -271,6 +280,7 @@ export function DockStage({
 
   /* ------------------------------------------------------------------ geometry */
   const [selected, setSelected] = useState<DockerId | undefined>(undefined);
+  const [maximizedId, setMaximizedId] = useState<DockerId | null>(null);
   const minOf = useMemo(() => dockerMinOf(registry.meta), [registry]);
   const geometry = useMemo(
     () => layoutTree(workspace, widthRem, heightRem, { minOf, selected }),
@@ -984,13 +994,43 @@ export function DockStage({
   const splitterOpts = () => ({ minOf, selected: latest.current.selected });
   const dockerList = geometry.dockers.map((p) => ({ id: p.docker.id, name: p.docker.name }));
 
+  // Maximize (U4): one docker fills the whole stage. A view state only: never saved, never in the workspace, gone
+  // when the docker is gone or collapses. The layout underneath is untouched (the other dockers keep their
+  // rectangles and are `inert` behind it), so Restore puts everything back exactly.
+  const maximizedDocker =
+    maximizedId !== null &&
+    geometry.dockers.some((p) => p.docker.id === maximizedId && p.state === 'open')
+      ? maximizedId
+      : null;
+  useEffect(() => {
+    if (maximizedDocker === null) {
+      return;
+    }
+    const onKey = (e: KeyboardEvent) => {
+      // Esc restores, unless a menu or a dialog is open (it closes that first). Capture phase: the docker strip
+      // also handles Escape (focus back to the panel) and would otherwise mark the event handled before this runs.
+      if (e.key === 'Escape' && !document.querySelector('[role="menu"], [role="dialog"]')) {
+        setMaximizedId(null);
+      }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, [maximizedDocker]);
+
   return (
     <StageApiContext.Provider value={api}>
       <div className={classes.root} ref={root} data-dock-root style={tokenStyle(DEFAULT_DENSITY)}>
         {geometry.dockers.map((p) => {
           const active = p.docker.active;
+          const isMax = maximizedDocker === p.docker.id;
           return (
-            <div key={p.docker.id} className={classes.dockerPos} style={rectStyle(p)}>
+            <div
+              key={p.docker.id}
+              className={classes.dockerPos}
+              data-maximized={isMax}
+              style={isMax ? MAXIMIZED_STYLE : rectStyle(p)}
+              inert={maximizedDocker !== null && !isMax}
+            >
               <Docker
                 placement={p}
                 dockers={dockerList}
@@ -1007,6 +1047,10 @@ export function DockStage({
                 sizeAttr={active ? slotSizeAttr(sizes[active] ?? INITIAL_SIZE) : undefined}
                 showSize={showSizes}
                 draggingPanel={draggingPanel}
+                maximized={isMax}
+                onToggleMaximize={() =>
+                  setMaximizedId((cur) => (cur === p.docker.id ? null : p.docker.id))
+                }
               />
             </div>
           );
@@ -1014,7 +1058,16 @@ export function DockStage({
         {geometry.splitters.map((sp) => {
           const row = sp.dir === 'row';
           return (
-            <div key={sp.key} className={classes.splitterPos} style={rectStyle(sp)}>
+            <div
+              key={sp.key}
+              className={classes.splitterPos}
+              style={
+                maximizedDocker === null
+                  ? rectStyle(sp)
+                  : { ...rectStyle(sp), visibility: 'hidden' }
+              }
+              inert={maximizedDocker !== null}
+            >
               <Splitter
                 orientation={row ? 'vertical' : 'horizontal'}
                 label={`Resize ${sp.before} and ${sp.after}`}

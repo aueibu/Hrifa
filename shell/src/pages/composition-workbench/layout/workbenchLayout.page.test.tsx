@@ -7,8 +7,7 @@ import { compositionStateKeys } from '../usePersistentState';
 import { WORKBENCH_KNOWN_IDS } from './workbenchWorkspaces';
 import { storeDefaultWorkspaces } from './workspaceFixtures';
 
-const footerTab = (name: string) =>
-  within(screen.getByRole('contentinfo')).getByRole('tab', { name });
+const footerTab = (name: string) => within(screen.getByRole('banner')).getByRole('tab', { name });
 
 function storedStore(): WorkspaceStore {
   const raw = localStorage.getItem(compositionStateKeys.workspaces);

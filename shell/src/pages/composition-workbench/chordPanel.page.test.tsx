@@ -109,8 +109,7 @@ function storedStore(): WorkspaceStore {
 const chordsDocker = (workspace: string) =>
   dockerHolding(storedStore().workspaces[workspace].tree, 'chords')?.name ?? null;
 
-const footerTab = (name: string) =>
-  within(screen.getByRole('contentinfo')).getByRole('tab', { name });
+const footerTab = (name: string) => within(screen.getByRole('banner')).getByRole('tab', { name });
 
 async function openDataBlock(user: ReturnType<typeof userEvent.setup>, name: string) {
   const input = await screen.findByDisplayValue(name);

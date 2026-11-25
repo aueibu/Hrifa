@@ -590,3 +590,37 @@ describe('selection and the status line', () => {
     }
   });
 });
+
+describe('maximize (U4)', () => {
+  it('a docker fills the stage from its header button, the rest stay inert and unchanged, Esc restores', async () => {
+    render(<Harness initial={A()} />);
+    const before = screen.getByTestId('workspace').textContent;
+    const maximizeButtons = screen.getAllByRole('button', { name: /^Maximize / });
+    expect(maximizeButtons.length).toBeGreaterThan(1);
+    expect(document.querySelector('[data-maximized="true"]')).toBeNull();
+
+    await userEvent.click(maximizeButtons[0]);
+    const full = document.querySelector<HTMLElement>('[data-maximized="true"]')!;
+    expect(full).not.toBeNull();
+    expect(full.style.width).toBe('100%');
+    expect(full).not.toHaveAttribute('inert');
+    const others = [...document.querySelectorAll('[data-maximized="false"]')];
+    expect(others.length).toBeGreaterThan(0);
+    expect(others.every((el) => el.hasAttribute('inert'))).toBe(true);
+    // a view state only: the saved workspace is untouched, and the button now restores
+    expect(screen.getByTestId('workspace').textContent).toBe(before);
+    expect(within(full).getByRole('button', { name: /^Restore / })).toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+    expect(document.querySelector('[data-maximized="true"]')).toBeNull();
+    expect(document.querySelectorAll('[inert][data-maximized]').length).toBe(0);
+    expect(screen.getByTestId('workspace').textContent).toBe(before);
+  });
+
+  it('the Restore button returns the layout too', async () => {
+    render(<Harness initial={A()} />);
+    await userEvent.click(screen.getAllByRole('button', { name: /^Maximize / })[0]);
+    await userEvent.click(screen.getByRole('button', { name: /^Restore / }));
+    expect(document.querySelector('[data-maximized="true"]')).toBeNull();
+  });
+});

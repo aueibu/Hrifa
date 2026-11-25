@@ -39,6 +39,24 @@ export const DownIcon = () => (
     <path d="M5 9l7 7 7-7" />
   </Icon>
 );
+/** The docker menu: three lines, so it cannot be mistaken for the tab menu's chevron (U4). */
+export const MenuIcon = () => (
+  <Icon>
+    <path d="M4 7h16M4 12h16M4 17h16" />
+  </Icon>
+);
+/** Maximize a docker: four corner brackets pointing outward. */
+export const MaximizeIcon = () => (
+  <Icon>
+    <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+  </Icon>
+);
+/** Restore a maximized docker: four corner brackets pointing inward. */
+export const RestoreIcon = () => (
+  <Icon>
+    <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+  </Icon>
+);
 export const StackIcon = () => (
   <Icon>
     <path d="M4 7h16M4 12h16M4 17h16" />

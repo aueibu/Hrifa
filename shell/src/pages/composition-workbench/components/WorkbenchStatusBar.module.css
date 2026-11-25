@@ -22,9 +22,3 @@
 .info {
   text-align: center;
 }
-
-/* The workspace meta-tabs (the Stage's WorkspaceTabs draws the strip itself). */
-.workspaces {
-  margin-left: 0.5rem;
-  min-width: 0;
-}
