@@ -152,7 +152,7 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
         'color-mix(in srgb, var(--mantine-color-dark-4) 10%, var(--mantine-color-dark-5))',
       '--grid': 'color-mix(in srgb, var(--mantine-color-dark-4) 24%, var(--mantine-color-dark-5))',
       '--chrome':
-        'color-mix(in srgb, var(--mantine-color-dark-4) 32%, var(--mantine-color-dark-5))',
+        'color-mix(in srgb, var(--mantine-color-dark-4) 10%, var(--mantine-color-dark-5))',
       '--control-border': 'var(--mantine-color-dark-4)',
       '--text-danger': 'var(--tint-red-text)',
       '--mantine-color-error': 'var(--text-danger)',
