@@ -3,6 +3,8 @@
 Current (2026-11-25):
 
 - `night_queue.py`: the job runner. One enumeration at a time, each job forecast from an exact `--count-only` count, no time caps, resumable at the stop time. It runs as `~/zgen/night_queue.py` on the VM and logs to `~/zruns/zprod/night_queue.out`.
+- `verify_families.py`: checks a finished `families.jsonl`. Run it as `pypy3 verify_families.py zgen_v4.py <families.jsonl>`.
+- `usesp.py`: lists the primes each family uses, for comparing two lists.
 
 On the VM, `~/zgen` holds only the current files and a `README.txt`:
 
