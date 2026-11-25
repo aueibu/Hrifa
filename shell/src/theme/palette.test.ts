@@ -82,11 +82,15 @@ describe('neutral roles', () => {
       tokens.dark[5], // body
     ];
     for (let index = 1; index < tiers.length; index += 1) {
-      expect(contrast(tiers[index], tiers[index - 1]), `tier ${index}`).toBeGreaterThanOrEqual(1.08);
+      expect(contrast(tiers[index], tiers[index - 1]), `tier ${index}`).toBeGreaterThanOrEqual(
+        1.08
+      );
     }
     // Surfaces, borders and subtle text lean only slightly warm: red >= green >= blue, spread of 8 or less.
     for (const step of tokens.dark.slice(3)) {
-      const [red, green, blue] = [1, 3, 5].map((start) => Number.parseInt(step.slice(start, start + 2), 16));
+      const [red, green, blue] = [1, 3, 5].map((start) =>
+        Number.parseInt(step.slice(start, start + 2), 16)
+      );
       expect(red >= green && green >= blue && red - blue <= 8, step).toBe(true);
     }
   });
@@ -104,7 +108,9 @@ describe('neutral roles', () => {
 describe('accent and filled colors', () => {
   it('holds white text at 4.5:1 or more on the primary shade in both schemes', () => {
     for (const scheme of schemes) {
-      expect(contrast('#ffffff', tokens.primary[tokens.primaryShade[scheme]])).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrast('#ffffff', tokens.primary[tokens.primaryShade[scheme]])
+      ).toBeGreaterThanOrEqual(4.5);
     }
   });
 

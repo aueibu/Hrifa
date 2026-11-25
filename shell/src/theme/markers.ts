@@ -151,7 +151,11 @@ export function markerPalettes(
 }
 
 /** Linear-light sRGB for an OKLCH color, clipped to the gamut. */
-export function oklchToLinearRgb(lightness: number, chroma: number, hue: number): [number, number, number] {
+export function oklchToLinearRgb(
+  lightness: number,
+  chroma: number,
+  hue: number
+): [number, number, number] {
   const angle = (hue * Math.PI) / 180;
   const a = chroma * Math.cos(angle);
   const b = chroma * Math.sin(angle);

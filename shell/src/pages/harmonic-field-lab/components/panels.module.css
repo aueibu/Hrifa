@@ -1,10 +1,6 @@
 /* Analysis panels of the layout mock (right pane). Same roles as mock.module.css: tiers instead of lines. */
 
-/* compact Mantine text inside the panels (the retuner uses Text size sm/xs) */
 .panelBody {
-  --mantine-font-size-sm: 0.75rem;
-  --mantine-font-size-xs: 0.6875rem;
-
   display: flex;
   flex: 1;
   flex-direction: column;

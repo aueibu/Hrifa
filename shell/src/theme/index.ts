@@ -6,3 +6,5 @@ import { defaultThemeTokens } from './tokens';
 export const theme = mergeMantineTheme(DEFAULT_THEME, createAppTheme(defaultThemeTokens));
 export { createAppTheme } from './foundation';
 export { defaultThemeTokens } from './tokens';
+export * from './radix';
+export * from './radixRoles';

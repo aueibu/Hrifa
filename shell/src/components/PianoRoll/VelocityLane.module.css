@@ -77,7 +77,7 @@
 .label {
   color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.68rem;
+  font-size: var(--mantine-font-size-xs);
 }
 
 .toggle {
@@ -117,9 +117,9 @@
   --band: color-mix(
     in srgb,
     color-mix(in srgb, var(--mark-cyan) 70%, var(--accent)) 60%,
-    white
+    var(--mantine-color-white)
   );
-  --band-line: color-mix(in srgb, white 82%, black);
+  --band-line: color-mix(in srgb, var(--mantine-color-white) 82%, var(--mantine-color-black));
   /* The fade distance per side: at least 80px, a quarter of the span, never past the middle. */
   --band-fade: min(max(80px, 25%), 50%);
 
@@ -157,7 +157,7 @@
 
 .pin {
   background: var(--stem-fill, var(--stem-color));
-  border: 1px solid color-mix(in srgb, var(--stem-fill, var(--stem-color)) 60%, black);
+  border: 1px solid color-mix(in srgb, var(--stem-fill, var(--stem-color)) 60%, var(--mantine-color-black));
   border-radius: 50%;
   cursor: ns-resize;
   height: 11px;
@@ -177,7 +177,7 @@
   border: 1px solid var(--grid);
   color: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.68rem;
+  font-size: var(--mantine-font-size-xs);
   left: 10px;
   line-height: 1;
   padding: 0.15rem 0.3rem;
@@ -259,7 +259,7 @@
   border: 1px solid var(--grid);
   color: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.68rem;
+  font-size: var(--mantine-font-size-xs);
   line-height: 1;
   margin: -1.4rem 0 0 8px;
   padding: 0.15rem 0.3rem;

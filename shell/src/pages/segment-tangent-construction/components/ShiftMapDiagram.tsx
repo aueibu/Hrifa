@@ -1,4 +1,6 @@
 import { resolvePeriodicityDiagramStyle } from '../../../theme/diagram';
+import { RADIX_HUES } from '../../../theme/radix';
+import { radixVar } from '../../../theme/radixRoles';
 import { localCoords, type UnisonVectorCandidate } from '../periodicityBlock';
 import { clipLineToBox, hashHue } from '../shiftMapGeometry';
 
@@ -45,7 +47,10 @@ export function ShiftMapDiagram({ uv1, uv2, range = 1.5, ci, cj, onShift }: Shif
           y={row * cell}
           width={cell + 0.5}
           height={cell + 0.5}
-          fill={`hsl(${hashHue(label)},60%,72%)`}
+          fill={radixVar(
+            RADIX_HUES[Math.floor((hashHue(label) / 360) * RADIX_HUES.length) % RADIX_HUES.length],
+            5
+          )}
         />
       );
     }

@@ -7,10 +7,10 @@
   --chord-selection: color-mix(
     in srgb,
     color-mix(in srgb, var(--mark-cyan) 70%, var(--accent)) 60%,
-    white
+    var(--mantine-color-white)
   );
   --chord-selection-edge: color-mix(in srgb, var(--mark-cyan) 70%, var(--accent));
-  --chord-selection-text: color-mix(in srgb, var(--mark-cyan) 15%, black);
+  --chord-selection-text: color-mix(in srgb, var(--mark-cyan) 15%, var(--mantine-color-black));
 
   color: var(--text);
   container-name: chord-picker;

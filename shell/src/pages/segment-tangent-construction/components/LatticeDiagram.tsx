@@ -1,4 +1,6 @@
 import { resolvePeriodicityDiagramStyle } from '../../../theme/diagram';
+import { RADIX_HUES } from '../../../theme/radix';
+import { radixVar } from '../../../theme/radixRoles';
 import type { BlockPoint, UnisonVectorCandidate } from '../periodicityBlock';
 
 interface LatticeDiagramProps {
@@ -134,7 +136,10 @@ export function LatticeDiagram({ uv1, uv2, points, ci, cj, cycles }: LatticeDiag
           cx={toX(p.i)}
           cy={toY(p.j)}
           r={4}
-          fill={`hsl(${Math.floor(p.pitch * 360)},65%,50%)`}
+          fill={radixVar(
+            RADIX_HUES[Math.floor(p.pitch * RADIX_HUES.length) % RADIX_HUES.length],
+            9
+          )}
           stroke={S.origin}
           strokeWidth={0.7}
         />

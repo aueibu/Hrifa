@@ -9,13 +9,13 @@
 
 .label {
   fill: var(--text-muted);
-  font-size: 9px;
+  font-size: var(--mantine-font-size-xs);
   text-anchor: middle;
 }
 
 .labelStrong {
   fill: var(--text);
-  font-size: 11px;
+  font-size: var(--mantine-font-size-xs);
 }
 
 .labelEnd {
@@ -33,7 +33,7 @@
 
 .nodeLabelOn {
   fill: var(--mantine-primary-color-contrast);
-  font-size: 11px;
+  font-size: var(--mantine-font-size-xs);
   font-weight: 600;
 }
 
@@ -63,7 +63,7 @@
 
 .markerLabel {
   fill: var(--text);
-  font-size: 11px;
+  font-size: var(--mantine-font-size-xs);
   font-weight: 600;
   text-anchor: middle;
 }

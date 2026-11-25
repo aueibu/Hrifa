@@ -98,6 +98,13 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--input-bg': 'var(--panel-well)',
       '--input-bd': 'var(--grid)',
       '--input-bd-focus': 'var(--focus-ring)',
+      '--piano-key-white': 'var(--mantine-color-gray-1)',
+      '--piano-key-white-border': 'var(--mantine-color-gray-4)',
+      '--piano-key-white-text': 'var(--mantine-color-dark-7)',
+      '--piano-key-black': 'var(--mantine-color-dark-8)',
+      '--piano-key-black-border': 'var(--mantine-color-dark-9)',
+      '--piano-key-black-text': 'var(--mantine-color-gray-3)',
+      '--piano-key-c-border': 'var(--mantine-color-gray-6)',
     },
     light: {
       '--surface': 'var(--mantine-color-gray-0)',

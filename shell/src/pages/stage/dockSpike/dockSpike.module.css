@@ -19,7 +19,7 @@
   border-radius: var(--radius-control);
   color: var(--text);
   flex: none;
-  font-size: 0.6875rem;
+  font-size: var(--mantine-font-size-xs);
   margin: 0;
   max-height: 30%;
   overflow: auto;
@@ -29,12 +29,12 @@
 }
 
 .standin {
-  font-size: 0.75rem;
+  font-size: var(--mantine-font-size-sm);
 }
 
 .sizeText {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--mantine-font-size-xs);
   margin: 0 0 0.25rem;
 }
 

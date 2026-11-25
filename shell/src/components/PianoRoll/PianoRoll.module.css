@@ -12,7 +12,7 @@
   border: 1px solid var(--accent);
   border-radius: var(--radius-control);
   color: var(--text);
-  font-size: 0.75rem;
+  font-size: var(--mantine-font-size-sm);
   left: 50%;
   max-width: calc(100% - 2rem);
   padding: 0.25rem 0.6rem;
@@ -128,12 +128,12 @@
 
 .key {
   align-items: center;
-  background: var(--mantine-color-gray-1);
-  border-bottom: 1px solid var(--mantine-color-gray-4);
-  color: var(--mantine-color-dark-7);
+  background: var(--piano-key-white);
+  border-bottom: 1px solid var(--piano-key-white-border);
+  color: var(--piano-key-white-text);
   display: flex;
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.62rem;
+  font-size: var(--mantine-font-size-xs);
   justify-content: flex-end;
   padding-right: 0.35rem;
   position: absolute;
@@ -141,14 +141,14 @@
 }
 
 .key[data-black] {
-  background: var(--mantine-color-dark-8);
-  border-color: var(--mantine-color-dark-9);
-  color: var(--mantine-color-gray-3);
+  background: var(--piano-key-black);
+  border-color: var(--piano-key-black-border);
+  color: var(--piano-key-black-text);
   width: 68%;
 }
 
 .key[data-c] {
-  border-bottom-color: var(--mantine-color-gray-6);
+  border-bottom-color: var(--piano-key-c-border);
 }
 
 .roll {
@@ -200,12 +200,12 @@
 .note {
   align-items: center;
   background: var(--mantine-primary-color-filled);
-  border: 1px solid color-mix(in srgb, var(--mantine-primary-color-filled) 72%, black);
+  border: 1px solid color-mix(in srgb, var(--mantine-primary-color-filled) 72%, var(--mantine-color-black));
   border-radius: var(--radius-hairline);
   color: var(--mantine-color-white);
   display: flex;
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.62rem;
+  font-size: var(--mantine-font-size-xs);
   line-height: 1;
   overflow: hidden;
   padding-inline: 0.2rem;
@@ -224,7 +224,7 @@
 
 .note[data-colored] {
   background: var(--note-color);
-  border-color: color-mix(in srgb, var(--note-color) 72%, black);
+  border-color: color-mix(in srgb, var(--note-color) 72%, var(--mantine-color-black));
 }
 
 /* A colored note keeps its own color while sounding; the ring marks it, not an orange fill. */
@@ -257,7 +257,7 @@
  */
 .note[data-velocity-fill]:not([data-active]) {
   background-color: var(--note-fill);
-  border-color: color-mix(in srgb, var(--note-fill) 72%, black);
+  border-color: color-mix(in srgb, var(--note-fill) 72%, var(--mantine-color-black));
 }
 
 /* These out-specify the fill rule above, so selected and erasing keep their own borders. */
@@ -296,8 +296,8 @@
    * max(80px, 25% of the span) per side, low in the middle so the notes inside stay readable. The edge lines are a fixed light grey
    * (white mixed with a little black) so they read in both schemes. Time selections only. Roll and lane share this recipe.
    */
-  --band: color-mix(in srgb, color-mix(in srgb, var(--mark-cyan) 70%, var(--accent)) 60%, white);
-  --band-line: color-mix(in srgb, white 82%, black);
+  --band: color-mix(in srgb, color-mix(in srgb, var(--mark-cyan) 70%, var(--accent)) 60%, var(--mantine-color-white));
+  --band-line: color-mix(in srgb, var(--mantine-color-white) 82%, var(--mantine-color-black));
   /* The fade distance per side: at least 80px, a quarter of the span, never past the middle. */
   --band-fade: min(max(80px, 25%), 50%);
 
@@ -427,7 +427,7 @@
   border: 1px solid var(--grid);
   color: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.68rem;
+  font-size: var(--mantine-font-size-xs);
   line-height: 1;
   padding: 0.2rem 0.35rem;
   pointer-events: none;

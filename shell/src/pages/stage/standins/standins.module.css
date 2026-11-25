@@ -1,7 +1,7 @@
 /* Throwaway stand-in modules: visibly different per size so the mechanism can be seen. Theme roles only. */
 .sizeText {
   color: var(--text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--mantine-font-size-xs);
   margin: 0 0 0.25rem;
 }
 

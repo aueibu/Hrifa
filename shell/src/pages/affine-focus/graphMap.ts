@@ -4,6 +4,8 @@ import type {
   ClosureNode,
   TrajectoryStep,
 } from '../../lib/affine-focus';
+import { radixHex } from '../../theme/radix';
+import { defaultThemeTokens } from '../../theme/tokens';
 import type { GraphMapLayout } from './state';
 
 export type GraphLabelMode = 'auto' | 'path' | 'all' | 'none';
@@ -76,19 +78,19 @@ export interface SvgPalette {
 }
 
 export const DEFAULT_EXPORT_PALETTE: SvgPalette = {
-  bg: '#14161a',
-  guide: '#2c313c',
-  text: '#e6e9ef',
-  textMuted: '#8d96a6',
-  edge: '#5a6478',
-  edgeTrajectory: '#4c9aff',
-  edgeSelected: '#34d399',
-  nodeFill: '#242934',
-  nodeStroke: '#6d778d',
-  seedFill: '#eab308',
-  trajectoryFill: '#4c9aff',
-  selectedStroke: '#34d399',
-  attractorStroke: '#22d3ee',
+  bg: defaultThemeTokens.dark[9],
+  guide: defaultThemeTokens.dark[7],
+  text: defaultThemeTokens.dark[0],
+  textMuted: defaultThemeTokens.dark[2],
+  edge: defaultThemeTokens.dark[4],
+  edgeTrajectory: radixHex('dark', 'blue', 9),
+  edgeSelected: radixHex('dark', 'green', 9),
+  nodeFill: defaultThemeTokens.dark[8],
+  nodeStroke: defaultThemeTokens.dark[4],
+  seedFill: radixHex('dark', 'yellow', 9),
+  trajectoryFill: radixHex('dark', 'blue', 9),
+  selectedStroke: radixHex('dark', 'green', 9),
+  attractorStroke: radixHex('dark', 'cyan', 9),
 };
 
 function fmt(n: number): string {

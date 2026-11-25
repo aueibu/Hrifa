@@ -4,6 +4,7 @@ import type {
   TransformConfig,
   TransformResult,
 } from '../../lib/affine-focus';
+import { radixHex } from '../../theme/radix';
 
 export function buildExportJson(
   config: TransformConfig,
@@ -177,11 +178,11 @@ export function buildMermaidDiagram(
   }
 
   if (seedMermaidIds.length > 0) {
-    lines.push('  classDef seedNode stroke:#eab308,stroke-width:2.5px;');
+    lines.push(`  classDef seedNode stroke:${radixHex('dark', 'yellow', 9)},stroke-width:2.5px;`);
     lines.push(`  class ${seedMermaidIds.join(',')} seedNode;`);
   }
   if (trajMermaidIds.length > 0) {
-    lines.push('  classDef trajNode stroke:#4c9aff,stroke-width:2px;');
+    lines.push(`  classDef trajNode stroke:${radixHex('dark', 'blue', 9)},stroke-width:2px;`);
     lines.push(`  class ${trajMermaidIds.join(',')} trajNode;`);
   }
 
