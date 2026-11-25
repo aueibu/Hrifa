@@ -30,20 +30,19 @@ import {
 } from '../scene/arrangerGeometry';
 import {
   PREVIEW_HEIGHT,
-  groupEventsByStrip,
+  groupEventsByObject,
   previewRects,
   rectsToPath,
   toPreviewNotes,
 } from '../scene/arrangerPreview';
-import { setTimeSpan } from '../scene/sceneOps';
+import { placeObjectNearest, setTimeSpan } from '../scene/sceneOps';
 import { ROW_HEIGHT_MAX_REM, ROW_HEIGHT_MIN_REM, rowHeightRem } from '../scene/sceneSession';
 import {
   chainPlacement,
+  objectChain,
   objectDataOf,
-  stripChain,
-  stripKey,
+  type ObjectData,
   type ObjectMapping,
-  type PlacedStrip,
 } from '../scene/sceneTypes';
 import { useSceneEvaluation, useScenePlayback } from '../scene/useScenePlayback';
 import { useSceneEditor } from './ScenePanels';
@@ -60,17 +59,15 @@ import classes from './ArrangerPanel.module.css';
 /** The name column's width in rem (the CSS uses the same). */
 const NAME_REM = 8;
 
-/** One strip's placement: world start and duration, plus the strips from itself up its parents. */
-interface PlacedRowStrip {
+/** One object's placement: world start and duration, plus the objects from itself up its parents. */
+interface PlacedRowObject {
   key: string;
-  objectId: string;
-  stripId: string;
   world: Rational;
   relative: Rational;
   duration: Rational;
   offset: Rational;
   mapping: ObjectMapping;
-  chain: PlacedStrip[];
+  chain: { id: string; data: ObjectData }[];
 }
 
 export function ArrangerPanel() {
@@ -102,39 +99,30 @@ function ArrangerBody() {
   const byId = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks]);
   const step = beatStep(meter);
 
-  /** Each object row's strips, in the object's order. */
+  /** Each object row's placement. */
   const placed = useMemo(() => {
-    const out = new Map<string, PlacedRowStrip[]>();
+    const out = new Map<string, PlacedRowObject>();
     for (const row of rows) {
       const data = row.kind === 'object' ? objectDataOf(byId.get(row.id)) : null;
-      if (!data) {
+      const chain = data ? objectChain(byId, row.id) : null;
+      if (!data || chain === null || chain.length === 0) {
         continue;
       }
-      const list: PlacedRowStrip[] = [];
-      for (const strip of data.strips) {
-        const chain = stripChain(byId, row.id, strip.id);
-        if (chain === null || chain.length === 0) {
-          continue;
-        }
-        list.push({
-          key: stripKey(row.id, strip.id),
-          objectId: row.id,
-          stripId: strip.id,
-          world: chainPlacement(chain).start,
-          relative: strip.start,
-          duration: strip.duration,
-          offset: strip.contentOffset,
-          mapping: strip.mapping,
-          chain,
-        });
-      }
-      out.set(row.id, list);
+      out.set(row.id, {
+        key: row.id,
+        world: chainPlacement(chain).start,
+        relative: data.timeSpan.start,
+        duration: data.timeSpan.duration,
+        offset: data.contentOffset,
+        mapping: data.mapping,
+        chain,
+      });
     }
     return out;
   }, [rows, byId]);
 
   /**
-   * Each strip's note preview as one SVG path, from the committed placement. It depends on the
+   * Each object's note preview as one SVG path, from the committed placement. It depends on the
    * evaluation and the placement only (a live drag is local state), so dragging never recomputes it.
    */
   const previews = useMemo(() => {
@@ -142,20 +130,18 @@ function ArrangerBody() {
     if (!evaluation) {
       return out;
     }
-    const groups = groupEventsByStrip(evaluation.plan.events);
-    for (const list of placed.values()) {
-      for (const item of list) {
-        const events = groups.get(item.key);
-        if (!events || events.length === 0) {
-          continue;
-        }
-        const notes = toPreviewNotes(events, rationalToNumber(item.world));
-        const path = rectsToPath(
-          previewRects(notes, rationalToNumber(item.duration), PIXELS_PER_QUARTER)
-        );
-        if (path !== '') {
-          out.set(item.key, path);
-        }
+    const groups = groupEventsByObject(evaluation.plan.events);
+    for (const item of placed.values()) {
+      const events = groups.get(item.key);
+      if (!events || events.length === 0) {
+        continue;
+      }
+      const notes = toPreviewNotes(events, rationalToNumber(item.world));
+      const path = rectsToPath(
+        previewRects(notes, rationalToNumber(item.duration), PIXELS_PER_QUARTER)
+      );
+      if (path !== '') {
+        out.set(item.key, path);
       }
     }
     return out;
@@ -165,21 +151,27 @@ function ArrangerBody() {
   const live = drag ? dragLive(drag, meter) : null;
 
   /**
-   * A strip's block: its world start, full width and the part the evaluator plays. While a drag is live,
-   * the chain is re-placed with the dragged strip's live span, so a moved parent carries its children
-   * and the cut at the parent's end follows both, from local state only.
+   * An object's block: its world start, full width and the part the evaluator plays. While a drag is
+   * live, the chain is re-placed with the dragged object's live span, so a moved parent carries its
+   * children and the cut at the parent's end follows both, from local state only.
    */
-  function geometryOf(item: PlacedRowStrip) {
+  function geometryOf(item: PlacedRowObject) {
     const chain =
-      drag && live && item.chain.some((link) => stripKey(link.objectId, link.strip.id) === drag.id)
+      drag && live && item.chain.some((link) => link.id === drag.id)
         ? item.chain.map((link) =>
-            stripKey(link.objectId, link.strip.id) === drag.id
-              ? { ...link, strip: { ...link.strip, start: live.start, duration: live.duration } }
+            link.id === drag.id
+              ? {
+                  ...link,
+                  data: {
+                    ...link.data,
+                    timeSpan: { start: live.start, duration: live.duration },
+                  },
+                }
               : link
           )
         : item.chain;
     const { start, bound } = chainPlacement(chain);
-    const { duration } = chain[0].strip;
+    const { duration } = chain[0].data.timeSpan;
     const { visible } = cutExtent(start, duration, bound);
     return {
       left: quartersToPx(start),
@@ -189,11 +181,9 @@ function ArrangerBody() {
   }
 
   let liveEnd = 0;
-  for (const list of placed.values()) {
-    for (const item of list) {
-      const g = geometryOf(item);
-      liveEnd = Math.max(liveEnd, g.left + g.width);
-    }
+  for (const item of placed.values()) {
+    const g = geometryOf(item);
+    liveEnd = Math.max(liveEnd, g.left + g.width);
   }
   const lengthQuarters = sceneLengthQuarters(planQuarters, meter);
   const lanePx = Math.max(lengthQuarters * PIXELS_PER_QUARTER, liveEnd + 4 * quartersToPx(step));
@@ -202,7 +192,7 @@ function ArrangerBody() {
   function begin(
     event: PointerEvent<HTMLElement>,
     rowId: string,
-    item: PlacedRowStrip,
+    item: PlacedRowObject,
     kind: DragKind
   ) {
     if (event.button !== 0) {
@@ -243,23 +233,22 @@ function ArrangerBody() {
     const commit = dragRelease(drag, event.clientX, event.shiftKey, meter);
     const { id, kind } = drag;
     setDrag(dragCancel());
-    const target = [...placed.values()].flat().find((item) => item.key === id);
-    if (commit === null || !target) {
+    if (commit === null || !placed.has(id)) {
       return;
     }
-    const { objectId, stripId } = target;
     if (kind === 'move') {
-      editor.commit((list) => setTimeSpan(list, objectId, stripId, { start: commit.start }));
+      // Lands where it was dropped when free, else in the nearest free slot (never overlaps a sibling).
+      editor.commit((list) => placeObjectNearest(list, id, commit.start));
     } else if (kind === 'resize-left') {
       editor.commit((list) =>
-        setTimeSpan(list, objectId, stripId, {
+        setTimeSpan(list, id, {
           start: commit.start,
           duration: commit.duration,
           contentOffset: commit.contentOffset,
         })
       );
     } else {
-      editor.commit((list) => setTimeSpan(list, objectId, stripId, { duration: commit.duration }));
+      editor.commit((list) => setTimeSpan(list, id, { duration: commit.duration }));
     }
   }
 
@@ -332,7 +321,13 @@ function ArrangerBody() {
               </div>
             </div>
             {rows.map((row) => {
-              const items = placed.get(row.id) ?? [];
+              const item = placed.get(row.id);
+              const geometry = item === undefined ? null : geometryOf(item);
+              const looping = item?.mapping === 'loop';
+              const edgeInfo = looping
+                ? 'Drag to extend the loop. Hold Shift to turn snapping off.'
+                : 'Drag to change the length. Hold Shift to turn snapping off.';
+              const path = item === undefined ? undefined : previews.get(item.key);
               const selected = row.id === session.selectedId;
               const heightRem =
                 rowDrag && rowDrag.id === row.id ? rowDrag.rem : rowHeightRem(session, row.id);
@@ -356,92 +351,80 @@ function ArrangerBody() {
                     {row.name}
                   </div>
                   <div className={classes.lane} style={{ width: lanePx }} role="gridcell">
-                    {items.map((item, index) => {
-                      const geometry = geometryOf(item);
-                      const looping = item.mapping === 'loop';
-                      const edgeInfo = looping
-                        ? 'Drag to extend the loop. Hold Shift to turn snapping off.'
-                        : 'Drag to change the length. Hold Shift to turn snapping off.';
-                      const path = previews.get(item.key);
-                      return (
-                        <div
-                          key={item.key}
-                          className={`${classes.block} ${selected ? classes.blockSelected : ''} ${
-                            row.muted ? classes.blockMuted : ''
-                          }`}
-                          role="button"
-                          aria-label={
-                            items.length === 1
-                              ? `Block ${row.name}`
-                              : `Block ${row.name} (strip ${index + 1})`
-                          }
-                          aria-pressed={selected}
-                          data-muted={row.muted}
-                          data-info="Drag to move. Drag an edge to change the length. Hold Shift to turn snapping off."
-                          style={{ left: geometry.left, width: geometry.width }}
-                          onPointerDown={(event) => begin(event, row.id, item, 'move')}
-                          onPointerMove={move}
-                          onPointerUp={end}
-                          onPointerCancel={() => setDrag(dragCancel())}
-                        >
-                          {path !== undefined && (
-                            <svg
-                              className={classes.preview}
-                              data-testid="arranger-preview"
-                              aria-hidden
-                              width={quartersToPx(item.duration)}
-                              height="100%"
-                              style={
-                                drag && drag.id === item.key && drag.kind === 'resize-left' && live
-                                  ? {
-                                      left: quartersToPx(item.relative) - quartersToPx(live.start),
-                                    }
-                                  : undefined
-                              }
-                              viewBox={`0 0 ${quartersToPx(item.duration)} ${PREVIEW_HEIGHT}`}
-                              preserveAspectRatio="none"
-                            >
-                              <path d={path} />
-                            </svg>
-                          )}
-                          <span
-                            className={classes.blockLabel}
-                            style={{ maxWidth: Math.max(0, geometry.visible - 12) }}
+                    {item !== undefined && geometry !== null && (
+                      <div
+                        key={item.key}
+                        className={`${classes.block} ${selected ? classes.blockSelected : ''} ${
+                          row.muted ? classes.blockMuted : ''
+                        }`}
+                        role="button"
+                        aria-label={`Block ${row.name}`}
+                        aria-pressed={selected}
+                        data-muted={row.muted}
+                        data-info="Drag to move. Drag an edge to change the length. Hold Shift to turn snapping off."
+                        style={{ left: geometry.left, width: geometry.width }}
+                        onPointerDown={(event) => begin(event, row.id, item, 'move')}
+                        onPointerMove={move}
+                        onPointerUp={end}
+                        onPointerCancel={() => setDrag(dragCancel())}
+                      >
+                        {path !== undefined && (
+                          <svg
+                            className={classes.preview}
+                            data-testid="arranger-preview"
+                            aria-hidden
+                            width={quartersToPx(item.duration)}
+                            height="100%"
+                            style={
+                              drag && drag.id === item.key && drag.kind === 'resize-left' && live
+                                ? {
+                                    left: quartersToPx(item.relative) - quartersToPx(live.start),
+                                  }
+                                : undefined
+                            }
+                            viewBox={`0 0 ${quartersToPx(item.duration)} ${PREVIEW_HEIGHT}`}
+                            preserveAspectRatio="none"
                           >
-                            {row.name}
-                          </span>
-                          <span
-                            className={classes.cut}
-                            data-cut={geometry.visible < geometry.width}
-                            data-info="Cut at the end of its parent"
-                            title="Cut at the end of its parent"
-                            style={{ left: geometry.visible }}
-                          />
-                          <span
-                            className={`${classes.edge} ${classes.edgeLeft} ${
-                              looping ? classes.edgeFull : ''
-                            }`}
-                            data-edge="left"
-                            data-info={edgeInfo}
-                            onPointerDown={(event) => {
-                              event.stopPropagation();
-                              begin(event, row.id, item, 'resize-left');
-                            }}
-                          />
-                          <span
-                            className={`${classes.edge} ${classes.edgeRight} ${
-                              looping ? classes.edgeFull : ''
-                            }`}
-                            data-edge="right"
-                            data-info={edgeInfo}
-                            onPointerDown={(event) => {
-                              event.stopPropagation();
-                              begin(event, row.id, item, 'resize');
-                            }}
-                          />
-                        </div>
-                      );
-                    })}
+                            <path d={path} />
+                          </svg>
+                        )}
+                        <span
+                          className={classes.blockLabel}
+                          style={{ maxWidth: Math.max(0, geometry.visible - 12) }}
+                        >
+                          {row.name}
+                        </span>
+                        <span
+                          className={classes.cut}
+                          data-cut={geometry.visible < geometry.width}
+                          data-info="Cut at the end of its parent"
+                          title="Cut at the end of its parent"
+                          style={{ left: geometry.visible }}
+                        />
+                        <span
+                          className={`${classes.edge} ${classes.edgeLeft} ${
+                            looping ? classes.edgeFull : ''
+                          }`}
+                          data-edge="left"
+                          data-info={edgeInfo}
+                          onPointerDown={(event) => {
+                            event.stopPropagation();
+                            begin(event, row.id, item, 'resize-left');
+                          }}
+                        />
+                        <span
+                          className={`${classes.edge} ${classes.edgeRight} ${
+                            looping ? classes.edgeFull : ''
+                          }`}
+                          data-edge="right"
+                          data-info={edgeInfo}
+                          onPointerDown={(event) => {
+                            event.stopPropagation();
+                            begin(event, row.id, item, 'resize');
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                   <span
                     className={classes.rowGrip}

@@ -298,7 +298,7 @@ export function loadDesk(): Promise<LoadedDesk> {
       // so the next write deletes them from the database instead of leaving orphans behind.
       const dropped = records.filter(isLegacyDataBlock);
       const kept = records.filter((record) => !isLegacyDataBlock(record));
-      // Objects stored before strips are converted before they are validated (W-75, row 12). `stored`
+      // Objects stored with strips are unwrapped back to one placement each before they are validated (W-77). `stored`
       // keeps the records as they were saved, so the next write replaces them with the migrated ones.
       const current = migrateStoredBlocks(kept);
       if (acceptsDataBlocks(current)) {

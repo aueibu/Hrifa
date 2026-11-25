@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { outlinerRows } from './outlinerRows';
-import { claveBlock, collectionBlock, objectBlock, sceneBlock, stripOf } from './sceneTestHelpers';
+import { claveBlock, collectionBlock, objectBlock, sceneBlock } from './sceneTestHelpers';
 
 describe('outlinerRows', () => {
   it('hides the root, nests a child under its parent in the same collection, and shows data', () => {
@@ -24,42 +24,6 @@ describe('outlinerRows', () => {
     expect(rows[1].parentRowId).toBe('a');
     expect(rows[2]).toMatchObject({ kind: 'collection', hasChildren: true });
     expect(rows[3].data).toBe('');
-  });
-
-  it('an object with several strips is ONE row; nesting and data follow its first strip', () => {
-    const blocks = [
-      claveBlock(),
-      sceneBlock('s', 'root'),
-      collectionBlock('root', ['a', 'b']),
-      objectBlock('a', { strips: [stripOf({ id: 'x' })] }, 'Parent'),
-      objectBlock(
-        'b',
-        {
-          strips: [
-            {
-              ...stripOf({ id: 'y', dataRef: { id: 'clave' } }),
-              parentStrip: { objectId: 'a', stripId: 'x' },
-            },
-            stripOf({ id: 'z', start: 8 }),
-          ],
-        },
-        'Kid'
-      ),
-    ];
-    const rows = outlinerRows(blocks, 's');
-    expect(rows.map((row) => [row.name, row.depth, row.data])).toEqual([
-      ['Parent', 0, ''],
-      ['Kid', 1, 'Clave'],
-    ]);
-  });
-
-  it('an object with no strips is a plain silent row', () => {
-    const blocks = [
-      sceneBlock('s', 'root'),
-      collectionBlock('root', ['a']),
-      objectBlock('a', { strips: [] }, 'Empty'),
-    ];
-    expect(outlinerRows(blocks, 's')).toMatchObject([{ name: 'Empty', depth: 0, data: '' }]);
   });
 
   it('shows inherited mute separately from the own flag', () => {

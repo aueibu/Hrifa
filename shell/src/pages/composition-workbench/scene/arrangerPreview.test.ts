@@ -5,13 +5,11 @@ import {
   BAR_HEIGHT,
   PREVIEW_HEIGHT,
   groupEventsByObject,
-  groupEventsByStrip,
   previewRects,
   rectsToPath,
   toPreviewNotes,
   type PreviewNote,
 } from './arrangerPreview';
-import { stripKey } from './sceneTypes';
 
 const PX = 48;
 const note = (start: number, end: number, midicents: number, unpitched = false): PreviewNote => ({
@@ -133,31 +131,5 @@ describe('groupEventsByObject and toPreviewNotes', () => {
     expect(notes[0]).toEqual({ start: 0.5, end: 1, midicents: 6000, unpitched: false });
     expect(notes[1].start).toBe(1);
     expect(notes[1].unpitched).toBe(true);
-  });
-});
-
-describe('groupEventsByStrip', () => {
-  it('groups by the object of the last provenance step and the strip named in its parameters', () => {
-    const inStrip = (objectId: string, stripId: string) => {
-      const base = event(objectId, [0, 1], [1, 1], 6000);
-      return {
-        ...base,
-        provenance: base.provenance.map((step) => ({
-          ...step,
-          parameters: { mapping: 'loop', strip: stripId },
-        })),
-      };
-    };
-    const groups = groupEventsByStrip([
-      inStrip('a', 's1'),
-      inStrip('a', 's2'),
-      inStrip('a', 's1'),
-      inStrip('b', 's1'),
-      event('a', [0, 1], [1, 1], 6000),
-    ]);
-    expect(groups.get(stripKey('a', 's1'))).toHaveLength(2);
-    expect(groups.get(stripKey('a', 's2'))).toHaveLength(1);
-    expect(groups.get(stripKey('b', 's1'))).toHaveLength(1);
-    expect(groups.size).toBe(3);
   });
 });

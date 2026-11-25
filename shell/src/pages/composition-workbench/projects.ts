@@ -308,7 +308,7 @@ export function parseProjectFile(text: string): ProjectRecord[] {
     throw new Error(`Unsupported project file version: ${String(file.version)}.`);
   }
   return (file.projects as ProjectRecord[]).filter(isProjectShape).map((project, index) => {
-    // Objects saved before strips are converted before the desk is checked (W-75, row 12).
+    // Objects saved with strips are unwrapped to one placement each before the desk is checked (W-77).
     const desk = Array.isArray(project.desk) ? migrateStoredBlocks(project.desk) : project.desk;
     return {
       id: `project-${stamp}-import-${index}`,

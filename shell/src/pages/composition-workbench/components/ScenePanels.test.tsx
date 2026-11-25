@@ -156,6 +156,24 @@ describe('the Outliner and Properties panels (O2a)', () => {
   });
 });
 
+describe('Duplicate Object and Duplicate Linked in Properties (W-77)', () => {
+  it('Duplicate Object adds a copy after the original and selects it; Duplicate Linked shares the data', async () => {
+    await renderPanels();
+    await click('New scene');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add Empty' })).toBeEnabled());
+    await click('Add Empty');
+    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(1));
+    await click('Duplicate Object');
+    await waitFor(() => expect(names()).toHaveLength(2));
+    expect(screen.getByLabelText('Name')).toHaveValue('Empty.001');
+    await click('Duplicate Linked');
+    await waitFor(() => expect(names()).toHaveLength(3));
+    expect(screen.getByLabelText('Name')).toHaveValue('Empty.001.001');
+    // The copy lands after the original in time: starts 0, then 4, then 8.
+    expect(screen.getByLabelText('Start')).toHaveValue('3.1.0');
+  });
+});
+
 describe('the Modifiers section of Properties (O3-ii)', () => {
   async function renderObject(modifiers: ModifierInstance[], withPitchSet = true) {
     await seedDesk([

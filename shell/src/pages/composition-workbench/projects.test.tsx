@@ -133,8 +133,8 @@ describe('workbench state helpers', () => {
     expect(imported.desk).toEqual([dataBlock('a')]);
   });
 
-  it('migrates objects saved before strips when a file is imported (W-75)', () => {
-    const oldObject = {
+  it('unwraps objects saved with strips when a file is imported (W-77)', () => {
+    const stripped = {
       schemaVersion: 2,
       id: 'o',
       typeId: 'object',
@@ -143,28 +143,32 @@ describe('workbench state helpers', () => {
       payload: {
         kind: 'record',
         data: {
-          parentRef: null,
-          timeSpan: {
+          registerSpan: { lowMc: 0, highMc: 12700 },
+          mute: false,
+          strips: ['s1', 's2'].map((id) => ({
+            id,
+            dataRef: null,
             start: { numerator: 0, denominator: 1 },
             duration: { numerator: 4, denominator: 1 },
-          },
-          registerSpan: { lowMc: 0, highMc: 12700 },
-          primaryDataRef: null,
-          mapping: 'loop',
-          modifiers: [],
-          mute: false,
+            mapping: 'loop',
+            contentOffset: { numerator: 0, denominator: 1 },
+            modifiers: [],
+            mute: false,
+            parentStrip: null,
+          })),
         },
       },
     };
     const project = {
       ...createProject('Old', null),
-      desk: [dataBlock('a'), oldObject] as unknown as PacketBlock[],
+      desk: [dataBlock('a'), stripped] as unknown as PacketBlock[],
     };
     const [imported] = parseProjectFile(projectFileText([project]));
-    expect(imported.desk?.map((block) => block.id)).toEqual(['a', 'o']);
-    expect(
-      (imported.desk?.[1].payload as { data: { strips: unknown[] } }).data.strips
-    ).toHaveLength(1);
+    expect(imported.desk?.map((block) => block.id)).toEqual(['a', 'o', 'o:s2']);
+    expect((imported.desk?.[1].payload as { data: { timeSpan: unknown } }).data.timeSpan).toEqual({
+      start: { numerator: 0, denominator: 1 },
+      duration: { numerator: 4, denominator: 1 },
+    });
   });
 
   it('rejects files that are not a project export', () => {

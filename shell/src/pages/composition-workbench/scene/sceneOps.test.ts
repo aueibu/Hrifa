@@ -14,14 +14,14 @@ import {
   renameBlock,
   setMapping,
   setMute,
-  setStripParent,
+  setParent,
   setPrimaryData,
   setTimeSpan,
   type OpEnv,
   type SceneOpResult,
 } from './sceneOps';
 import { claveBlock } from './sceneTestHelpers';
-import { collectionDataOf, objectDataOf, sceneDataOf, type Strip } from './sceneTypes';
+import { collectionDataOf, objectDataOf, sceneDataOf } from './sceneTypes';
 
 function env(): OpEnv {
   let n = 0;
@@ -44,11 +44,6 @@ function start() {
 
 const byId = (blocks: readonly StoredDataBlock[], id: string) =>
   blocks.find((block) => block.id === id);
-
-/** The first strip of an object made by `addEmpty` (its id comes from the env). */
-const strip = (blocks: readonly StoredDataBlock[], id: string): Strip =>
-  objectDataOf(byId(blocks, id))!.strips[0];
-const sid = (blocks: readonly StoredDataBlock[], id: string) => strip(blocks, id).id;
 
 describe('scene ops', () => {
   it('creates a scene with its root collection and numbers names like Blender', () => {
@@ -75,22 +70,17 @@ describe('scene ops', () => {
       collectionDataOf(byId(inside.blocks, group.created[0]))?.memberRefs.map((m) => m.id)
     ).toEqual(inside.created);
     const object = objectDataOf(byId(inside.blocks, inside.created[0]));
-    expect(object?.strips).toHaveLength(1);
-    expect(object?.strips[0].mapping).toBe('loop');
-    expect(object?.strips[0].dataRef).toBeNull();
-    expect(rationalToNumber(object!.strips[0].duration)).toBe(4);
+    expect(object?.mapping).toBe('loop');
+    expect(object?.primaryDataRef).toBeNull();
   });
 
   it('adds a child under the selected object at relative start 0, in the same collection', () => {
     const { e, blocks, sceneId, rootId } = start();
     const parent = ok(addEmpty(blocks, e, sceneId, null));
     const child = ok(addChildEmpty(parent.blocks, e, sceneId, parent.created[0]));
-    const placed = strip(child.blocks, child.created[0]);
-    expect(placed.parentStrip).toEqual({
-      objectId: parent.created[0],
-      stripId: sid(child.blocks, parent.created[0]),
-    });
-    expect(rationalToNumber(placed.start)).toBe(0);
+    const data = objectDataOf(byId(child.blocks, child.created[0]));
+    expect(data?.parentRef?.id).toBe(parent.created[0]);
+    expect(rationalToNumber(data?.timeSpan.start ?? rational(9))).toBe(0);
     expect(collectionDataOf(byId(child.blocks, rootId))?.memberRefs).toHaveLength(2);
     expect(addChildEmpty(child.blocks, e, sceneId, rootId).ok).toBe(false);
   });
@@ -100,27 +90,19 @@ describe('scene ops', () => {
     const made = ok(addEmpty(blocks, e, sceneId, null));
     const id = made.created[0];
     let next = ok(renameBlock(made.blocks, id, '  Bass  ')).blocks;
-    const s = sid(next, id);
-    next = ok(setTimeSpan(next, id, s, { start: rational(1, 2), duration: rational(8) })).blocks;
-    next = ok(setMapping(next, id, s, 'stretch')).blocks;
-    next = ok(setPrimaryData(next, id, s, 'clave')).blocks;
+    next = ok(setTimeSpan(next, id, { start: rational(1, 2), duration: rational(8) })).blocks;
+    next = ok(setMapping(next, id, 'stretch')).blocks;
+    next = ok(setPrimaryData(next, id, 'clave')).blocks;
     next = ok(setMute(next, id, true)).blocks;
     const object = objectDataOf(byId(next, id));
     expect(byId(next, id)?.name).toBe('Bass');
-    expect(object?.strips[0]).toMatchObject({
-      start: rational(1, 2),
-      duration: rational(8),
-      mapping: 'stretch',
-      dataRef: { id: 'clave' },
-    });
+    expect(object?.timeSpan).toEqual({ start: rational(1, 2), duration: rational(8) });
+    expect(object?.mapping).toBe('stretch');
+    expect(object?.primaryDataRef?.id).toBe('clave');
     expect(object?.mute).toBe(true);
-    expect(setTimeSpan(next, id, s, { duration: rational(0) }).ok).toBe(false);
+    expect(setTimeSpan(next, id, { duration: rational(0) }).ok).toBe(false);
     expect(renameBlock(next, id, '  ').ok).toBe(false);
-    expect(ok(setPrimaryData(next, id, s, null)).blocks.length).toBe(next.length);
-    expect(setMapping(next, id, 'nope', 'loop')).toEqual({
-      ok: false,
-      error: 'That strip is gone.',
-    });
+    expect(ok(setPrimaryData(next, id, null)).blocks.length).toBe(next.length);
   });
 
   it('mutes a collection', () => {
@@ -134,18 +116,12 @@ describe('scene ops', () => {
     const { e, blocks, sceneId } = start();
     const a = ok(addEmpty(blocks, e, sceneId, null));
     const b = ok(addChildEmpty(a.blocks, e, sceneId, a.created[0]));
-    const [aId, bId] = [a.created[0], b.created[0]];
-    const aStrip = { objectId: aId, stripId: sid(b.blocks, aId) };
-    const bStrip = { objectId: bId, stripId: sid(b.blocks, bId) };
-    const loop = setStripParent(b.blocks, aId, aStrip.stripId, bStrip);
+    const loop = setParent(b.blocks, a.created[0], b.created[0]);
     expect(loop.ok).toBe(false);
     expect(!loop.ok && loop.error).toMatch(/loop/);
-    const self = setStripParent(b.blocks, aId, aStrip.stripId, aStrip);
-    expect(!self.ok && self.error).toBe('A strip cannot be its own parent.');
-    const gone = setStripParent(b.blocks, aId, aStrip.stripId, { objectId: bId, stripId: 'nope' });
-    expect(!gone.ok && gone.error).toBe('A parent must be a strip.');
-    const cleared = ok(setStripParent(b.blocks, bId, bStrip.stripId, null)).blocks;
-    expect(strip(cleared, bId).parentStrip).toBeNull();
+    expect(setParent(b.blocks, a.created[0], a.created[0]).ok).toBe(false);
+    const cleared = ok(setParent(b.blocks, b.created[0], null)).blocks;
+    expect(objectDataOf(byId(cleared, b.created[0]))?.parentRef).toBeNull();
   });
 
   it('moves an object between collections (membership only) and refuses a collection into itself', () => {
@@ -167,16 +143,12 @@ describe('deleting through the existing path', () => {
   it('a deleted parent leaves the child in place and out of the collection list', () => {
     const { e, blocks, sceneId, rootId } = start();
     const parent = ok(addEmpty(blocks, e, sceneId, null));
-    const timed = ok(
-      setTimeSpan(parent.blocks, parent.created[0], sid(parent.blocks, parent.created[0]), {
-        start: rational(4),
-      })
-    ).blocks;
+    const timed = ok(setTimeSpan(parent.blocks, parent.created[0], { start: rational(4) })).blocks;
     const child = ok(addChildEmpty(timed, e, sceneId, parent.created[0]));
     const next = deleteSelected({ dataBlocks: child.blocks, instances: [] }, parent.created[0]);
-    const kept = strip(next.dataBlocks, child.created[0]);
-    expect(kept.parentStrip).toBeNull();
-    expect(rationalToNumber(kept.start)).toBe(4);
+    const kept = objectDataOf(byId(next.dataBlocks, child.created[0]));
+    expect(kept?.parentRef).toBeNull();
+    expect(rationalToNumber(kept?.timeSpan.start ?? rational(9))).toBe(4);
     expect(byId(next.dataBlocks, parent.created[0])).toBeUndefined();
     expect(collectionDataOf(byId(next.dataBlocks, rootId))?.memberRefs.map((m) => m.id)).toEqual(
       child.created
@@ -192,9 +164,7 @@ describe('deleting through the existing path', () => {
     const { e, blocks, sceneId, rootId } = start();
     const group = ok(addCollection(blocks, e, sceneId, null));
     const made = ok(addEmpty(group.blocks, e, sceneId, group.created[0]));
-    const withData = ok(
-      setPrimaryData(made.blocks, made.created[0], sid(made.blocks, made.created[0]), 'clave')
-    ).blocks;
+    const withData = ok(setPrimaryData(made.blocks, made.created[0], 'clave')).blocks;
     const next = deleteHierarchy({ dataBlocks: withData, instances: [] }, group.created[0]);
     expect(byId(next.dataBlocks, made.created[0])).toBeUndefined();
     expect(byId(next.dataBlocks, group.created[0])).toBeUndefined();

@@ -260,8 +260,20 @@ describe('loading', () => {
   });
 });
 
-describe('a desk saved before strips (W-75, row 12)', () => {
-  const oldObject = (id: string, extra: object = {}) => ({
+describe('a desk saved with strips (W-75) opens as one placement per object (W-77)', () => {
+  const strip = (id: string, extra: object = {}) => ({
+    id,
+    dataRef: { id: 'n1' },
+    start: { numerator: 4, denominator: 1 },
+    duration: { numerator: 8, denominator: 1 },
+    mapping: 'stretch',
+    contentOffset: { numerator: 0, denominator: 1 },
+    modifiers: [],
+    mute: false,
+    parentStrip: null,
+    ...extra,
+  });
+  const strippedObject = (id: string, strips: object[], mute = false) => ({
     schemaVersion: 2,
     id,
     typeId: 'object',
@@ -269,48 +281,63 @@ describe('a desk saved before strips (W-75, row 12)', () => {
     createdAt: '2026-11-24T00:00:00Z',
     payload: {
       kind: 'record',
-      data: {
-        parentRef: null,
-        timeSpan: {
-          start: { numerator: 4, denominator: 1 },
-          duration: { numerator: 8, denominator: 1 },
-        },
-        registerSpan: { lowMc: 0, highMc: 12700 },
-        primaryDataRef: { id: 'n1' },
-        mapping: 'stretch',
-        modifiers: [],
-        mute: true,
-        ...extra,
-      },
+      data: { registerSpan: { lowMc: 0, highMc: 12700 }, mute, strips },
+    },
+  });
+  const collection = (members: string[]) => ({
+    schemaVersion: 2,
+    id: 'root',
+    typeId: 'collection',
+    name: 'root',
+    createdAt: '2026-11-24T00:00:00Z',
+    payload: {
+      kind: 'record',
+      data: { memberRefs: members.map((id) => ({ id })), mute: false },
     },
   });
 
-  it('opens with each old object migrated to one strip, writable, with no error', async () => {
+  it('opens with a second strip as its own object, parents remapped, writable, with no error', async () => {
     await seedDesk([
       dataBlock('n1'),
-      oldObject('verse'),
-      oldObject('kid', { parentRef: { id: 'verse' } }),
+      strippedObject(
+        'verse',
+        [strip('a'), strip('b', { start: { numerator: 16, denominator: 1 } })],
+        true
+      ),
+      strippedObject('kid', [strip('k', { parentStrip: { objectId: 'verse', stripId: 'b' } })]),
+      collection(['verse', 'kid']),
     ] as unknown as StoredDataBlock[]);
     const loaded = await loadDesk();
     expect(loaded.error).toBeUndefined();
     expect(loaded.writable).toBe(true);
-    expect(loaded.dataBlocks.map((block) => block.id)).toEqual(['n1', 'verse', 'kid']);
-    const strips = (id: string) =>
+    expect(loaded.dataBlocks.map((block) => block.id)).toEqual([
+      'n1',
+      'verse',
+      'verse:b',
+      'kid',
+      'root',
+    ]);
+    const data = (id: string) =>
       (
         loaded.dataBlocks.find((block) => block.id === id)!.payload as {
-          data: { mute: boolean; strips: Record<string, unknown>[] };
+          data: Record<string, unknown>;
         }
       ).data;
-    expect(strips('verse').mute).toBe(true);
-    expect(strips('verse').strips).toHaveLength(1);
-    expect(strips('verse').strips[0]).toMatchObject({
-      id: 'strip-1',
-      dataRef: { id: 'n1' },
+    expect(data('verse')).toMatchObject({
+      mute: true,
       mapping: 'stretch',
-      mute: false,
-      parentStrip: null,
+      primaryDataRef: { id: 'n1' },
     });
-    expect(strips('kid').strips[0].parentStrip).toEqual({ objectId: 'verse', stripId: 'strip-1' });
+    expect(data('verse:b')).toMatchObject({
+      timeSpan: { start: { numerator: 16, denominator: 1 } },
+      mute: true,
+    });
+    expect(data('kid').parentRef).toEqual({ id: 'verse:b' });
+    expect((data('root').memberRefs as { id: string }[]).map((ref) => ref.id)).toEqual([
+      'verse',
+      'verse:b',
+      'kid',
+    ]);
   });
 });
 

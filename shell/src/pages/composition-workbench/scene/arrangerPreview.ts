@@ -1,6 +1,5 @@
 import type { MusicalPerformanceEvent } from '../audio/types';
 import { rationalToNumber } from '../musicalTime';
-import { stripKey } from './sceneTypes';
 
 /**
  * The note preview inside an Arranger block (workbench O2c), pure: the evaluated events of one object
@@ -58,31 +57,6 @@ export function groupEventsByObject(
       list.push(event);
     } else {
       groups.set(id, [event]);
-    }
-  }
-  return groups;
-}
-
-/**
- * The scene's events grouped by the strip that made them (`stripKey(objectId, stripId)`): the object is
- * the last provenance step's source and the strip is named in its parameters.
- */
-export function groupEventsByStrip(
-  events: readonly MusicalPerformanceEvent[]
-): Map<string, MusicalPerformanceEvent[]> {
-  const groups = new Map<string, MusicalPerformanceEvent[]>();
-  for (const event of events) {
-    const step = event.provenance[event.provenance.length - 1];
-    const stripId = step?.parameters?.strip;
-    if (step === undefined || typeof stripId !== 'string') {
-      continue;
-    }
-    const key = stripKey(step.sourceNodeInstance, stripId);
-    const list = groups.get(key);
-    if (list) {
-      list.push(event);
-    } else {
-      groups.set(key, [event]);
     }
   }
   return groups;

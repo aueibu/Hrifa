@@ -24,20 +24,18 @@ import { runModifierStack, type StackProblem } from './modifiers';
 import {
   chainPlacement,
   collectionDataOf,
+  objectChain,
   objectDataOf,
   sceneDataOf,
-  stripChain,
   type ModifierInstance,
   type ObjectData,
-  type Strip,
 } from './sceneTypes';
 
 /**
  * Scene evaluation (workbench O1; W-67): a scene, compiled into the existing musical plan. Pure (no
  * React, no Tone, no storage); all time is exact rationals in quarter notes.
  *
- * Per object, per strip (W-75; muted strips are silent, an object with no strips is a silent Empty), in
- * order: world start (parent strip chain of relative starts) -> the strip data's ONE cycle
+ * Per object, in order: world start (parent chain of relative starts) -> the object data's ONE cycle
  * (`auditionBlock`) -> mapping (Loop tiles it, Stretch scales it to the span, One-shot plays it once)
  * -> the end bound -> merge. `registerSpan` is stored but IGNORED here (undecided).
  *
@@ -56,25 +54,24 @@ import {
  * muted and empty ones included (the form's length, row 5), so a silent tail is kept.
  */
 
-/** The problems of a strip's modifier stack, for Properties; empty when it is sound or has none. */
+/** The problems of an object's modifier stack, for Properties; empty when it is sound or has none. */
 export function modifierProblems(
   blocks: readonly StoredDataBlock[],
   objectId: string,
-  stripId: string,
   context: AuditionContext = defaultAuditionContext
 ): StackProblem[] {
   const byId = new Map(blocks.map((block) => [block.id, block]));
-  const strip = objectDataOf(byId.get(objectId))?.strips.find((entry) => entry.id === stripId);
-  const primary = strip?.dataRef ? byId.get(strip.dataRef.id) : undefined;
-  if (!strip || !primary || isBlockEmpty(primary) || strip.modifiers.every((m) => m.mute)) {
+  const object = objectDataOf(byId.get(objectId));
+  const primary = object?.primaryDataRef ? byId.get(object.primaryDataRef.id) : undefined;
+  if (!object || !primary || isBlockEmpty(primary) || object.modifiers.every((m) => m.mute)) {
     return [];
   }
-  const result = runModifierStack(primary, strip.modifiers, byId, context);
+  const result = runModifierStack(primary, object.modifiers, byId, context);
   return result.ok ? [] : result.problems;
 }
 
 /**
- * One strip's base cycle: what stage 1 remembers. `built` plays; the others are why not (a refusal
+ * One object's base cycle: what stage 1 remembers. `built` plays; the others are why not (a refusal
  * of the audition core, or the stack's problems).
  */
 type CycleOutcome =
@@ -102,7 +99,7 @@ export interface SceneEvaluator {
 /** How many placements one cycle result remembers (a drag over start values stays bounded). */
 const PLACEMENT_MEMORY = 32;
 
-type Mapping = Strip['mapping'];
+type Mapping = ObjectData['mapping'];
 
 function ceilDivide(numerator: Rational, divisor: Rational): number {
   const n = numerator.numerator * divisor.denominator;
@@ -122,7 +119,6 @@ function modRational(value: Rational, modulus: Rational): Rational {
 function placeCycle(
   built: Extract<AuditionResult, { ok: true }>,
   objectId: string,
-  stripId: string,
   start: Rational,
   duration: Rational,
   mapping: Mapping,
@@ -142,7 +138,7 @@ function placeCycle(
     const clipped = compareRational(end, bound) > 0 ? subtractRational(bound, at) : length;
     out.push({
       ...event,
-      id: `${objectId}:${stripId}:${tag}${event.id}`,
+      id: `${objectId}:${tag}${event.id}`,
       at: { quarterNotes: at },
       duration: { quarterNotes: clipped },
       provenance: [
@@ -151,7 +147,7 @@ function placeCycle(
           sourceNodeInstance: objectId,
           sourceItemIds: [event.id],
           transformation: 'scene-object',
-          parameters: { mapping, strip: stripId },
+          parameters: { mapping },
         },
       ],
     });
@@ -282,7 +278,6 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
   const placedEvents = (
     built: Extract<AuditionResult, { ok: true }>,
     objectId: string,
-    stripId: string,
     start: Rational,
     duration: Rational,
     mapping: Mapping,
@@ -294,7 +289,7 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
       memory = new Map();
       placements.set(built, memory);
     }
-    const key = [objectId, stripId, start, duration, mapping, bound, offset]
+    const key = [objectId, start, duration, mapping, bound, offset]
       .map((part) => (typeof part === 'string' ? part : JSON.stringify(part)))
       .join('|');
     let events = memory.get(key);
@@ -302,7 +297,7 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
       if (memory.size >= PLACEMENT_MEMORY) {
         memory.clear();
       }
-      events = placeCycle(built, objectId, stripId, start, duration, mapping, bound, offset);
+      events = placeCycle(built, objectId, start, duration, mapping, bound, offset);
       memory.set(key, events);
     }
     return events;
@@ -366,61 +361,56 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
     let formEnd = rational(0);
     const events: MusicalPerformanceEvent[] = [];
     for (const { block, data, muted } of reached) {
-      for (const strip of data.strips) {
-        const chain = stripChain(byId, block.id, strip.id);
-        if (chain === null) {
-          warnings.push(`Object "${block.name}" has a circular parent chain and is silent.`);
-          continue;
-        }
-        const { start, bound } = chainPlacement(chain);
-        const ownEnd = addRational(start, strip.duration);
-        if (compareRational(ownEnd, formEnd) > 0) {
-          formEnd = ownEnd;
-        }
-        if (muted || data.mute || strip.mute || strip.dataRef === null) {
-          continue;
-        }
-        const primary = byId.get(strip.dataRef.id);
-        if (!primary) {
-          continue;
-        }
-        const outcome: CycleOutcome = strip.modifiers.some((modifier) => !modifier.mute)
-          ? isBlockEmpty(primary)
-            ? { kind: 'refused', reason: '' }
-            : stackCycleOf(primary, strip.modifiers, byId)
-          : (() => {
-              const base = cycleOf(primary);
-              return base.ok
-                ? ({ kind: 'built', built: base } as const)
-                : ({ kind: 'refused', reason: base.reason } as const);
-            })();
-        if (outcome.kind === 'problems') {
-          outcome.texts.forEach((text) => warnings.push(`Object "${block.name}": ${text}`));
-          continue;
-        }
-        if (outcome.kind === 'refused') {
-          if (!isBlockEmpty(primary)) {
-            warnings.push(`Object "${block.name}" is silent: ${outcome.reason}`);
-          }
-          continue;
-        }
-        const built = outcome.built;
-        built.plan.warnings.forEach((warning) =>
-          warnings.push(`Object "${block.name}": ${warning}`)
-        );
-        events.push(
-          ...placedEvents(
-            built,
-            block.id,
-            strip.id,
-            start,
-            strip.duration,
-            strip.mapping,
-            bound,
-            strip.contentOffset
-          )
-        );
+      const chain = objectChain(byId, block.id);
+      if (chain === null) {
+        warnings.push(`Object "${block.name}" has a circular parent chain and is silent.`);
+        continue;
       }
+      const { start, bound } = chainPlacement(chain);
+      const ownEnd = addRational(start, data.timeSpan.duration);
+      if (compareRational(ownEnd, formEnd) > 0) {
+        formEnd = ownEnd;
+      }
+      if (muted || data.mute || data.primaryDataRef === null) {
+        continue;
+      }
+      const primary = byId.get(data.primaryDataRef.id);
+      if (!primary) {
+        continue;
+      }
+      const outcome: CycleOutcome = data.modifiers.some((modifier) => !modifier.mute)
+        ? isBlockEmpty(primary)
+          ? { kind: 'refused', reason: '' }
+          : stackCycleOf(primary, data.modifiers, byId)
+        : (() => {
+            const base = cycleOf(primary);
+            return base.ok
+              ? ({ kind: 'built', built: base } as const)
+              : ({ kind: 'refused', reason: base.reason } as const);
+          })();
+      if (outcome.kind === 'problems') {
+        outcome.texts.forEach((text) => warnings.push(`Object "${block.name}": ${text}`));
+        continue;
+      }
+      if (outcome.kind === 'refused') {
+        if (!isBlockEmpty(primary)) {
+          warnings.push(`Object "${block.name}" is silent: ${outcome.reason}`);
+        }
+        continue;
+      }
+      const built = outcome.built;
+      built.plan.warnings.forEach((warning) => warnings.push(`Object "${block.name}": ${warning}`));
+      events.push(
+        ...placedEvents(
+          built,
+          block.id,
+          start,
+          data.timeSpan.duration,
+          data.mapping,
+          bound,
+          data.contentOffset
+        )
+      );
     }
     events.sort((left, right) => compareRational(left.at.quarterNotes, right.at.quarterNotes));
     return {

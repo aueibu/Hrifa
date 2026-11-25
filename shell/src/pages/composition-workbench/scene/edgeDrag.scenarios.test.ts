@@ -13,8 +13,8 @@ import {
 } from './arrangerGeometry';
 import { evaluateScene } from './evaluateScene';
 import { setTimeSpan } from './sceneOps';
-import { S1, claveBlock, collectionBlock, objectBlock, sceneBlock } from './sceneTestHelpers';
-import { chainPlacement, objectDataOf, stripChain } from './sceneTypes';
+import { claveBlock, collectionBlock, objectBlock, sceneBlock } from './sceneTestHelpers';
+import { chainPlacement, objectChain, objectDataOf } from './sceneTypes';
 
 /**
  * Edge drags (workbench O2d, W-74): the confirmed rows, each through the real drag machine, the real
@@ -42,14 +42,14 @@ function drag(
   shift = false
 ): StoredDataBlock[] {
   const byId = new Map(blocks.map((block) => [block.id, block]));
-  const chain = stripChain(byId, 'o', S1)!;
-  const strip = chain[0].strip;
+  const chain = objectChain(byId, 'o')!;
+  const object = chain[0].data;
   const base = {
     worldStart: chainPlacement(chain).start,
-    relativeStart: strip.start,
-    duration: strip.duration,
-    contentOffset: strip.contentOffset,
-    mapping: strip.mapping,
+    relativeStart: object.timeSpan.start,
+    duration: object.timeSpan.duration,
+    contentOffset: object.contentOffset,
+    mapping: object.mapping,
   };
   const state = dragStart('o', kind, base, 1000, shift);
   const commit = dragRelease(
@@ -61,7 +61,7 @@ function drag(
   if (commit === null) {
     return blocks;
   }
-  const result = setTimeSpan(blocks, 'o', S1, {
+  const result = setTimeSpan(blocks, 'o', {
     ...(kind === 'resize' ? {} : { start: commit.start }),
     duration: commit.duration,
     contentOffset: commit.contentOffset,
@@ -73,11 +73,11 @@ function drag(
 }
 
 const span = (blocks: StoredDataBlock[]) => {
-  const strip = objectDataOf(blocks.find((block) => block.id === 'o'))!.strips[0];
+  const object = objectDataOf(blocks.find((block) => block.id === 'o'))!;
   return {
-    start: rationalToNumber(strip.start),
-    duration: rationalToNumber(strip.duration),
-    offset: rationalToNumber(strip.contentOffset),
+    start: rationalToNumber(object.timeSpan.start),
+    duration: rationalToNumber(object.timeSpan.duration),
+    offset: rationalToNumber(object.contentOffset),
   };
 };
 const attacks = (blocks: StoredDataBlock[]) =>
@@ -175,12 +175,12 @@ describe('row 7: dragging the middle moves the block with its content', () => {
   it.each(['loop', 'one-shot', 'stretch'] as const)('%s: the offset does not change', (kind) => {
     const blocks = scene({ mapping: mapping(kind), contentOffset: rational(1) });
     const byId = new Map(blocks.map((block) => [block.id, block]));
-    const chain = stripChain(byId, 'o', S1)!;
+    const chain = objectChain(byId, 'o')!;
     const base = {
       worldStart: chainPlacement(chain).start,
-      relativeStart: chain[0].strip.start,
-      duration: chain[0].strip.duration,
-      contentOffset: chain[0].strip.contentOffset,
+      relativeStart: chain[0].data.timeSpan.start,
+      duration: chain[0].data.timeSpan.duration,
+      contentOffset: chain[0].data.contentOffset,
       mapping: kind,
     };
     const commit = dragRelease(
@@ -191,7 +191,7 @@ describe('row 7: dragging the middle moves the block with its content', () => {
     );
     expect(commit?.start).toEqual(rational(6));
     expect(commit?.contentOffset).toBeUndefined();
-    const moved = setTimeSpan(blocks, 'o', S1, { start: commit!.start });
+    const moved = setTimeSpan(blocks, 'o', { start: commit!.start });
     expect(moved.ok && span(moved.blocks)).toEqual({ start: 6, duration: 8, offset: 1 });
   });
 });
@@ -249,8 +249,8 @@ describe('the left-edge drag itself', () => {
 });
 
 describe('the new field', () => {
-  it('a strip starts with offset 0', () => {
-    const strip = objectDataOf(scene({})[1])!.strips[0];
-    expect(strip.contentOffset).toEqual(rational(0));
+  it('an object starts with offset 0', () => {
+    const object = objectDataOf(scene({})[1])!;
+    expect(object.contentOffset).toEqual(rational(0));
   });
 });

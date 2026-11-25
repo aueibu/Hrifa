@@ -6,13 +6,7 @@ import { seedDesk } from '../deskTestUtils';
 import { historyChangeCount, resetHistory, undo } from '../history';
 import { PIXELS_PER_QUARTER } from '../scene/arrangerGeometry';
 import { writeSceneSession } from '../scene/sceneSession';
-import {
-  claveBlock,
-  collectionBlock,
-  objectBlock,
-  sceneBlock,
-  stripOf,
-} from '../scene/sceneTestHelpers';
+import { claveBlock, collectionBlock, objectBlock, sceneBlock } from '../scene/sceneTestHelpers';
 import { ArrangerPanel } from './ArrangerPanel';
 import { mockEngine, mockEngineState } from './sceneEngineMock';
 import { OutlinerPanel, PropertiesPanel } from './ScenePanels';
@@ -374,7 +368,7 @@ describe('edge strips and row height (O2d)', () => {
       objectBlock('loop', { start: 4, duration: 8, primaryDataRef: { id: 'clave' } }, 'Loop'),
       objectBlock(
         'shot',
-        { start: 4, duration: 8, mapping: 'one-shot', primaryDataRef: { id: 'clave' } },
+        { start: 20, duration: 8, mapping: 'one-shot', primaryDataRef: { id: 'clave' } },
         'Shot'
       ),
     ]);
@@ -449,28 +443,14 @@ describe('edge strips and row height (O2d)', () => {
   });
 });
 
-describe('an object with several strips (S0, W-75)', () => {
-  it('draws every strip in the object row, each at its own world start', async () => {
+describe('two objects of one collection (W-77)', () => {
+  it('a drop onto its neighbor lands in the nearest free slot instead of overlapping', async () => {
     await seedDesk([
       claveBlock(),
       sceneBlock('scene-1', 'root'),
-      collectionBlock('root', ['two']),
-      objectBlock(
-        'two',
-        {
-          strips: [
-            stripOf({ id: 'a', dataRef: { id: 'clave' }, start: 4, duration: 4 }),
-            stripOf({
-              id: 'b',
-              dataRef: { id: 'clave' },
-              start: 12,
-              duration: 8,
-              mapping: 'stretch',
-            }),
-          ],
-        },
-        'Two'
-      ),
+      collectionBlock('root', ['a', 'b']),
+      objectBlock('a', { primaryDataRef: { id: 'clave' }, start: 4, duration: 4 }, 'A'),
+      objectBlock('b', { primaryDataRef: { id: 'clave' }, start: 12, duration: 8 }, 'B'),
     ]);
     writeSceneSession({ activeSceneId: 'scene-1', selectedId: null });
     render(
@@ -482,19 +462,16 @@ describe('an object with several strips (S0, W-75)', () => {
         </DeskProvider>
       </CompositionSettingsProvider>
     );
-    const first = await screen.findByRole('button', { name: 'Block Two (strip 1)' });
-    const second = screen.getByRole('button', { name: 'Block Two (strip 2)' });
-    expect(screen.getAllByRole('row')).toHaveLength(1);
+    const first = await screen.findByRole('button', { name: 'Block A' });
+    const second = screen.getByRole('button', { name: 'Block B' });
+    expect(screen.getAllByRole('row')).toHaveLength(2);
     expect(Number.parseFloat(first.style.left)).toBe(4 * PIXELS_PER_QUARTER);
     expect(Number.parseFloat(second.style.left)).toBe(12 * PIXELS_PER_QUARTER);
-    expect(second.style.width).toBe(`${8 * PIXELS_PER_QUARTER}px`);
-    // A drag moves only the strip it grabbed: the second one commits its own start.
+    // Dropping B at 7 would overlap A (4 to 8): it lands at 8, the nearest free start.
     fireEvent.pointerDown(second, { button: 0, clientX: 1000, pointerId: 1 });
-    fireEvent.pointerMove(second, { clientX: 1000 + 2 * PIXELS_PER_QUARTER, pointerId: 1 });
-    fireEvent.pointerUp(second, { clientX: 1000 + 2 * PIXELS_PER_QUARTER, pointerId: 1 });
-    await waitFor(() => expect(Number.parseFloat(second.style.left)).toBe(14 * PIXELS_PER_QUARTER));
+    fireEvent.pointerMove(second, { clientX: 1000 - 5 * PIXELS_PER_QUARTER, pointerId: 1 });
+    fireEvent.pointerUp(second, { clientX: 1000 - 5 * PIXELS_PER_QUARTER, pointerId: 1 });
+    await waitFor(() => expect(Number.parseFloat(second.style.left)).toBe(8 * PIXELS_PER_QUARTER));
     expect(Number.parseFloat(first.style.left)).toBe(4 * PIXELS_PER_QUARTER);
-    // Properties edits the first strip (S1 adds strip selection).
-    await waitFor(() => expect(screen.getByLabelText('Start')).toHaveValue('2.1.0'));
   });
 });

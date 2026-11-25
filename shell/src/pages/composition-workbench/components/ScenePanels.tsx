@@ -32,6 +32,8 @@ import {
   addEmpty,
   addModifier,
   applyAll,
+  duplicateObject,
+  duplicateObjectLinked,
   applyModifier,
   moveModifier,
   removeModifier,
@@ -44,7 +46,7 @@ import {
   renameBlock,
   setMapping,
   setMute,
-  setStripParent,
+  setParent,
   setPrimaryData,
   setTimeSpan,
   type SceneOpResult,
@@ -52,10 +54,8 @@ import {
 import { useSceneSession } from '../scene/sceneSession';
 import {
   collectionDataOf,
-  firstStripOf,
   objectDataOf,
   sceneDataOf,
-  stripDataSlot,
   type ModifierInstance,
   type ObjectMapping,
 } from '../scene/sceneTypes';
@@ -673,15 +673,13 @@ function PropertiesBody() {
   const id = selected.id;
   const deskReason = writable ? null : NO_DESK;
   const objectOnly = (what: string) => (isObject ? null : `A collection has no ${what}.`);
-  const lock = (what: string) =>
-    deskReason ?? objectOnly(what) ?? (isObject && !strip ? 'This object has no strips.' : null);
+  const lock = (what: string) => deskReason ?? objectOnly(what);
 
-  // Properties edits the object's first strip for now (S1 adds strip selection, W-75).
-  const strip = object ? firstStripOf(object) : undefined;
-  const stripId = strip?.id ?? '';
-  const primary = strip?.dataRef ? blocks.find((b) => b.id === strip.dataRef?.id) : undefined;
+  const primary = object?.primaryDataRef
+    ? blocks.find((b) => b.id === object.primaryDataRef?.id)
+    : undefined;
   const users = primary ? dataBlockUsers(project, primary.id) : [];
-  const mine = users.find((user) => user.ownerId === id && user.slot === stripDataSlot(stripId));
+  const mine = users.find((user) => user.ownerId === id && user.slot === 'data');
   const heardRefusal = primary ? auditionRefusal(primary) : null;
 
   const timeText = (value: Rational | undefined, length: boolean) => {
@@ -726,25 +724,14 @@ function PropertiesBody() {
               }
               data={parentOptions}
               value={
-                strip?.parentStrip &&
-                parentOptions.some((o) => o.value === strip.parentStrip?.objectId)
-                  ? strip.parentStrip.objectId
+                object?.parentRef && parentOptions.some((o) => o.value === object.parentRef?.id)
+                  ? object.parentRef.id
                   : NONE
               }
               onChange={(value) =>
-                apply((list) => {
-                  if (value === null || value === NONE) {
-                    return setStripParent(list, id, stripId, null);
-                  }
-                  // A parent is a strip: the picked object's first strip (S1 picks any strip).
-                  const target = objectDataOf(list.find((block) => block.id === value))?.strips[0];
-                  return target
-                    ? setStripParent(list, id, stripId, { objectId: value, stripId: target.id })
-                    : {
-                        ok: false as const,
-                        error: 'That object has no strip to place this under.',
-                      };
-                })
+                apply((list) =>
+                  setParent(list, id, value === null || value === NONE ? null : value)
+                )
               }
               comboboxProps={{ transitionProps: { duration: 0 } }}
             />
@@ -752,7 +739,7 @@ function PropertiesBody() {
           <Field label="Start">
             <CommitField
               ariaLabel="Start"
-              value={timeText(strip?.start, false)}
+              value={timeText(object?.timeSpan.start, false)}
               disabled={lock('start') !== null}
               info={
                 lock('start') ??
@@ -764,14 +751,14 @@ function PropertiesBody() {
                   setMessage(parsed.error);
                   return parsed.error;
                 }
-                return apply((list) => setTimeSpan(list, id, stripId, { start: parsed.value }));
+                return apply((list) => setTimeSpan(list, id, { start: parsed.value }));
               }}
             />
           </Field>
           <Field label="Duration">
             <CommitField
               ariaLabel="Duration"
-              value={timeText(strip?.duration, true)}
+              value={timeText(object?.timeSpan.duration, true)}
               disabled={lock('duration') !== null}
               info={lock('duration') ?? `Length as bars.beats.ticks in ${meter}.`}
               onCommit={(text) => {
@@ -780,7 +767,7 @@ function PropertiesBody() {
                   setMessage(parsed.error);
                   return parsed.error;
                 }
-                return apply((list) => setTimeSpan(list, id, stripId, { duration: parsed.value }));
+                return apply((list) => setTimeSpan(list, id, { duration: parsed.value }));
               }}
             />
           </Field>
@@ -792,19 +779,19 @@ function PropertiesBody() {
               info="The data-block this object plays. None is an Empty: silent."
               selectedId={primary?.id ?? null}
               disabledReason={lock('data')}
-              onPick={(row) => apply((list) => setPrimaryData(list, id, stripId, row.block.id))}
+              onPick={(row) => apply((list) => setPrimaryData(list, id, row.block.id))}
             />
             <Button
               size="compact-xs"
               variant="default"
-              disabled={lock('data') !== null || !strip?.dataRef}
+              disabled={lock('data') !== null || !object?.primaryDataRef}
               data-info={
                 lock('data') ??
-                (strip?.dataRef
+                (object?.primaryDataRef
                   ? 'Clear the data: the object becomes an Empty.'
                   : 'Already an Empty.')
               }
-              onClick={() => apply((list) => setPrimaryData(list, id, stripId, null))}
+              onClick={() => apply((list) => setPrimaryData(list, id, null))}
             >
               None
             </Button>
@@ -839,15 +826,13 @@ function PropertiesBody() {
               size="xs"
               aria-label="Mapping"
               data={MAPPING_OPTIONS}
-              value={strip?.mapping ?? 'loop'}
+              value={object?.mapping ?? 'loop'}
               disabled={lock('mapping') !== null}
               data-info={
                 lock('mapping') ??
                 'Loop repeats the data across the span. Stretch fits one cycle to it. One-shot plays it once.'
               }
-              onChange={(value) =>
-                apply((list) => setMapping(list, id, stripId, value as ObjectMapping))
-              }
+              onChange={(value) => apply((list) => setMapping(list, id, value as ObjectMapping))}
             />
           </Field>
         </>
@@ -861,11 +846,11 @@ function PropertiesBody() {
           onChange={(event) => apply((list) => setMute(list, id, event.currentTarget.checked))}
         />
       </Field>
-      {object && strip && (
+      {object && <DuplicateButtons objectId={id} deskReason={deskReason} />}
+      {object && (
         <ModifiersSection
           objectId={id}
-          stripId={strip.id}
-          modifiers={strip.modifiers}
+          modifiers={object.modifiers}
           blocks={blocks}
           deskReason={deskReason}
           apply={apply}
@@ -904,14 +889,12 @@ const APPLY_BELOW = 'Apply the modifiers above it first.';
  */
 function ModifiersSection({
   objectId,
-  stripId,
   modifiers,
   blocks,
   deskReason,
   apply,
 }: {
   objectId: string;
-  stripId: string;
   modifiers: ModifierInstance[];
   blocks: readonly StoredDataBlock[];
   deskReason: string | null;
@@ -925,8 +908,8 @@ function ModifiersSection({
     [pulseUnit, rhythm]
   );
   const problems = useMemo(
-    () => modifierProblems(blocks, objectId, stripId, context),
-    [blocks, objectId, stripId, context]
+    () => modifierProblems(blocks, objectId, context),
+    [blocks, objectId, context]
   );
 
   return (
@@ -948,9 +931,7 @@ function ModifiersSection({
             {modifierDefs().map((def) => (
               <Menu.Item
                 key={def.id}
-                onClick={() =>
-                  apply((list) => addModifier(list, newEnv(), objectId, stripId, def.id))
-                }
+                onClick={() => apply((list) => addModifier(list, newEnv(), objectId, def.id))}
               >
                 {def.label}
               </Menu.Item>
@@ -967,7 +948,7 @@ function ModifiersSection({
               ? 'There are no modifiers to apply.'
               : 'Bake the whole stack into a new Notes data-block and clear the stack.')
           }
-          onClick={() => apply((list) => applyAll(list, newEnv(), objectId, stripId, context))}
+          onClick={() => apply((list) => applyAll(list, newEnv(), objectId, context))}
         >
           Apply All
         </Button>
@@ -977,7 +958,6 @@ function ModifiersSection({
           <ModifierCard
             key={modifier.id}
             objectId={objectId}
-            stripId={stripId}
             modifier={modifier}
             index={index}
             last={index === modifiers.length - 1}
@@ -995,7 +975,6 @@ function ModifiersSection({
 
 function ModifierCard({
   objectId,
-  stripId,
   modifier,
   index,
   last,
@@ -1006,7 +985,6 @@ function ModifierCard({
   apply,
 }: {
   objectId: string;
-  stripId: string;
   modifier: ModifierInstance;
   blocks: readonly StoredDataBlock[];
   index: number;
@@ -1023,7 +1001,7 @@ function ModifierCard({
   const id = modifier.id;
   const params = modifier.params;
   const setParam = (key: string, value: unknown) =>
-    apply((list) => setModifierParam(list, objectId, stripId, id, key, value));
+    apply((list) => setModifierParam(list, objectId, id, key, value));
   const numberField = (key: string, label: string, info: string) => (
     <Field label={label}>
       <CommitField
@@ -1057,9 +1035,7 @@ function ModifierCard({
           disabled={deskReason !== null}
           data-info={deskReason ?? 'Play this modifier. Off skips it.'}
           onChange={(event) =>
-            apply((list) =>
-              setModifierMute(list, objectId, stripId, id, !event.currentTarget.checked)
-            )
+            apply((list) => setModifierMute(list, objectId, id, !event.currentTarget.checked))
           }
         />
         <Button
@@ -1068,7 +1044,7 @@ function ModifierCard({
           aria-label={`Move ${def.label} Up`}
           disabled={deskReason !== null || upReason !== null}
           data-info={deskReason ?? upReason ?? 'Move this modifier up. It runs earlier.'}
-          onClick={() => apply((list) => moveModifier(list, objectId, stripId, id, 'up'))}
+          onClick={() => apply((list) => moveModifier(list, objectId, id, 'up'))}
         >
           ▲
         </Button>
@@ -1078,7 +1054,7 @@ function ModifierCard({
           aria-label={`Move ${def.label} Down`}
           disabled={deskReason !== null || downReason !== null}
           data-info={deskReason ?? downReason ?? 'Move this modifier down. It runs later.'}
-          onClick={() => apply((list) => moveModifier(list, objectId, stripId, id, 'down'))}
+          onClick={() => apply((list) => moveModifier(list, objectId, id, 'down'))}
         >
           ▼
         </Button>
@@ -1092,9 +1068,7 @@ function ModifierCard({
             applyReason ??
             'Bake this modifier into a new Notes data-block and remove it from the stack.'
           }
-          onClick={() =>
-            apply((list) => applyModifier(list, newEnv(), objectId, stripId, id, context))
-          }
+          onClick={() => apply((list) => applyModifier(list, newEnv(), objectId, id, context))}
         >
           Apply
         </Button>
@@ -1104,7 +1078,7 @@ function ModifierCard({
           aria-label={`Remove ${def.label}`}
           disabled={deskReason !== null}
           data-info={deskReason ?? 'Remove this modifier from the stack.'}
-          onClick={() => apply((list) => removeModifier(list, objectId, stripId, id))}
+          onClick={() => apply((list) => removeModifier(list, objectId, id))}
         >
           ✕
         </Button>
@@ -1123,9 +1097,7 @@ function ModifierCard({
               selectedId={target?.id ?? null}
               disabledReason={deskReason}
               onPick={(row) =>
-                apply((list) =>
-                  setModifierRef(list, objectId, stripId, id, slot.slot, row.block.id)
-                )
+                apply((list) => setModifierRef(list, objectId, id, slot.slot, row.block.id))
               }
             />
             <Button
@@ -1135,9 +1107,7 @@ function ModifierCard({
               data-info={
                 deskReason ?? 'Clear the pitch set. The object is silent until one is chosen.'
               }
-              onClick={() =>
-                apply((list) => setModifierRef(list, objectId, stripId, id, slot.slot, null))
-              }
+              onClick={() => apply((list) => setModifierRef(list, objectId, id, slot.slot, null))}
             >
               None
             </Button>
@@ -1198,6 +1168,58 @@ function ModifierCard({
       <div className={classes.line} title={problem}>
         {problem}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Duplicate Object (independent: its own copy of the data-block) and Duplicate Linked (shares the
+ * data-block), Blender's Shift+D and Alt+D. The copy lands in the same collection right after the
+ * original, in the first free space after it in time, and becomes the selection.
+ */
+function DuplicateButtons({
+  objectId,
+  deskReason,
+}: {
+  objectId: string;
+  deskReason: string | null;
+}) {
+  const editor = useSceneEditor();
+  const { updateSession } = editor;
+  const duplicate = (linked: boolean) => {
+    const result = editor.commit((list) =>
+      linked
+        ? duplicateObjectLinked(list, newEnv(), objectId)
+        : duplicateObject(list, newEnv(), objectId)
+    );
+    if (result.ok && result.created[0]) {
+      updateSession({ selectedId: result.created[0] });
+    }
+  };
+  return (
+    <div className={classes.bar}>
+      <Button
+        size="compact-xs"
+        variant="default"
+        disabled={deskReason !== null}
+        data-info={
+          deskReason ?? 'Copy this object with its own copy of the data. It lands right after it.'
+        }
+        onClick={() => duplicate(false)}
+      >
+        Duplicate Object
+      </Button>
+      <Button
+        size="compact-xs"
+        variant="default"
+        disabled={deskReason !== null}
+        data-info={
+          deskReason ?? 'Copy this object but share its data: an edit to the data shows in both.'
+        }
+        onClick={() => duplicate(true)}
+      >
+        Duplicate Linked
+      </Button>
     </div>
   );
 }
