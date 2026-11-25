@@ -1,14 +1,14 @@
+import { Chip, Group, Select, Stack } from '@mantine/core';
 import {
-  Chip,
-  CloseButton,
-  Group,
-  NumberInput,
-  Select,
-  Stack,
-  Switch,
-  Text,
-  Title,
-} from '@mantine/core';
+  KitScope,
+  NumberField,
+  Panel,
+  Row,
+  Section,
+  StripTool,
+  Tip,
+  Toggle,
+} from '../../../components/InspectorKit';
 import { PITCH_SET_PRESETS, togglePitch, type PitchSetPreset } from '../chordInput/pitchSet';
 import { projectPitchSetFromPreset, useCompositionSettings } from '../compositionSettings';
 import { pitchClassName } from '../pitch';
@@ -28,9 +28,10 @@ function PitchSetControl() {
   const pcs = Array.from({ length: edo }, (_unused, pc) => pc);
   return (
     <Stack gap="xs">
-      <Group gap="xs" grow wrap="nowrap" align="flex-end">
+      <Row name="Preset" fill>
         <Select
-          label="Preset"
+          size="xs"
+          aria-label="Preset"
           data={(edo === 12
             ? PITCH_SET_PRESETS
             : PITCH_SET_PRESETS.filter((p) => p === 'chromatic')
@@ -44,8 +45,11 @@ function PitchSetControl() {
             })
           }
         />
+      </Row>
+      <Row name="Tonic" fill>
         <Select
-          label="Tonic"
+          size="xs"
+          aria-label="Tonic"
           data={pcs.map((pc) => ({ value: String(pc), label: pitchClassName(pc, edo) }))}
           value={String(pitchSet.tonic)}
           allowDeselect={false}
@@ -57,7 +61,7 @@ function PitchSetControl() {
             })
           }
         />
-      </Group>
+      </Row>
       <Group gap={4} role="group" aria-label="Pitches in the set">
         {pcs.map((pc) => (
           <Chip
@@ -73,12 +77,6 @@ function PitchSetControl() {
           </Chip>
         ))}
       </Group>
-      <Text size="xs" c="dimmed">
-        Chord input offers chords whose notes all lie in this set. Presets fill it; toggle pitches
-        for anything else.
-        {edo !== 12 &&
-          ` At ${edo}-EDO only the chromatic preset is defined; build the set by hand.`}
-      </Text>
     </Stack>
   );
 }
@@ -94,89 +92,120 @@ export function CompositionSettingsPanel({ onClose }: { onClose(): void }) {
   const { settings, updateSettings } = useCompositionSettings();
 
   return (
-    <aside className={classes.panel} aria-label="Workbench settings">
-      <Group justify="space-between" wrap="nowrap" className={classes.header}>
-        <Title order={2} size="sm">
-          Workbench settings
-        </Title>
-        <CloseButton size="sm" aria-label="Close settings" onClick={onClose} />
-      </Group>
-      <Stack gap="lg">
-        <div>
-          <Title order={4} size="h6" mb={4}>
-            Pitch
-          </Title>
-          <Stack gap="xs">
-            <NumberInput
-              label="EDO (steps per octave)"
-              description="Applies to pitch-class material — Scale Construction, Scale Evolution, Pitch List's pitch-class format, Arithmetic, and pitch-class route treatments. Concrete MIDI/note-name pitch stays 12-tone."
-              min={1}
-              max={96}
-              step={1}
-              value={settings.edo}
-              onChange={(value) =>
-                typeof value === 'number' && updateSettings({ edo: Math.max(1, Math.round(value)) })
+    <KitScope fill className={classes.root}>
+      <Panel
+        title="Workbench settings"
+        tools={
+          <StripTool label="Close settings" onClick={onClose}>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </StripTool>
+        }
+      >
+        <>
+          <Section heading="Pitch">
+            <Row
+              name={
+                <Tip
+                  term="EDO (steps per octave)"
+                  text={`Applies to pitch-class material: Scale Construction, Scale Evolution, Pitch List's pitch-class format, Arithmetic, and pitch-class route treatments. Concrete MIDI and note-name pitch stays 12-tone.${
+                    settings.edo !== 12
+                      ? ` At ${settings.edo}-EDO, pitch classes display as plain step numbers (0 to ${settings.edo - 1}) rather than letter names; there is no standard note-name convention outside 12-EDO.`
+                      : ''
+                  }`}
+                >
+                  EDO
+                </Tip>
+              }
+            >
+              <NumberField
+                min={1}
+                max={96}
+                value={settings.edo}
+                onChange={(value) =>
+                  typeof value === 'number' &&
+                  updateSettings({ edo: Math.max(1, Math.round(value)) })
+                }
+              />
+            </Row>
+          </Section>
+          <Section
+            heading={
+              <Tip
+                term="Pitch set (key)"
+                text={`Chord input offers chords whose notes all lie in this set. Presets fill it; toggle pitches for anything else.${
+                  settings.edo !== 12
+                    ? ` At ${settings.edo}-EDO only the chromatic preset is defined; build the set by hand.`
+                    : ''
+                }`}
+              >
+                Pitch set (key)
+              </Tip>
+            }
+          >
+            <PitchSetControl />
+          </Section>
+          <Section heading="Note editor">
+            <Row name="Note colors">
+              <Tip
+                as="control"
+                term="Scale degree"
+                text="Each note takes a color from its scale degree, counted from C and repeating every octave (steps follow the EDO above). Off uses one color for every note."
+              >
+                <Toggle
+                  pressed={settings.colorByScaleDegree}
+                  onPressedChange={(next) => updateSettings({ colorByScaleDegree: next })}
+                >
+                  Scale degree
+                </Toggle>
+              </Tip>
+            </Row>
+          </Section>
+          <Section
+            heading={
+              <Tip
+                term="Rhythm sounds"
+                text="Nodes play their layers on these voices in order (Interference's generators 1, 2, 3; Rhythm Householder's input and candidate) unless a node sets its own sound. Clicks and woodblocks sound two to three octaves above the written pitch and drums two below, so one pitch suits every sound."
+              >
+                Rhythm sounds
+              </Tip>
+            }
+          >
+            <SoundSetEditor
+              name="Rhythm"
+              set={settings.sounds.rhythm}
+              onChange={(rhythm) => updateSettings({ sounds: { ...settings.sounds, rhythm } })}
+            />
+          </Section>
+          <Section
+            heading={
+              <Tip
+                term="Metronome sounds"
+                text="Primary marks each downbeat, secondary the other beats, tertiary Interference's grouping click."
+              >
+                Metronome sounds
+              </Tip>
+            }
+          >
+            <SoundSetEditor
+              name="Metronome"
+              set={settings.sounds.metronome}
+              onChange={(metronome) =>
+                updateSettings({ sounds: { ...settings.sounds, metronome } })
               }
             />
-            {settings.edo !== 12 && (
-              <Text size="xs" c="dimmed">
-                At {settings.edo}-EDO, pitch classes display as plain step numbers (0–
-                {settings.edo - 1}) rather than letter names — there's no standard note-name
-                convention outside 12-EDO.
-              </Text>
-            )}
-          </Stack>
-        </div>
-        <div>
-          <Title order={4} size="h6" mb={4}>
-            Pitch set (key)
-          </Title>
-          <PitchSetControl />
-        </div>
-        <div>
-          <Title order={4} size="h6" mb={4}>
-            Note editor
-          </Title>
-          <Switch
-            label="Color notes by scale degree"
-            description="Each note takes a color from its scale degree, counted from C and repeating every octave (steps follow the EDO above). Off uses one color for every note."
-            checked={settings.colorByScaleDegree}
-            onChange={(event) =>
-              updateSettings({ colorByScaleDegree: event.currentTarget.checked })
-            }
-          />
-        </div>
-        <div>
-          <Title order={4} size="h6" mb={4}>
-            Rhythm sounds
-          </Title>
-          <Text size="xs" c="dimmed" mb="xs">
-            Nodes play their layers on these voices in order — Interference's generators 1, 2, 3;
-            Rhythm Householder's input and candidate — unless a node sets its own sound. Clicks and
-            woodblocks sound two to three octaves above the written pitch and drums two below, so
-            one pitch suits every sound.
-          </Text>
-          <SoundSetEditor
-            name="Rhythm"
-            set={settings.sounds.rhythm}
-            onChange={(rhythm) => updateSettings({ sounds: { ...settings.sounds, rhythm } })}
-          />
-        </div>
-        <div>
-          <Title order={4} size="h6" mb={4}>
-            Metronome sounds
-          </Title>
-          <Text size="xs" c="dimmed" mb="xs">
-            Primary marks each downbeat, secondary the other beats, tertiary Interference's grouping
-            click.
-          </Text>
-          <SoundSetEditor
-            name="Metronome"
-            set={settings.sounds.metronome}
-            onChange={(metronome) => updateSettings({ sounds: { ...settings.sounds, metronome } })}
-          />
-        </div>
-      </Stack>
-    </aside>
+          </Section>
+        </>
+      </Panel>
+    </KitScope>
   );
 }

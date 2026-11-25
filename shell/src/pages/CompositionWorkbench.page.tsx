@@ -14,7 +14,7 @@ import {
   WorkspaceTabs,
 } from '../components/Stage/dock';
 import { Surface } from '../components/Surface/Surface';
-import type { Workspace } from '../lib/stage';
+import { dockerHolding, type Workspace } from '../lib/stage';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
 import { ChordPanelBridge } from './composition-workbench/chordInput/ChordPanelBridge';
 import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
@@ -65,6 +65,7 @@ import {
   bringPanelForward,
   DATA_BLOCK_EDITOR_PANEL,
   defaultWorkbenchWorkspaces,
+  INSPECTOR_PANEL,
   NODE_DETAIL_PANEL,
   parseStoredWorkspaces,
   workspaceForCanvas,
@@ -188,12 +189,7 @@ export function CompositionWorkbenchPage() {
     stageApiRef.current = api;
     setStageApi(api);
   }, []);
-  const [inspectorOpen, setInspectorOpen] = usePersistentState<boolean>(
-    compositionStateKeys.inspectorOpen,
-    true,
-    (value): value is boolean => typeof value === 'boolean'
-  );
-  // The settings panel is docked like the inspector and remembers whether it was open.
+  // The settings panel is docked on the right and remembers whether it was open. (The inspector is a dock panel since U3.)
   const [settingsOpened, setSettingsOpened] = usePersistentState<boolean>(
     compositionStateKeys.settingsOpen,
     false,
@@ -461,6 +457,15 @@ export function CompositionWorkbenchPage() {
 
   // What each panel shows; the Stage places them (workbenchPanels.tsx). They read the page's state as the old
   // split pane did, so a page render updates them.
+  // Read from the workspace itself, not `stageApi.isOpen`: the Stage updates its own copy after this render.
+  const inspectorDocker = dockerHolding(workspace.tree, INSPECTOR_PANEL);
+  const inspectorOpen = inspectorDocker !== null;
+  // Visible: its tab is the docker's active one and the docker is not collapsed. Only then do a node's setup controls
+  // go into the Inspector; otherwise they stay in the node panel, where they can be reached.
+  const inspectorShown =
+    inspectorDocker !== null &&
+    inspectorDocker.active === INSPECTOR_PANEL &&
+    !(workspace.collapsed ?? []).includes(inspectorDocker.id);
   const panelNodes: WorkbenchPanelNodes = {
     canvas: (
       <>
@@ -526,6 +531,19 @@ export function CompositionWorkbenchPage() {
       <div className={classes.nodeHost}>
         <DataBlockEditorSlot dataBlockId={editorTarget} onMissing={clearEditorTarget} />
       </div>
+    ),
+    inspector: (
+      <CompositionInspector
+        selected={shownInspectorTarget}
+        activeInstanceId={shownInstanceId}
+        dataBlockId={editorTarget}
+        outputs={publishedCompositionOutputs}
+        instances={compositionInstances}
+        routes={nodeRouteStates}
+        onRemoveNode={removeCompositionNode}
+        onNodeSlot={setNodeInspectorSlot}
+        onRouteTreatment={updateRouteTreatment}
+      />
     ),
   };
 
@@ -616,26 +634,12 @@ export function CompositionWorkbenchPage() {
                             <>
                               <div
                                 className={classes.compositionWorkspace}
-                                data-inspector={inspectorOpen}
                                 data-settings={settingsOpened}
                               >
-                                {inspectorOpen && (
-                                  <div className={classes.inspectorColumn}>
-                                    <CompositionInspector
-                                      selected={shownInspectorTarget}
-                                      activeInstanceId={shownInstanceId}
-                                      dataBlockId={editorTarget}
-                                      outputs={publishedCompositionOutputs}
-                                      instances={compositionInstances}
-                                      routes={nodeRouteStates}
-                                      onRemoveNode={removeCompositionNode}
-                                      onNodeSlot={setNodeInspectorSlot}
-                                      onRouteTreatment={updateRouteTreatment}
-                                    />
-                                  </div>
-                                )}
                                 <div className={classes.stageColumn} ref={stageBox.ref}>
-                                  <NodeInspectorSlotContext.Provider value={nodeInspectorSlot}>
+                                  <NodeInspectorSlotContext.Provider
+                                    value={inspectorShown ? nodeInspectorSlot : null}
+                                  >
                                     <WorkbenchPanelsContext.Provider value={panelNodes}>
                                       <DockStage
                                         registry={WORKBENCH_REGISTRY}
@@ -662,7 +666,13 @@ export function CompositionWorkbenchPage() {
                         <AppShell.Footer>
                           <WorkbenchStatusBar
                             inspectorOpen={inspectorOpen}
-                            onToggleInspector={() => setInspectorOpen((open) => !open)}
+                            onToggleInspector={() => {
+                              if (inspectorOpen) {
+                                stageApi?.close(INSPECTOR_PANEL);
+                              } else {
+                                stageApi?.show(INSPECTOR_PANEL);
+                              }
+                            }}
                             settingsOpen={settingsOpened}
                             onToggleSettings={() => setSettingsOpened((open) => !open)}
                             panelsMenu={

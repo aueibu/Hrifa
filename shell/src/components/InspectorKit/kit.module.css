@@ -73,7 +73,7 @@
 
 /* section */
 .section {
-  background: var(--panel-inset);
+  background: transparent;
   border-radius: var(--radius-control);
   display: flex;
   flex-direction: column;

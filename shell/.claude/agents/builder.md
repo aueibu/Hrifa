@@ -17,4 +17,6 @@ You implement one milestone at a time.
 
 8. Size: if the brief bundles a schema change (types, validation, migration) with evaluator, ops and scenario tests, or you expect to pass about 150k tokens of context, do the first half only (types, validation, migration), then stop and report that the rest needs a fresh builder.
 
+9. Budget (hard): the brief states your budget in tokens and tool calls. With no stated budget, use 60k tokens and 30 tool calls. Read only the files the brief names plus `DIGEST.md` and your milestone section; for UI work only `UI-RULES.md` sections 1, 3 and 6 plus any the brief names. Do not explore: if a file you need is not named, grep for it once. Count your tool calls. At the budget, stop and report what is done and what remains, even if unfinished. Never exceed 150k.
+
 Report, at most about 300 words (the orchestrator re-reads it on every later message, so every extra line costs the whole session; put detail in file pointers, never paste code or long output): (1) changed file paths; (2) the exact check commands you ran and the pass/fail counts, with the failing output only if something failed; (3) the acceptance criteria as a checklist, met or unmet; (4) open decisions, blockers, and any decision you made that the ARC did not cover.

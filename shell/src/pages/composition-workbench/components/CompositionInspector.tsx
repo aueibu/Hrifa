@@ -1,5 +1,15 @@
 import { useState, type ReactNode } from 'react';
-import { Badge, Button, Collapse, Group, Stack, Text, Title, UnstyledButton } from '@mantine/core';
+import { Collapse, Stack, Text, Title, UnstyledButton } from '@mantine/core';
+import {
+  ActionButton,
+  Actions,
+  KitScope,
+  Num,
+  Row,
+  Section,
+  Strip,
+  Tip,
+} from '../../../components/InspectorKit';
 import {
   boundOutput,
   describeOutputRef,
@@ -110,20 +120,15 @@ function CanvasPart({
   const update = (value: unknown) => onRouteTreatment(route.instanceId, route.port, value);
 
   return (
-    <Stack gap="sm">
-      <Group justify="space-between" align="start">
-        <div>
-          <Text className={classes.heading} size="xs" c="dimmed" fw={700} tt="uppercase">
-            Route · {definition.label} input
-          </Text>
-          <Title order={3} size="h5">
-            Quick Adjust
-          </Title>
-        </div>
-        <Badge variant={definition.isIdentity(treatment, output?.packet) ? 'outline' : 'light'}>
+    <Stack gap="xs">
+      <Text className={classes.heading} size="xs" c="dimmed" fw={700} tt="uppercase">
+        Route · {definition.label} input
+      </Text>
+      <Row name="Treatment">
+        <Num muted={definition.isIdentity(treatment, output?.packet)}>
           {definition.summary(treatment, output?.packet)}
-        </Badge>
-      </Group>
+        </Num>
+      </Row>
       <div className={classes.routePath}>
         {sourceLabel} → {destinationLabel} · {routePortLabel}
       </div>
@@ -146,14 +151,15 @@ function CanvasPart({
         <NumericTreatmentEditor treatment={treatment as never} onChange={update} />
       )}
 
-      <Group justify="space-between">
-        <Text size="xs" c="dimmed">
-          Source material remains unchanged.
-        </Text>
-        <Button size="compact-xs" variant="default" onClick={() => update(definition.default)}>
-          Reset route
-        </Button>
-      </Group>
+      <Actions>
+        <Tip
+          as="control"
+          term="Reset route"
+          text="Return this cable to its default treatment. Source material remains unchanged."
+        >
+          <ActionButton onClick={() => update(definition.default)}>Reset route</ActionButton>
+        </Tip>
+      </Actions>
     </Stack>
   );
 }
@@ -200,47 +206,49 @@ function NodePart({
   const nodeName = compositionInstanceLabel(instance, instances);
   return (
     <Stack gap="xs">
-      <Title order={3} size="h6">
+      <Title order={3} size="h6" data-info={nodeDescriptions[instance.nodeId]}>
         {nodeName} node
       </Title>
-      <Text size="xs">{nodeDescriptions[instance.nodeId]}</Text>
-      <Button variant="light" color="red" onClick={() => onRemoveNode(instance.id)}>
-        Remove {nodeName}
-      </Button>
+      <Actions>
+        <ActionButton onClick={() => onRemoveNode(instance.id)}>Remove {nodeName}</ActionButton>
+      </Actions>
       {/* The active node's setup controls are portaled in here; see NodeHost. */}
       <div ref={onNodeSlot} className={classes.nodeSlot} />
     </Stack>
   );
 }
 
-/** A collapsible inspector section, like a Bitwig panel section. */
+/** A collapsible inspector section: a kit `Section` whose heading is the toggle (the kit has no collapse of its own). */
 function Part({ label, children }: { label: string; children: ReactNode }) {
   const [expanded, setExpanded] = useState(true);
   return (
     <div className={classes.part}>
-      <UnstyledButton
-        className={classes.partHeader}
-        aria-expanded={expanded}
-        onClick={() => setExpanded((value) => !value)}
+      <Section
+        heading={
+          <UnstyledButton
+            className={classes.partHeader}
+            aria-expanded={expanded}
+            onClick={() => setExpanded((value) => !value)}
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              aria-hidden
+            >
+              <path d={expanded ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6'} />
+            </svg>
+            {label}
+          </UnstyledButton>
+        }
       >
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          aria-hidden
-        >
-          <path d={expanded ? 'M6 9l6 6 6-6' : 'M9 6l6 6-6 6'} />
-        </svg>
-        <Text className={classes.heading} size="xs" c="dimmed" fw={700} tt="uppercase">
-          {label}
-        </Text>
-      </UnstyledButton>
-      <Collapse expanded={expanded} keepMounted>
-        <div className={classes.partBody}>{children}</div>
-      </Collapse>
+        <Collapse expanded={expanded} keepMounted>
+          {children}
+        </Collapse>
+      </Section>
     </div>
   );
 }
@@ -248,13 +256,16 @@ function Part({ label, children }: { label: string; children: ReactNode }) {
 /** Two stacked parts: canvas and cables above, the active node below. */
 export function CompositionInspector(props: CompositionInspectorProps) {
   return (
-    <div className={classes.panel}>
-      <Part label="Canvas & cables">
-        <CanvasPart {...props} />
-      </Part>
-      <Part label={props.dataBlockId === null ? 'Node' : 'Data-block'}>
-        <NodePart {...props} />
-      </Part>
-    </div>
+    <KitScope>
+      <div className={classes.panel}>
+        <Strip title="Inspector" />
+        <Part label="Canvas & cables">
+          <CanvasPart {...props} />
+        </Part>
+        <Part label={props.dataBlockId === null ? 'Node' : 'Data-block'}>
+          <NodePart {...props} />
+        </Part>
+      </div>
+    </KitScope>
   );
 }

@@ -70,14 +70,14 @@ async function setVolumeToThirty(user: ReturnType<typeof userEvent.setup>, acces
 describe('CompositionWorkbenchPage', () => {
   it('opens in the node-first composition view', () => {
     renderPage();
-    // Exactly these tabs and no other (a node must not get one): the Canvas, Nodes and Data-block editor docker
-    // tabs and the Canvas, Desk and Edit workspace tabs in the header.
+    // Exactly these tabs and no other (a node must not get one): the Canvas, Nodes, Data-block editor and Inspector
+    // docker tabs and the Canvas, Desk and Edit workspace tabs in the header.
     expect(
       screen
         .getAllByRole('tab')
         .map((tab) => tab.textContent)
         .sort()
-    ).toEqual(['Canvas', 'Canvas', 'Data-block editor', 'Desk', 'Edit', 'Nodes']);
+    ).toEqual(['Canvas', 'Canvas', 'Data-block editor', 'Desk', 'Edit', 'Inspector', 'Nodes']);
     expect(screen.getByRole('heading', { name: 'Interference' })).toBeInTheDocument();
   });
 

@@ -13,6 +13,7 @@ import {
   DATA_BLOCK_EDITOR_PANEL,
   defaultWorkbenchWorkspaces,
   DESK_PANEL,
+  INSPECTOR_PANEL,
   isPanelShown,
   NODE_DETAIL_PANEL,
   parseStoredWorkspaces,
@@ -37,12 +38,12 @@ describe('the default workspaces', () => {
     expect(acceptsWorkspaceStore(store)).toBe(true);
   });
 
-  it('put the canvas or desk over Detail beside an empty Tools of 30rem', () => {
+  it('put the canvas or desk over Detail beside Tools (the Inspector) of 30rem', () => {
     const canvas = store.workspaces.canvas;
     expect(treeDockers(canvas.tree).map((d) => [d.name, d.tabs])).toEqual([
       ['Canvas', [CANVAS_PANEL]],
       ['Detail', [NODE_DETAIL_PANEL, DATA_BLOCK_EDITOR_PANEL]],
-      ['Tools', []],
+      ['Tools', [INSPECTOR_PANEL]],
     ]);
     const desk = store.workspaces.desk;
     expect(treeDockers(desk.tree).map((d) => [d.name, d.tabs])[0]).toEqual(['Desk', [DESK_PANEL]]);
@@ -62,7 +63,8 @@ describe('the default workspaces', () => {
       const s = store.workspaces[id];
       expect(dockerByName(s.tree, 'Detail')?.active).toBe(NODE_DETAIL_PANEL);
       expect(s.collapsed ?? []).toEqual([]);
-      expect(s.lastDocker.chords).toMatchObject({ name: 'Tools', index: 0 });
+      expect(s.lastDocker.chords).toMatchObject({ name: 'Tools', index: 1 });
+      expect(dockerByName(s.tree, 'Tools')?.active).toBe(INSPECTOR_PANEL);
     }
   });
 });

@@ -25,9 +25,12 @@ export const OUTLINER_PANEL = 'outliner';
 export const PROPERTIES_PANEL = 'properties';
 /** The scene Arranger (O2b): one row per Outliner row, objects as blocks on a time ruler. Panels menu only. */
 export const ARRANGER_PANEL = 'arranger';
+/** The Inspector (canvas and cables, the active node's setup controls): a dock panel since U3, open in `Tools` by default. */
+export const INSPECTOR_PANEL = 'inspector';
 
 /** The panels the workbench page registers. */
 export const WORKBENCH_PANEL_IDS = [
+  INSPECTOR_PANEL,
   CANVAS_PANEL,
   DESK_PANEL,
   NODE_DETAIL_PANEL,
@@ -66,7 +69,8 @@ function baseWorkspace(top: Top): Workspace {
       [top.panel]: { docker: DOCKER_TOP, name: top.name, index: 0 },
       [NODE_DETAIL_PANEL]: { docker: DOCKER_DETAIL, name: DETAIL_NAME, index: 0 },
       [DATA_BLOCK_EDITOR_PANEL]: { docker: DOCKER_DETAIL, name: DETAIL_NAME, index: 1 },
-      [CHORDS_PANEL]: { docker: DOCKER_TOOLS, name: TOOLS_NAME, index: 0 },
+      [CHORDS_PANEL]: { docker: DOCKER_TOOLS, name: TOOLS_NAME, index: 1 },
+      [INSPECTOR_PANEL]: { docker: DOCKER_TOOLS, name: TOOLS_NAME, index: 0 },
     },
     tree: {
       kind: 'split',
@@ -91,7 +95,10 @@ function baseWorkspace(top: Top): Workspace {
                   NODE_DETAIL_PANEL
                 ),
               },
-              { rem: DEFAULT_TOOLS_REM, node: makeDocker(DOCKER_TOOLS, TOOLS_NAME) },
+              {
+                rem: DEFAULT_TOOLS_REM,
+                node: makeDocker(DOCKER_TOOLS, TOOLS_NAME, [INSPECTOR_PANEL], INSPECTOR_PANEL),
+              },
             ],
           },
         },

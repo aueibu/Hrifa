@@ -24,20 +24,20 @@ Sources: `RESEARCH.blender.md` (the manual pages) and the Blender manual's own t
 | **Node tree** | The canvas: nodes and their connections | Node tree | patch, canvas wiring |
 | **Operator** | A one-shot action on a selection, with options adjustable after running (x2, invert, affine) | Operator (Adjust Last Operation) | operation, clip action, transform |
 | **Modifier** | A non-destructive step that follows its sources and can be applied (frozen) | Modifier (Apply) | candidate for "realization", see below |
-| **Strip** | A placement of a data-block on a track in time: start, length, crop, repeat, scale, extrapolation, mute | NLA strip | timeline block |
-| **Track** | A layer of strips with mute, solo and lock; strips on higher tracks combine with lower ones by a blend mode | NLA track | lane |
+| **Object** | One placement of a data-block in time (start, duration, parent, mapping, modifiers). There is no Strip layer (W-77, W-82). | Object | timeline block |
+| **Track** | A named row in the Arranger, inside a Collection, that holds Objects; there for organization (W-82). Not a layer of blended strips. | (Blender has no exact match; nearest is an NLA track without strips) | lane |
 | **Channel** | One aspect over time (pitch, velocity, volume, tempo) inside a data-block, shown as a row | F-curve channel (Dope Sheet row) | (new) |
 | **Marker** | A named point or span on the time ruler shared by every time view; may be bound to a pitch context | Marker | section (meta lane) |
 | **Workspace** | A saved arrangement of panels | Workspace | screenset |
 | **Kept words** | `instrument` in `audio/` is the sound source (a synth voice, not a tool); `processor` is the SpessaSynth library class; **velocity lane** is the shared piano roll's own part (`VelocityLane`, `velocityLane` preference keys). These are not renamed. | (none) | (kept, B1c, W-56) |
-| **Tweak mode** | Edit a strip's data-block in place while the timeline shows where it sits | Tweak mode | (new) |
+| **Tweak mode** | Edit an object's data-block in place while the timeline shows where it sits | Tweak mode | (new) |
 | **Bake** | Freeze a modifier's result into a data-block | Bake / Apply | (unchanged) |
 
 ## Decided in the same session (human, 2026-11-23)
-- **Realization versus Modifier.** The data-block type the user sees is **Modifier**; **realize** is the verb ("realize this strip"). Prose may still say "a realization" for a modifier's result.
+- **Realization versus Modifier.** The data-block type the user sees is **Modifier**; **realize** is the verb ("realize this object"). Prose may still say "a realization" for a modifier's result.
 - **Make source** becomes a **data-block node** (a node that references a data-block); the exact code name is chosen in B1b.
 - **Packet** and the **version tree** stay.
-- **Track versus lane.** The human: in this realm they are two separate things. Track stays (a layer of strips). The second word is **channel** (Blender's name for one animated aspect over time); see "Aspects over time" below. "Lane" is retired as a general word.
+- **Track versus lane.** The human: in this realm they are two separate things. (Revised 2026-11-25, W-82: there are no strips; a Track is now a named organizational row inside a Collection that holds Objects.) The second word is **channel** (Blender's name for one animated aspect over time); see "Aspects over time" below. "Lane" is retired as a general word.
 
 ## Open
 - **The meta item.** How the project-level things (sections, pitch context, tempo, meter, density) are modeled. Proposal in "Aspects over time" below; decided in B0 and T0 (not code yet).
@@ -50,9 +50,9 @@ Blender keeps three jobs apart, and each has its own word:
 
 Mapped to the workbench (proposal, judgement):
 - A **collection** is job 1 for material (roles: rhythm, pitch set, voicing). An **Action-like** data-block type with **channels** (pitch, velocity, volume, tempo as curves) is job 1 for time-varying aspects.
-- **Tracks** hold strips and layer them with a blend mode per channel (job 2).
+- **Tracks** organize Objects into named rows (W-82); layering with a blend mode per channel (job 2) is not planned.
 - A **modifier** realizes notes from a collection's roles (job 3); a baked modifier becomes a Notes data-block.
-- **The meta item is not a special lane.** In Blender the scene's own settings (frame rate, active camera) are animated like anything else, and **markers** switch them (a bound camera marker). The workbench equivalent: the **project's own data-block** (tempo, meter, pitch context) has channels, shown as a top track, and **markers** switch the pitch context. Sections are markers; tempo, density and register are curve channels on that top track. No new concept: the same strip, channel and marker machinery pointed at the project.
+- **The meta item is not a special lane.** In Blender the scene's own settings (frame rate, active camera) are animated like anything else, and **markers** switch them (a bound camera marker). The workbench equivalent: the **project's own data-block** (tempo, meter, pitch context) has channels, shown as a top track, and **markers** switch the pitch context. Sections are markers; tempo, density and register are curve channels on that top track. No new concept: the same object, channel and marker machinery pointed at the project.
 
 ## Rename rules (for the rename milestones, B1a to B1c)
 - Rename symbols with the TypeScript compiler's rename (language server or ts-morph), never with text search: "module" also means ES module, CSS module and Vite module, "patch" also means a code patch, "lane" and "clip" appear in unrelated words and in the Stage's and PianoRoll's own APIs.

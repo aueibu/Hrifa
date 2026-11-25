@@ -37,26 +37,13 @@
   min-height: 30rem;
 }
 
-.compositionWorkspace[data-inspector='true'] {
-  grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
-}
-
-/* The settings panel docks on the right, as the inspector does on the left. */
+/* The settings panel docks on the right. */
 .compositionWorkspace[data-settings='true'] {
   grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
 }
 
-.compositionWorkspace[data-inspector='true'][data-settings='true'] {
-  grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr) minmax(16rem, 20rem);
-}
-
 .settingsColumn {
   min-height: 0;
-}
-
-.inspectorColumn {
-  min-height: 0;
-  overflow-y: auto;
 }
 
 /*
@@ -626,9 +613,7 @@
 
 @media (max-width: 64rem) {
   .compositionWorkspace,
-  .compositionWorkspace[data-inspector='true'],
   .compositionWorkspace[data-settings='true'],
-  .compositionWorkspace[data-inspector='true'][data-settings='true'],
   .interferenceLayout {
     grid-template-columns: minmax(0, 1fr);
   }

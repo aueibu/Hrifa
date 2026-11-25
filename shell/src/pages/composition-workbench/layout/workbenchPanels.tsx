@@ -20,6 +20,7 @@ import {
   CHORDS_PANEL,
   DATA_BLOCK_EDITOR_PANEL,
   DESK_PANEL,
+  INSPECTOR_PANEL,
   NODE_DETAIL_PANEL,
   ARRANGER_PANEL,
   OUTLINER_PANEL,
@@ -32,6 +33,7 @@ export interface WorkbenchPanelNodes {
   desk: ReactNode;
   nodeDetail: ReactNode;
   dataBlockEditor: ReactNode;
+  inspector: ReactNode;
 }
 
 export const WorkbenchPanelsContext = createContext<WorkbenchPanelNodes | null>(null);
@@ -55,6 +57,17 @@ const SIZES: readonly SlotSize[] = WIDTH_CLASSES.flatMap((width) =>
 const MIN_SIZE: SlotSize = { width: 'narrow', height: 'short' };
 
 export const WORKBENCH_KINDS: readonly PanelKind[] = [
+  {
+    // keepMounted: the active node portals its setup controls into this panel's slot (`#nodeInspectorSlot`), so it must
+    // not unmount when its tab is closed or its workspace does not show it.
+    id: INSPECTOR_PANEL,
+    title: 'Inspector',
+    sizes: SIZES,
+    minSize: MIN_SIZE,
+    keepMounted: true,
+    home: 'Tools',
+    render: () => <PanelSlot which="inspector" scroll />,
+  },
   {
     id: CANVAS_PANEL,
     title: 'Canvas',
