@@ -33,10 +33,20 @@ JOBS = [
     (11, 729, 8, False),
     (17, 405, 7, False), (19, 405, 7, False),
     (7, 32805, 6, False), (11, 3645, 6, False), (19, 729, 6, False), (17, 1215, 6, False),
-    # the two ~6 h jobs (exact count: hash-mode slices make the work 5-7x the set count); pausable, resume later
-    (13, 405, 9, True),
-    (7, 2187, 9, True),
+    # 02:40 Eastern, human: 6-8 notes matter most for composition ("run updated list"): the two ~6 h 9-note jobs
+    # (13-limit q 405, 7-limit q 2,187; not started) move to a later night, replaced by 6-8-note jobs
+    (13, 405, 8, False),
+    (5, 295245, 6, False), (5, 295245, 7, False), (5, 295245, 8, False),
+    (7, 59049, 6, False),
+    (23, 405, 7, False),
+    (17, 405, 8, False),
+    (13, 2187, 6, False),
+    (11, 6561, 6, False),
+    (7, 3645, 8, False),
+    (11, 2187, 7, False),
+    (7, 19683, 7, True),
 ]
+LATER = [(13, 405, 9), (7, 2187, 9)]  # 9-note jobs for a later night (forecasts 6.35 h, 6.15 h)
 
 
 def log(msg):
