@@ -16,6 +16,10 @@ export function storeDefaultWorkspaces(
   );
   localStorage.setItem(
     compositionStateKeys.workspaces,
-    serializeWorkspaceStore({ ...base, workspaces: workspaces, active: options.active ?? 'canvas' })
+    serializeWorkspaceStore({
+      ...base,
+      workspaces: workspaces,
+      active: options.active ?? 'canvas',
+    })
   );
 }

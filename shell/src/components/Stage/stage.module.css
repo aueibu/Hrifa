@@ -9,7 +9,6 @@
   --splitter-thickness: 0.5rem;
   --grip-thickness: 3px;
   --grip-length: 2.5rem;
-  --input-height-xs: 1.625rem;
 
   background: var(--surface);
   box-sizing: border-box;
@@ -97,12 +96,12 @@
   touch-action: none;
 }
 
-.splitter[data-orientation="vertical"] {
+.splitter[data-orientation='vertical'] {
   cursor: col-resize;
   width: var(--splitter-thickness);
 }
 
-.splitter[data-orientation="horizontal"] {
+.splitter[data-orientation='horizontal'] {
   cursor: row-resize;
   height: var(--splitter-thickness);
 }
@@ -113,25 +112,25 @@
   opacity: 0;
 }
 
-.splitter[data-orientation="vertical"] .grip {
+.splitter[data-orientation='vertical'] .grip {
   height: var(--grip-length);
   width: var(--grip-thickness);
 }
 
-.splitter[data-orientation="horizontal"] .grip {
+.splitter[data-orientation='horizontal'] .grip {
   height: var(--grip-thickness);
   width: var(--grip-length);
 }
 
 .splitter:hover,
 .splitter:focus-visible,
-.splitter[data-drag="true"] {
+.splitter[data-drag='true'] {
   background: var(--panel-slot);
 }
 
 .splitter:hover .grip,
 .splitter:focus-visible .grip,
-.splitter[data-drag="true"] .grip {
+.splitter[data-drag='true'] .grip {
   opacity: 1;
 }
 

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en" data-scheme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hrifa Density Comparison — 20px (Blender UI_UNIT_Y) vs 24px</title>
+  <style>
+    :root {
+      --font-sans: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      --accent: #00729f;
+      --focus-ring: #00729f;
+      --r-xs: 2px;
+    }
+
+    [data-scheme='dark'] {
+      --gray-0: #e6e3df;
+      --gray-2: #b4b1ad;
+      --gray-3: #a19e9a;
+      --gray-4: #85827e;
+      --gray-5: #464442;
+      --gray-6: #3a3836;
+      --gray-7: #32302e;
+      --gray-8: #2a2826;
+      --gray-9: #1d1b19;
+
+      --panel-well: var(--gray-9);
+      --surface: var(--gray-8);
+      --panel: var(--gray-7);
+      --panel-slot: var(--gray-6);
+      --panel-body: var(--gray-5);
+      --panel-header: color-mix(in srgb, var(--gray-4) 8%, var(--gray-5));
+      --grid: color-mix(in srgb, var(--gray-4) 28%, var(--gray-5));
+      --chrome: color-mix(in srgb, var(--gray-4) 38%, var(--gray-5));
+      --text: var(--gray-0);
+      --text-muted: var(--gray-2);
+      --text-subtle: var(--gray-3);
+    }
+
+    [data-scheme='light'] {
+      --white: #fbf9f5;
+      --gray-0: #f3f0ea;
+      --gray-1: #ece8e0;
+      --gray-2: #ddd7cc;
+      --gray-3: #b8b0a3;
+      --gray-5: #6f685e;
+      --gray-6: #554f47;
+      --gray-9: #1b1814;
+
+      --panel-well: var(--gray-1);
+      --surface: var(--gray-0);
+      --panel: var(--white);
+      --panel-slot: var(--gray-1);
+      --panel-body: var(--white);
+      --panel-header: color-mix(in srgb, var(--gray-2) 50%, var(--gray-1));
+      --grid: color-mix(in srgb, var(--gray-3) 40%, var(--gray-2));
+      --chrome: var(--gray-2);
+      --text: var(--gray-9);
+      --text-muted: var(--gray-6);
+      --text-subtle: var(--gray-5);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      line-height: 1.25;
+      padding: 16px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--panel-header);
+      border-radius: var(--r-xs);
+      padding: 6px 10px;
+      margin-bottom: 12px;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .compare {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(320px, 440px));
+      gap: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 760px) {
+      .compare { grid-template-columns: 1fr; }
+    }
+
+    /* Density tokens per column */
+    .d20 {
+      --unit: 20px;
+      --strip: 24px;
+      --fz-micro: 11px;
+      --fz-body: 12px;
+      --lh: 1.25;
+      --pad-panel: 6px;
+      --gap-panel: 6px;
+      --gap-row: 4px;
+      --pad-x: 6px;
+    }
+
+    .d24 {
+      --unit: 24px;
+      --strip: 28px;
+      --fz-micro: 11.5px;
+      --fz-body: 13px;
+      --lh: 1.3;
+      --pad-panel: 8px;
+      --gap-panel: 8px;
+      --gap-row: 6px;
+      --pad-x: 8px;
+    }
+
+    .col-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: var(--r-xs);
+      overflow: hidden;
+      font-size: var(--fz-body);
+      line-height: var(--lh);
+    }
+
+    .strip {
+      height: var(--strip);
+      background: var(--panel-header);
+      padding: 0 var(--pad-x);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: var(--fz-body);
+    }
+
+    .strip-tools {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .icon-btn {
+      width: var(--unit);
+      height: var(--unit);
+      border: 0;
+      border-radius: var(--r-xs);
+      background: transparent;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: var(--fz-micro);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .icon-btn:hover {
+      background: var(--chrome);
+      color: var(--text);
+    }
+
+    .body {
+      padding: var(--pad-panel);
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap-panel);
+    }
+
+    .section {
+      background: var(--panel-slot);
+      border-radius: var(--r-xs);
+      padding: var(--pad-panel);
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap-row);
+    }
+
+    .sec-head {
+      font-size: var(--fz-micro);
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 0.4fr 0.6fr;
+      align-items: center;
+      gap: var(--gap-panel);
+      min-height: var(--unit);
+    }
+
+    .label {
+      color: var(--text-muted);
+      font-size: var(--fz-body);
+    }
+
+    .input, .select {
+      height: var(--unit);
+      background: var(--panel-well);
+      border: 1px solid var(--grid);
+      border-radius: var(--r-xs);
+      color: var(--text);
+      font-family: inherit;
+      font-size: var(--fz-body);
+      padding: 0 var(--pad-x);
+      width: 100%;
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .input:focus, .select:focus {
+      outline: none;
+      border-color: var(--focus-ring);
+    }
+
+    .seg {
+      height: var(--unit);
+      background: var(--panel-well);
+      border-radius: var(--r-xs);
+      padding: 2px;
+      display: grid;
+      grid-auto-flow: column;
+      gap: 2px;
+    }
+
+    .seg button {
+      border: 0;
+      border-radius: 1px;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: var(--fz-micro);
+      cursor: pointer;
+      padding: 0 4px;
+    }
+
+    .seg button[data-active='true'] {
+      background: var(--panel-body);
+      color: var(--text);
+    }
+
+    .toggles {
+      display: flex;
+      gap: 4px;
+    }
+
+    .btn {
+      height: var(--unit);
+      padding: 0 var(--pad-x);
+      border-radius: var(--r-xs);
+      border: 1px solid var(--grid);
+      background: var(--panel-body);
+      color: var(--text);
+      font-family: inherit;
+      font-size: var(--fz-body);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn.accent {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .screen {
+      background: var(--panel-well);
+      border-radius: var(--r-xs);
+      padding: var(--pad-panel);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--fz-micro);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--gap-row);
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>Side-by-Side Density: 20px (Blender UI_UNIT_Y) vs 24px</h1>
+    <button class="btn" id="toggle-scheme" type="button" style="--unit: 20px; --pad-x: 8px; --fz-body: 12px;">Switch to Light Mode</button>
+  </div>
+
+  <div class="compare">
+    <!-- 20px -->
+    <div class="d20">
+      <div class="col-label">20px controls · 24px strip · 12px/11px type · 4–6px gaps</div>
+      <section class="panel">
+        <div class="strip">
+          <span>Scale Construction</span>
+          <div class="strip-tools">
+            <button class="icon-btn" type="button" title="Duplicate">+</button>
+            <button class="icon-btn" type="button" title="More">…</button>
+          </div>
+        </div>
+        <div class="body">
+          <div class="section">
+            <div class="sec-head"><span>Generator</span><span>▾</span></div>
+            <div class="row">
+              <span class="label">Name</span>
+              <input class="input" value="Bohlen–Pierce" />
+            </div>
+            <div class="row">
+              <span class="label">Ratio</span>
+              <input class="input mono" value="3:1" />
+            </div>
+            <div class="row">
+              <span class="label">Steps</span>
+              <input class="input mono" value="13" />
+            </div>
+            <div class="row">
+              <span class="label">Mode</span>
+              <div class="seg">
+                <button type="button" data-active="true">Harmonic</button>
+                <button type="button">Sub</button>
+                <button type="button">MOS</button>
+              </div>
+            </div>
+            <div class="row">
+              <span class="label">Temperament</span>
+              <select class="select">
+                <option>Just Intonation</option>
+                <option>13-EDT</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="sec-head"><span>Playback</span><span>▾</span></div>
+            <div class="row">
+              <span class="label">Options</span>
+              <div class="toggles">
+                <button class="btn accent" type="button">Loop</button>
+                <button class="btn" type="button">Quantize</button>
+              </div>
+            </div>
+            <div class="screen">
+              <span style="color: var(--text-muted);">Result</span>
+              <span class="mono">1 · 27:25 · 25:21 · 9:7 · 7:5</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn" type="button">Reset</button>
+            <button class="btn accent" type="button">Apply</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 24px -->
+    <div class="d24">
+      <div class="col-label">24px controls · 28px strip · 13px/11.5px type · 6–8px gaps</div>
+      <section class="panel">
+        <div class="strip">
+          <span>Scale Construction</span>
+          <div class="strip-tools">
+            <button class="icon-btn" type="button" title="Duplicate">+</button>
+            <button class="icon-btn" type="button" title="More">…</button>
+          </div>
+        </div>
+        <div class="body">
+          <div class="section">
+            <div class="sec-head"><span>Generator</span><span>▾</span></div>
+            <div class="row">
+              <span class="label">Name</span>
+              <input class="input" value="Bohlen–Pierce" />
+            </div>
+            <div class="row">
+              <span class="label">Ratio</span>
+              <input class="input mono" value="3:1" />
+            </div>
+            <div class="row">
+              <span class="label">Steps</span>
+              <input class="input mono" value="13" />
+            </div>
+            <div class="row">
+              <span class="label">Mode</span>
+              <div class="seg">
+                <button type="button" data-active="true">Harmonic</button>
+                <button type="button">Sub</button>
+                <button type="button">MOS</button>
+              </div>
+            </div>
+            <div class="row">
+              <span class="label">Temperament</span>
+              <select class="select">
+                <option>Just Intonation</option>
+                <option>13-EDT</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="sec-head"><span>Playback</span><span>▾</span></div>
+            <div class="row">
+              <span class="label">Options</span>
+              <div class="toggles">
+                <button class="btn accent" type="button">Loop</button>
+                <button class="btn" type="button">Quantize</button>
+              </div>
+            </div>
+            <div class="screen">
+              <span style="color: var(--text-muted);">Result</span>
+              <span class="mono">1 · 27:25 · 25:21 · 9:7 · 7:5</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn" type="button">Reset</button>
+            <button class="btn accent" type="button">Apply</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('toggle-scheme');
+    btn.addEventListener('click', () => {
+      const root = document.documentElement;
+      const next = root.getAttribute('data-scheme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-scheme', next);
+      btn.textContent = next === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+    });
+  </script>
+</body>
+</html>

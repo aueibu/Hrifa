@@ -1,4 +1,5 @@
-import { Alert, Badge, Button, Text } from '@mantine/core';
+import { Alert, Badge, Text } from '@mantine/core';
+import { Button } from '../../../ui';
 import { useCompositionSettings } from '../compositionSettings';
 import {
   createRhythmPreviewPlan,
@@ -130,7 +131,7 @@ export function FractioningNode({ instanceId, instanceLabel }: FractioningNodePr
       }
       onReset={resetFractioning}
       footer={
-        <Text size="xs" c="dimmed" truncate aria-live="polite">
+        <Text c="dimmed" truncate aria-live="polite">
           {preview.status ||
             (generated.result
               ? `N_b = a − b + 1 = ${Number(a) - Number(b) + 1} staggered minor-generator clocks, each restarting phase at a multiple of a, unioned with the major-generator clock over one period a².`
@@ -146,7 +147,7 @@ export function FractioningNode({ instanceId, instanceLabel }: FractioningNodePr
           <NodeInspectorContent>
             <InspectorSection label="Preview">
               <div className={classes.nodeParameterRow}>
-                <Text size="xs">Sound</Text>
+                <Text>Sound</Text>
                 <SoundOverrideControl
                   label="Preview"
                   set={settings.sounds.rhythm}

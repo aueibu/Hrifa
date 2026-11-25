@@ -1,15 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import {
-  ActionIcon,
-  Group,
-  NumberInput,
-  Popover,
-  Select,
-  Stack,
-  Switch,
-  Text,
-  Tooltip,
-} from '@mantine/core';
+import { Group, Popover, Stack, Text, Tooltip } from '@mantine/core';
+import { NumberInput, Select, Switch, ActionIcon } from '../../../ui';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { useCompositionSettings } from '../compositionSettings';
 import { useHistory } from '../history';
@@ -126,7 +117,6 @@ function MeterAndPulse({
   return (
     <>
       <Select
-        size="xs"
         w={76}
         aria-label="Meter"
         data={meterData}
@@ -136,7 +126,6 @@ function MeterAndPulse({
         comboboxProps={{ withinPortal: !inPopover }}
       />
       <Select
-        size="xs"
         w={186}
         aria-label="Pulse value"
         data={pulseData}
@@ -272,7 +261,6 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
         </ActionIcon>
       </Tooltip>
       <NumberInput
-        size="xs"
         w={92}
         aria-label="Tempo"
         suffix=" BPM"
@@ -324,7 +312,6 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
               onChange={(value) => updateTransport({ metronomeVolume: value })}
             />
             <Switch
-              size="xs"
               label="Count in one bar"
               checked={transport.countIn}
               onChange={(event) => updateTransport({ countIn: event.currentTarget.checked })}
@@ -332,7 +319,7 @@ export function TransportBar({ selectedInstanceId }: { selectedInstanceId: strin
             <Stack gap={6} hiddenFrom="sm">
               <MeterAndPulse transport={transport} update={updateTransport} inPopover />
             </Stack>
-            <Text size="xs" c="dimmed">
+            <Text c="dimmed">
               The click marks the meter's beats, accenting each downbeat. One rhythm pulse lasts one{' '}
               {transportPulseOptions
                 .find((option) => option.value === transport.pulse)

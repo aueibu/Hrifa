@@ -1,17 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  ActionIcon,
-  Button,
-  FileButton,
-  Group,
-  Modal,
-  Popover,
-  ScrollArea,
-  Stack,
-  Text,
-  TextInput,
-  Tooltip,
-} from '@mantine/core';
+import { FileButton, Group, Modal, Popover, ScrollArea, Stack, Text, Tooltip } from '@mantine/core';
+import { Button, TextInput, ActionIcon } from '../../../ui';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { useOptionalDesk } from '../desk';
 import {
@@ -346,14 +335,13 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
               <Text fw={600} size="sm">
                 Projects
               </Text>
-              <Text size="xs" c="dimmed" truncate title={currentName}>
+              <Text c="dimmed" truncate title={currentName}>
                 Current project: {currentName}
                 {current.dirty ? ' (unsaved changes)' : ''}
               </Text>
             </div>
             <Group gap="xs" wrap="nowrap" align="end">
               <TextInput
-                size="xs"
                 style={{ flex: 1 }}
                 label="Project name"
                 placeholder={current.id ? current.name : 'Project name'}
@@ -361,18 +349,14 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
                 onChange={(event) => setName(event.currentTarget.value)}
                 onKeyDown={(event) => event.key === 'Enter' && !busy && void save()}
               />
-              <Button size="xs" disabled={deskBusy || busy} onClick={() => void save()}>
+              <Button disabled={deskBusy || busy} onClick={() => void save()}>
                 Save project
               </Button>
             </Group>
             {projects === null ? (
-              <Text size="xs" c="dimmed">
-                Loading projects…
-              </Text>
+              <Text c="dimmed">Loading projects…</Text>
             ) : projects.length === 0 ? (
-              <Text size="xs" c="dimmed">
-                No projects yet.
-              </Text>
+              <Text c="dimmed">No projects yet.</Text>
             ) : (
               <ScrollArea.Autosize mah={280} type="auto" offsetScrollbars>
                 <Stack gap={6}>
@@ -382,7 +366,6 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
                       <div key={project.id}>
                         {renaming?.id === project.id ? (
                           <TextInput
-                            size="xs"
                             aria-label={`Rename ${project.name}`}
                             value={renaming.name}
                             autoFocus
@@ -405,14 +388,13 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
                           </Text>
                         )}
                         <Group gap={4} justify="space-between" wrap="nowrap">
-                          <Text size="xs" c="dimmed" truncate>
+                          <Text c="dimmed" truncate>
                             {formatSavedAt(project.savedAt)}
                             {project.hasDesk ? '' : ' · no desk'}
                           </Text>
                           {deleting ? (
                             <Group gap={4} wrap="nowrap">
                               <Button
-                                size="compact-xs"
                                 color="red"
                                 onClick={() => {
                                   setConfirmingDelete(null);
@@ -421,18 +403,13 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
                               >
                                 Delete project
                               </Button>
-                              <Button
-                                size="compact-xs"
-                                variant="default"
-                                onClick={() => setConfirmingDelete(null)}
-                              >
+                              <Button variant="default" onClick={() => setConfirmingDelete(null)}>
                                 Cancel
                               </Button>
                             </Group>
                           ) : (
                             <Group gap={4} wrap="nowrap">
                               <Button
-                                size="compact-xs"
                                 variant="light"
                                 aria-label={`Open project ${project.name}`}
                                 disabled={deskBusy || busy}
@@ -441,7 +418,6 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
                                 Open
                               </Button>
                               <Button
-                                size="compact-xs"
                                 variant="subtle"
                                 aria-label={`Rename ${project.name}`}
                                 onClick={() => setRenaming({ id: project.id, name: project.name })}
@@ -449,7 +425,6 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
                                 Rename
                               </Button>
                               <Button
-                                size="compact-xs"
                                 variant="subtle"
                                 color="red"
                                 aria-label={`Delete project ${project.name}`}
@@ -468,7 +443,6 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
             )}
             <Group gap="xs" justify="space-between">
               <Button
-                size="compact-xs"
                 variant="default"
                 disabled={!projects?.length}
                 onClick={() => void exportFile()}
@@ -477,14 +451,14 @@ export function ProjectMenu({ reload = () => window.location.reload() }: { reloa
               </Button>
               <FileButton accept="application/json,.json" onChange={importFile}>
                 {(props) => (
-                  <Button size="compact-xs" variant="default" {...props}>
+                  <Button variant="default" {...props}>
                     Import file
                   </Button>
                 )}
               </FileButton>
             </Group>
             {status && (
-              <Text size="xs" c="dimmed" aria-live="polite">
+              <Text c="dimmed" aria-live="polite">
                 {status}
               </Text>
             )}

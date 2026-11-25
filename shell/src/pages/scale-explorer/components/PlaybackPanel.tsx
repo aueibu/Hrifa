@@ -1,5 +1,6 @@
-import { Button, FileButton, Group, Select, Slider, Stack, Text } from '@mantine/core';
+import { FileButton, Group, Slider, Stack, Text } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
+import { Button, Select } from '../../../ui';
 import {
   parseSoundfontVoice,
   soundfontVoiceId,

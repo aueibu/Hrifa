@@ -84,7 +84,7 @@ export function InspectorSection({
 }) {
   return (
     <section className={classes.section}>
-      <Text className={classes.label} size="xs" fw={700} tt="uppercase">
+      <Text className={classes.label} fw={700} tt="uppercase">
         {help ? <HelpTip help={help}>{label}</HelpTip> : label}
       </Text>
       <div className={classes.content}>{children}</div>

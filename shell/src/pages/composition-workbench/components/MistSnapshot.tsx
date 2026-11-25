@@ -89,7 +89,7 @@ export const MistSnapshot = memo(function MistSnapshot({
 
   return (
     <>
-      <Text size="xs" c="dimmed">
+      <Text c="dimmed">
         Extracted: {count} {count === 1 ? 'step' : 'steps'} from{' '}
         {formatNumber(sampling.positions[0])}
         {count > 1
@@ -192,7 +192,7 @@ export const MistSnapshot = memo(function MistSnapshot({
           ))}
         </svg>
       </div>
-      <Text size="xs" c="dimmed" ff="monospace" className={classes.readout}>
+      <Text c="dimmed" ff="monospace" className={classes.readout}>
         {playing !== undefined
           ? `playing step ${playing + 1} of ${count} · unit ${formatNumber(sampling.positions[playing])} · [${sampling.mapped[playing].map(formatNumber).join(' ')}]`
           : hovered !== null

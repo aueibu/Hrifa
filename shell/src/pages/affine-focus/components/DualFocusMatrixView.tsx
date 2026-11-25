@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Button, Checkbox, NativeSelect, SegmentedControl } from '@mantine/core';
 import {
   searchDualFocusMaps,
   type ClosureGraph,
@@ -8,6 +7,7 @@ import {
   type GamutPitch,
   type TransformConfig,
 } from '../../../lib/affine-focus';
+import { Checkbox, NativeSelect, SegmentedControl, Button } from '../../../ui';
 import classes from '../AffineFocus.module.css';
 
 export function DualFocusMatrixView({

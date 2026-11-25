@@ -14,14 +14,7 @@ import {
   type CSSProperties,
   type MouseEvent,
 } from 'react';
-import {
-  ActionIcon,
-  Button,
-  Modal,
-  SegmentedControl,
-  TextInput,
-  useComputedColorScheme,
-} from '@mantine/core';
+import { Modal, useComputedColorScheme } from '@mantine/core';
 import {
   addedCellNote,
   addedCells,
@@ -51,6 +44,7 @@ import {
   type PairCell,
   type PitchRef,
 } from '../../../lib/harmonic-field';
+import { Button, SegmentedControl, TextInput, ActionIcon } from '../../../ui';
 import { MAX_PAIRS, noteLabel } from '../state/derive';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { checkAddedPitch, type PairsColor } from '../state/labState';

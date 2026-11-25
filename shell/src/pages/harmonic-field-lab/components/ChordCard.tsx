@@ -4,7 +4,7 @@
  * right. The behaviors (hover, click, hold keys, send) stay with the caller: it passes the handlers and the texts.
  */
 import type { ReactElement, ReactNode } from 'react';
-import { Button } from '@mantine/core';
+import { Button } from '../../../ui';
 import { glueUnits } from '../markup';
 import {
   EXACT_NOTE_C,

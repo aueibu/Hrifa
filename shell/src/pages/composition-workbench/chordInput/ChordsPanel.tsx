@@ -1,4 +1,4 @@
-import { Button } from '@mantine/core';
+import { Button } from '../../../ui';
 import { ReadyLine } from '../components/ReadyLine';
 import { ChordPickerPanel } from './ChordPickerPanel';
 import { useChordSelector, useChordSession } from './ChordSessionProvider';
@@ -23,12 +23,7 @@ export function ChordsPanel() {
         <span />
         <div className={classes.buttons}>
           {closable && (
-            <Button
-              size="compact-xs"
-              variant="subtle"
-              aria-label="Close chord picker"
-              onClick={session.closePicker}
-            >
+            <Button variant="subtle" aria-label="Close chord picker" onClick={session.closePicker}>
               Close
             </Button>
           )}

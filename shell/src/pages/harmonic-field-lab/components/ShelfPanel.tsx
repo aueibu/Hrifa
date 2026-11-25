@@ -4,8 +4,8 @@
  * (the chord's source as a new tab). Everything reads and writes the shelf through `useLab()`; nothing is stored here.
  */
 import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
-import { ActionIcon, Button, Checkbox, TextInput } from '@mantine/core';
 import { mulNotes } from '../../../lib/harmonic-field';
+import { Button, Checkbox, TextInput, ActionIcon } from '../../../ui';
 import { CHORD_KEYS, CHORD_PAGE, playsChords } from '../audio/keymap';
 import type { PreviewTarget } from '../audio/plan';
 import { SHORTCUTS } from '../audio/shortcuts';

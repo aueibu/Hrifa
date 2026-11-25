@@ -5,8 +5,10 @@
 ## Layers
 
 1. `tokens.ts` holds the values the application deliberately owns: two neutral ramps (`gray` for
-   light, `dark` for dark), the primary ramp, the marker hues and the marker ramp. Omitted Mantine
-   values use Mantine defaults (`foundation.ts`).
+   light, `dark` for dark), the primary ramp (Blender's `#4772b3` at step 6), the marker hues and
+   the marker ramp. `foundation.ts` owns the compact 22px (`1.375rem`) type, spacing,
+   radius, and component defaults (`xs` / `compact-xs` / `sm`). Omitted Mantine values (`shadows`,
+   `breakpoints`) use Mantine defaults.
 2. `semantic.ts` maps application roles such as `--panel` and `--text-muted` to steps in those ramps
    and emits the per-scheme color variables (`--mark-*`, `--tint-*`). Applets use roles, never
    palette positions.
@@ -64,16 +66,16 @@ The light ramp is warmer.
 Dense editors (the composition workbench) need more surface tiers than page/panel/inset. These roles
 sit alongside the ones above; light mode gets the nearest equivalents.
 
-| Role | Use | Dark | Bitwig source |
+| Role | Use | Dark | Light |
 | --- | --- | --- | --- |
-| `--panel-well` | deepest recess: browsers, plots, minimap | `dark-9` `#1d1b19` | browser |
-| `--surface` | page, gaps and splitters | `dark-8` `#2a2826` | separator |
-| `--panel` | sidebars, inspector | `dark-7` `#32302e` | inspector |
-| `--panel-slot` | empty cells, fields, inset groups | `dark-6` `#3a3836` | clip slot |
-| `--panel-body` | work area: canvas, lanes, device body | `dark-5` `#464442` | lane |
-| `--panel-header` | device and panel headers | `dark-5` + 8% `dark-4` | detail header |
-| `--grid` | gridlines, cell and panel edges | `dark-5` + 28% `dark-4` | grid |
-| `--chrome` | title bars, raised controls | `dark-5` + 38% `dark-4` | track header |
+| `--panel-well` | deepest recess: screens, plots, minimap, input wells | `dark-9` `#1e1c1a` | `gray-2` `#ddd7cc` |
+| `--surface` | page floor, gaps and splitters | `dark-8` `#2a2825` | `gray-0` `#f3f0ea` |
+| `--panel` | sidebars, inspector, outliner | `dark-7` `#363430` | 40% `gray-0` / `white` |
+| `--panel-slot` | empty cells, clip slots, inset groups | `dark-6` `#44413c` | `gray-1` `#ece8e0` |
+| `--panel-body` | work area: canvas, lanes, device body | `dark-5` `#514e49` | `white` `#fbf9f5` |
+| `--panel-header` | device and panel headers | `dark-5` + 10% `dark-4` | `gray-1` `#ece8e0` |
+| `--grid` | gridlines, subtle input edges, cell edges | `dark-5` + 24% `dark-4` | 45% `gray-3` / `gray-2` |
+| `--chrome` | raised clickable controls, buttons, active segmented thumb | `dark-5` + 32% `dark-4` | `white` `#fbf9f5` |
 
 Use `--grid`, not `--border`, for lines drawn on `--panel-body`: `--border` has the same value as the
 body in dark mode.

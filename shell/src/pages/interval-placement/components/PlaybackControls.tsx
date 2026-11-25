@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, Group, Select } from '@mantine/core';
+import { Group } from '@mantine/core';
+import { Select, Button } from '../../../ui';
 import { playArpeggio, playChord, playIntervalPairs, type Timbre } from '../sonify';
 
 interface PlaybackControlsProps {

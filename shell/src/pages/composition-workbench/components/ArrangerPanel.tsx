@@ -9,7 +9,8 @@ import {
   type MouseEvent,
   type PointerEvent,
 } from 'react';
-import { Button, Menu, Text } from '@mantine/core';
+import { Menu, Text } from '@mantine/core';
+import { Button } from '../../../ui';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { useCompositionSettings } from '../compositionSettings';
 import { EnsureDataBlockOps } from '../dataBlockOps';
@@ -727,7 +728,6 @@ function ArrangerBody() {
       <div className={classes.bar}>
         <Button
           className={classes.play}
-          size="compact-xs"
           variant="default"
           disabled={!playback.playing && playback.refusal !== null}
           data-info={

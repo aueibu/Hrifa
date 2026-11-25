@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, NativeSelect, SegmentedControl } from '@mantine/core';
 import {
   findShortestTransformPath,
   type ClosureEdge,
@@ -8,6 +7,7 @@ import {
   type GamutPitch,
   type TransformConfig,
 } from '../../../lib/affine-focus';
+import { NativeSelect, SegmentedControl, Button } from '../../../ui';
 import type { OrbitGroupBy } from '../state';
 import { MiniRing } from './MiniRing';
 import classes from '../AffineFocus.module.css';

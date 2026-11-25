@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Badge, Group, Select, Stack, Text, TextInput } from '@mantine/core';
+import { Badge, Group, Stack, Text } from '@mantine/core';
+import { Select, TextInput } from '../../../ui';
 import { chakraOf, CHAKRA_NAMES } from '../melas';
 import { pcsOf } from '../theory';
 import type { MelaRef, RagaVariant } from '../types';

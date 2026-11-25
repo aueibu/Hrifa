@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { ActionIcon, Text } from '@mantine/core';
+import { Text } from '@mantine/core';
+import { ActionIcon } from '../../../ui';
 import { useHoverInfo } from './hoverInfo';
 import classes from './WorkbenchStatusBar.module.css';
 

@@ -3,7 +3,7 @@
   display: grid;
   gap: var(--mantine-spacing-xs);
   grid-template-columns: 4.25rem minmax(0, 1fr);
-  min-height: 1.75rem;
+  min-height: var(--ui-row-height);
 }
 
 .fader,

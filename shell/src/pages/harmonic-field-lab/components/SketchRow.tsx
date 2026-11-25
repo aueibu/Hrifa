@@ -6,7 +6,6 @@
  * arms its template and shape here (hold 4 on a note moves that shape onto it, hold 5 plays the exact ratios there).
  */
 import { Fragment, useEffect, useMemo, useRef } from 'react';
-import { ActionIcon, Button, NativeSelect, SegmentedControl } from '@mantine/core';
 import {
   matchToField,
   parsePattern,
@@ -16,6 +15,7 @@ import {
   type ChordTemplate,
   type Note,
 } from '../../../lib/harmonic-field';
+import { Button, NativeSelect, SegmentedControl, ActionIcon } from '../../../ui';
 import { SHORTCUTS } from '../audio/shortcuts';
 import { OTHER_FAMILY, familyOrder, noteLabel } from '../state/derive';
 import { autoName } from '../state/generate';

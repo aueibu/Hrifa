@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Button, Group, Modal, Popover, Text, TextInput } from '@mantine/core';
+import { Alert, Group, Modal, Popover, Text } from '@mantine/core';
+import { Button, TextInput } from '../../../ui';
 import type { PerformancePlan } from '../audio/types';
 import { useAuditionSettings } from '../auditionPreferences';
 import { useCompositionSettings } from '../compositionSettings';
@@ -57,7 +58,6 @@ function PlayButtons({
   return (
     <>
       <Button
-        size="compact-xs"
         variant="default"
         // While playing, Stop is always available.
         disabled={!playing && !result.ok}
@@ -74,7 +74,6 @@ function PlayButtons({
         return (
           <Button
             key={conversion.id}
-            size="compact-xs"
             variant="default"
             disabled={!playing && !refusal.ok}
             data-info={refusal.ok ? conversion.describe : refusal.reason}
@@ -146,7 +145,6 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
     <div className={classes.actions}>
       <NewDataBlockPopover onCreated={(dataBlock) => onOpenDataBlock?.(dataBlock)} />
       <Button
-        size="compact-xs"
         variant={onlyUnused ? 'filled' : 'default'}
         aria-pressed={onlyUnused}
         data-info="Show only the data-blocks nothing uses. Nothing is removed by this."
@@ -163,7 +161,6 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
       >
         <Popover.Target>
           <Button
-            size="compact-xs"
             variant="default"
             disabled={unusedIds.size === 0}
             data-info={
@@ -180,18 +177,15 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
           </Button>
         </Popover.Target>
         <Popover.Dropdown>
-          <Text size="xs" fw={600}>
-            Delete these {purgeIds.length} unused data-blocks?
-          </Text>
+          <Text fw={600}>Delete these {purgeIds.length} unused data-blocks?</Text>
           <ul className={classes.impactList}>
             {purgeIds.map((id) => (
               <li key={id}>
-                <Text size="xs">{dataBlocks.find((block) => block.id === id)?.name ?? id}</Text>
+                <Text>{dataBlocks.find((block) => block.id === id)?.name ?? id}</Text>
               </li>
             ))}
           </ul>
           <Button
-            size="compact-xs"
             onClick={() => {
               report(ops.purge(purgeIds));
               setPurgeOpen(false);
@@ -285,8 +279,8 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
       icon={<span aria-hidden>⚠</span>}
       title="Desk changes could not be saved."
     >
-      <Text size="xs">{persistError}</Text>
-      {locked && <Text size="xs">Changes to the desk are turned off until it can be read.</Text>}
+      <Text>{persistError}</Text>
+      {locked && <Text>Changes to the desk are turned off until it can be read.</Text>}
     </Alert>
   );
 
@@ -330,7 +324,6 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
               }}
             >
               <TextInput
-                size="xs"
                 variant="unstyled"
                 aria-label="Data-block name"
                 classNames={{ input: classes.name }}
@@ -345,7 +338,6 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                 }}
               />
               <TextInput
-                size="xs"
                 variant="unstyled"
                 aria-label="Data-block note"
                 placeholder="Add a note"
@@ -366,9 +358,7 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
               <div className={classes.meta}>{describe(dataBlock)}</div>
               <div className={classes.usage}>
                 {users.length === 0 ? (
-                  <Text size="xs" c="dimmed">
-                    Not used
-                  </Text>
+                  <Text c="dimmed">Not used</Text>
                 ) : (
                   <Popover
                     opened={usersOpenId === dataBlock.id}
@@ -379,7 +369,6 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                   >
                     <Popover.Target>
                       <Button
-                        size="compact-xs"
                         variant="subtle"
                         data-info="Where this data-block is used. Make single user gives one place its own copy."
                         onClick={() =>
@@ -422,7 +411,6 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                   onPlay={(hearAs) => audition(dataBlock, hearAs)}
                 />
                 <Button
-                  size="compact-xs"
                   variant="default"
                   disabled={!onMakeSource || makeSourceRefusal(dataBlock) !== null}
                   data-info={
@@ -434,7 +422,6 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                   Make source
                 </Button>
                 <Button
-                  size="compact-xs"
                   variant="default"
                   data-info="Add a copy of this data-block to the desk, named as a variation, to change without losing the original."
                   onClick={() => duplicateDataBlockById(dataBlock.id)}
@@ -442,7 +429,6 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                   Duplicate
                 </Button>
                 <Button
-                  size="compact-xs"
                   variant="default"
                   disabled={pitchClassConversionRefusal(dataBlock) !== null}
                   data-info={
@@ -471,7 +457,6 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                 >
                   <Popover.Target>
                     <Button
-                      size="compact-xs"
                       variant="default"
                       data-info="Remove this data-block from the desk. Places that use it show it as missing."
                       onClick={() =>
@@ -486,27 +471,24 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                   <Popover.Dropdown>
                     {impact && (
                       <>
-                        <Text size="xs" fw={600}>
-                          Delete {dataBlock.name}?
-                        </Text>
+                        <Text fw={600}>Delete {dataBlock.name}?</Text>
                         {impact.users.length > 0 ? (
-                          <Text size="xs">
+                          <Text>
                             Used by {impact.users.length}:{' '}
                             {impact.users.map((user) => user.label).join(', ')}. They will show it
                             as missing or blank.
                           </Text>
                         ) : (
-                          <Text size="xs">Nothing uses it.</Text>
+                          <Text>Nothing uses it.</Text>
                         )}
                         {impact.descendants.length > 0 && (
-                          <Text size="xs">
+                          <Text>
                             Derived from it:{' '}
                             {impact.descendants.map((block) => block.name).join(', ')}. They are not
                             changed.
                           </Text>
                         )}
                         <Button
-                          size="compact-xs"
                           mt="xs"
                           onClick={() => {
                             setConfirmingId(null);
@@ -538,11 +520,10 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
                 `Replace ${nameOf(replacing.fromId, 'it')} in ${replacement.count} ${replacement.count === 1 ? 'place' : 'places'} with ${nameOf(replacing.toId, 'the replacement')}?`}
             </Text>
             <Group justify="flex-end" mt="md" gap="xs">
-              <Button size="compact-sm" variant="default" onClick={() => setReplacing(null)}>
+              <Button variant="default" onClick={() => setReplacing(null)}>
                 Cancel
               </Button>
               <Button
-                size="compact-sm"
                 disabled={replacement.refusal !== null}
                 onClick={() => {
                   report(ops.remap(replacing.fromId, replacing.toId));
@@ -564,11 +545,10 @@ function DeskViewBody({ onMakeSource, onOpenDataBlock }: DeskViewProps) {
       >
         <Text size="sm">{snapPrompt?.message}</Text>
         <Group justify="flex-end" mt="md" gap="xs">
-          <Button size="compact-sm" variant="default" onClick={() => setSnapPrompt(null)}>
+          <Button variant="default" onClick={() => setSnapPrompt(null)}>
             Cancel
           </Button>
           <Button
-            size="compact-sm"
             onClick={() => {
               if (snapPrompt) {
                 toPitchClasses(snapPrompt.id, true);

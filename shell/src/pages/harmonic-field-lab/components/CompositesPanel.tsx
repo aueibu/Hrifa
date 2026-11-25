@@ -4,8 +4,8 @@
  * Items are hover sources for the `-` popup and the right-click menu, like chips and slots.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActionIcon, Button, TextInput } from '@mantine/core';
 import { mergeComposite } from '../../../lib/harmonic-field';
+import { Button, TextInput, ActionIcon } from '../../../ui';
 import { centsList, type Composite, type CompositeItem } from '../state/composites';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { autoName } from '../state/generate';

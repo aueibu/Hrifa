@@ -1,6 +1,5 @@
 .device {
   background: var(--panel-body);
-  border: 1px solid var(--grid);
   border-radius: var(--radius-panel);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -12,7 +11,7 @@
 
 .header {
   background: var(--panel-header);
-  min-height: 2rem;
+  min-height: var(--ui-strip-height);
   padding: 0.2rem 0.5rem;
 }
 
@@ -44,7 +43,7 @@
 }
 
 .controls {
-  border-right: 1px solid var(--grid);
+  background: var(--panel);
   display: flex;
   flex-direction: column;
   gap: var(--mantine-spacing-xs);
@@ -77,7 +76,6 @@
   }
 
   .controls {
-    border-bottom: 1px solid var(--grid);
-    border-right: 0;
+    background: var(--panel);
   }
 }

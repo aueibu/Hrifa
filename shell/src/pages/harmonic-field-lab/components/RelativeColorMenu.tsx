@@ -8,7 +8,7 @@
  * `RelativeColorControls`; the other views wrap it in `RelativeColorPanel`, the same panel box.
  */
 import type { ReactNode } from 'react';
-import { NativeSelect, SegmentedControl } from '@mantine/core';
+import { SegmentedControl, NativeSelect } from '../../../ui';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import {
   PRESET_CUSTOM,

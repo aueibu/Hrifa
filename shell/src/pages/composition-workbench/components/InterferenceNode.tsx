@@ -1,15 +1,6 @@
 import { useEffect } from 'react';
-import {
-  ActionIcon,
-  Alert,
-  Badge,
-  Button,
-  Select,
-  Stack,
-  Switch,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Alert, Badge, Stack, Text } from '@mantine/core';
+import { Button, Select, Switch, TextInput, ActionIcon } from '../../../ui';
 import { volumePercentToGain } from '../audio';
 import { createInterferencePreviewPlan, GROUPING_BUS } from '../audio/performancePlans';
 import { useCompositionSettings } from '../compositionSettings';
@@ -207,7 +198,7 @@ export function InterferenceNode({ instanceId, instanceLabel }: InterferenceNode
         />
 
         <div>
-          <Text fw={600} size="xs" mb={4}>
+          <Text fw={600} mb={4}>
             Generator attacks
           </Text>
           {generated.result.recurrence <= 128 ? (
@@ -218,9 +209,7 @@ export function InterferenceNode({ instanceId, instanceLabel }: InterferenceNode
                 );
                 return (
                   <div className={classes.attackRow} key={drafts[generatorIndex].id}>
-                    <Text ff="monospace" size="xs">
-                      G{generatorIndex + 1}
-                    </Text>
+                    <Text ff="monospace">G{generatorIndex + 1}</Text>
                     <div
                       className={classes.attackCells}
                       aria-label={`Generator ${generatorIndex + 1} pattern ${pattern.join(' + ')}; period ${generatorPeriod(pattern)}`}
@@ -240,7 +229,7 @@ export function InterferenceNode({ instanceId, instanceLabel }: InterferenceNode
               })}
             </Stack>
           ) : (
-            <Text size="xs" c="dimmed">
+            <Text c="dimmed">
               The {generated.result.recurrence}-unit attack grid is hidden above 128 units; the
               exact durations remain available above.
             </Text>
@@ -272,7 +261,7 @@ export function InterferenceNode({ instanceId, instanceLabel }: InterferenceNode
       }
       onReset={resetInterference}
       footer={
-        <Text size="xs" c="dimmed" truncate aria-live="polite">
+        <Text c="dimmed" truncate aria-live="polite">
           {preview.status || 'Plays at the transport tempo; volume and click controls stay live.'}
         </Text>
       }
@@ -290,7 +279,7 @@ export function InterferenceNode({ instanceId, instanceLabel }: InterferenceNode
               <div className={classes.generatorRows}>
                 {authored.map(({ draft, parsed }, index) => (
                   <div className={classes.generatorRow} key={draft.id}>
-                    <Text ff="monospace" size="xs" c="dimmed">
+                    <Text ff="monospace" c="dimmed">
                       {index + 1}
                     </Text>
                     <TextInput
@@ -302,7 +291,7 @@ export function InterferenceNode({ instanceId, instanceLabel }: InterferenceNode
                         updateDraft(draft.id, { valueText: event.currentTarget.value })
                       }
                     />
-                    <Text ff="monospace" size="xs" ta="center">
+                    <Text ff="monospace" ta="center">
                       {parsed.values.length ? generatorPeriod(parsed.values) : '—'}
                     </Text>
                     <SoundOverrideControl

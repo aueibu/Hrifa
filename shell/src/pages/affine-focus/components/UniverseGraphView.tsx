@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, NativeSelect, SegmentedControl } from '@mantine/core';
 import {
   findShortestTransformPath,
   type ClosureEdge,
@@ -9,6 +8,7 @@ import {
   type TrajectoryStep,
   type TransformConfig,
 } from '../../../lib/affine-focus';
+import { NativeSelect, SegmentedControl, Button } from '../../../ui';
 import { buildMermaidDiagram, triggerFileDownload, type MermaidSliceMode } from '../export';
 import {
   buildFullEdgeMapSvg,

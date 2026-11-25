@@ -81,7 +81,7 @@
   color: var(--text-muted);
   display: flex;
   flex: none;
-  font-size: 0.75rem;
+  font-size: var(--mantine-font-size-md);
   gap: 0.3rem;
   overflow: hidden;
   white-space: nowrap;
@@ -113,7 +113,7 @@
   display: flex;
   flex: none;
   gap: 2px;
-  height: 1.625rem;
+  height: var(--ui-row-height);
 }
 
 .idpick {
@@ -162,7 +162,7 @@
   all: unset;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: var(--mantine-font-size-xs);
 }
 
 .foldToggle:focus-visible {

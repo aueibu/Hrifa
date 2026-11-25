@@ -5,7 +5,8 @@
  * `HarmonicFieldLabApp` wraps it in the provider; a frozen embedding (tests, a later Workbench host) passes `initial` and `frozen`.
  */
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { ActionIcon, AppShell } from '@mantine/core';
+import { AppShell } from '@mantine/core';
+import { ActionIcon } from '../../ui';
 import { GlossaryDrawer } from './components/GlossaryDrawer';
 import { PinIcon } from './components/icons';
 import { KeyboardDock } from './components/KeyboardDock';

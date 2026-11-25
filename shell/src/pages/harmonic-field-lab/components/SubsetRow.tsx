@@ -1,14 +1,14 @@
 /** Note selection, under the pitch ring: All/None/Invert stacked, the mode stepper centered, nearest scale and odd limit on the right. */
 import { useMemo } from 'react';
+import { SCALE_LIBRARY, melakarta } from '../../../lib/harmonic-field';
 import {
-  ActionIcon,
   Button,
   Checkbox,
   NativeSelect,
   NumberInput,
   SegmentedControl,
-} from '@mantine/core';
-import { SCALE_LIBRARY, melakarta } from '../../../lib/harmonic-field';
+  ActionIcon,
+} from '../../../ui';
 import { PICK_ED, PICK_ODD, resolveScale } from '../state/labState';
 import { ProductButton } from './ProductDialog';
 import { Hint, Num, Tip, useLab } from './ui';

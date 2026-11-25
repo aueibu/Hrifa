@@ -4,7 +4,8 @@
  * Apply footer. The rules are pure (`state/fillCards.ts`); Apply sends each card through the existing `ret/add`.
  */
 import { useMemo, useState } from 'react';
-import { Button, Checkbox, Modal, Text } from '@mantine/core';
+import { Modal, Text } from '@mantine/core';
+import { Checkbox, Button } from '../../../ui';
 import {
   FILL_SOURCES,
   fillCandidates,

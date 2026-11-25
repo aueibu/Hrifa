@@ -57,11 +57,7 @@ export function ChordPickerPanel() {
     [selectionMode, session, target, targetVersion]
   );
   if (target && wanted && !anchor) {
-    return (
-      <Text size="xs" c="dimmed">
-        {target.hint ?? DEFAULT_HINT}
-      </Text>
-    );
+    return <Text c="dimmed">{target.hint ?? DEFAULT_HINT}</Text>;
   }
   const shownAnchor = selectionAnchor ?? anchor ?? AUDITION_ANCHOR;
   return (

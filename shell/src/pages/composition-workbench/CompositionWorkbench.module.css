@@ -5,20 +5,6 @@
   grid-template-columns: minmax(16rem, 19rem) minmax(26rem, 1fr) minmax(19rem, 24rem);
 }
 
-/* The workbench's corner radii, defined once. Everything here reads the variables below, and
-   stylelint rejects a hard-coded border-radius in this folder, so tuning the look is this one
-   block. Mantine's own components follow through --mantine-radius-default. Popovers, menus and
-   modals render in portals on <body>, outside .workbench, so they get the same radii while the
-   workbench is on the page. */
-.workbench,
-:global(body):has(.workbench) :global([data-portal]) {
-  --workbench-radius: var(--mantine-radius-xs);
-  --mantine-radius-default: var(--workbench-radius);
-  --radius-control: var(--workbench-radius);
-  --radius-panel: var(--workbench-radius);
-  --radius-hairline: 2px;
-}
-
 /* The top and bottom bars sit on their own tier, so Mantine's AppShell rules are redundant. */
 .workbench :global(.mantine-AppShell-header),
 .workbench :global(.mantine-AppShell-footer) {
@@ -129,7 +115,7 @@
   width: 100%;
 }
 
-.pulse[data-active="true"] {
+.pulse[data-active='true'] {
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -144,7 +130,7 @@
   display: grid;
   gap: 0.3rem;
   grid-template-columns: 1rem minmax(4rem, 1fr) 2.25rem minmax(5.5rem, 7rem) 1.5rem;
-  min-height: 2rem;
+  min-height: var(--ui-row-height);
   min-width: 15.5rem;
 }
 
@@ -174,8 +160,13 @@
   align-items: center;
   display: grid;
   gap: var(--mantine-spacing-xs);
-  grid-template-columns: 4.25rem minmax(0, 1fr);
-  min-height: 1.75rem;
+  grid-template-columns: minmax(5.5rem, 0.4fr) minmax(0, 0.6fr);
+  min-height: var(--ui-row-height);
+}
+
+.nodeParameterRow > :global(.mantine-Button-root) {
+  justify-self: start;
+  width: fit-content;
 }
 
 .volumeControl,
@@ -411,7 +402,7 @@
   box-shadow: inset 1px 0 0 var(--grid);
   color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.7rem;
+  font-size: var(--mantine-font-size-xs);
   line-height: 1.5rem;
   min-width: 0;
   overflow: hidden;
@@ -517,7 +508,7 @@
   height: 1.25rem;
 }
 
-.attackCells > span[data-active="true"] {
+.attackCells > span[data-active='true'] {
   background: var(--accent);
 }
 
@@ -540,11 +531,13 @@
 .pitchPlot text {
   fill: var(--text);
   font-family: var(--mantine-font-family-monospace);
+  /* stylelint-disable-next-line declaration-property-value-allowed-list */
   font-size: 18px;
 }
 
 .pitchPlot .pitchAxisLabel {
   fill: var(--text-muted);
+  /* stylelint-disable-next-line declaration-property-value-allowed-list */
   font-size: 13px;
 }
 

@@ -2,13 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Alert,
-  ActionIcon,
   Anchor,
   Badge,
-  Button,
   Card,
-  Checkbox,
-  Chip,
   ColorInput,
   ColorPicker,
   FileInput,
@@ -17,16 +13,10 @@ import {
   MantineProvider,
   Modal,
   Progress,
-  Radio,
-  SegmentedControl,
-  Select,
   SimpleGrid,
   Slider,
   Stack,
-  Switch,
   Text,
-  TextInput,
-  Textarea,
   Tabs,
   ThemeIcon,
   Title,
@@ -57,6 +47,18 @@ import {
   type PrimaryRamp,
   type ThemeTokens,
 } from '../theme/tokens';
+import {
+  ActionIcon,
+  Button,
+  Checkbox,
+  Chip,
+  Radio,
+  SegmentedControl,
+  Select,
+  Switch,
+  TextInput,
+  Textarea,
+} from '../ui';
 
 type Palette = 'gray' | 'dark' | 'primary';
 type EditorTarget = { palette: Palette; index: number } | { palette: 'white' | 'black' };

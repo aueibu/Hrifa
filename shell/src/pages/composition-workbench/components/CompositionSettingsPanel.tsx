@@ -1,4 +1,4 @@
-import { Chip, Group, Select, Stack } from '@mantine/core';
+import { Group, Stack } from '@mantine/core';
 import {
   KitScope,
   NumberField,
@@ -8,7 +8,9 @@ import {
   StripTool,
   Tip,
   Toggle,
-} from '../../../components/InspectorKit';
+  Chip,
+  Select,
+} from '../../../ui';
 import { PITCH_SET_PRESETS, togglePitch, type PitchSetPreset } from '../chordInput/pitchSet';
 import { projectPitchSetFromPreset, useCompositionSettings } from '../compositionSettings';
 import { pitchClassName } from '../pitch';
@@ -30,7 +32,6 @@ function PitchSetControl() {
     <Stack gap="xs">
       <Row name="Preset" fill>
         <Select
-          size="xs"
           aria-label="Preset"
           data={(edo === 12
             ? PITCH_SET_PRESETS
@@ -48,7 +49,6 @@ function PitchSetControl() {
       </Row>
       <Row name="Tonic" fill>
         <Select
-          size="xs"
           aria-label="Tonic"
           data={pcs.map((pc) => ({ value: String(pc), label: pitchClassName(pc, edo) }))}
           value={String(pitchSet.tonic)}
@@ -66,7 +66,6 @@ function PitchSetControl() {
         {pcs.map((pc) => (
           <Chip
             key={pc}
-            size="xs"
             variant="outline"
             checked={pitchSet.pcs.includes(pc)}
             onChange={() =>

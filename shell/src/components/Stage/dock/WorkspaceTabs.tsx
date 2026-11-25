@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ActionIcon, Menu } from '@mantine/core';
 import type { WorkspaceId, WorkspaceStore } from '../../../lib/stage';
-import { StripTool } from '../../InspectorKit';
+import { StripTool } from '../../../ui';
 import { DownIcon } from '../icons';
 import { NamePrompt } from './NamePrompt';
 import { isRoveKey, roveFocus } from './tabKeys';

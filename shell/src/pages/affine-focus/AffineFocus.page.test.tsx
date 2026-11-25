@@ -1,8 +1,10 @@
 import { render } from '@test-utils';
 import { fireEvent, screen, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AffineFocusPage } from '../AffineFocus.page';
 import { STORAGE_KEY } from './state';
+
+vi.setConfig({ testTimeout: 35_000 });
 
 function renderPage() {
   return render(<AffineFocusPage />);

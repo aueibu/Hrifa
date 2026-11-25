@@ -1,6 +1,7 @@
 /** Glossary drawer: every tooltip text from texts.ts, searchable, with "see also" links. */
 import { useMemo, useRef, useState } from 'react';
-import { Anchor, Drawer, Text, TextInput } from '@mantine/core';
+import { Anchor, Drawer, Text } from '@mantine/core';
+import { TextInput } from '../../../ui';
 import { Blocks } from '../helpMarkup';
 import { GLOSSARY, TIPS, type TipKey } from '../texts';
 import { SearchIcon } from './icons';

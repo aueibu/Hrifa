@@ -113,9 +113,7 @@ export function LadderDiagram({
           r={playingNote?.part === 'aroha' && playingNote.index === i ? 4.5 : 2.6}
           fill="var(--mark-blue)"
           stroke={
-            playingNote?.part === 'aroha' && playingNote.index === i
-              ? 'var(--mark-orange)'
-              : 'none'
+            playingNote?.part === 'aroha' && playingNote.index === i ? 'var(--mark-orange)' : 'none'
           }
           strokeWidth={2}
         >

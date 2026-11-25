@@ -201,7 +201,7 @@
   align-items: center;
   background: var(--mantine-primary-color-filled);
   border: 1px solid color-mix(in srgb, var(--mantine-primary-color-filled) 72%, black);
-  border-radius: 2px;
+  border-radius: var(--radius-hairline);
   color: var(--mantine-color-white);
   display: flex;
   font-family: var(--mantine-font-family-monospace);

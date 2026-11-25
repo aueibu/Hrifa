@@ -29,7 +29,7 @@ export function VolumeControl({
   const db = volumePercentToDb(value);
   return (
     <div className={classes.root}>
-      {typeof label === 'string' ? <Text size="xs">{label}</Text> : label}
+      {typeof label === 'string' ? <Text>{label}</Text> : label}
       <Group gap="xs" wrap="nowrap" className={classes.fader}>
         {decibels ? (
           <Slider
@@ -50,7 +50,7 @@ export function VolumeControl({
             onChange={onChange}
           />
         )}
-        <Text ff="monospace" size="xs" w="4.25rem" ta="right">
+        <Text ff="monospace" w="4.25rem" ta="right">
           {decibels ? volumeDbLabel(db) : volumePercentLabel(value)}
         </Text>
       </Group>

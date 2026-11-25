@@ -4,10 +4,7 @@ import {
   Anchor,
   AppShell,
   Box,
-  Button,
-  Checkbox,
   Group,
-  Radio,
   SimpleGrid,
   Slider,
   Stack,
@@ -21,6 +18,7 @@ import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeTo
 import { Data } from '../components/Data/Data';
 import { Surface } from '../components/Surface/Surface';
 import { resolveSegmentTangentStyle } from '../theme/diagram';
+import { Button, Checkbox, Radio } from '../ui';
 import { PeriodicityBlockPanel } from './segment-tangent-construction/PeriodicityBlockPanel';
 import {
   RatioAnalysisPanel,

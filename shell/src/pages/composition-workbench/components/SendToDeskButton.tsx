@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Text } from '@mantine/core';
+import { Text } from '@mantine/core';
+import { Button } from '../../../ui';
 import type { PublishedCompositionOutput } from '../compositionRouting';
 import { captureDataBlock } from '../dataBlock';
 import { chooseTypeId } from '../dataBlocks/registry';
@@ -60,7 +61,6 @@ export function SendToDeskButton({ output }: { output: PublishedCompositionOutpu
   return (
     <div>
       <Button
-        size="compact-xs"
         variant="default"
         data-info="Copy this output to the desk, where it can be heard, renamed and placed back on the canvas as a source."
         disabled={unsupported !== undefined}
@@ -70,7 +70,7 @@ export function SendToDeskButton({ output }: { output: PublishedCompositionOutpu
         Send to desk
       </Button>
       {message && (
-        <Text size="xs" c="dimmed" mt={4} aria-live="polite">
+        <Text c="dimmed" mt={4} aria-live="polite">
           {message}
         </Text>
       )}

@@ -1,3 +1,4 @@
+import { CloseIcon } from '../../../components/Stage/icons';
 /**
  * The spike inspector region: left of the Stage, built entirely from the kit (one `KitScope`, `Panel`s chosen by the
  * selection). It reads the demo selection: clicking a note in the roll or a clip on the canvas selects it. Compact
@@ -18,8 +19,7 @@ import {
   TextField,
   Tip,
   Toggle,
-} from '../../../components/InspectorKit';
-import { CloseIcon } from '../../../components/Stage/icons';
+} from '../../../ui';
 import { pitchName, useSpike, type ClipGrid, type ClipMode } from './state';
 import classes from './spike.module.css';
 

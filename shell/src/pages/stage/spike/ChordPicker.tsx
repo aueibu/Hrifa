@@ -6,8 +6,8 @@
  * changes only `size` and loses nothing. `chordProbe.mounts` counts mount effects for the tests.
  */
 import { useEffect, useState } from 'react';
-import { Button, SegmentedControl } from '@mantine/core';
 import type { SlotSize } from '../../../lib/stage';
+import { SegmentedControl, Button } from '../../../ui';
 import classes from './spike.module.css';
 
 export const chordProbe = { mounts: 0 };

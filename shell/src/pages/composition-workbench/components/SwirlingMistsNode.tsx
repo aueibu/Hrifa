@@ -1,17 +1,6 @@
 import { useState } from 'react';
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Group,
-  Modal,
-  NumberInput,
-  Select,
-  Slider,
-  Switch,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Badge, Group, Modal, Slider, Text } from '@mantine/core';
+import { Button, NumberInput, Select, Switch, TextInput, ActionIcon } from '../../../ui';
 import { createPitchPreviewPlan } from '../audio/performancePlans';
 import {
   curveShape,
@@ -181,7 +170,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
   const stratumRows = settings.strata.map((stratum, index) => (
     <div key={index} style={{ display: 'contents' }}>
       <Switch
-        size="xs"
         checked={stratum.enabled}
         aria-label={`Stratum ${index + 1} enabled`}
         onChange={(event) => updateStratum(index, { enabled: event.currentTarget.checked })}
@@ -189,7 +177,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
       <Group gap={6} wrap="nowrap">
         <span className={classes.swatch} style={{ background: strataColor(index) }} aria-hidden />
         <Select
-          size="xs"
           w="5rem"
           aria-label={`Stratum ${index + 1} waveform`}
           allowDeselect={false}
@@ -215,7 +202,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
         />
       </Group>
       <NumberInput
-        size="xs"
         aria-label={`Stratum ${index + 1} cycles per pass`}
         title="Whole cycles of the waveform in one pass"
         min={1}
@@ -226,7 +212,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
         }
       />
       <NumberInput
-        size="xs"
         aria-label={`Stratum ${index + 1} speed: passes per position`}
         title="How fast the shape is traversed, in passes per position (bigger is faster). Speeds 1 and 0.5 line up every 2; 2 and 3 every 1. 0 holds still."
         step={0.25}
@@ -235,7 +220,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
         onChange={(value) => updateStratum(index, { speed: numberOr(value, stratum.speed) })}
       />
       <NumberInput
-        size="xs"
         aria-label={`Stratum ${index + 1} phase as a fraction of a pass`}
         step={0.05}
         decimalScale={3}
@@ -243,7 +227,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
         onChange={(value) => updateStratum(index, { phase: numberOr(value, stratum.phase) })}
       />
       <NumberInput
-        size="xs"
         aria-label={`Stratum ${index + 1} center`}
         step={0.25}
         decimalScale={3}
@@ -251,7 +234,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
         onChange={(value) => updateStratum(index, { center: numberOr(value, stratum.center) })}
       />
       <NumberInput
-        size="xs"
         aria-label={`Stratum ${index + 1} amplitude`}
         step={0.1}
         min={0}
@@ -272,7 +254,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
       {stratum.waveform === 'walk' && (
         <Group gap="xs" wrap="nowrap" style={{ gridColumn: '2 / -1' }}>
           <NumberInput
-            size="xs"
             w="6.5rem"
             label="Points"
             aria-label={`Stratum ${index + 1} points per cycle`}
@@ -284,7 +265,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
             }
           />
           <NumberInput
-            size="xs"
             w="6.5rem"
             label="Walk step"
             aria-label={`Stratum ${index + 1} walk step`}
@@ -297,7 +277,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
             }
           />
           <NumberInput
-            size="xs"
             w="6.5rem"
             label="Smoothing"
             aria-label={`Stratum ${index + 1} smoothing window`}
@@ -312,7 +291,7 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
       )}
       {stratum.waveform === 'custom' && (
         <Group gap="xs" wrap="nowrap" style={{ gridColumn: '2 / -1' }}>
-          <Button size="compact-xs" variant="default" onClick={() => setEditingCurve(index)}>
+          <Button variant="default" onClick={() => setEditingCurve(index)}>
             Draw curve…
           </Button>
           <svg width={96} height={24} viewBox="0 0 96 24" aria-hidden>
@@ -338,7 +317,7 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
       >
         {curveStratum && editingCurve !== null && (
           <>
-            <Text size="xs" c="dimmed" mb="xs">
+            <Text c="dimmed" mb="xs">
               Drag across the plot to draw one loop. The curve repeats, and the dashed line is where
               the end leads back into the start. Changes apply immediately.
             </Text>
@@ -382,7 +361,7 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
         }
         onReset={reset}
         footer={
-          <Text size="xs" c="dimmed" truncate aria-live="polite">
+          <Text c="dimmed" truncate aria-live="polite">
             {preview.status ||
               sampling.warnings[0] ||
               'Preview reads each step as MIDI notes; the outputs are plain numbers.'}
@@ -392,7 +371,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
           <>
             <InspectorSection label="Sampling">
               <Select
-                size="xs"
                 label="Preset"
                 placeholder="Apply a preset…"
                 data={mistPresets.map((preset) => ({ value: preset.id, label: preset.label }))}
@@ -400,7 +378,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
                 onChange={applyPreset}
               />
               <NumberInput
-                size="xs"
                 label="Steps"
                 min={1}
                 max={maxMistSteps}
@@ -408,14 +385,12 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
                 onChange={(value) => update({ steps: Math.round(numberOr(value, settings.steps)) })}
               />
               <NumberInput
-                size="xs"
                 label="Start"
                 decimalScale={6}
                 value={settings.start}
                 onChange={(value) => update({ start: numberOr(value, settings.start) })}
               />
               <NumberInput
-                size="xs"
                 label="Stride"
                 description="Positions between samples. Speed 1 is one pass per position."
                 step={0.0625}
@@ -440,7 +415,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
               </div>
               <Button
                 variant="default"
-                size="xs"
                 disabled={settings.strata.length >= maxMistStrata}
                 onClick={addStratum}
               >
@@ -451,14 +425,12 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
             <NodeInspectorContent>
               <InspectorSection label="Source">
                 <TextInput
-                  size="xs"
                   label="Seed"
                   description="Random walks repeat exactly for the same seed."
                   value={settings.seed}
                   onChange={(event) => update({ seed: event.currentTarget.value.slice(0, 24) })}
                 />
                 <Select
-                  size="xs"
                   label="Interpolation"
                   allowDeselect={false}
                   data={[
@@ -472,24 +444,21 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
                 />
               </InspectorSection>
               <InspectorSection label="Output range">
-                <Text size="xs" c="dimmed">
+                <Text c="dimmed">
                   The field&apos;s full reach maps onto this range, so values do not move when the
                   window does.
                 </Text>
                 <NumberInput
-                  size="xs"
                   label="Low"
                   value={settings.mapLow}
                   onChange={(value) => update({ mapLow: numberOr(value, settings.mapLow) })}
                 />
                 <NumberInput
-                  size="xs"
                   label="High"
                   value={settings.mapHigh}
                   onChange={(value) => update({ mapHigh: numberOr(value, settings.mapHigh) })}
                 />
                 <NumberInput
-                  size="xs"
                   label="Round to"
                   description="Outputs are rounded to a multiple of this, e.g. 1, 0.5, 0.01."
                   step={settings.mapStep <= 0.1 ? 0.01 : 0.5}
@@ -507,7 +476,6 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
               </InspectorSection>
               <InspectorSection label="Preview">
                 <NumberInput
-                  size="xs"
                   label="Step"
                   suffix=" ms"
                   min={20}
@@ -516,7 +484,7 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
                   onChange={(value) => setStepMilliseconds(numberOr(value, stepMilliseconds))}
                 />
                 <div className={workbench.nodeParameterRow}>
-                  <Text size="xs">Gate</Text>
+                  <Text>Gate</Text>
                   <Group gap="xs" wrap="nowrap" className={workbench.volumeControl}>
                     <Slider
                       thumbLabel="Preview gate length"
@@ -525,7 +493,7 @@ export function SwirlingMistsNode({ instanceId, instanceLabel }: SwirlingMistsNo
                       value={gatePercent}
                       onChange={setGatePercent}
                     />
-                    <Text ff="monospace" size="xs" w="2.5rem" ta="right">
+                    <Text ff="monospace" w="2.5rem" ta="right">
                       {gatePercent}%
                     </Text>
                   </Group>

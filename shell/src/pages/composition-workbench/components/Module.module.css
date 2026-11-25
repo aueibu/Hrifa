@@ -5,8 +5,7 @@
 
 .header {
   background: var(--panel-header);
-  border-bottom: 1px solid var(--grid);
-  min-height: 2rem;
+  min-height: var(--ui-strip-height);
   padding: 0.25rem 0.5rem;
 }
 
@@ -25,13 +24,12 @@
 }
 
 .section {
-  border-right: 1px solid var(--grid);
   min-width: 0;
   padding: 0.5rem;
 }
 
 .section:last-child {
-  border-right: 0;
+  min-width: 0;
 }
 
 .sectionLabel {
@@ -46,14 +44,13 @@
 }
 
 .footer {
-  border-top: 1px solid var(--grid);
-  min-height: 1.75rem;
+  background: var(--panel-header);
+  min-height: var(--ui-row-height);
   padding: 0.25rem 0.5rem;
 }
 
 .output {
   background: color-mix(in srgb, var(--accent-tint) 35%, var(--panel));
-  border-top: 1px solid var(--grid);
   min-height: 2.25rem;
   padding: 0.35rem 0.5rem;
 }
@@ -75,7 +72,7 @@
     grid-template-columns: minmax(20rem, 1fr) minmax(12rem, 15rem);
   }
 
-  .section[data-grow="true"] {
+  .section[data-grow='true'] {
     grid-column: 1 / -1;
   }
 }
@@ -86,7 +83,7 @@
   }
 
   .section,
-  .section[data-grow="true"] {
+  .section[data-grow='true'] {
     border-bottom: 1px solid var(--grid);
     border-right: 0;
     grid-column: auto;

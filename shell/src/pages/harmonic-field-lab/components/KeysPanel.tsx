@@ -3,7 +3,7 @@
  * summary line and the Switch / Add buttons, then one mini ring per key with its common-tone count.
  */
 import { useState } from 'react';
-import { Button } from '@mantine/core';
+import { Button } from '../../../ui';
 import type { PreviewTarget } from '../audio/plan';
 import { MAX_KEYS_NOTES, type KeyRingData } from '../state/derive';
 import {

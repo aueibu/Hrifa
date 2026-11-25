@@ -1,14 +1,8 @@
 /** Generator column (left of the ring): preset, ⚙ fold-out (prime filter, odd limit, repeat), method tabs, then that method's parameters. */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActionIcon,
-  Button,
-  Checkbox,
-  NativeSelect,
-  Popover,
-  SegmentedControl,
-} from '@mantine/core';
+import { Popover } from '@mantine/core';
 import { fmtRatio, genusSummary, parseGenusN, parseScl } from '../../../lib/harmonic-field';
+import { Button, Checkbox, NativeSelect, SegmentedControl, ActionIcon } from '../../../ui';
 import {
   MAX_ODD_LIMIT,
   filterSummary,

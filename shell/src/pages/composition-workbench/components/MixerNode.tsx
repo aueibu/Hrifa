@@ -1,23 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActionIcon,
-  Alert,
-  Badge,
-  Button,
-  Group,
-  NumberInput,
-  SegmentedControl,
-  Select,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Alert, Badge, Group, Stack, Text, Title } from '@mantine/core';
 import {
   PianoRoll,
   defaultPianoRollView,
   type PianoRollViewState,
 } from '../../../components/PianoRoll';
 import { Surface } from '../../../components/Surface/Surface';
+import { Button, NumberInput, SegmentedControl, Select, ActionIcon } from '../../../ui';
 import { volumePercentToGain } from '../audio';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import {
@@ -489,7 +478,6 @@ export function MixerNode({
             <div>
               <Group justify="space-between" mb="xs" wrap="wrap" gap="xs">
                 <SegmentedControl
-                  size="xs"
                   aria-label="Roll view"
                   value={rollMode}
                   onChange={(value) => setRollMode(value as 'composite' | 'channels')}
@@ -500,9 +488,7 @@ export function MixerNode({
                 />
                 {rollMode === 'channels' && (
                   <Group gap={4} wrap="nowrap">
-                    <Text size="xs" c="dimmed">
-                      Shared time scale
-                    </Text>
+                    <Text c="dimmed">Shared time scale</Text>
                     <ActionIcon
                       size="sm"
                       variant="default"
@@ -520,7 +506,6 @@ export function MixerNode({
                       +
                     </ActionIcon>
                     <Button
-                      size="compact-xs"
                       variant="subtle"
                       disabled={channelScale === null}
                       onClick={() => setChannelScale(null)}
@@ -530,14 +515,14 @@ export function MixerNode({
                   </Group>
                 )}
                 {preview.playing && mix.compiled?.loopable && (
-                  <Text size="xs" c="dimmed" aria-live="off">
+                  <Text c="dimmed" aria-live="off">
                     Pass {Math.floor(elapsed / Math.max(1e-9, playedPass.current)) + 1}
                   </Text>
                 )}
               </Group>
               {truncated && (
                 <Alert color="yellow" variant="light" p="xs" mb="xs" title="Preview only">
-                  <Text size="xs">
+                  <Text>
                     {mix.realignment
                       ? `These channels realign every ${realignmentLength}, beyond the ${previewBars}-bar limit.`
                       : 'The realignment period of these channels is too large to compute.'}{' '}
@@ -588,10 +573,8 @@ export function MixerNode({
                                 width: 10,
                               }}
                             />
-                            <Text size="xs" fw={700}>
-                              Ch {channelRoll.index + 1}
-                            </Text>
-                            <Text size="xs" c="dimmed">
+                            <Text fw={700}>Ch {channelRoll.index + 1}</Text>
+                            <Text c="dimmed">
                               {describeChannelLength(
                                 channelRoll.period,
                                 pulseQuarters,
@@ -650,17 +633,17 @@ export function MixerNode({
                 </div>
               )}
               {rollMode === 'composite' && roll.total > roll.notes.length && (
-                <Text size="xs" c="dimmed" mt={4}>
+                <Text c="dimmed" mt={4}>
                   Showing the first {roll.notes.length} of {roll.total} events.
                 </Text>
               )}
               {!channelRolls.length && rollMode === 'channels' && (
-                <Text size="xs" c="dimmed" mt={4}>
+                <Text c="dimmed" mt={4}>
                   Connect a source to a channel to see its cycle.
                 </Text>
               )}
               {rollMode === 'composite' && !mix.compiled?.plan && (
-                <Text size="xs" c="dimmed" mt={4}>
+                <Text c="dimmed" mt={4}>
                   Connect a source to a channel to see every channel together.
                 </Text>
               )}
@@ -702,7 +685,6 @@ export function MixerNode({
                           Ch {index + 1}
                         </Text>
                         <Text
-                          size="xs"
                           c={material.status === 'error' ? 'red' : 'dimmed'}
                           aria-live="polite"
                           style={{ paddingTop: 2 }}
@@ -711,7 +693,6 @@ export function MixerNode({
                         </Text>
                       </Group>
                       <Button
-                        size="compact-xs"
                         variant="subtle"
                         color="gray"
                         disabled={ports.length <= 1}
@@ -730,7 +711,6 @@ export function MixerNode({
                     />
                     <Group gap="sm" align="end" wrap="wrap">
                       <Select
-                        size="xs"
                         label="Loop"
                         aria-label={`Channel ${index + 1} loop`}
                         allowDeselect={false}
@@ -742,7 +722,6 @@ export function MixerNode({
                         }
                       />
                       <NumberInput
-                        size="xs"
                         label="Offset (pulses)"
                         aria-label={`Channel ${index + 1} offset in pulses`}
                         min={0}
@@ -758,7 +737,6 @@ export function MixerNode({
                       />
                       {isRhythm && (
                         <NumberInput
-                          size="xs"
                           label="Gate %"
                           aria-label={`Channel ${index + 1} gate percent`}
                           min={MIN_GATE_PERCENT}
@@ -800,7 +778,6 @@ export function MixerNode({
                         />
                       </div>
                       <Button
-                        size="compact-sm"
                         variant={channel.muted ? 'filled' : 'default'}
                         aria-pressed={channel.muted}
                         aria-label={`Mute channel ${index + 1}`}
@@ -809,7 +786,6 @@ export function MixerNode({
                         M
                       </Button>
                       <Button
-                        size="compact-sm"
                         variant={channel.solo ? 'filled' : 'default'}
                         aria-pressed={channel.solo}
                         aria-label={`Solo channel ${index + 1}`}
@@ -823,11 +799,11 @@ export function MixerNode({
               );
             })}
             <Group>
-              <Button size="compact-sm" variant="default" onClick={onAddChannel}>
+              <Button variant="default" onClick={onAddChannel}>
                 + Channel
               </Button>
             </Group>
-            <Text size="xs" c="dimmed">
+            <Text c="dimmed">
               Changes to a source, loop, or offset apply the next time you press Play. Level, mute
               and solo are live.
             </Text>
@@ -839,7 +815,7 @@ export function MixerNode({
           status={`${connected} of ${ports.length} playing`}
           onReset={resetMixer}
           footer={
-            <Text size="xs" c="dimmed" truncate aria-live="polite">
+            <Text c="dimmed" truncate aria-live="polite">
               {preview.status || 'Plays at the transport tempo; levels stay live.'}
             </Text>
           }
@@ -854,10 +830,8 @@ export function MixerNode({
                 onChange={setMasterVolume}
               />
               <Group gap="xs" wrap="nowrap">
-                <Button size="compact-sm" onClick={playMix}>
-                  ▶ Play
-                </Button>
-                <Button size="compact-sm" variant="default" onClick={() => preview.stop()}>
+                <Button onClick={playMix}>▶ Play</Button>
+                <Button variant="default" onClick={() => preview.stop()}>
                   ■ Stop
                 </Button>
               </Group>

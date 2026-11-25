@@ -3,8 +3,9 @@
  * notice with Undo and Show removed, and the refusal line. Everything goes through the library actions of the lab state.
  */
 import { useMemo, useState } from 'react';
-import { ActionIcon, Button, Menu, Modal, Popover, TextInput } from '@mantine/core';
+import { Menu, Modal, Popover } from '@mantine/core';
 import { reportSentence } from '../../../lib/harmonic-field';
+import { Button, TextInput, ActionIcon } from '../../../ui';
 import { folderList } from '../state/folderRecords';
 import { autoName } from '../state/generate';
 import { subsetsOf } from '../state/generatorLibrary';

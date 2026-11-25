@@ -1,18 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Anchor,
-  Badge,
-  Button,
-  Group,
-  Modal,
-  SegmentedControl,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-  UnstyledButton,
-} from '@mantine/core';
+import { Anchor, Badge, Group, Modal, Stack, Text, Title, UnstyledButton } from '@mantine/core';
+import { Button, SegmentedControl, Select, TextInput } from '../../../ui';
 import {
   createForteSetSelection,
   forteCatalog,
@@ -173,7 +161,7 @@ export function ForteCatalogBrowser({
                 <Text ff="monospace" size="sm">
                   ({entry.primeForm.map(compactPitchClass).join('')})
                 </Text>
-                <Text ff="monospace" c="dimmed" size="xs" ta="right">
+                <Text ff="monospace" c="dimmed" ta="right">
                   &lt;{entry.intervalClassVector.join('')}&gt;
                 </Text>
               </UnstyledButton>
@@ -184,10 +172,10 @@ export function ForteCatalogBrowser({
               </Text>
             )}
           </div>
-          <Text size="xs" c="dimmed">
+          <Text c="dimmed">
             {filteredEntries.length} of {forteCatalog.length} set classes
           </Text>
-          <Text size="xs" c="dimmed">
+          <Text c="dimmed">
             Prime forms checked against the{' '}
             <Anchor href="https://www.humdrum.org/rep/pcset/index.html" target="_blank">
               Humdrum **pcset table
@@ -246,7 +234,7 @@ export function ForteCatalogBrowser({
           <Text className={classes.realizedSet} ff="monospace" size="lg" fw={700}>
             {formatPitchClassGroup(selection.pitchClasses)}
           </Text>
-          <Text size="xs" c="dimmed">
+          <Text c="dimmed">
             The catalog creates one simultaneous pitch-class group. Register remains a separate
             musical operation; the octave in Preview is only for listening.
           </Text>

@@ -68,7 +68,7 @@ export function DataBlockEditorSlot({ dataBlockId, onMissing }: DataBlockEditorS
   return (
     <div className={classes.empty} role="status">
       <Text size="sm">No editor for this data-block yet.</Text>
-      <Text size="xs" className={classes.detail}>
+      <Text className={classes.detail}>
         {dataBlock.name} · {dataBlock.payload.packet.kind} | {dataBlock.payload.packet.domain}
       </Text>
     </div>

@@ -59,7 +59,7 @@ import {
   type PanelId,
   type Workspace,
 } from '../../../lib/stage';
-import { DEFAULT_DENSITY, tokenStyle } from '../../InspectorKit';
+import { DEFAULT_DENSITY, tokenStyle } from '../../../ui';
 import { browserStorage, type StageStorage } from '../persistence';
 import type { StageRegistry } from '../registry';
 import { INITIAL_SIZE, withMeasure, type SlotSizes } from '../sizeState';

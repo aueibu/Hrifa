@@ -1,18 +1,16 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Badge, Group, Text } from '@mantine/core';
 import {
-  Badge,
   ActionIcon,
   Button,
   Chip,
-  Group,
   NumberInput,
   SegmentedControl,
   Select,
   Switch,
-  Text,
   Textarea,
   TextInput,
-} from '@mantine/core';
+} from '../../../ui';
 import {
   compositionOutputOptions,
   outputRefKey,
@@ -497,9 +495,7 @@ export function RhythmEditNode({
           <div className={classes.iconBar}>
             <Group gap={4} wrap="nowrap">
               <HelpTip help="Zoom changes only the width of the roll; every row keeps its height. Drag the bar above to scroll and zoom as well.">
-                <Text size="xs" c="dimmed">
-                  Zoom
-                </Text>
+                <Text c="dimmed">Zoom</Text>
               </HelpTip>
               <ActionIcon
                 variant="default"
@@ -518,7 +514,6 @@ export function RhythmEditNode({
                 +
               </ActionIcon>
               <Button
-                size="compact-xs"
                 variant="default"
                 onClick={() => {
                   const view = scrollerRef.current?.clientWidth ?? 0;
@@ -527,16 +522,10 @@ export function RhythmEditNode({
               >
                 Fit
               </Button>
-              <Button
-                size="compact-xs"
-                variant="default"
-                onClick={() => zoomTo(DEFAULT_CELL_WIDTH)}
-              >
+              <Button variant="default" onClick={() => zoomTo(DEFAULT_CELL_WIDTH)}>
                 Reset
               </Button>
-              <Text size="xs" c="dimmed">
-                {Math.round(clampCellWidth(cellWidth))}px/note
-              </Text>
+              <Text c="dimmed">{Math.round(clampCellWidth(cellWidth))}px/note</Text>
             </Group>
             <Chip.Group
               multiple
@@ -545,12 +534,10 @@ export function RhythmEditNode({
             >
               <Group gap="xs" wrap="nowrap">
                 <HelpTip help="Preview plays every layer chosen here together, each on its own sound.">
-                  <Text size="xs" c="dimmed">
-                    Audition
-                  </Text>
+                  <Text c="dimmed">Audition</Text>
                 </HelpTip>
                 {auditionLayers.map(({ id, label }) => (
-                  <Chip key={id} value={id} size="xs" variant="outline">
+                  <Chip key={id} value={id} variant="outline">
                     {label}
                   </Chip>
                 ))}
@@ -578,9 +565,7 @@ export function RhythmEditNode({
         boundaries={groupingMarks(input)}
       />
     ) : (
-      <Text size="xs" c="dimmed">
-        Connect a rhythm in the Rhythm source setting to see it here.
-      </Text>
+      <Text c="dimmed">Connect a rhythm in the Rhythm source setting to see it here.</Text>
     );
 
   return (
@@ -604,7 +589,7 @@ export function RhythmEditNode({
       }
       onReset={resetRhythmEdit}
       footer={
-        <Text size="xs" c="dimmed" truncate aria-live="polite">
+        <Text c="dimmed" truncate aria-live="polite">
           {preview.status || 'Plays at the transport tempo; volume stays live.'}
         </Text>
       }
@@ -616,7 +601,6 @@ export function RhythmEditNode({
             help="Choose which notes become rests or ties: a cyclic program of blocks, or rules that pick notes directly."
           >
             <SegmentedControl
-              size="xs"
               fullWidth
               aria-label="How notes are chosen"
               value={mode}
@@ -801,7 +785,7 @@ export function RhythmEditNode({
             <InspectorSection label="Preview">
               {auditionLayers.map(({ id, label, voice }) => (
                 <div className={classes.nodeParameterRow} key={id}>
-                  <Text size="xs">{label}</Text>
+                  <Text>{label}</Text>
                   <SoundOverrideControl
                     label={label}
                     set={settings.sounds.rhythm}

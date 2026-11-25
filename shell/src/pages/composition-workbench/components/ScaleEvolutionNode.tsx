@@ -1,4 +1,5 @@
-import { Alert, Badge, Select, Text, TextInput } from '@mantine/core';
+import { Alert, Badge, Text } from '@mantine/core';
+import { Select, TextInput } from '../../../ui';
 import {
   compositionOutputOptions,
   outputRefKey,
@@ -77,7 +78,7 @@ export function ScaleEvolutionNode({
   ) : (
     generated.result && (
       <>
-        <Text size="xs" c="dimmed">
+        <Text c="dimmed">
           Input:{' '}
           <Text span ff="monospace">
             {sourceIntervals.join(' + ')}
@@ -101,7 +102,7 @@ export function ScaleEvolutionNode({
           </div>
         ))}
         {generated.result.terminationReason === 'cycle' && (
-          <Text size="xs" c="dimmed">
+          <Text c="dimmed">
             Stopped: this stage's durations repeated an earlier stage exactly, rather than reaching
             a neutral (all-semitone) collapse.
           </Text>
@@ -128,7 +129,7 @@ export function ScaleEvolutionNode({
       }
       onReset={resetScaleEvolution}
       footer={
-        <Text size="xs" c="dimmed" truncate>
+        <Text c="dimmed" truncate>
           Synchronizes a sequence with its own circular permutations within one shared period (Book
           I Ch. 13 / Book II Ch. 3 §A).
         </Text>
@@ -146,7 +147,7 @@ export function ScaleEvolutionNode({
               />
             )}
             {binding?.source && (
-              <Text size="xs" c="dimmed" ff="monospace">
+              <Text c="dimmed" ff="monospace">
                 {rawIntervalLine(resolvedSequence)}
               </Text>
             )}

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Button, Popover, TextInput } from '@mantine/core';
+import { Popover } from '@mantine/core';
+import { TextInput, Button } from '../../../ui';
 import { useCompositionSettings } from '../compositionSettings';
 import type { PacketBlock } from '../dataBlock';
 import { useDataBlockOps } from '../dataBlockOps';
@@ -136,7 +137,6 @@ export function DataBlockMenu({
       <Popover.Dropdown p={0} aria-label={ariaLabel}>
         <div className={classes.dropdown}>
           <TextInput
-            size="xs"
             aria-label="Search data-blocks"
             placeholder="Search"
             value={query}
@@ -189,7 +189,6 @@ function NewBlankButton({ onCreated }: { onCreated(dataBlock: PacketBlock): void
   }
   return (
     <Button
-      size="compact-xs"
       variant="default"
       data-info="Add an empty data-block of the default type and length to the desk and use it."
       onClick={() => {

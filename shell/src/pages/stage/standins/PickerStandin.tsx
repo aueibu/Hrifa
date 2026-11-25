@@ -4,8 +4,8 @@
  * state kept above the per-size branch to show it survives a move; `pickerProbe.mounts` counts mount effects for tests.
  */
 import { useEffect, useState } from 'react';
-import { Button } from '@mantine/core';
 import { slotSizeAttr, type SlotSize } from '../../../lib/stage';
+import { Button } from '../../../ui';
 import classes from './standins.module.css';
 
 export const pickerProbe = { mounts: 0 };

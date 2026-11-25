@@ -19,15 +19,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import {
-  ActionIcon,
-  Button,
-  NativeSelect,
-  NumberInput,
-  Switch,
-  TextInput,
-  VisuallyHidden,
-} from '@mantine/core';
+import { VisuallyHidden } from '@mantine/core';
 import { Splitter } from '../../../components/Stage/Splitter';
 import {
   CHORD_LIBRARY_CREDIT,
@@ -46,6 +38,7 @@ import {
   type LibraryEntry,
   type LibraryFilter,
 } from '../../../lib/harmonic-field';
+import { Button, NativeSelect, NumberInput, Switch, TextInput, ActionIcon } from '../../../ui';
 import type { PreviewTarget } from '../audio/plan';
 import type { SoundingSnap } from '../state/context';
 import { MAX_CHORDS, noteLabel } from '../state/derive';

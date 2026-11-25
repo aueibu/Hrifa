@@ -1,9 +1,9 @@
+import { NativeSelect } from '../../../ui';
 /**
  * Tuner strip: the field notes by pitch with their sharp/flat bars and the scale steps right under them. Faint
  * vertical reference lines mark every 100 c (1/1 as C): lighter for a white key, darker for a black key. The strip and
  * the saved-subset rows share one gutter and one cents scale (`stripLeft`), so a note is in the same column everywhere.
  */
-import { NativeSelect } from '@mantine/core';
 import type { CmpRef } from '../state/labState';
 import { StripGhosts } from './GhostMarks';
 import { rootLabel, useModeRoot } from './ModeRoot';

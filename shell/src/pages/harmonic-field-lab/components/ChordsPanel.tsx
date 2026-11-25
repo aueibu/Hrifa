@@ -1,6 +1,6 @@
 /** Chords panel: tolerance with a ladder; sections by note count, one row per family, one chip per voicing. */
 import { Fragment, useMemo, useState } from 'react';
-import { ActionIcon, Button, Modal, SegmentedControl, Switch } from '@mantine/core';
+import { Modal } from '@mantine/core';
 import {
   DEFAULT_TEMPLATES,
   FOLD_EDIT_NOTE,
@@ -14,6 +14,7 @@ import {
   type ChordTemplate,
   type CpsChord,
 } from '../../../lib/harmonic-field';
+import { Button, SegmentedControl, Switch, ActionIcon } from '../../../ui';
 import type { PreviewTarget } from '../audio/plan';
 import {
   chipOrder,

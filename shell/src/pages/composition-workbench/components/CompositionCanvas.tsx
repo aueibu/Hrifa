@@ -30,7 +30,8 @@ import {
   type NodeProps,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Button, Menu, useComputedColorScheme } from '@mantine/core';
+import { Menu, useComputedColorScheme } from '@mantine/core';
+import { Button } from '../../../ui';
 import {
   NODE_HEIGHT,
   NODE_WIDTH,

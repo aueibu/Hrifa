@@ -10,8 +10,9 @@
  * blur, tab switch and an outside click; the pointer leaving the target does NOT close it (the item is captured at open).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Menu, SegmentedControl } from '@mantine/core';
+import { Menu } from '@mantine/core';
 import { samePitches, type Note } from '../../../lib/harmonic-field';
+import { SegmentedControl, Button } from '../../../ui';
 import { isTyping } from '../audio/keymap';
 import { SHORTCUTS } from '../audio/shortcuts';
 import type { ShelfChord } from '../state/chordShelf';

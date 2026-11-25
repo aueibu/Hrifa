@@ -21,8 +21,9 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { ActionIcon, Button, Popover, TextInput, VisuallyHidden } from '@mantine/core';
+import { Popover, VisuallyHidden } from '@mantine/core';
 import { PRESETS, splitFolder } from '../../../lib/harmonic-field';
+import { Button, TextInput, ActionIcon } from '../../../ui';
 import { deleteFolderQuestion, folderList, orderFolderSuggestions } from '../state/folderRecords';
 import { MAX_DESCRIPTION, parseOwner, type UserPreset } from '../state/generatorLibrary';
 import type { Action } from '../state/labState';

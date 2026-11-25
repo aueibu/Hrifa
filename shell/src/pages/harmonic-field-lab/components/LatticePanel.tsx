@@ -5,8 +5,8 @@
  * highlighted chord show in both.
  */
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { ActionIcon, Checkbox, NativeSelect, SegmentedControl } from '@mantine/core';
 import { chooseAxes3d, fmtHidden, rankAxes3d, type HiddenPrime } from '../../../lib/harmonic-field';
+import { Checkbox, NativeSelect, SegmentedControl, ActionIcon } from '../../../ui';
 import {
   cpsFactorNames,
   effectiveLatMode,

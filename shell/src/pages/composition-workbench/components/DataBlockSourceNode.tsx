@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Badge, Button, Text } from '@mantine/core';
+import { Alert, Badge, Text } from '@mantine/core';
+import { Button } from '../../../ui';
 import { EnsureDataBlockOps, useDataBlockOps } from '../dataBlockOps';
 import { makeSourceInputSpec } from '../dataBlocks/dataBlockMenuModel';
 import { makeSourceRefusal } from '../dataBlocks/registry';
@@ -94,7 +95,6 @@ function DataBlockSourceNodeBody({
             onNew={(created) => report(ops.setSourceBlock(instanceId, created.id))}
           />
           <Button
-            size="compact-xs"
             variant="default"
             disabled={!chosen}
             data-info={
@@ -122,7 +122,7 @@ function DataBlockSourceNodeBody({
         </>
       }
       footer={
-        <Text size="xs" c="dimmed" truncate>
+        <Text c="dimmed" truncate>
           {error ??
             (state === 'present'
               ? 'Reads a data-block on the desk. Edit or delete it there.'
@@ -151,12 +151,11 @@ function DataBlockSourceNodeBody({
           everywhere.
           {confirm && replacePreview && (
             <div>
-              <Text size="xs" mt="xs">
+              <Text mt="xs">
                 {replacePreview.refusal ??
                   `Replace it in ${replacePreview.count} ${replacePreview.count === 1 ? 'place' : 'places'} with ${confirm.name}?`}
               </Text>
               <Button
-                size="compact-xs"
                 mt="xs"
                 disabled={replacePreview.refusal !== null}
                 onClick={() => {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, Stack, Text, TextInput } from '@mantine/core';
+import { Stack, Text } from '@mantine/core';
+import { TextInput, Button } from '../../../ui';
 import type { PacketBlock } from '../dataBlock';
 import { useDesk } from '../desk';
 import {
@@ -60,7 +61,6 @@ function PropertyField({ label, value, description, disabled, onCommit, ariaLabe
 
   return (
     <TextInput
-      size="xs"
       label={label}
       aria-label={ariaLabel}
       description={description}
@@ -170,7 +170,6 @@ export function NotesPropertiesPanel({ dataBlock }: { dataBlock: PacketBlock }) 
       {positionField('start', 'Playback start', 'bar.beat.tick')}
       <Stack gap="xs" role="group" aria-label="Loop">
         <Button
-          size="xs"
           // On is the accent fill (a switch-class control); off is the plain outlined button.
           variant={properties.loopOn ? 'filled' : 'default'}
           aria-pressed={properties.loopOn}
@@ -210,7 +209,7 @@ export function NotesPropertiesPanel({ dataBlock }: { dataBlock: PacketBlock }) 
         }}
       />
       {notice && (
-        <Text size="xs" c="var(--mantine-color-error)" role="alert">
+        <Text c="var(--mantine-color-error)" role="alert">
           {notice}
         </Text>
       )}

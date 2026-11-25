@@ -1,4 +1,4 @@
-import { ActionIcon } from '@mantine/core';
+import { ActionIcon } from '../../../ui';
 
 interface MakeSingleUserButtonProps {
   /** How many users the data-block has; below 2 it is already single user and the button is disabled. */

@@ -9,7 +9,6 @@
   --splitter-thickness: 0.5rem;
   --grip-thickness: 3px;
   --grip-length: 2.5rem;
-  --input-height-xs: 1.625rem;
 
   background: var(--surface);
   box-sizing: border-box;

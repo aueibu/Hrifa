@@ -1,4 +1,5 @@
-import { ActionIcon, Button, Group, Select, Stack, Text } from '@mantine/core';
+import { Group, Stack, Text } from '@mantine/core';
+import { ActionIcon, Button, Select } from '../../../ui';
 import { SARGAM_DEGREES, type SargamDegree, type TanpuraNote } from '../settings';
 
 export interface TanpuraSequenceEditorProps {

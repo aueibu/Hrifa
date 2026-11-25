@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { act, fireEvent, render, screen, userEvent } from '@test-utils';
 import { describe, expect, it, vi } from 'vitest';
-import type { StageStorage } from '../Stage/persistence';
+import type { StageStorage } from '../components/Stage/persistence';
 import {
   DEFAULT_TIP_DELAY,
   DENSITY_TOKENS,
@@ -10,6 +10,7 @@ import {
   KitScope,
   NumberField,
   Row,
+  ScrubNumber,
   SelectField,
   TIP_DELAY_KEY,
   TipDelayContext,
@@ -96,7 +97,7 @@ describe('Row alignment contract', () => {
 describe('density', () => {
   it('writes the one token set (and the fixed tokens) as custom properties', () => {
     const style = tokenStyle('compact') as Record<string, string>;
-    expect(style['--kit-row-height']).toBe('1.625rem'); // Q9
+    expect(style['--kit-row-height']).toBe('1.375rem'); // Q9
     expect(Object.keys(style)).toHaveLength(
       Object.keys(DENSITY_TOKENS.compact).length + Object.keys(FIXED_TOKENS).length
     );
@@ -179,5 +180,63 @@ describe('Tip delay is applied', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('ScrubNumber', () => {
+  it('switches to textbox on single click, commits on Enter, and steps with arrows', () => {
+    const onChange = vi.fn();
+    render(
+      <KitScope>
+        <ScrubNumber
+          aria-label="Rotate"
+          value={4}
+          clamp={[-10, 10]}
+          defaultValue={0}
+          onChange={onChange}
+        />
+      </KitScope>
+    );
+    const spin = screen.getByRole('spinbutton', { name: 'Rotate' });
+    expect(document.querySelector('[aria-hidden="true"]')).toBeNull();
+    fireEvent.keyDown(spin, { key: 'ArrowUp' });
+    expect(onChange).toHaveBeenCalledWith(5);
+
+    fireEvent.pointerDown(spin, { button: 0, clientX: 10 });
+    fireEvent.pointerUp(spin, { button: 0, clientX: 10 });
+    const input = screen.getByRole('textbox', { name: 'Rotate' });
+    fireEvent.change(input, { target: { value: '7' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onChange).toHaveBeenCalledWith(7);
+    expect(screen.getByRole('spinbutton', { name: 'Rotate' })).toBeInTheDocument();
+  });
+
+  it('draws a bipolar fill from zero for signed ranges and unipolar from 0% otherwise', () => {
+    const { container, rerender } = render(
+      <KitScope>
+        <ScrubNumber aria-label="Bipolar" value={0} range={[-4, 4]} onChange={() => {}} />
+      </KitScope>
+    );
+    let fill = container.querySelector('[aria-hidden="true"]') as HTMLElement;
+    expect(fill.style.left).toBe('50%');
+    expect(fill.style.width).toBe('0%');
+
+    rerender(
+      <KitScope>
+        <ScrubNumber aria-label="Bipolar" value={-2} range={[-4, 4]} onChange={() => {}} />
+      </KitScope>
+    );
+    fill = container.querySelector('[aria-hidden="true"]') as HTMLElement;
+    expect(fill.style.left).toBe('25%');
+    expect(fill.style.width).toBe('25%');
+
+    rerender(
+      <KitScope>
+        <ScrubNumber aria-label="Unipolar" value={3} range={[1, 5]} onChange={() => {}} />
+      </KitScope>
+    );
+    fill = container.querySelector('[aria-hidden="true"]') as HTMLElement;
+    expect(fill.style.left).toBe('0%');
+    expect(fill.style.width).toBe('50%');
   });
 });

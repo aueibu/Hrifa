@@ -1,7 +1,7 @@
 /** Notes stand-in (throwaway): a small form-like panel with the lab's compact sizes; two columns when wide. */
 import { useState } from 'react';
-import { NativeSelect, NumberInput, TextInput } from '@mantine/core';
 import { slotSizeAttr, type SlotSize } from '../../../lib/stage';
+import { NumberInput, TextInput, NativeSelect } from '../../../ui';
 import classes from './standins.module.css';
 
 export function NotesStandin({ size }: { size: SlotSize }) {

@@ -1,4 +1,3 @@
-import { Button, SegmentedControl } from '@mantine/core';
 import type {
   GamutPitch,
   TraceConnectionMode,
@@ -8,6 +7,7 @@ import type {
   TransformConfig,
   TransformResult,
 } from '../../../lib/affine-focus';
+import { Button, SegmentedControl } from '../../../ui';
 import { formatSignedCents, signedErrorColorVar } from '../state';
 import { MiniRing } from './MiniRing';
 import { TrajectoryTraceStrip } from './TrajectoryTraceStrip';

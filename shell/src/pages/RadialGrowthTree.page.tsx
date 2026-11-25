@@ -4,16 +4,12 @@ import {
   Anchor,
   AppShell,
   Box,
-  Button,
   Divider,
   Group,
-  NumberInput,
   Paper,
-  Select,
   SimpleGrid,
   Slider,
   Stack,
-  Switch,
   Text,
   Title,
   useComputedColorScheme,
@@ -24,6 +20,7 @@ import { Data } from '../components/Data/Data';
 import { Surface } from '../components/Surface/Surface';
 import { SOLIDS, type SolidClass, solidClasses, solidsForClass } from '../data/polyhedra';
 import { resolveGrowthTreeStyle, resolveSolidViewStyle } from '../theme/diagram';
+import { Button, NumberInput, Select, Switch } from '../ui';
 import {
   type ChildFormula,
   type GrowthParams,

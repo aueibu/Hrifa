@@ -4,7 +4,8 @@
  * as the line above (never under the label).
  */
 import { useState, type MouseEvent } from 'react';
-import { ActionIcon, Modal } from '@mantine/core';
+import { Modal } from '@mantine/core';
+import { ActionIcon } from '../../../ui';
 import { MAX_KEYS_NOTES, MAX_MODES } from '../state/derive';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { signedErrorTileStyle } from '../state/tileColors';

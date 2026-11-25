@@ -3,4 +3,164 @@
 body {
   background: var(--surface);
   color: var(--text);
+  font-size: var(--mantine-font-size-md);
+  line-height: var(--mantine-line-height-md);
+}
+
+/*
+ * Mantine v9 declares component-level size/surface variables on its own `.mantine-*` selectors,
+ * overriding `:root` values from semantic.ts. Pin them here once so every Mantine control follows
+ * the 22px (1.375rem) / 12px (sm) / 11px (xs) dense baseline and Blender well-vs-chrome surfaces.
+ */
+
+/* Inputs (TextInput, NumberInput, Select, NativeSelect, MultiSelect, Textarea) */
+.mantine-Input-wrapper[data-size='sm'],
+.mantine-Input-wrapper[data-size='xs'] {
+  --input-height: 1.375rem;
+  --input-height-sm: 1.375rem;
+  --input-height-xs: 1.25rem;
+  --input-padding-y-sm: 0;
+  --input-padding-y-xs: 0;
+}
+
+.mantine-Input-input {
+  background-color: var(--panel-well);
+  border-color: var(--grid);
+  font-size: var(--mantine-font-size-sm);
+}
+
+.mantine-Input-input:not(textarea) {
+  height: 1.375rem;
+  line-height: 1.375rem;
+  min-height: 1.375rem;
+  padding-block: 0;
+}
+
+.mantine-Input-input:focus,
+.mantine-Input-input:focus-within {
+  border-color: var(--focus-ring);
+}
+
+.mantine-Input-section {
+  height: 100%;
+  max-height: 100%;
+}
+
+.mantine-NumberInput-controls {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.mantine-NumberInput-control {
+  border-color: var(--grid);
+  flex: 1 1 0;
+  height: 50%;
+  min-height: 0;
+  padding: 0;
+}
+
+.mantine-NumberInput-control svg {
+  height: 0.5625rem;
+  width: 0.5625rem;
+}
+
+/* Buttons & ActionIcons (raised --chrome vs recessed --panel-well inputs) */
+.mantine-Button-root {
+  --button-height-sm: 1.375rem;
+  --button-height-xs: 1.25rem;
+  --button-height-compact-sm: 1.375rem;
+  --button-height-compact-xs: 1.25rem;
+  --button-padding-x-sm: 0.5rem;
+  --button-padding-x-xs: 0.375rem;
+}
+
+.mantine-Button-root[data-size='sm'],
+.mantine-Button-root[data-size='xs'] {
+  font-size: var(--mantine-font-size-sm);
+  height: 1.375rem;
+  line-height: 1.375rem;
+  min-height: 1.375rem;
+  padding-inline: 0.5rem;
+}
+
+.mantine-ActionIcon-root {
+  --ai-size-sm: 1.375rem;
+  --ai-size-xs: 1.25rem;
+  --ai-size-input-sm: 1.375rem;
+}
+
+.mantine-ActionIcon-root[data-size='sm'] {
+  height: 1.375rem;
+  min-height: 1.375rem;
+  min-width: 1.375rem;
+  width: 1.375rem;
+}
+
+.mantine-Button-root[data-variant='default'],
+.mantine-ActionIcon-root[data-variant='default'] {
+  background: var(--chrome);
+  border-color: var(--grid);
+}
+
+.mantine-Button-root[data-variant='default']:hover,
+.mantine-ActionIcon-root[data-variant='default']:hover {
+  background: color-mix(in srgb, var(--chrome) 88%, var(--text));
+}
+
+/* SegmentedControl */
+.mantine-SegmentedControl-root[data-size='sm'],
+.mantine-SegmentedControl-root[data-size='xs'] {
+  --sc-padding-sm: 0 0.5rem;
+  --sc-padding-xs: 0 0.375rem;
+
+  background: var(--panel-well);
+  height: 1.375rem;
+  padding: 2px;
+}
+
+.mantine-SegmentedControl-root[data-size='sm'] .mantine-SegmentedControl-indicator,
+.mantine-SegmentedControl-root[data-size='xs'] .mantine-SegmentedControl-indicator {
+  background: var(--chrome);
+  box-shadow: none;
+}
+
+.mantine-SegmentedControl-root[data-size='sm'] .mantine-SegmentedControl-label,
+.mantine-SegmentedControl-root[data-size='xs'] .mantine-SegmentedControl-label {
+  font-size: var(--mantine-font-size-sm);
+  line-height: calc(1.375rem - 4px);
+  padding-block: 0;
+}
+
+/* Switch, Checkbox, Radio, Badge, Chip */
+.mantine-Switch-root {
+  --switch-height-sm: 1rem;
+  --switch-width-sm: 1.875rem;
+  --switch-thumb-size-sm: 0.75rem;
+  --switch-label-font-size-sm: var(--mantine-font-size-sm);
+}
+
+.mantine-Checkbox-root {
+  --checkbox-size-sm: 0.9375rem;
+}
+
+.mantine-Checkbox-label,
+.mantine-Radio-label {
+  font-size: var(--mantine-font-size-sm);
+}
+
+.mantine-Radio-root {
+  --radio-size-sm: 0.9375rem;
+}
+
+.mantine-Badge-root {
+  --badge-height-xs: 1rem;
+  --badge-height-sm: 1.125rem;
+  --badge-fz-xs: var(--mantine-font-size-xs);
+  --badge-fz-sm: var(--mantine-font-size-sm);
+}
+
+.mantine-Chip-root {
+  --chip-size-sm: 1.375rem;
+  --chip-padding-sm: 0.5rem;
 }

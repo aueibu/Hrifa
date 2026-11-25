@@ -10,14 +10,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import {
-  ActionIcon,
-  NativeSelect,
-  Popover,
-  SegmentedControl,
-  TextInput,
-  VisuallyHidden,
-} from '@mantine/core';
+import { Popover, VisuallyHidden } from '@mantine/core';
 import {
   landingPitch,
   landingReadout,
@@ -25,6 +18,7 @@ import {
   parseInterval,
   type FifthsLayout,
 } from '../../../lib/harmonic-field';
+import { NativeSelect, SegmentedControl, TextInput, ActionIcon } from '../../../ui';
 import { fieldRowsOf, fifthsFor, periodText, spectrumOf } from '../state/derive';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { ghostsOf, type Ghost } from '../state/ghosts';

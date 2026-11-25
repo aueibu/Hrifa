@@ -1,11 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
-  ActionIcon,
   Badge,
-  Button,
-  Checkbox,
   Group,
-  Select,
   SimpleGrid,
   Stack,
   Table,
@@ -16,6 +12,7 @@ import {
 } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
+import { Button, Checkbox, Select, ActionIcon } from '../../../ui';
 import {
   barHasValue,
   COLUMNS,

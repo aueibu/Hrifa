@@ -8,7 +8,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { Badge, Button, Menu, Text, Title, VisuallyHidden } from '@mantine/core';
+import { Badge, Menu, Text, Title, VisuallyHidden } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import {
   adaptiveSubdivision,
@@ -24,6 +24,7 @@ import {
   type PianoRollViewState,
   type VelocityRamp,
 } from '../../../components/PianoRoll';
+import { Button } from '../../../ui';
 import type {
   ChordCell,
   ChordClaim,
@@ -1284,7 +1285,7 @@ function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
         <VisuallyHidden role="status" aria-live="polite" data-testid="note-announcement">
           {announcement}
         </VisuallyHidden>
-        <Text size="xs" c="dimmed" aria-live="polite">
+        <Text c="dimmed" aria-live="polite">
           {notice ??
             (packet.items.length === 0
               ? 'Empty data-block. Enter notes on the grid with the Pencil tool.'
@@ -1293,7 +1294,7 @@ function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
         <div className={classes.controls}>
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
-              <Button size="compact-xs" variant="default">
+              <Button variant="default">
                 Tool: {tools.find((entry) => entry.id === tool)?.label}
               </Button>
             </Menu.Target>
@@ -1312,9 +1313,7 @@ function NotesEditorBody({ dataBlock, onChordAnchor }: DataBlockEditorProps) {
           </Menu>
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
-              <Button size="compact-xs" variant="default">
-                Grid: {gridOption.label}
-              </Button>
+              <Button variant="default">Grid: {gridOption.label}</Button>
             </Menu.Target>
             <Menu.Dropdown>
               {GRID_OPTIONS.map((option, index) => (

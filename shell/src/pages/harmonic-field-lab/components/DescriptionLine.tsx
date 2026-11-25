@@ -7,7 +7,7 @@
  * notepad icon) and stores the text (`onSave`).
  */
 import { useRef, useState } from 'react';
-import { Textarea, TextInput } from '@mantine/core';
+import { TextInput, Textarea } from '../../../ui';
 import { MAX_DESCRIPTION } from '../state/generatorLibrary';
 import classes from './description.module.css';
 

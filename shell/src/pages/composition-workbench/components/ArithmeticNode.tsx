@@ -1,4 +1,5 @@
-import { Alert, Badge, NumberInput, Select, Stack, Text } from '@mantine/core';
+import { Alert, Badge, Stack, Text } from '@mantine/core';
+import { NumberInput, Select } from '../../../ui';
 import {
   arithmeticOperatorDefaults,
   arithmeticOperatorLabels,
@@ -146,21 +147,21 @@ export function ArithmeticNode({
       )}
 
       <Stack gap={2}>
-        <Text size="xs" c="dimmed">
+        <Text c="dimmed">
           A raw:{' '}
           <Text span ff="monospace">
             {rawOperandLine(treatedA, Number(fallbackA) || 0)}
           </Text>
         </Text>
         {!isUnary && (
-          <Text size="xs" c="dimmed">
+          <Text c="dimmed">
             B raw:{' '}
             <Text span ff="monospace">
               {rawOperandLine(treatedB, Number(fallbackB) || 0)}
             </Text>
           </Text>
         )}
-        <Text size="xs" c="dimmed">
+        <Text c="dimmed">
           Result raw:{' '}
           <Text span ff="monospace">
             {resultLine}

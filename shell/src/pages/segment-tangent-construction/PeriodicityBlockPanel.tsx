@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Alert, Button, Group, NumberInput, Select, Stack, Text, Title } from '@mantine/core';
+import { Alert, Group, Stack, Text, Title } from '@mantine/core';
 import { Data } from '../../components/Data/Data';
 import { Surface } from '../../components/Surface/Surface';
+import { Button, NumberInput, Select } from '../../ui';
 import { type EnvelopeType, usePeriodicityAudio } from './audio';
 import { LatticeDiagram } from './components/LatticeDiagram';
 import { ShiftMapDiagram } from './components/ShiftMapDiagram';

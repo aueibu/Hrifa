@@ -4,7 +4,6 @@
  * chords come from the lib (`positionalChords`, `rankPositional`, `positionalNaming`); a row behaves like a chord chip.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActionIcon, Button, SegmentedControl, TextInput } from '@mantine/core';
 import {
   mulNotes,
   parsePattern,
@@ -16,6 +15,7 @@ import {
   type PositionalOrder,
   type PositionalRow as RankedRow,
 } from '../../../lib/harmonic-field';
+import { Button, SegmentedControl, TextInput, ActionIcon } from '../../../ui';
 import type { PreviewTarget } from '../audio/plan';
 import { groupFoldId, positionalShapeKey, representative } from '../state/chordGroups';
 import { autoName } from '../state/generate';

@@ -5,17 +5,16 @@ import {
   Anchor,
   Badge,
   Card,
-  Chip,
   Group,
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
   Title,
 } from '@mantine/core';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import { Mono } from '../components/Mono/Mono';
 import { applets, type Applet } from '../data/applets';
+import { Chip, TextInput } from '../ui';
 
 const statusColor: Record<Applet['status'], string> = {
   maintained: 'green',

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, NumberInput, Popover, SegmentedControl, Stack, Switch } from '@mantine/core';
+import { Popover, Stack } from '@mantine/core';
+import { NumberInput, SegmentedControl, Switch, Button } from '../../../ui';
 import {
   MAX_BASE_OCTAVE,
   MAX_OFFSET,
@@ -43,7 +44,6 @@ export function AuditionSettingsPopover({ typeId }: { typeId: string }) {
     >
       <Popover.Target>
         <Button
-          size="compact-xs"
           variant="default"
           px={4}
           aria-label="Audition settings"
@@ -57,7 +57,6 @@ export function AuditionSettingsPopover({ typeId }: { typeId: string }) {
         <Stack gap="xs" w={200}>
           {controls.mode && (
             <SegmentedControl
-              size="xs"
               fullWidth
               aria-label="Play mode"
               data={[
@@ -71,7 +70,6 @@ export function AuditionSettingsPopover({ typeId }: { typeId: string }) {
           {controls.pitchClasses && (
             <>
               <NumberInput
-                size="xs"
                 label="Base octave"
                 min={MIN_BASE_OCTAVE}
                 max={MAX_BASE_OCTAVE}
@@ -85,7 +83,6 @@ export function AuditionSettingsPopover({ typeId }: { typeId: string }) {
                 }}
               />
               <NumberInput
-                size="xs"
                 label="Offset"
                 min={-MAX_OFFSET}
                 max={MAX_OFFSET}
@@ -102,7 +99,6 @@ export function AuditionSettingsPopover({ typeId }: { typeId: string }) {
           )}
           {controls.loop && (
             <Switch
-              size="xs"
               label="Loop"
               checked={settings.loop}
               onChange={(event) => update({ loop: event.currentTarget.checked })}

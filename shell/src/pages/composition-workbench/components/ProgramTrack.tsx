@@ -100,7 +100,7 @@ export function ProgramTrack({
         : `${label} · note ${index + 1}: skipped (rate)`;
   return (
     <div style={widthShare === undefined ? undefined : { width: `${widthShare * 100}%` }}>
-      <Text className={classes.stickyLabel} size="xs" c="dimmed" mb={2}>
+      <Text className={classes.stickyLabel} c="dimmed" mb={2}>
         {label}
         {detail && ` · ${detail}`}
       </Text>

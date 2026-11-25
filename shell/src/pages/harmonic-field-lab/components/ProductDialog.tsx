@@ -15,14 +15,7 @@ import {
   useState,
   type MouseEvent,
 } from 'react';
-import {
-  ActionIcon,
-  Button,
-  Menu,
-  NativeSelect,
-  NumberInput,
-  SegmentedControl,
-} from '@mantine/core';
+import { Menu } from '@mantine/core';
 import {
   PRODUCT_MAX_STEPS,
   RELATIVE_MAX_NOTES,
@@ -34,6 +27,7 @@ import {
   type ProductDirection,
   type ProductKind,
 } from '../../../lib/harmonic-field';
+import { Button, NativeSelect, NumberInput, SegmentedControl, ActionIcon } from '../../../ui';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { ownerLabel } from '../state/generatorLibrary';
 import { MAX_TABS } from '../state/labState';

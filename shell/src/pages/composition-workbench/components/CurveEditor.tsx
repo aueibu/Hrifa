@@ -1,5 +1,6 @@
 import { useRef } from 'react';
-import { Button, Group, Text } from '@mantine/core';
+import { Group, Text } from '@mantine/core';
+import { Button } from '../../../ui';
 import { clampCurve, curveShape, curveShapes, smoothCurve, type CurveShape } from '../mist';
 import classes from './SwirlingMists.module.css';
 
@@ -126,13 +127,10 @@ export function CurveEditor({ points, onChange }: CurveEditorProps) {
         </svg>
       </div>
       <Group gap="xs" mt="xs">
-        <Text size="xs" c="dimmed">
-          Start from
-        </Text>
+        <Text c="dimmed">Start from</Text>
         {curveShapes.map((shape) => (
           <Button
             key={shape.id}
-            size="compact-xs"
             variant="default"
             onClick={() => onChange(curveShape(shape.id as CurveShape, count))}
           >
@@ -141,24 +139,17 @@ export function CurveEditor({ points, onChange }: CurveEditorProps) {
         ))}
       </Group>
       <Group gap="xs" mt="xs">
-        <Text size="xs" c="dimmed">
-          Reshape
-        </Text>
-        <Button size="compact-xs" variant="default" onClick={() => onChange(smoothCurve(points))}>
+        <Text c="dimmed">Reshape</Text>
+        <Button variant="default" onClick={() => onChange(smoothCurve(points))}>
           Smooth
         </Button>
-        <Button
-          size="compact-xs"
-          variant="default"
-          onClick={() => onChange(points.map((value) => -value))}
-        >
+        <Button variant="default" onClick={() => onChange(points.map((value) => -value))}>
           Invert
         </Button>
-        <Button size="compact-xs" variant="default" onClick={() => onChange([...points].reverse())}>
+        <Button variant="default" onClick={() => onChange([...points].reverse())}>
           Reverse
         </Button>
         <Button
-          size="compact-xs"
           variant="default"
           onClick={() => onChange([...points.slice(count / 4), ...points.slice(0, count / 4)])}
         >

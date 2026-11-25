@@ -1,6 +1,7 @@
 import type { PropsWithChildren, ReactNode } from 'react';
-import { ActionIcon, Group, Text } from '@mantine/core';
+import { Group, Text } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
+import { ActionIcon } from '../../../ui';
 import type { DataPacket } from '../model';
 import classes from './Module.module.css';
 
@@ -23,11 +24,11 @@ export function NodeShell({ name, status, output, footer, onReset, children }: N
       <Group className={classes.header} justify="space-between" wrap="nowrap">
         <Group gap="xs" wrap="nowrap">
           <span className={classes.nodeIndicator} aria-hidden="true" />
-          <Text size="xs" fw={700} truncate>
+          <Text fw={700} truncate>
             {name}
           </Text>
           {status && (
-            <Text size="xs" c="dimmed" truncate>
+            <Text c="dimmed" truncate>
               {status}
             </Text>
           )}
@@ -83,10 +84,8 @@ export function NodeOutput({
   if (stacked) {
     return (
       <div className={classes.outputStacked}>
-        <Text size="xs" fw={600}>
-          {name}
-        </Text>
-        <Text size="xs" c="dimmed">
+        <Text fw={600}>{name}</Text>
+        <Text c="dimmed">
           {description} | {packet.items.length} items
           {extentDescription ? ` | ${extentDescription}` : ''}
           {start ? ` | ${start}` : ''}
@@ -98,13 +97,13 @@ export function NodeOutput({
   return (
     <Group justify="space-between" gap="xs" wrap="nowrap">
       <Group gap="xs" wrap="nowrap" className={classes.outputSummary}>
-        <Text size="xs" fw={700} tt="uppercase" c="dimmed">
+        <Text fw={700} tt="uppercase" c="dimmed">
           Output
         </Text>
-        <Text size="xs" fw={600} truncate>
+        <Text fw={600} truncate>
           {name}
         </Text>
-        <Text size="xs" c="dimmed" truncate>
+        <Text c="dimmed" truncate>
           {description} | {packet.items.length} items
           {extentDescription ? ` | ${extentDescription}` : ''}
           {start ? ` | ${start}` : ''}
@@ -118,7 +117,7 @@ export function NodeOutput({
 export function NodeSection({ label, grow, children }: NodeSectionProps) {
   return (
     <section className={classes.section} data-grow={grow || undefined}>
-      <Text className={classes.sectionLabel} size="xs" fw={700} tt="uppercase">
+      <Text className={classes.sectionLabel} fw={700} tt="uppercase">
         {label}
       </Text>
       <div className={classes.sectionContent}>{children}</div>

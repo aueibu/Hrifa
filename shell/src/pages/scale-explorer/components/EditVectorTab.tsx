@@ -1,18 +1,8 @@
 import { useMemo, useState } from 'react';
-import {
-  ActionIcon,
-  Button,
-  Checkbox,
-  Group,
-  SimpleGrid,
-  Stack,
-  Table,
-  Text,
-  Title,
-  Tooltip,
-} from '@mantine/core';
+import { Group, SimpleGrid, Stack, Table, Text, Title, Tooltip } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
+import { Button, Checkbox, ActionIcon } from '../../../ui';
 import { catalog, icvOf, icvText, type PrimeConvention } from '../pitchSets';
 import { spectrumChange, spectrumOf } from '../spectrum';
 import { SPECTRUM_CHANGE_HINT, VECTOR_RESULTS_HINT } from '../texts';

@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Button, Group, NumberInput, Text } from '@mantine/core';
+import { Group, Text } from '@mantine/core';
+import { NumberInput, Button } from '../../../ui';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { cyclesOf, periodOf, type MistField, type MistSettings } from '../mist';
 import classes from './SwirlingMists.module.css';
@@ -465,7 +466,6 @@ export const MistStage = memo(function MistStage({
       </div>
       <Group gap="sm" align="flex-end" wrap="wrap">
         <Button
-          size="xs"
           variant={running ? 'filled' : 'default'}
           disabled={audioFollowing}
           onClick={() => setRunning((current) => !current)}
@@ -473,7 +473,6 @@ export const MistStage = memo(function MistStage({
           {running ? '❚❚ Pause' : '▶ Run'}
         </Button>
         <NumberInput
-          size="xs"
           w="6.5rem"
           label="Speed / s"
           aria-label="Positions advanced per second"
@@ -486,7 +485,6 @@ export const MistStage = memo(function MistStage({
           }}
         />
         <NumberInput
-          size="xs"
           w="6.5rem"
           label="View span"
           aria-label="Positions shown across the plot"
@@ -502,7 +500,6 @@ export const MistStage = memo(function MistStage({
           }}
         />
         <Button
-          size="xs"
           variant="default"
           disabled={!repeat}
           title={
@@ -518,7 +515,6 @@ export const MistStage = memo(function MistStage({
           Fit repeat{repeat ? ` (${formatNumber(repeat)})` : ''}
         </Button>
         <NumberInput
-          size="xs"
           w="6.5rem"
           label="Position"
           aria-label="Position of the now line"
@@ -535,20 +531,19 @@ export const MistStage = memo(function MistStage({
             }
           }}
         />
-        <Text size="xs" ff="monospace" pb={6} aria-live="off">
+        <Text ff="monospace" pb={6} aria-live="off">
           {cycleLength
             ? `cycle ${cycleNumber} · ${formatNumber(wrap(position))} of ${formatNumber(cycleLength)}`
             : `${formatNumber(position)} · does not repeat`}
         </Text>
         <Button
-          size="xs"
           variant="default"
           disabled={audioFollowing}
           onClick={() => setPosition(settings.start)}
         >
           Back to start
         </Button>
-        <Text size="xs" c="dimmed" pb={6}>
+        <Text c="dimmed" pb={6}>
           Drag the plot to move through time.
         </Text>
       </Group>

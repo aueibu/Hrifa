@@ -27,7 +27,7 @@
 }
 
 .catalogEntry:hover,
-.catalogEntry[data-selected="true"] {
+.catalogEntry[data-selected='true'] {
   background: var(--accent-tint);
 }
 
@@ -58,7 +58,7 @@
   stroke-width: 2;
 }
 
-.clockPoint[data-active="true"] {
+.clockPoint[data-active='true'] {
   fill: var(--accent);
   stroke: var(--accent);
 }
@@ -66,7 +66,7 @@
 .clockLabel {
   fill: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 12px;
+  font-size: var(--mantine-font-size-md);
   text-anchor: middle;
 }
 

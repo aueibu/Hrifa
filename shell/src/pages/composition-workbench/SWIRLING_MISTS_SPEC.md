@@ -58,10 +58,10 @@ Raw doubles are not useful downstream, so the node maps them: `map` takes the fu
 range of the field (`center ± amplitude` across strata, not the sampled window) to `[low, high]` and
 rounds to `step`. This keeps pitches stable while you scrub or change N.
 
-| Port | Packet | Meaning |
-| --- | --- | --- |
+| Port     | Packet                                                    | Meaning                                                        |
+| -------- | --------------------------------------------------------- | -------------------------------------------------------------- |
 | `chords` | `list \| integer` (items are groups, one per sample step) | one group per step, one pitch per stratum: a snapshot sequence |
-| `voices` | `bank \| integer` (one list per stratum) | each stratum read over the N steps: concurrent melodies |
+| `voices` | `bank \| integer` (one list per stratum)                  | each stratum read over the N steps: concurrent melodies        |
 
 Both carry provenance (`sample-mist` with seed, stratum, `s`) and frame `linear`, unit `abstract`,
 extent N. Interpretation stays downstream: Pitch List route "read as MIDI notes", rhythm inlets'

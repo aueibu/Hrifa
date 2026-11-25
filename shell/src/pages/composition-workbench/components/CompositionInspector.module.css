@@ -53,7 +53,7 @@
   display: grid;
   gap: var(--mantine-spacing-xs);
   grid-template-columns: minmax(5rem, 0.9fr) minmax(7rem, 1.1fr);
-  min-height: 1.75rem;
+  min-height: var(--ui-row-height);
 }
 
 .parameterRow > :last-child {

@@ -5,7 +5,8 @@
  * every control here is disabled and says so; the rest of the popover (Wave, Volume ...) stays usable.
  */
 import { useRef, useState } from 'react';
-import { Button, NativeSelect, Slider, Text } from '@mantine/core';
+import { Slider, Text } from '@mantine/core';
+import { NativeSelect, Button } from '../../../ui';
 import { useImpulseState } from '../audio/impulseStore';
 import { DEFAULT_WET_MIX, REVERB_PRESETS, customLabel, type ReverbPreset } from '../audio/reverb';
 import { Tip, useLab } from './ui';

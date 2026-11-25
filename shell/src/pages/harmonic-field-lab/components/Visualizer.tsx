@@ -3,7 +3,8 @@
  * fit, Dissonance curve, Live roughness, Isomorphic keyboard and JI reach), with a pop-out that opens the same view full size in a window.
  */
 import { useState } from 'react';
-import { ActionIcon, Menu, Modal } from '@mantine/core';
+import { Menu, Modal } from '@mantine/core';
+import { ActionIcon } from '../../../ui';
 import { VIZ_VIEWS, VIZ_VIEW_LABEL, vizName, type VizId, type VizView } from '../state/layout';
 import { VIEW_TIP } from '../state/vizState';
 import { DissonanceBody } from './DissonanceView';

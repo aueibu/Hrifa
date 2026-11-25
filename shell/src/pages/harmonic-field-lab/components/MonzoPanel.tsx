@@ -11,7 +11,6 @@
  * cells. The panel is `MONZO_AREA_ROWS` rows tall (M9f: the per-prime split band, the header and 25 value rows) with the controls under it.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, SegmentedControl, TextInput } from '@mantine/core';
 import {
   MONZO_PRIMES,
   MONZO_RANGE,
@@ -20,6 +19,7 @@ import {
   type MonzoExps,
   type MonzoPrime,
 } from '../../../lib/harmonic-field';
+import { SegmentedControl, TextInput, Button } from '../../../ui';
 import { isTyping } from '../audio/keymap';
 import { primeTextColor, tintVars, type IntervalTint } from '../state/intervalColor';
 import {

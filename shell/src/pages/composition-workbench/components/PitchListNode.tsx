@@ -1,16 +1,6 @@
 import { useState } from 'react';
-import {
-  Alert,
-  Badge,
-  Button,
-  Group,
-  NumberInput,
-  Select,
-  Slider,
-  Switch,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Alert, Badge, Group, Slider, Text } from '@mantine/core';
+import { Button, NumberInput, Select, Switch, TextInput } from '../../../ui';
 import { createPitchPreviewPlan } from '../audio/performancePlans';
 import { useCompositionSettings } from '../compositionSettings';
 import { formatPitchClassGroup, type ForteSetSelection } from '../forteCatalog';
@@ -358,7 +348,7 @@ export function PitchListNode({ instanceId, instanceLabel, upstream }: PitchList
             {interpreted.packet.items.map((item) => item.label).join(' | ')}
           </Text>
           {interpreted.packet.domain === 'pitchClass' && (
-            <Text size="xs" c="dimmed">
+            <Text c="dimmed">
               The preview register is only for listening. The output remains a pitch-class list
               without register.
             </Text>
@@ -402,7 +392,7 @@ export function PitchListNode({ instanceId, instanceLabel, upstream }: PitchList
         }
         onReset={resetPitchList}
         footer={
-          <Text size="xs" c="dimmed" truncate aria-live="polite">
+          <Text c="dimmed" truncate aria-live="polite">
             {preview.status || 'Preview timing does not alter the pitch-list output.'}
           </Text>
         }
@@ -410,7 +400,7 @@ export function PitchListNode({ instanceId, instanceLabel, upstream }: PitchList
           <>
             <InspectorSection label="Values">
               {upstream && (
-                <Text size="xs" c="dimmed">
+                <Text c="dimmed">
                   {upstream.domain} list connected; inline values are inactive.
                 </Text>
               )}
@@ -470,7 +460,7 @@ export function PitchListNode({ instanceId, instanceLabel, upstream }: PitchList
                   onChange={setStepMilliseconds}
                 />
                 <div className={classes.nodeParameterRow}>
-                  <Text size="xs">Gate</Text>
+                  <Text>Gate</Text>
                   <Group gap="xs" wrap="nowrap" className={classes.volumeControl}>
                     <Slider
                       thumbLabel="Preview gate length"
@@ -479,7 +469,7 @@ export function PitchListNode({ instanceId, instanceLabel, upstream }: PitchList
                       value={gatePercent}
                       onChange={setGatePercent}
                     />
-                    <Text ff="monospace" size="xs" w="2.5rem" ta="right">
+                    <Text ff="monospace" w="2.5rem" ta="right">
                       {gatePercent}%
                     </Text>
                   </Group>

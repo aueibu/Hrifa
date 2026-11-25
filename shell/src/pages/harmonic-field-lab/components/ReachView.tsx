@@ -7,7 +7,7 @@
  * root, limit and tolerance (never on hover).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, NativeSelect } from '@mantine/core';
+import { NativeSelect, Button } from '../../../ui';
 import type { PreviewTarget } from '../audio/plan';
 import {
   REACH_LIMITS,

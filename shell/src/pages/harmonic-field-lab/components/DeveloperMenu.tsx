@@ -4,15 +4,7 @@
  * Playback and keys, Composites); a new control goes into the section it affects, or a new section.
  */
 import type { ReactNode } from 'react';
-import {
-  Button,
-  NativeSelect,
-  NumberInput,
-  Popover,
-  SegmentedControl,
-  Switch,
-  Text,
-} from '@mantine/core';
+import { Popover, Text } from '@mantine/core';
 import {
   BEAT_PARTIAL_LIMIT_MAX,
   HE_LIMITS,
@@ -22,6 +14,7 @@ import {
   formatBuildMs,
   type HeLimit,
 } from '../../../lib/harmonic-field';
+import { NativeSelect, NumberInput, SegmentedControl, Switch, Button } from '../../../ui';
 import {
   TOOLTIP_DELAY_MAX,
   sanitizeTileLook,

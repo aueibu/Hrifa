@@ -1,4 +1,5 @@
-import { Alert, Badge, Button, Select, Stack, Text } from '@mantine/core';
+import { Alert, Badge, Stack, Text } from '@mantine/core';
+import { Button, Select } from '../../../ui';
 import { useCompositionSettings } from '../compositionSettings';
 import type { PairCompositionMode } from '../pairComposition';
 import {
@@ -116,16 +117,14 @@ export function PairCompositionNode({ instanceId, instanceLabel }: PairCompositi
           playhead={{ sourceId: instanceId, unitSeconds: pulseSeconds(settings.transport) }}
         />
         <div className={classes.candidateList}>
-          <Text fw={600} size="xs" mb={4}>
+          <Text fw={600} mb={4}>
             Segments
           </Text>
           <Stack gap={6}>
             {generated.result.segments.map((segment, index) => (
               <div key={index}>
-                <Text size="xs" fw={600}>
-                  {segment.label}
-                </Text>
-                <Text ff="monospace" size="xs" c="dimmed" className={classes.durationText}>
+                <Text fw={600}>{segment.label}</Text>
+                <Text ff="monospace" c="dimmed" className={classes.durationText}>
                   {segment.durations.join(' + ')}
                 </Text>
               </div>
@@ -158,7 +157,7 @@ export function PairCompositionNode({ instanceId, instanceLabel }: PairCompositi
       }
       onReset={resetPairComposition}
       footer={
-        <Text size="xs" c="dimmed" truncate aria-live="polite">
+        <Text c="dimmed" truncate aria-live="polite">
           {preview.status ||
             (generated.result
               ? 'Plays at the transport tempo; volume stays live.'
@@ -182,7 +181,7 @@ export function PairCompositionNode({ instanceId, instanceLabel }: PairCompositi
           <NodeInspectorContent>
             <InspectorSection label="Preview">
               <div className={classes.nodeParameterRow}>
-                <Text size="xs">Sound</Text>
+                <Text>Sound</Text>
                 <SoundOverrideControl
                   label="Preview"
                   set={settings.sounds.rhythm}

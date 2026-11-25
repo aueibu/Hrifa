@@ -1,19 +1,14 @@
 import { useState } from 'react';
+import { Alert, Badge, Slider, Stack, Text, Tooltip } from '@mantine/core';
 import {
-  Alert,
-  Badge,
   Button,
   Checkbox,
   NumberInput,
   Radio,
   SegmentedControl,
   Select,
-  Slider,
-  Stack,
-  Text,
   TextInput,
-  Tooltip,
-} from '@mantine/core';
+} from '../../../ui';
 import {
   compositionOutputOptions,
   outputRefKey,
@@ -128,7 +123,7 @@ function CoefficientSlider({
 }) {
   return (
     <div>
-      <Text size="xs" mb={2}>
+      <Text mb={2}>
         {label}:{' '}
         <Text span ff="monospace">
           {value.toFixed(2)}
@@ -298,9 +293,7 @@ export function HouseholderNode({
         <Alert color="yellow" title="Householder report" p="xs">
           <Stack gap={4}>
             {computed.warnings.map((warning) => (
-              <Text size="xs" key={warning}>
-                {warning}
-              </Text>
+              <Text key={warning}>{warning}</Text>
             ))}
           </Stack>
         </Alert>
@@ -323,7 +316,7 @@ export function HouseholderNode({
                 key={index}
                 value={String(index)}
                 label={
-                  <Text ff="monospace" size="xs">
+                  <Text ff="monospace">
                     {candidate.durations.join(' ')}
                     {(candidate.origin ?? inputOrigin) > 0
                       ? ` · starts +${candidate.origin ?? inputOrigin}`
@@ -388,7 +381,7 @@ export function HouseholderNode({
       }
       onReset={resetNode}
       footer={
-        <Text size="xs" c="dimmed" truncate aria-live="polite">
+        <Text c="dimmed" truncate aria-live="polite">
           {preview.status ||
             (settings.mode === 'reflect'
               ? 'Reflects the duration vector along an axis, keeping attack count and total span.'
@@ -568,7 +561,7 @@ export function HouseholderNode({
 
             <InspectorSection label="Preview">
               <div className={classes.nodeParameterRow}>
-                <Text size="xs">Input (A)</Text>
+                <Text>Input (A)</Text>
                 <SoundOverrideControl
                   label="Input"
                   set={rhythmVoices}
@@ -578,7 +571,7 @@ export function HouseholderNode({
                 />
               </div>
               <div className={classes.nodeParameterRow}>
-                <Text size="xs">Candidate (B)</Text>
+                <Text>Candidate (B)</Text>
                 <SoundOverrideControl
                   label="Candidate"
                   set={rhythmVoices}

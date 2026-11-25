@@ -1,4 +1,5 @@
-import { NumberInput, Stack, Switch, Text } from '@mantine/core';
+import { Stack, Text } from '@mantine/core';
+import { ScrubNumber, Switch } from '../../../ui';
 import type { DataPacket } from '../model';
 import {
   applyRhythmRouteTreatment,
@@ -22,12 +23,13 @@ export function RhythmTreatmentEditor({ treatment, source, onChange }: RhythmTre
     treatment.interpretAsRhythm &&
     applyRhythmRouteTreatment(source, treatment)?.warnings.includes(rhythmInterpretationError);
   const update = (patch: Partial<RhythmRouteTreatment>) => onChange({ ...treatment, ...patch });
+  const itemCount = source?.items.length ?? 0;
+  const rotationBound = itemCount > 1 ? itemCount - 1 : 256;
   return (
     <Stack className={classes.section} gap={4}>
       <div className={classes.parameterRow}>
-        <Text size="xs">Bypass</Text>
+        <Text>Bypass</Text>
         <Switch
-          size="xs"
           aria-label="Bypass rhythm route treatment"
           checked={treatment.bypassed}
           onChange={(event) => update({ bypassed: event.currentTarget.checked })}
@@ -35,11 +37,10 @@ export function RhythmTreatmentEditor({ treatment, source, onChange }: RhythmTre
       </div>
       {sourceNeedsInterpretation && (
         <div className={classes.parameterRow}>
-          <Text size="xs" className={treatment.interpretAsRhythm ? classes.changed : undefined}>
+          <Text className={treatment.interpretAsRhythm ? classes.changed : undefined}>
             Interpret as rhythm
           </Text>
           <Switch
-            size="xs"
             aria-label="Interpret source as an inter-onset rhythm"
             checked={treatment.interpretAsRhythm}
             onChange={(event) => update({ interpretAsRhythm: event.currentTarget.checked })}
@@ -47,71 +48,57 @@ export function RhythmTreatmentEditor({ treatment, source, onChange }: RhythmTre
         </div>
       )}
       {sourceNeedsInterpretation && !treatment.interpretAsRhythm && (
-        <Text size="xs" c="dimmed">
+        <Text c="dimmed">
           This source ({source!.domain}) isn't rhythm material yet — a consumer that requires an
           inter-onset duration list will error until this is turned on. Only positive numbers in a
           plain numeric domain (integer, rational, duration, onset, interval, cycleLength,
           pulseCount, phaseOffset) can convert.
         </Text>
       )}
-      {interpretationFailed && (
-        <Text size="xs" c="red">
-          {rhythmInterpretationError}
-        </Text>
-      )}
+      {interpretationFailed && <Text c="red">{rhythmInterpretationError}</Text>}
       <div className={classes.parameterRow}>
-        <Text size="xs" className={treatment.retrograde ? classes.changed : undefined}>
-          Retrograde
-        </Text>
+        <Text className={treatment.retrograde ? classes.changed : undefined}>Retrograde</Text>
         <Switch
-          size="xs"
           aria-label="Retrograde rhythm route"
           checked={treatment.retrograde}
           onChange={(event) => update({ retrograde: event.currentTarget.checked })}
         />
       </div>
       <div className={classes.parameterRow}>
-        <Text size="xs" className={treatment.rotation !== 0 ? classes.changed : undefined}>
-          Rotate
-        </Text>
-        <NumberInput
-          size="xs"
+        <Text className={treatment.rotation !== 0 ? classes.changed : undefined}>Rotate</Text>
+        <ScrubNumber
           aria-label="Rotate rhythm items"
-          min={-256}
-          max={256}
+          range={itemCount > 1 ? [-rotationBound, rotationBound] : undefined}
+          clamp={itemCount > 1 ? undefined : [-256, 256]}
+          defaultValue={0}
           value={treatment.rotation}
-          onChange={(value) => update({ rotation: Math.trunc(Number(value) || 0) })}
+          onChange={(value) => update({ rotation: Math.trunc(value) })}
         />
       </div>
       <div className={classes.parameterRow}>
-        <Text size="xs" className={treatment.durationScale !== 1 ? classes.changed : undefined}>
+        <Text className={treatment.durationScale !== 1 ? classes.changed : undefined}>
           Duration scale
         </Text>
-        <NumberInput
-          size="xs"
+        <ScrubNumber
           aria-label="Rhythm duration scale"
           prefix="× "
-          min={1}
-          max={16}
+          clamp={[1, 16]}
           step={1}
+          defaultValue={1}
           value={treatment.durationScale}
-          onChange={(value) =>
-            update({ durationScale: Math.max(1, Math.trunc(Number(value) || 1)) })
-          }
+          onChange={(value) => update({ durationScale: Math.max(1, Math.trunc(value)) })}
         />
       </div>
       <div className={classes.parameterRow}>
-        <Text size="xs" className={rhythmOffset(treatment) !== 0 ? classes.changed : undefined}>
+        <Text className={rhythmOffset(treatment) !== 0 ? classes.changed : undefined}>
           Start offset
         </Text>
-        <NumberInput
-          size="xs"
+        <ScrubNumber
           aria-label="Rhythm start offset in pulses"
-          description="Pulses after the downbeat; wraps in loops."
-          min={-256}
-          max={256}
+          clamp={[-256, 256]}
+          defaultValue={0}
           value={rhythmOffset(treatment)}
-          onChange={(value) => update({ offset: Math.trunc(Number(value) || 0) })}
+          onChange={(value) => update({ offset: Math.trunc(value) })}
         />
       </div>
     </Stack>

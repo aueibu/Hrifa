@@ -9,7 +9,10 @@ import {
   createContext,
   forwardRef,
   useContext,
+  useEffect,
   useId,
+  useRef,
+  useState,
   type ComponentPropsWithoutRef,
   type ReactNode,
 } from 'react';
@@ -25,7 +28,7 @@ import {
   type ActionIconProps,
   type ButtonProps,
 } from '@mantine/core';
-import { Data } from '../Data/Data';
+import { Data } from '../components/Data/Data';
 import { useTipDelay } from './settings';
 import { DEFAULT_DENSITY, TIP_WIDTH, tokenStyle, type Density } from './tokens';
 import classes from './kit.module.css';
@@ -269,6 +272,201 @@ export function NumberField({
       max={max}
       {...useFieldLabel(ariaLabel)}
     />
+  );
+}
+
+/**
+ * Blender `wcol_num`-style scrubbable numeric control:
+ * - At rest / hover: raised `--panel-slot` fill with `ew-resize` cursor (drag horizontally to scrub, Shift for 0.1x).
+ * - Single-click without drag (or Enter): switches to recessed `--panel-well` text entry with `--focus-ring`.
+ * - Double-click: resets to `defaultValue` when provided.
+ * - Pass `range={[min, max]}` for a genuinely bounded range (draws the `--accent` fill bar, unipolar or bipolar from 0).
+ * - Pass `clamp={[min, max]}` for a safety clamp without a fill bar.
+ */
+export function ScrubNumber({
+  value,
+  onChange,
+  range,
+  clamp: clampBounds,
+  step = 1,
+  defaultValue,
+  prefix = '',
+  'aria-label': ariaLabel,
+}: {
+  value: number;
+  onChange: (next: number) => void;
+  /** Genuinely bounded `[min, max]` range: clamps values and draws the `--accent` progress fill bar. */
+  range?: [number, number];
+  /** Safety `[min, max]` clamp: clamps values without drawing a progress fill bar. */
+  clamp?: [number, number];
+  step?: number;
+  defaultValue?: number;
+  prefix?: string;
+  'aria-label'?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dragRef = useRef<{
+    startX: number;
+    startValue: number;
+    moved: boolean;
+  } | null>(null);
+  const labelProps = useFieldLabel(ariaLabel);
+
+  const bounds = range ?? clampBounds;
+  const min = bounds?.[0];
+  const max = bounds?.[1];
+
+  const clampValue = (n: number) => {
+    let out = n;
+    if (min !== undefined) {
+      out = Math.max(min, out);
+    }
+    if (max !== undefined) {
+      out = Math.min(max, out);
+    }
+    return out;
+  };
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commitDraft = () => {
+    const parsed = Number(draft.trim());
+    if (Number.isFinite(parsed) && draft.trim() !== '') {
+      onChange(clampValue(parsed));
+    }
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="decimal"
+        className={classes.scrubInput}
+        value={draft}
+        onChange={(e) => setDraft(e.currentTarget.value)}
+        onBlur={commitDraft}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commitDraft();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            setEditing(false);
+          }
+        }}
+        {...labelProps}
+      />
+    );
+  }
+
+  let fillStyle: { left: string; width: string } | null = null;
+  if (range !== undefined && range[1] > range[0]) {
+    const [rMin, rMax] = range;
+    const span = rMax - rMin;
+    const clamped = Math.max(rMin, Math.min(rMax, value));
+    if (rMin < 0 && rMax > 0) {
+      // Bipolar: grow left or right from zero so 0 reads empty.
+      const zeroPct = ((0 - rMin) / span) * 100;
+      const valPct = ((clamped - rMin) / span) * 100;
+      fillStyle = {
+        left: `${Math.min(zeroPct, valPct)}%`,
+        width: `${Math.abs(valPct - zeroPct)}%`,
+      };
+    } else {
+      fillStyle = {
+        left: '0%',
+        width: `${((clamped - rMin) / span) * 100}%`,
+      };
+    }
+  }
+
+  return (
+    <div
+      role="spinbutton"
+      tabIndex={0}
+      aria-valuenow={value}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      data-kit="scrub-number"
+      data-dragging={dragging ? 'true' : undefined}
+      className={classes.scrub}
+      onPointerDown={(e) => {
+        if (e.button !== 0) {
+          return;
+        }
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+        dragRef.current = { startX: e.clientX, startValue: value, moved: false };
+      }}
+      onPointerMove={(e) => {
+        const d = dragRef.current;
+        if (!d) {
+          return;
+        }
+        const dx = e.clientX - d.startX;
+        if (!d.moved && Math.abs(dx) < 3) {
+          return;
+        }
+        d.moved = true;
+        setDragging(true);
+        const factor = e.shiftKey ? 0.1 : 1;
+        // ~6px per step for crisp integer/fine control
+        const delta = Math.round((dx / 6) * factor) * step;
+        const next = clampValue(d.startValue + delta);
+        if (next !== value) {
+          onChange(next);
+        }
+      }}
+      onPointerUp={(e) => {
+        const d = dragRef.current;
+        dragRef.current = null;
+        setDragging(false);
+        if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+        if (d && !d.moved && e.detail < 2) {
+          setDraft(String(value));
+          setEditing(true);
+        }
+      }}
+      onDoubleClick={() => {
+        if (defaultValue !== undefined) {
+          setEditing(false);
+          onChange(clampValue(defaultValue));
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setDraft(String(value));
+          setEditing(true);
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          onChange(clampValue(value + step * (e.shiftKey ? 0.1 : 1)));
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          onChange(clampValue(value - step * (e.shiftKey ? 0.1 : 1)));
+        }
+      }}
+      {...labelProps}
+    >
+      {fillStyle !== null && (
+        <span className={classes.scrubFill} style={fillStyle} aria-hidden="true" />
+      )}
+      <span className={classes.scrubValue}>
+        {prefix}
+        {value}
+      </span>
+    </div>
   );
 }
 

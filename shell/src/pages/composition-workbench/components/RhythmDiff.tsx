@@ -308,11 +308,11 @@ export function RhythmDiffLegend() {
       help="Color: which way an edge moved (cyan earlier, orange later), deeper for a bigger change from where it was. Brightness: its share of the whole rhythm. Thickness: how far it moved compared with the other edges in this edit."
       className={classes.rhythmDiffLegend}
     >
-      <Text size="xs" c="dimmed">
+      <Text c="dimmed">
         <span className={classes.rhythmDiffSwatch} data-direction="earlier" />
         earlier
       </Text>
-      <Text size="xs" c="dimmed">
+      <Text c="dimmed">
         <span className={classes.rhythmDiffSwatch} data-direction="later" />
         later
       </Text>

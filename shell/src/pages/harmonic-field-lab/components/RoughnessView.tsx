@@ -22,13 +22,13 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react';
-import { SegmentedControl } from '@mantine/core';
 import {
   POSITIONAL_BASE_HZ,
   curveMinima,
   fieldMarks,
   liveRoughness,
 } from '../../../lib/harmonic-field';
+import { SegmentedControl } from '../../../ui';
 import { layoutChartLabels } from '../state/chartLabelLayout';
 import { ghostKey } from '../state/ghosts';
 import type { VizId } from '../state/layout';

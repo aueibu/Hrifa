@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" data-scheme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hrifa Theme Reference — Studio Tiers, Grays, Fonts & 20px Baseline</title>
+  <style>
+    :root {
+      --font-sans: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+      --fz-xs: 11px;
+      --fz-sm: 12px;
+      --fz-md: 13px;
+      --fz-lg: 15px;
+      --fz-xl: 18px;
+
+      --lh-xs: 1.2;
+      --lh-sm: 1.25;
+      --lh-md: 1.3;
+      --lh-lg: 1.35;
+      --lh-xl: 1.4;
+
+      --sp-xs: 4px;
+      --sp-sm: 6px;
+      --sp-md: 8px;
+      --sp-lg: 12px;
+      --sp-xl: 16px;
+
+      --r-xs: 2px;
+      --r-sm: 3px;
+      --r-md: 4px;
+
+      --ui-unit: 20px;
+      --strip-h: 24px;
+      --accent: #00729f;
+      --focus-ring: #00729f;
+      --mark-red: #c94a4a;
+      --mark-green: #3d9970;
+      --mark-yellow: #c89b3c;
+    }
+
+    [data-scheme='dark'] {
+      --gray-0: #e6e3df;
+      --gray-1: #cbc8c4;
+      --gray-2: #b4b1ad;
+      --gray-3: #a19e9a;
+      --gray-4: #85827e;
+      --gray-5: #464442;
+      --gray-6: #3a3836;
+      --gray-7: #32302e;
+      --gray-8: #2a2826;
+      --gray-9: #1d1b19;
+
+      --panel-well: var(--gray-9);
+      --panel-inset: var(--gray-9);
+      --surface: var(--gray-8);
+      --panel: var(--gray-7);
+      --panel-slot: var(--gray-6);
+      --panel-raised: var(--gray-6);
+      --panel-body: var(--gray-5);
+      --panel-header: color-mix(in srgb, var(--gray-4) 8%, var(--gray-5));
+      --grid: color-mix(in srgb, var(--gray-4) 28%, var(--gray-5));
+      --chrome: color-mix(in srgb, var(--gray-4) 38%, var(--gray-5));
+      --border: var(--gray-5);
+      --control-border: var(--gray-4);
+
+      --text: var(--gray-0);
+      --text-muted: var(--gray-2);
+      --text-subtle: var(--gray-3);
+      --accent-tint: #233b46;
+      --accent-tint-text: #8fd4f2;
+      --text-danger: #f08a85;
+    }
+
+    [data-scheme='light'] {
+      --white: #fbf9f5;
+      --gray-0: #f3f0ea;
+      --gray-1: #ece8e0;
+      --gray-2: #ddd7cc;
+      --gray-3: #b8b0a3;
+      --gray-4: #8c8478;
+      --gray-5: #6f685e;
+      --gray-6: #554f47;
+      --gray-7: #3a352f;
+      --gray-8: #27231f;
+      --gray-9: #1b1814;
+
+      --panel-well: var(--gray-1);
+      --panel-inset: var(--gray-1);
+      --surface: var(--gray-0);
+      --panel: var(--white);
+      --panel-slot: var(--gray-1);
+      --panel-raised: var(--white);
+      --panel-body: var(--white);
+      --panel-header: color-mix(in srgb, var(--gray-2) 50%, var(--gray-1));
+      --grid: color-mix(in srgb, var(--gray-3) 40%, var(--gray-2));
+      --chrome: var(--gray-2);
+      --border: var(--gray-2);
+      --control-border: var(--gray-4);
+
+      --text: var(--gray-9);
+      --text-muted: var(--gray-6);
+      --text-subtle: var(--gray-5);
+      --accent-tint: #dff0f8;
+      --accent-tint-text: #005d82;
+      --text-danger: #a73d3b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: var(--fz-sm);
+      line-height: var(--lh-sm);
+      padding: 16px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--panel-header);
+      border-radius: var(--r-xs);
+      padding: 6px 10px;
+      margin-bottom: 12px;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: var(--fz-lg);
+      font-weight: 600;
+      line-height: var(--lh-lg);
+    }
+
+    .btn {
+      height: var(--ui-unit);
+      padding: 0 8px;
+      border-radius: var(--r-xs);
+      border: 1px solid var(--grid);
+      background: var(--panel-slot);
+      color: var(--text);
+      font-family: inherit;
+      font-size: var(--fz-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn:hover {
+      background: var(--chrome);
+    }
+
+    .btn.accent {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .grid-layout {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 10px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: var(--r-xs);
+      overflow: hidden;
+    }
+
+    .strip {
+      height: var(--strip-h);
+      background: var(--panel-header);
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: var(--fz-sm);
+      font-weight: 600;
+    }
+
+    .strip-meta {
+      font-family: var(--font-mono);
+      font-size: var(--fz-xs);
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .panel-body {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tier-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tier-row {
+      display: grid;
+      grid-template-columns: 120px 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: var(--r-xs);
+      min-height: 30px;
+    }
+
+    .tier-name {
+      font-family: var(--font-mono);
+      font-size: var(--fz-xs);
+      font-weight: 600;
+    }
+
+    .tier-use {
+      font-size: var(--fz-xs);
+      color: var(--text-muted);
+    }
+
+    .tier-step {
+      font-family: var(--font-mono);
+      font-size: var(--fz-xs);
+      color: var(--text-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ramp-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+    }
+
+    .swatch {
+      border-radius: var(--r-xs);
+      padding: 6px;
+      min-height: 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: var(--fz-xs);
+      border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+    }
+
+    .type-row {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      align-items: baseline;
+      gap: 8px;
+      padding: 4px 6px;
+      background: var(--panel-slot);
+      border-radius: var(--r-xs);
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .prop-row {
+      display: grid;
+      grid-template-columns: 0.4fr 0.6fr;
+      align-items: center;
+      gap: 6px;
+      min-height: var(--ui-unit);
+    }
+
+    .prop-label {
+      color: var(--text-muted);
+      font-size: var(--fz-sm);
+    }
+
+    .input {
+      height: var(--ui-unit);
+      background: var(--panel-well);
+      border: 1px solid var(--grid);
+      border-radius: var(--r-xs);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: var(--fz-sm);
+      padding: 0 6px;
+      width: 100%;
+    }
+
+    .input.mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--focus-ring);
+    }
+
+    .seg {
+      height: var(--ui-unit);
+      background: var(--panel-well);
+      border-radius: var(--r-xs);
+      padding: 2px;
+      display: grid;
+      grid-auto-flow: column;
+      gap: 2px;
+    }
+
+    .seg button {
+      border: 0;
+      border-radius: 1px;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: var(--fz-xs);
+      cursor: pointer;
+      padding: 0 6px;
+    }
+
+    .seg button[data-active='true'] {
+      background: var(--panel-body);
+      color: var(--text);
+    }
+
+    .screen-box {
+      background: var(--panel-well);
+      border-radius: var(--r-xs);
+      padding: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nested-demo {
+      background: var(--panel-body);
+      border-radius: var(--r-xs);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .sub-group {
+      background: var(--panel-slot);
+      border-radius: var(--r-xs);
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sub-heading {
+      font-size: var(--fz-xs);
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <h1>Hrifa Theme Reference <span class="strip-meta">UI_UNIT_Y = 20px · Strip = 24px · Radius = 2px</span></h1>
+    </div>
+    <div style="display: flex; gap: 6px; align-items: center;">
+      <button class="btn" id="toggle-scheme" type="button">Switch to Light Mode</button>
+    </div>
+  </div>
+
+  <div class="grid-layout">
+    <!-- 1. STUDIO SURFACE TIERS -->
+    <section class="panel">
+      <div class="strip">
+        <span>1. Studio Surface Tiers (Darkest → Lightest in Dark)</span>
+        <span class="strip-meta">semantic.ts</span>
+      </div>
+      <div class="panel-body">
+        <div class="tier-stack">
+          <div class="tier-row" style="background: var(--panel-well); border: 1px solid var(--grid);">
+            <span class="tier-name">--panel-well</span>
+            <span class="tier-use">Deepest recess: screens, plots, minimap, input bg</span>
+            <span class="tier-step">dark-9 / gray-1</span>
+          </div>
+          <div class="tier-row" style="background: var(--surface);">
+            <span class="tier-name">--surface</span>
+            <span class="tier-use">App background, page floor, dock gaps &amp; splitters</span>
+            <span class="tier-step">dark-8 / gray-0</span>
+          </div>
+          <div class="tier-row" style="background: var(--panel);">
+            <span class="tier-name">--panel</span>
+            <span class="tier-use">Sidebars, Inspector, Outliner, Mantine body</span>
+            <span class="tier-step">dark-7 / white</span>
+          </div>
+          <div class="tier-row" style="background: var(--panel-slot);">
+            <span class="tier-name">--panel-slot</span>
+            <span class="tier-use">Empty clip slots, inset sub-groups, tree box, cards</span>
+            <span class="tier-step">dark-6 / gray-1</span>
+          </div>
+          <div class="tier-row" style="background: var(--panel-body);">
+            <span class="tier-name">--panel-body</span>
+            <span class="tier-use">Active work area: canvas, lanes, device body, active tab</span>
+            <span class="tier-step">dark-5 / white</span>
+          </div>
+          <div class="tier-row" style="background: var(--panel-header);">
+            <span class="tier-name">--panel-header</span>
+            <span class="tier-use">Panel &amp; device title strips, status bar</span>
+            <span class="tier-step">mix 8% d4/d5</span>
+          </div>
+          <div class="tier-row" style="background: var(--grid);">
+            <span class="tier-name">--grid</span>
+            <span class="tier-use">Gridlines, subtle input edge, rare divider</span>
+            <span class="tier-step">mix 28% d4/d5</span>
+          </div>
+          <div class="tier-row" style="background: var(--chrome);">
+            <span class="tier-name">--chrome</span>
+            <span class="tier-use">Raised controls, track headers, hover chrome</span>
+            <span class="tier-step">mix 38% d4/d5</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. FULL NEUTRAL RAMPS -->
+    <section class="panel">
+      <div class="strip">
+        <span>2. Raw Neutral Ramp (10 steps) + Text Roles</span>
+        <span class="strip-meta">tokens.ts</span>
+      </div>
+      <div class="panel-body">
+        <div class="sub-heading">Dark Ramp (warm neutral, Bitwig-sampled)</div>
+        <div class="ramp-grid" id="dark-ramp"></div>
+
+        <div class="sub-heading" style="margin-top: 4px;">Light Ramp (warm paper)</div>
+        <div class="ramp-grid" id="light-ramp"></div>
+
+        <div class="sub-heading" style="margin-top: 4px;">Text &amp; Interactive Roles (on --panel)</div>
+        <div class="tier-stack">
+          <div class="tier-row" style="background: var(--panel); border: 1px solid var(--grid);">
+            <span class="tier-name" style="color: var(--text);">--text</span>
+            <span style="color: var(--text);">Main values, active titles, selected outline</span>
+            <span class="tier-step">dark-0 / black</span>
+          </div>
+          <div class="tier-row" style="background: var(--panel); border: 1px solid var(--grid);">
+            <span class="tier-name" style="color: var(--text-muted);">--text-muted</span>
+            <span style="color: var(--text-muted);">Parameter names, inactive tabs, secondary info</span>
+            <span class="tier-step">dark-2 / gray-6</span>
+          </div>
+          <div class="tier-row" style="background: var(--panel); border: 1px solid var(--grid);">
+            <span class="tier-name" style="color: var(--text-subtle);">--text-subtle</span>
+            <span style="color: var(--text-subtle);">Placeholders, dotted tip underlines</span>
+            <span class="tier-step">dark-3 / gray-5</span>
+          </div>
+          <div class="tier-row" style="background: var(--panel); border: 1px solid var(--grid);">
+            <span class="tier-name" style="color: var(--accent);">--accent</span>
+            <span style="color: var(--text);">Focus rings, active switches, primary action (#00729f)</span>
+            <span class="tier-step">primary-6</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. FONT SIZES & FAMILIES -->
+    <section class="panel">
+      <div class="strip">
+        <span>3. Font Scale, Line Heights &amp; Families</span>
+        <span class="strip-meta">foundation.ts</span>
+      </div>
+      <div class="panel-body">
+        <div class="type-row">
+          <span class="mono" style="font-size: var(--fz-xs); color: var(--text-muted);">xs · 11px / 1.2</span>
+          <span style="font-size: var(--fz-xs); line-height: var(--lh-xs);">Micro labels, badges, segmented items, <span class="mono">3/2 · 701.96¢</span></span>
+        </div>
+        <div class="type-row">
+          <span class="mono" style="font-size: var(--fz-xs); color: var(--text-muted);">sm · 12px / 1.25</span>
+          <span style="font-size: var(--fz-sm); line-height: var(--lh-sm);">Default UI body, inspector labels, inputs, panel strips (Figtree)</span>
+        </div>
+        <div class="type-row">
+          <span class="mono" style="font-size: var(--fz-xs); color: var(--text-muted);">md · 13px / 1.3</span>
+          <span style="font-size: var(--fz-md); line-height: var(--lh-md);">Card titles, emphasized body copy</span>
+        </div>
+        <div class="type-row">
+          <span class="mono" style="font-size: var(--fz-xs); color: var(--text-muted);">lg · 15px / 1.35</span>
+          <span style="font-size: var(--fz-lg); line-height: var(--lh-lg); font-weight: 600;">Section / modal headings (Figtree 600)</span>
+        </div>
+        <div class="type-row">
+          <span class="mono" style="font-size: var(--fz-xs); color: var(--text-muted);">xl · 18px / 1.4</span>
+          <span style="font-size: var(--fz-xl); line-height: var(--lh-xl); font-weight: 600;">Page-level title (Figtree 600)</span>
+        </div>
+        <div class="type-row">
+          <span class="mono" style="font-size: var(--fz-xs); color: var(--text-muted);">DM Mono · tabular</span>
+          <span class="mono" style="font-size: var(--fz-sm);">01:24.08 · 440.00 Hz · 16:15:12 · -6.0 dB</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. LIVE 20px SPECIMEN (BLENDER / BITWIG TIER NESTING) -->
+    <section class="panel">
+      <div class="strip">
+        <span>4. Live 20px Specimen (Tier Nesting, No Extra Lines)</span>
+        <span class="strip-meta">UI_UNIT_Y = 20px</span>
+      </div>
+      <div class="panel-body">
+        <div class="nested-demo">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 600;">Device Body (--panel-body)</span>
+            <div style="display: flex; gap: 4px;">
+              <button class="btn accent" type="button">Active</button>
+              <button class="btn" type="button">Reset</button>
+            </div>
+          </div>
+
+          <div class="sub-group">
+            <div class="sub-heading">Sub-group (--panel-slot) · 40/60 Split</div>
+            <div class="prop-row">
+              <span class="prop-label">Root ratio</span>
+              <input class="input mono" value="3:2" />
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Tuning</span>
+              <div class="seg">
+                <button type="button" data-active="true">JI</button>
+                <button type="button">12-TET</button>
+                <button type="button">EDO</button>
+              </div>
+            </div>
+            <div class="prop-row">
+              <span class="prop-label">Generator</span>
+              <input class="input" value="Harmonic Lattice" />
+            </div>
+          </div>
+
+          <div class="screen-box">
+            <span class="tier-use">Screen / Readout (--panel-well)</span>
+            <span class="mono" style="font-size: var(--fz-sm);">[1, 5/4, 3/2, 7/4]</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const darkRamp = [
+      ['d0', '#e6e3df', '#1d1b19'],
+      ['d1', '#cbc8c4', '#1d1b19'],
+      ['d2', '#b4b1ad', '#1d1b19'],
+      ['d3', '#a19e9a', '#1d1b19'],
+      ['d4', '#85827e', '#1d1b19'],
+      ['d5', '#464442', '#e6e3df'],
+      ['d6', '#3a3836', '#e6e3df'],
+      ['d7', '#32302e', '#e6e3df'],
+      ['d8', '#2a2826', '#e6e3df'],
+      ['d9', '#1d1b19', '#e6e3df'],
+    ];
+
+    const lightRamp = [
+      ['white', '#fbf9f5', '#1b1814'],
+      ['g0', '#f3f0ea', '#1b1814'],
+      ['g1', '#ece8e0', '#1b1814'],
+      ['g2', '#ddd7cc', '#1b1814'],
+      ['g3', '#b8b0a3', '#1b1814'],
+      ['g4', '#8c8478', '#fbf9f5'],
+      ['g5', '#6f685e', '#fbf9f5'],
+      ['g6', '#554f47', '#fbf9f5'],
+      ['g7', '#3a352f', '#fbf9f5'],
+      ['black', '#1b1814', '#fbf9f5'],
+    ];
+
+    function renderRamp(id, items) {
+      const el = document.getElementById(id);
+      for (const [name, bg, fg] of items) {
+        const div = document.createElement('div');
+        div.className = 'swatch';
+        div.style.background = bg;
+        div.style.color = fg;
+        div.innerHTML = `<span>${name}</span><span>${bg}</span>`;
+        el.appendChild(div);
+      }
+    }
+
+    renderRamp('dark-ramp', darkRamp);
+    renderRamp('light-ramp', lightRamp);
+
+    const btn = document.getElementById('toggle-scheme');
+    btn.addEventListener('click', () => {
+      const root = document.documentElement;
+      const next = root.getAttribute('data-scheme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-scheme', next);
+      btn.textContent = next === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+    });
+  </script>
+</body>
+</html>

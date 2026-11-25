@@ -19,7 +19,7 @@
   display: flex;
   flex: 0 0 auto;
   gap: 0.25rem;
-  height: 1.6rem;
+  height: var(--ui-strip-height);
 }
 
 /* Same width for Play and Stop, so the header never shifts. */
@@ -43,7 +43,7 @@
 
 .empty {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: var(--mantine-font-size-md);
   padding: 0.5rem;
 }
 
@@ -82,7 +82,7 @@
   background: var(--panel-slot);
   color: var(--text);
   flex: 0 0 8rem;
-  font-size: 0.78rem;
+  font-size: var(--mantine-font-size-md);
   left: 0;
   overflow: hidden;
   position: sticky;
@@ -138,7 +138,7 @@
 .markLabel {
   color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 0.68rem;
+  font-size: var(--mantine-font-size-xs);
   left: 0.25rem;
   line-height: 1.5rem;
   position: absolute;
@@ -158,7 +158,7 @@
   cursor: grab;
   display: flex;
   flex-direction: column;
-  font-size: 0.78rem;
+  font-size: var(--mantine-font-size-md);
   overflow: hidden;
   position: absolute;
   touch-action: none;
@@ -235,7 +235,7 @@
 .status {
   color: var(--text-muted);
   flex: 1 1 0;
-  font-size: 0.75rem;
+  font-size: var(--mantine-font-size-md);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -303,7 +303,7 @@
 
 .blockName {
   flex: 0 1 auto;
-  font-size: 0.7rem;
+  font-size: var(--mantine-font-size-xs);
   font-weight: 600;
   max-width: 100%;
   min-width: 0;
@@ -320,7 +320,7 @@
 .dataName {
   color: var(--text-muted);
   flex: 1 1 2.5rem;
-  font-size: 0.7rem;
+  font-size: var(--mantine-font-size-xs);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -400,7 +400,7 @@
 .follows {
   color: var(--text-muted);
   flex: 0 0 auto;
-  font-size: 0.7rem;
+  font-size: var(--mantine-font-size-xs);
   margin-right: -0.2rem;
 }
 
@@ -410,7 +410,7 @@
   color: var(--text-muted);
   display: inline-flex;
   flex: 0 0 auto;
-  font-size: 0.65rem;
+  font-size: var(--mantine-font-size-xs);
   gap: 0.15rem;
 }
 

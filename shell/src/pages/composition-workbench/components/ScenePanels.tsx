@@ -1,17 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { Collapse, Menu, Popover, Text, UnstyledButton } from '@mantine/core';
 import {
-  Button,
-  Collapse,
-  Menu,
-  Popover,
+  KitScope,
+  Section,
   SegmentedControl,
   Select,
   Switch,
-  Text,
   TextInput,
-  UnstyledButton,
-} from '@mantine/core';
-import { KitScope, Section } from '../../../components/InspectorKit';
+  Button,
+} from '../../../ui';
 import { useCompositionSettings } from '../compositionSettings';
 import { EnsureDataBlockOps, useDataBlockOps } from '../dataBlockOps';
 import { dataBlockUsers } from '../dataBlocks/dataBlockRefs';
@@ -235,7 +232,6 @@ function OutlinerBody() {
         ) : (
           <Select
             className={classes.picker}
-            size="xs"
             aria-label="Scene"
             placeholder="Choose a scene"
             allowDeselect={false}
@@ -246,7 +242,6 @@ function OutlinerBody() {
           />
         )}
         <Button
-          size="compact-xs"
           variant="default"
           disabled={!writable}
           data-info={deskReason ?? 'Create a scene with an empty root collection and open it.'}
@@ -260,7 +255,6 @@ function OutlinerBody() {
           New scene
         </Button>
         <Button
-          size="compact-xs"
           variant="default"
           disabled={!playback.playing && playRefusal !== null}
           data-info={
@@ -275,7 +269,6 @@ function OutlinerBody() {
       </div>
       <div className={classes.bar}>
         <Button
-          size="compact-xs"
           variant="default"
           disabled={addReason !== null}
           data-info={addReason ?? 'Add an empty object to the selected collection, or the scene.'}
@@ -289,7 +282,6 @@ function OutlinerBody() {
           Add Empty
         </Button>
         <Button
-          size="compact-xs"
           variant="default"
           disabled={childReason !== null}
           data-info={childReason ?? 'Add an empty object placed under the selected object.'}
@@ -304,7 +296,6 @@ function OutlinerBody() {
           Add Child Empty
         </Button>
         <Button
-          size="compact-xs"
           variant="default"
           disabled={addReason !== null}
           data-info={addReason ?? 'Add a collection inside the selected collection, or the scene.'}
@@ -326,7 +317,6 @@ function OutlinerBody() {
         >
           <Popover.Target>
             <Button
-              size="compact-xs"
               variant="default"
               disabled={deleteReason !== null}
               data-info={
@@ -341,11 +331,8 @@ function OutlinerBody() {
           <Popover.Dropdown>
             {summary && (
               <>
-                <Text size="xs" fw={600}>
-                  {deleteLine(summary)}
-                </Text>
+                <Text fw={600}>{deleteLine(summary)}</Text>
                 <Button
-                  size="compact-xs"
                   mt="xs"
                   onClick={() => {
                     setConfirming(false);
@@ -616,7 +603,6 @@ function CommitField({
   return (
     <TextInput
       className={classes.grow}
-      size="xs"
       aria-label={ariaLabel}
       value={draft}
       error={bad}
@@ -770,7 +756,6 @@ function PropertiesBody() {
         <Section heading="Playback">
           <Field label="Mute">
             <Switch
-              size="xs"
               aria-label="Mute"
               checked={collection?.mute ?? false}
               disabled={deskReason !== null}
@@ -791,7 +776,6 @@ function PropertiesBody() {
           <Field label="Parent">
             <Select
               className={classes.grow}
-              size="xs"
               aria-label="Parent"
               allowDeselect={false}
               disabled={lock('parent') !== null}
@@ -850,7 +834,6 @@ function PropertiesBody() {
           </Field>
           <Field label="Mapping">
             <SegmentedControl
-              size="xs"
               aria-label="Mapping"
               data={MAPPING_OPTIONS}
               value={object?.mapping ?? 'loop'}
@@ -866,7 +849,6 @@ function PropertiesBody() {
         <Section heading="Playback">
           <Field label="Mute">
             <Switch
-              size="xs"
               aria-label="Mute"
               checked={object?.mute ?? false}
               disabled={deskReason !== null}
@@ -927,7 +909,6 @@ function PropertiesBody() {
         >
           <div className={tabsClasses.idname}>{renameField(primary, deskReason)}</div>
           <Button
-            size="compact-xs"
             variant="default"
             aria-label="Make single user"
             disabled={!primary || !mine || deskReason !== null || users.length < 2}
@@ -946,7 +927,6 @@ function PropertiesBody() {
             {primary ? users.length : 0}
           </Button>
           <Button
-            size="compact-xs"
             variant="default"
             aria-label="New"
             disabled={!primary || !mine || deskReason !== null}
@@ -965,7 +945,6 @@ function PropertiesBody() {
             +
           </Button>
           <Button
-            size="compact-xs"
             variant="default"
             aria-label="Unlink"
             disabled={unlinkReason !== null}
@@ -995,7 +974,7 @@ function PropertiesBody() {
                 {`Used by ${users.length}`}
               </UnstyledButton>
             ) : (
-              <Text size="xs" c="dimmed" className={classes.grow}>
+              <Text c="dimmed" className={classes.grow}>
                 No data
               </Text>
             )}
@@ -1122,7 +1101,6 @@ function ModifiersSection({
         <Menu position="bottom-end" withinPortal={false} transitionProps={{ duration: 0 }}>
           <Menu.Target>
             <Button
-              size="compact-xs"
               variant="default"
               disabled={deskReason !== null}
               data-info={deskReason ?? 'Add a modifier at the bottom of the stack. It runs last.'}
@@ -1142,7 +1120,6 @@ function ModifiersSection({
           </Menu.Dropdown>
         </Menu>
         <Button
-          size="compact-xs"
           variant="default"
           disabled={deskReason !== null || modifiers.length === 0}
           data-info={
@@ -1232,7 +1209,6 @@ function ModifierCard({
           {def.label}
         </span>
         <Switch
-          size="xs"
           aria-label={`${def.label} On`}
           checked={!modifier.mute}
           disabled={deskReason !== null}
@@ -1242,7 +1218,6 @@ function ModifierCard({
           }
         />
         <Button
-          size="compact-xs"
           variant="default"
           aria-label={`Move ${def.label} Up`}
           disabled={deskReason !== null || upReason !== null}
@@ -1252,7 +1227,6 @@ function ModifierCard({
           ▲
         </Button>
         <Button
-          size="compact-xs"
           variant="default"
           aria-label={`Move ${def.label} Down`}
           disabled={deskReason !== null || downReason !== null}
@@ -1262,7 +1236,6 @@ function ModifierCard({
           ▼
         </Button>
         <Button
-          size="compact-xs"
           variant="default"
           aria-label={`Apply ${def.label}`}
           disabled={deskReason !== null || index > 0}
@@ -1276,7 +1249,6 @@ function ModifierCard({
           Apply
         </Button>
         <Button
-          size="compact-xs"
           variant="default"
           aria-label={`Remove ${def.label}`}
           disabled={deskReason !== null}
@@ -1304,7 +1276,6 @@ function ModifierCard({
               }
             />
             <Button
-              size="compact-xs"
               variant="default"
               disabled={deskReason !== null || !modifier.refs[slot.slot]}
               data-info={
@@ -1322,7 +1293,6 @@ function ModifierCard({
           <Field label="Allocation">
             <Select
               className={classes.grow}
-              size="xs"
               aria-label={`Allocation of ${def.label}`}
               allowDeselect={false}
               disabled={deskReason !== null}
@@ -1350,7 +1320,6 @@ function ModifierCard({
         <>
           <Field label="Repeat">
             <Switch
-              size="xs"
               aria-label={`Repeat Every Octave of ${def.label}`}
               checked={params.repeat === true}
               disabled={deskReason !== null}
@@ -1402,7 +1371,6 @@ function DuplicateButtons({
   return (
     <div className={classes.bar}>
       <Button
-        size="compact-xs"
         variant="default"
         disabled={deskReason !== null}
         data-info={
@@ -1413,7 +1381,6 @@ function DuplicateButtons({
         Duplicate Object
       </Button>
       <Button
-        size="compact-xs"
         variant="default"
         disabled={deskReason !== null}
         data-info={

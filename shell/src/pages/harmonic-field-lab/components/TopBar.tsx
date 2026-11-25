@@ -1,18 +1,16 @@
 /** Top bar, one thin row: back link, title, tuning tabs, transport (scale, chord, stop), sound menu, glossary, scheme. */
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Popover, Slider, Text } from '@mantine/core';
+import { ColorSchemeToggle } from '../../../components/ColorSchemeToggle/ColorSchemeToggle';
 import {
-  ActionIcon,
   Button,
   Checkbox,
   NativeSelect,
-  Popover,
   SegmentedControl,
-  Slider,
-  Text,
   TextInput,
-} from '@mantine/core';
-import { ColorSchemeToggle } from '../../../components/ColorSchemeToggle/ColorSchemeToggle';
+  ActionIcon,
+} from '../../../ui';
 import { PARTIALS, ROLLOFF, SOUND_ROLLOFF_MIN, soundPartials } from '../audio/engine';
 import { useLabDeveloperOptions } from '../state/developerOptions';
 import { MAX_TABS, WAVES, tabName, type Wave } from '../state/labState';

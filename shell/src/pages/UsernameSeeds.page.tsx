@@ -5,14 +5,11 @@ import {
   Alert,
   Anchor,
   Badge,
-  Button,
   Card,
   Group,
   Stack,
   Table,
   Text,
-  TextInput,
-  Textarea,
   Title,
   VisuallyHidden,
 } from '@mantine/core';
@@ -27,6 +24,7 @@ import {
   parseWordList,
   savedListsKey,
 } from '../lib/usernameSeeds';
+import { Button, TextInput, Textarea } from '../ui';
 
 type Mode = 'live' | 'frozen' | 'manual';
 

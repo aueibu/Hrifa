@@ -1,19 +1,9 @@
 import { useState } from 'react';
-import {
-  Group,
-  NumberInput,
-  Select,
-  Slider,
-  Stack,
-  Switch,
-  Text,
-  TextInput,
-  Title,
-  UnstyledButton,
-} from '@mantine/core';
+import { Group, Slider, Stack, Text, Title, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
+import { NumberInput, Select, Switch, TextInput } from '../../../ui';
 import type { OddBiasDirection } from '../engine';
 import { parseIntervalsText, type Settings } from '../settings';
 

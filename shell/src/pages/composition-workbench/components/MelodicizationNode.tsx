@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Badge, Button, Group, Select, Slider, Table, Text } from '@mantine/core';
+import { Alert, Badge, Group, Slider, Table, Text } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import {
   defaultPianoRollView,
@@ -7,6 +7,7 @@ import {
   type PianoRollGridLine,
   type PianoRollViewState,
 } from '../../../components/PianoRoll';
+import { Button, Select } from '../../../ui';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import {
   compositionOutputOptions,
@@ -466,7 +467,7 @@ export function MelodicizationNode({
             </Table.Tbody>
           </Table>
           {result.packet.items.length > visibleNotes.length && (
-            <Text size="xs" c="dimmed" mt="xs">
+            <Text c="dimmed" mt="xs">
               Showing the first {visibleNotes.length} of {result.packet.items.length} events.
             </Text>
           )}
@@ -495,7 +496,7 @@ export function MelodicizationNode({
       }
       onReset={resetMelodicization}
       footer={
-        <Text size="xs" c="dimmed" truncate aria-live="polite">
+        <Text c="dimmed" truncate aria-live="polite">
           {preview.status ||
             'Note events retain musical time; preview tempo does not rewrite them.'}
         </Text>
@@ -510,7 +511,7 @@ export function MelodicizationNode({
               onChange={(value) => value && setAllocation(value as PitchAllocation)}
             />
             <div className={classes.nodeParameterRow}>
-              <Text size="xs">Articulation</Text>
+              <Text>Articulation</Text>
               <Group gap="xs" wrap="nowrap" className={classes.volumeControl}>
                 <Slider
                   thumbLabel="Note articulation"
@@ -519,7 +520,7 @@ export function MelodicizationNode({
                   value={articulationPercent}
                   onChange={setArticulationPercent}
                 />
-                <Text ff="monospace" size="xs" w="2.8rem" ta="right">
+                <Text ff="monospace" w="2.8rem" ta="right">
                   {articulationPercent}%
                 </Text>
               </Group>
@@ -549,7 +550,7 @@ export function MelodicizationNode({
             </InspectorSection>
 
             <InspectorSection label="Preview">
-              <Text size="xs" c="dimmed">
+              <Text c="dimmed">
                 One pulse = one {transportPulse(transport).label.toLowerCase()}, in {meter} at{' '}
                 {tempo} BPM. Set these in the transport at the top of the page.
               </Text>

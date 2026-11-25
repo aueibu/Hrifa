@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, SegmentedControl } from '@mantine/core';
 import { ColorSchemeToggle } from '../../components/ColorSchemeToggle/ColorSchemeToggle';
 import {
   appendTrajectoryStep,
@@ -21,6 +20,7 @@ import {
   type TransformConfig,
   type TransformResult,
 } from '../../lib/affine-focus';
+import { SegmentedControl, Button } from '../../ui';
 import { affineAudio, type AudioSettings } from './audio';
 import { ClosureOrbitView } from './components/ClosureOrbitView';
 import { ControlRail } from './components/ControlRail';

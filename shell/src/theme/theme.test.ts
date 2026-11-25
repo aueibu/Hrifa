@@ -1,14 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_THEME } from '@mantine/core';
+import { DEFAULT_THEME, rem } from '@mantine/core';
 import { defaultThemeTokens } from './tokens';
 import { theme } from './index';
 
 describe('theme boundaries', () => {
-  it('keeps unowned foundation values on Mantine defaults', () => {
-    expect(theme.spacing).toEqual(DEFAULT_THEME.spacing);
+  it('keeps unowned foundation values on Mantine defaults and owns compact scale', () => {
     expect(theme.shadows).toEqual(DEFAULT_THEME.shadows);
-    expect(theme.radius).toEqual(DEFAULT_THEME.radius);
     expect(theme.breakpoints).toEqual(DEFAULT_THEME.breakpoints);
+    expect(theme.defaultRadius).toBe('xs');
+    expect(theme.spacing).toEqual({
+      xs: rem(4),
+      sm: rem(6),
+      md: rem(8),
+      lg: rem(12),
+      xl: rem(16),
+    });
+    expect(theme.radius).toEqual({
+      xs: rem(2),
+      sm: rem(3),
+      md: rem(4),
+      lg: rem(6),
+      xl: rem(8),
+    });
   });
 
   it('keeps the approved neutral foundation as the source baseline', () => {
@@ -28,32 +41,32 @@ describe('theme boundaries', () => {
         '#1b1814',
       ],
       dark: [
-        '#e6e3df',
-        '#cbc8c4',
-        '#b4b1ad',
-        '#a19e9a',
-        '#85827e',
-        '#464442',
-        '#3a3836',
-        '#32302e',
-        '#2a2826',
-        '#1d1b19',
+        '#ece9e4',
+        '#d2cfca',
+        '#b9b5af',
+        '#a4a09c',
+        '#8a8682',
+        '#514e49',
+        '#44413c',
+        '#363430',
+        '#2a2825',
+        '#1e1c1a',
       ],
       primary: [
-        '#ebf7ff',
-        '#c8eaff',
-        '#9cdaff',
-        '#54c4ff',
-        '#00abed',
-        '#008ec5',
-        '#00729f',
-        '#005d82',
-        '#004867',
-        '#003249',
+        '#eef3fb',
+        '#d5e1f4',
+        '#b3c9eb',
+        '#8daee0',
+        '#6d94d1',
+        '#5680c2',
+        '#4772b3',
+        '#395d94',
+        '#2c4975',
+        '#1f3557',
       ],
       primaryShade: { light: 6, dark: 6 },
       primaryRamp: {
-        core: '#00729f',
+        core: '#4772b3',
         contrast: 90,
         curve: 'even',
         endpointChroma: 100,

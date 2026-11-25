@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type MutableRefObject } from 'react';
-import { Button, Chip, Group, Select, Text, Tooltip } from '@mantine/core';
+import { Group, Text, Tooltip } from '@mantine/core';
+import { Chip, Select, Button } from '../../../ui';
 import { projectPitchSetFromPreset, type ProjectPitchSet } from '../compositionSettings';
 import { pitchClassName } from '../pitch';
 import { pitchLabel } from '../routeTreatments';
@@ -331,7 +332,6 @@ export function ChordPicker({
         <Group gap={4} className={classes.modes} wrap="wrap">
           <Button.Group>
             <Button
-              size="compact-xs"
               variant={common ? 'default' : 'filled'}
               aria-pressed={!common}
               onClick={() => onModeChange?.('root')}
@@ -339,7 +339,6 @@ export function ChordPicker({
               Root
             </Button>
             <Button
-              size="compact-xs"
               variant={common ? 'filled' : 'default'}
               aria-pressed={common}
               disabled={!onModeChange}
@@ -350,7 +349,6 @@ export function ChordPicker({
           </Button.Group>
           <Button.Group>
             <Button
-              size="compact-xs"
               variant={tier === 'simple' ? 'filled' : 'default'}
               aria-pressed={tier === 'simple'}
               disabled={!onTierChange}
@@ -360,7 +358,6 @@ export function ChordPicker({
               Simple
             </Button>
             <Button
-              size="compact-xs"
               variant={tier === 'extended' ? 'filled' : 'default'}
               aria-pressed={tier === 'extended'}
               disabled={!onTierChange}
@@ -372,7 +369,6 @@ export function ChordPicker({
           </Button.Group>
           {!selectionMode && (
             <Button
-              size="compact-xs"
               variant={continuous ? 'filled' : 'default'}
               aria-pressed={continuous}
               disabled={!onContinuousChange}
@@ -399,13 +395,13 @@ export function ChordPicker({
               </>
             }
           >
-            <Button size="compact-xs" variant="subtle" aria-label="Keyboard shortcuts">
+            <Button variant="subtle" aria-label="Keyboard shortcuts">
               ?
             </Button>
           </Tooltip>
         </Group>
 
-        <Text size="xs" className={`${classes.anchorLine} ${classes.muted}`}>
+        <Text className={`${classes.anchorLine} ${classes.muted}`}>
           {onNote
             ? `On ${pitchLabel(anchor.pitchMidicents)}${
                 Math.abs(noteOffsetCents) > 1
@@ -421,7 +417,6 @@ export function ChordPicker({
           {common && (
             <>
               <Chip
-                size="xs"
                 variant="outline"
                 checked={allPitches}
                 onChange={(checked) => onAllPitchesChange?.(checked)}
@@ -429,18 +424,18 @@ export function ChordPicker({
                 All pitches
               </Chip>
               {columns.length > 0 && (
-                <Text size="xs" className={`${classes.muted} ${classes.roleLine}`}>
+                <Text className={`${classes.muted} ${classes.roleLine}`}>
                   {pitchClassName(rootPc, edo)} is the ...
                 </Text>
               )}
             </>
           )}
           {active.pcs.length === 0 ? (
-            <Text size="xs" role="status" className={classes.empty}>
+            <Text role="status" className={classes.empty}>
               No pitches in the scale, so there are no chords to offer. Turn some on under Scale.
             </Text>
           ) : chords.length === 0 ? (
-            <Text size="xs" role="status" className={classes.empty}>
+            <Text role="status" className={classes.empty}>
               {common
                 ? `No chord contains ${pitchClassName(rootPc, edo)} in this scale. Try All pitches.`
                 : `No chord on ${pitchClassName(rootPc, edo)} fits this scale.`}
@@ -502,9 +497,7 @@ export function ChordPicker({
 
         <div className={classes.voicing}>
           <div role="group" aria-label="Spread" className={classes.column}>
-            <Text size="xs" className={classes.muted}>
-              Spread
-            </Text>
+            <Text className={classes.muted}>Spread</Text>
             {SPREADS.map((spread) => (
               <button
                 key={spread.id}
@@ -525,9 +518,7 @@ export function ChordPicker({
             ))}
           </div>
           <div role="group" aria-label="Inversion" className={classes.column}>
-            <Text size="xs" className={classes.muted}>
-              Inversion
-            </Text>
+            <Text className={classes.muted}>Inversion</Text>
             {INVERSION_LABELS.slice(0, inversions).map((label, index) => (
               <button
                 key={label}
@@ -563,7 +554,6 @@ export function ChordPicker({
             <div className={classes.foldBody}>
               <Group gap="xs" grow wrap="nowrap" align="flex-end">
                 <Select
-                  size="xs"
                   label="Preset"
                   data={(edo === 12
                     ? PITCH_SET_PRESETS
@@ -579,7 +569,6 @@ export function ChordPicker({
                   }
                 />
                 <Select
-                  size="xs"
                   label="Tonic"
                   data={pcs.map((pc) => ({ value: String(pc), label: pitchClassName(pc, edo) }))}
                   value={String(scale.tonic)}
@@ -595,7 +584,6 @@ export function ChordPicker({
                 {pcs.map((pc) => (
                   <Chip
                     key={pc}
-                    size="xs"
                     variant="outline"
                     checked={scale.pcs.includes(pc)}
                     onChange={() => onOverrideChange({ ...scale, ...togglePitch(scale, pc) })}
@@ -605,7 +593,6 @@ export function ChordPicker({
                 ))}
               </Group>
               <Button
-                size="compact-xs"
                 variant="subtle"
                 disabled={!overridden}
                 onClick={() => onOverrideChange(null)}
@@ -617,7 +604,7 @@ export function ChordPicker({
         </div>
 
         <div className={classes.hint}>
-          <Text size="xs">
+          <Text>
             {previewGate === 'click'
               ? 'Hover previews. Click auditions. Double-click or Enter inserts.'
               : 'Hover previews. Click pins, Ctrl+click auditions. Double-click or Enter inserts.'}
@@ -625,7 +612,7 @@ export function ChordPicker({
               ? ' Scroll the columns, or use the takeover for more room.'
               : ''}
           </Text>
-          <Text size="xs">
+          <Text>
             {selectionMode
               ? 'Keys: arrows browse, Enter inserts, Alt+arrows voicing.'
               : 'Keys: arrows browse, Enter inserts, Alt+arrows voicing, Shift+arrows move the anchor, I continuous.'}

@@ -1,10 +1,11 @@
-import { Button, NativeSelect, NumberInput, SegmentedControl, Slider } from '@mantine/core';
+import { Slider } from '@mantine/core';
 import type {
   ClosureGraph,
   GamutPitch,
   TransformConfig,
   TransformResult,
 } from '../../../lib/affine-focus';
+import { Button, NativeSelect, NumberInput, SegmentedControl } from '../../../ui';
 import type { ArpeggioMode, AudioSettings, WaveType } from '../audio';
 import { formatSignedCents, signedErrorColorVar } from '../state';
 import classes from '../AffineFocus.module.css';

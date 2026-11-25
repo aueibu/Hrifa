@@ -1,4 +1,5 @@
-import { Group, NumberInput } from '@mantine/core';
+import { Group } from '@mantine/core';
+import { NumberInput } from '../../../ui';
 
 interface GeneratorPairControlsProps {
   a: number | string;

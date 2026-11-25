@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { ActionIcon, Group, Text, Title } from '@mantine/core';
+import { Group, Text, Title } from '@mantine/core';
+import { ActionIcon } from '../../../ui';
 import classes from './ModuleDevice.module.css';
 
 interface NodeDeviceProps {
@@ -42,7 +43,7 @@ export function NodeDevice({
             {name}
           </Title>
           {status && (
-            <Text size="xs" c="dimmed" truncate>
+            <Text c="dimmed" truncate>
               {status}
             </Text>
           )}

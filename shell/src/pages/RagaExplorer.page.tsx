@@ -1,19 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import {
-  ActionIcon,
-  Anchor,
-  AppShell,
-  Box,
-  Group,
-  Loader,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Anchor, AppShell, Box, Group, Loader, Stack, Text, Title } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import { Surface } from '../components/Surface/Surface';
+import { ActionIcon } from '../ui';
 import { PlaybackControls } from './raga-explorer/components/PlaybackControls';
 import { RagaDetail } from './raga-explorer/components/RagaDetail';
 import { RagaList } from './raga-explorer/components/RagaList';

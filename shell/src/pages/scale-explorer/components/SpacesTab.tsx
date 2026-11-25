@@ -1,5 +1,6 @@
-import { Group, Select, Stack, Text, Title } from '@mantine/core';
+import { Group, Stack, Text, Title } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
+import { Select } from '../../../ui';
 import { catalog, type PrimeConvention } from '../pitchSets';
 import { tonnetzStats } from '../spaces';
 import { SPECTRUM_COMPONENTS } from '../spectrum';

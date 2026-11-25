@@ -1,4 +1,5 @@
-import { Badge, Button, Switch, Text, TextInput } from '@mantine/core';
+import { Badge, Text } from '@mantine/core';
+import { Button, Switch, TextInput } from '../../../ui';
 import { useCompositionSettings } from '../compositionSettings';
 import { formatPulses } from '../rhythmNotation';
 import {
@@ -161,7 +162,7 @@ export function RhythmListNode({ instanceId, instanceLabel }: RhythmListNodeProp
       }
       onReset={resetRhythmList}
       footer={
-        <Text size="xs" c="dimmed" truncate aria-live="polite">
+        <Text c="dimmed" truncate aria-live="polite">
           {preview.status || 'Plays at the transport tempo; volume stays live.'}
         </Text>
       }
@@ -191,7 +192,7 @@ export function RhythmListNode({ instanceId, instanceLabel }: RhythmListNodeProp
           <NodeInspectorContent>
             <InspectorSection label="Preview">
               <div className={classes.nodeParameterRow}>
-                <Text size="xs">Sound</Text>
+                <Text>Sound</Text>
                 <SoundOverrideControl
                   label="Preview"
                   set={settings.sounds.rhythm}

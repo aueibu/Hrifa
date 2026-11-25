@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Accordion, Alert, Badge, Select, Stack, Text, TextInput } from '@mantine/core';
+import { Accordion, Alert, Badge, Stack, Text } from '@mantine/core';
+import { Select, TextInput } from '../../../ui';
 import { useCompositionSettings } from '../compositionSettings';
 import { pitchClassName } from '../pitch';
 import { useNodeEvaluationResult } from '../runtime/evaluationStore';
@@ -98,7 +99,7 @@ function FamilyAccordion({
           <Accordion.Control>
             <Text size="sm" fw={600}>
               {cycleLabel(family.cycle)}
-              <Text span size="xs" c="dimmed" ml="xs">
+              <Text span c="dimmed" ml="xs">
                 {family.forms.length} rotations · {family.inversions} swap
                 {family.inversions === 1 ? '' : 's'} from original
               </Text>
@@ -107,7 +108,7 @@ function FamilyAccordion({
           <Accordion.Panel>
             <Stack gap={2}>
               {family.forms.map((form) => (
-                <Text key={form.shift} ff="monospace" size="xs">
+                <Text key={form.shift} ff="monospace">
                   {form.values.join(' + ')}
                 </Text>
               ))}
@@ -173,7 +174,7 @@ export function ScaleConstructionNode({ instanceId, instanceLabel }: ScaleConstr
     generated.result && (
       <>
         <div>
-          <Text fw={600} size="xs" mb={4}>
+          <Text fw={600} mb={4}>
             Scale (from root {pitchClassName(rootValue, edo)})
           </Text>
           <Text ff="monospace" size="sm" className={classes.pitchValues}>
@@ -183,7 +184,7 @@ export function ScaleConstructionNode({ instanceId, instanceLabel }: ScaleConstr
             {intervals.join(' + ')}
           </Text>
         </div>
-        <Text size="xs" c="dimmed">
+        <Text c="dimmed">
           {formCount} melodic form{formCount === 1 ? '' : 's'} in {families.length}{' '}
           {families.length === 1 ? 'family' : 'families'} ({permutationMode} permutation of the
           interval sequence's own positions — coincident-valued forms are reported as separate
@@ -212,7 +213,7 @@ export function ScaleConstructionNode({ instanceId, instanceLabel }: ScaleConstr
       }
       onReset={resetScaleConstruction}
       footer={
-        <Text size="xs" c="dimmed" truncate>
+        <Text c="dimmed" truncate>
           Book II Ch. 1-2: scale built from the gaps between pitch-units.
         </Text>
       }

@@ -1,5 +1,6 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
-import { Accordion, Button, Group, SegmentedControl, Stack, Text, TextInput } from '@mantine/core';
+import { Accordion, Group, Stack, Text } from '@mantine/core';
+import { Button, SegmentedControl, TextInput } from '../../../ui';
 import type { PacketBlock } from '../dataBlock';
 import { runOperator } from '../dataBlockOperatorRunner';
 import type { OperatorParams } from '../dataBlockOperators';
@@ -121,7 +122,6 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
 
   const button = (id: string, label: string, aria: string, onClick: () => void) => (
     <Button
-      size="compact-xs"
       variant="default"
       aria-label={aria}
       disabled={disabled || !available(id)}
@@ -156,10 +156,8 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
       data-note-editor-scope=""
       onMouseDown={keepFocus}
     >
-      <Text size="xs" fw={600}>
-        Operators
-      </Text>
-      <Text size="xs" c="dimmed" aria-live="polite">
+      <Text fw={600}>Operators</Text>
+      <Text c="dimmed" aria-live="polite">
         Acts on {scope}.
       </Text>
       {/* Labelled, collapsible sections; several can be open at once and the open ones are
@@ -188,14 +186,13 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
           <>
             <Stack gap={4} role="group" aria-label="Scale">
               <Group gap={4} wrap="wrap">
-                <Text size="xs">Scale</Text>
+                <Text>Scale</Text>
                 {button('scale', '×2', 'Scale by 2', () => run('scale', { factor: 2, mode }))}
                 {button('scale', '÷2', 'Scale by one half', () =>
                   run('scale', { factor: 0.5, mode })
                 )}
               </Group>
               <SegmentedControl
-                size="xs"
                 aria-label="Scale mode"
                 disabled={disabled}
                 value={mode}
@@ -207,7 +204,6 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
               />
               <Group gap={4} wrap="nowrap">
                 <TextInput
-                  size="xs"
                   aria-label="Scale factor"
                   placeholder="2, 0.5 or 3/2"
                   value={factor}
@@ -223,15 +219,14 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
               </Group>
             </Stack>
             <Group gap={4} wrap="wrap" role="group" aria-label="Reverse">
-              <Text size="xs">Reverse</Text>
+              <Text>Reverse</Text>
               {button('reverse-time', 'In time', 'Reverse in time', () => run('reverse-time'))}
               {button('reverse-order', 'Order', 'Reverse order', () => run('reverse-order'))}
             </Group>
             <Stack gap={4} role="group" aria-label="Rotate">
-              <Text size="xs">Rotate</Text>
+              <Text>Rotate</Text>
               <Group gap={4} wrap="wrap">
                 <TextInput
-                  size="xs"
                   aria-label="Rotate amount"
                   placeholder="1 or -1"
                   value={rotation}
@@ -239,7 +234,6 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
                   onChange={(event) => setRotation(event.currentTarget.value)}
                 />
                 <Button
-                  size="compact-xs"
                   variant="default"
                   aria-label="Rotate one step back"
                   disabled={disabled || !available('rotate-values')}
@@ -248,7 +242,6 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
                   −1
                 </Button>
                 <Button
-                  size="compact-xs"
                   variant="default"
                   aria-label="Rotate one step forward"
                   disabled={disabled || !available('rotate-values')}
@@ -280,10 +273,9 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
           'Pitch',
           <>
             <Stack gap={4} role="group" aria-label="Transpose">
-              <Text size="xs">Transpose</Text>
+              <Text>Transpose</Text>
               <Group gap={4} wrap="wrap">
                 <TextInput
-                  size="xs"
                   aria-label="Transpose semitones"
                   placeholder="semitones"
                   value={semitones}
@@ -305,7 +297,7 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
             </Stack>
             <Stack gap={4} role="group" aria-label="Invert">
               <Group gap={4} wrap="wrap">
-                <Text size="xs">Invert</Text>
+                <Text>Invert</Text>
                 {button('invert', 'Invert', 'Invert', () =>
                   pick(
                     'invert',
@@ -317,7 +309,7 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
               </Group>
             </Stack>
             <Group gap={4} wrap="wrap" role="group" aria-label="Make equal pitch">
-              <Text size="xs">Make all equal</Text>
+              <Text>Make all equal</Text>
               {button('equal-pitch', 'Pitch', 'Make all pitches equal', () =>
                 pick(
                   'equal-pitch',
@@ -333,10 +325,9 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
           'values',
           'Values',
           <Stack gap={4} role="group" aria-label="Make equal">
-            <Text size="xs">Make all equal</Text>
+            <Text>Make all equal</Text>
             <Group gap={4} wrap="nowrap">
               <TextInput
-                size="xs"
                 aria-label="Equal duration"
                 placeholder="first note's: 1, 0.5 or 1/8"
                 value={equalLength}
@@ -354,7 +345,6 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
             </Group>
             <Group gap={4} wrap="nowrap">
               <TextInput
-                size="xs"
                 aria-label="Equal velocity"
                 placeholder="first note's: 1 to 100 %"
                 value={equalVelocity}
@@ -379,7 +369,6 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
             {button('duplicate', 'Duplicate', 'Duplicate selection', () => run('duplicate'))}
             {button('copy', 'Copy', 'Copy notes', () => run('copy'))}
             <Button
-              size="compact-xs"
               variant="default"
               aria-label="Paste notes"
               disabled={disabled || !available('paste') || clipboard === null}
@@ -392,20 +381,14 @@ export function DataBlockOperatorsPanel({ dataBlock }: { dataBlock: PacketBlock 
       </Accordion>
       {editor?.picking && (
         <Group gap={4} wrap="nowrap" role="status">
-          <Text size="xs">Pick a pitch in the roll.</Text>
-          <Button
-            size="compact-xs"
-            variant="default"
-            aria-label="Cancel pick"
-            onClick={() => editor.cancelPick()}
-          >
+          <Text>Pick a pitch in the roll.</Text>
+          <Button variant="default" aria-label="Cancel pick" onClick={() => editor.cancelPick()}>
             Cancel
           </Button>
         </Group>
       )}
       {notice && (
         <Text
-          size="xs"
           c={notice.refused ? 'var(--mantine-color-error)' : 'dimmed'}
           role={notice.refused ? 'alert' : 'status'}
         >

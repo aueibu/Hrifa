@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ActionIcon,
   Anchor,
   AppShell,
   Box,
@@ -15,6 +14,7 @@ import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import { Surface } from '../components/Surface/Surface';
 import { resolveIntervalPlacementStyle } from '../theme/diagram';
+import { ActionIcon } from '../ui';
 import { FretboardView } from './interval-placement/components/FretboardView';
 import { HoverInfoPanel } from './interval-placement/components/HoverInfoPanel';
 import { IntervalClassGrid } from './interval-placement/components/IntervalClassGrid';
@@ -230,7 +230,9 @@ export function IntervalPlacementPage() {
                 style={{
                   display: 'grid',
                   gap: 'var(--mantine-spacing-md)',
-                  gridTemplateColumns: stackedLayout ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) minmax(0, 3fr)',
+                  gridTemplateColumns: stackedLayout
+                    ? 'minmax(0, 1fr)'
+                    : 'minmax(0, 1fr) minmax(0, 3fr)',
                 }}
               >
                 <Surface>

@@ -13,8 +13,8 @@
  * target (outlined; the others snap back, the trade is shown; `swapPins`); moving on resumes the live order.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ActionIcon, Button } from '@mantine/core';
 import { Sortable, SortableItem, type Move } from '../../../components/Sortable';
+import { Button, ActionIcon } from '../../../ui';
 import { tintVars, type IntervalTint } from '../state/intervalColor';
 import { PIN_COLS, braKet, movePin, removePin, swapPins, type PinKind } from '../state/pins';
 import { ChevronDownIcon, CloseIcon } from './icons';

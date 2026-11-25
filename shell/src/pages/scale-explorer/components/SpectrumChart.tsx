@@ -1,4 +1,4 @@
-import { SegmentedControl } from '@mantine/core';
+import { SegmentedControl } from '../../../ui';
 import { spectrumOf, SPECTRUM_COMPONENTS } from '../spectrum';
 import { ROLE, STROKE, useScaleStyle } from '../useScaleStyle';
 import classes from '../ScaleExplorer.module.css';

@@ -1,15 +1,5 @@
-import {
-  ActionIcon,
-  Button,
-  Group,
-  NumberInput,
-  Popover,
-  Select,
-  Stack,
-  Switch,
-  Text,
-  Tooltip,
-} from '@mantine/core';
+import { Group, Popover, Stack, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Button, NumberInput, Select, Switch } from '../../../ui';
 import { useAudioEngine } from '../audio/AudioEngineProvider';
 import { midiNoteName } from '../interference';
 import {
@@ -46,7 +36,6 @@ export function PitchField({
   return (
     <Group gap={6} wrap="nowrap" align="end">
       <Select
-        size="xs"
         label={label}
         searchable
         w={96}
@@ -57,7 +46,6 @@ export function PitchField({
         onChange={(next) => next && onChange(Number(next) * 100 + cents)}
       />
       <NumberInput
-        size="xs"
         aria-label={`${label} cents`}
         w={78}
         suffix="¢"
@@ -86,7 +74,6 @@ function OffsetField({
   return (
     <Group gap={6} wrap="nowrap">
       <NumberInput
-        size="xs"
         aria-label={`${label} semitones`}
         w={84}
         suffix=" st"
@@ -98,7 +85,6 @@ function OffsetField({
         onChange={(next) => typeof next === 'number' && onChange(next * 100 + cents)}
       />
       <NumberInput
-        size="xs"
         aria-label={`${label} cents`}
         w={78}
         suffix="¢"
@@ -186,7 +172,6 @@ export function SoundSetEditor({
         <div key={voiceNames[index]}>
           <Group gap={6} wrap="nowrap" align="end">
             <Select
-              size="xs"
               w={112}
               label={voiceNames[index]}
               aria-label={`${name} ${voiceNames[index].toLowerCase()} sound`}
@@ -196,7 +181,7 @@ export function SoundSetEditor({
               onChange={(type) => type && updateVoice(index, { type: type as SoundType })}
             />
             {index === 0 ? (
-              <Text size="xs" c="dimmed" pb={6} style={{ flex: 1 }}>
+              <Text c="dimmed" pb={6} style={{ flex: 1 }}>
                 at the base pitch
               </Text>
             ) : (
@@ -212,7 +197,7 @@ export function SoundSetEditor({
             />
           </Group>
           {index > 0 && (
-            <Text size="xs" c="dimmed" mt={2}>
+            <Text c="dimmed" mt={2}>
               {formatOffset(voice.offsetCents)} → {soundLabel(voiceSound(set, index))}
             </Text>
           )}
@@ -245,7 +230,6 @@ export function SoundOverrideControl({
     <Popover position="bottom-start" withArrow shadow="md" width={260}>
       <Popover.Target>
         <Button
-          size="compact-xs"
           variant={value ? 'light' : 'default'}
           aria-label={`${label} sound`}
           title={value ? soundLabel(value) : `${voiceName} voice (${soundLabel(current)})`}
@@ -258,7 +242,6 @@ export function SoundOverrideControl({
       <Popover.Dropdown>
         <Stack gap="xs">
           <Switch
-            size="xs"
             label={`Use the ${voiceName.toLowerCase()} voice from settings`}
             checked={!value}
             onChange={(event) =>
@@ -268,7 +251,6 @@ export function SoundOverrideControl({
           {value ? (
             <>
               <Select
-                size="xs"
                 label="Sound"
                 data={soundTypeOptions}
                 value={value.type}
@@ -284,9 +266,7 @@ export function SoundOverrideControl({
               />
             </>
           ) : (
-            <Text size="xs" c="dimmed">
-              Now: {soundLabel(current)}. Change voices in Workbench settings.
-            </Text>
+            <Text c="dimmed">Now: {soundLabel(current)}. Change voices in Workbench settings.</Text>
           )}
           <Group justify="flex-end">
             <AuditionButton label={label} sound={current} />

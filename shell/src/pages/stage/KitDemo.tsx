@@ -15,7 +15,7 @@ import {
   TextField,
   Tip,
   Toggle,
-} from '../../components/InspectorKit';
+} from '../../ui';
 import classes from './kitDemo.module.css';
 
 function DemoPanel() {

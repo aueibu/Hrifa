@@ -1,15 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Collapse, Stack, Text, Title, UnstyledButton } from '@mantine/core';
-import {
-  ActionButton,
-  Actions,
-  KitScope,
-  Num,
-  Row,
-  Section,
-  Strip,
-  Tip,
-} from '../../../components/InspectorKit';
+import { ActionButton, Actions, KitScope, Num, Row, Section, Strip, Tip } from '../../../ui';
 import {
   boundOutput,
   describeOutputRef,
@@ -94,9 +85,7 @@ function CanvasPart({
   const binding = route ? routes[route.instanceId]?.[route.port] : undefined;
   if (!route || !binding) {
     return (
-      <Text size="xs" c="dimmed">
-        Select a cable to adjust how its material is treated between nodes.
-      </Text>
+      <Text c="dimmed">Select a cable to adjust how its material is treated between nodes.</Text>
     );
   }
 
@@ -121,7 +110,7 @@ function CanvasPart({
 
   return (
     <Stack gap="xs">
-      <Text className={classes.heading} size="xs" c="dimmed" fw={700} tt="uppercase">
+      <Text className={classes.heading} c="dimmed" fw={700} tt="uppercase">
         Route · {definition.label} input
       </Text>
       <Row name="Treatment">
@@ -185,7 +174,7 @@ function NodePart({
         <Title order={3} size="h6">
           {dataBlock.name}
         </Title>
-        <Text size="xs">
+        <Text>
           {dataBlock.payload.packet.kind} | {dataBlock.payload.packet.domain}
         </Text>
         {hasNotesProperties(dataBlock.payload.packet) && (
@@ -197,11 +186,7 @@ function NodePart({
   }
   const instance = instances.find((candidate) => candidate.id === activeInstanceId);
   if (!instance) {
-    return (
-      <Text size="xs" c="dimmed">
-        Select a node on the canvas.
-      </Text>
-    );
+    return <Text c="dimmed">Select a node on the canvas.</Text>;
   }
   const nodeName = compositionInstanceLabel(instance, instances);
   return (

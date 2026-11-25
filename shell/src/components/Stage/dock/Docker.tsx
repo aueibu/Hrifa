@@ -18,7 +18,7 @@ import {
 } from 'react';
 import { Menu, TextInput } from '@mantine/core';
 import { pxToRem, type DockerId, type Edge, type PanelId } from '../../../lib/stage';
-import { StripTool } from '../../InspectorKit';
+import { StripTool } from '../../../ui';
 import { CloseIcon, DownIcon, MaximizeIcon, MenuIcon, RestoreIcon } from '../icons';
 import type { DockerPlacement } from './dockLayout';
 import type { FocusReq } from './focusRequest';

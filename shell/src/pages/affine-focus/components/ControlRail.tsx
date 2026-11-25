@@ -1,12 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  Button,
-  NativeSelect,
-  NumberInput,
-  SegmentedControl,
-  TextInput,
-  type TextInputProps,
-} from '@mantine/core';
+import { type TextInputProps } from '@mantine/core';
 import {
   isBijectiveMultiplier,
   TUNING_PRESETS,
@@ -20,6 +13,7 @@ import {
   type TransformDomain,
   type TuningGamut,
 } from '../../../lib/affine-focus';
+import { NativeSelect, NumberInput, SegmentedControl, TextInput, Button } from '../../../ui';
 import { SCENARIO_EXAMPLES, type AffineFocusPersistedState, type ScenarioExample } from '../state';
 import classes from '../AffineFocus.module.css';
 

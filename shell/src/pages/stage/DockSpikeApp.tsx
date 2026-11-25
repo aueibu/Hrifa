@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Anchor, AppShell, Button, Checkbox, Group, Text } from '@mantine/core';
+import { Anchor, AppShell, Group, Text } from '@mantine/core';
 import { ColorSchemeToggle } from '../../components/ColorSchemeToggle/ColorSchemeToggle';
 import {
   addWorkspace,
@@ -34,6 +34,7 @@ import {
   type Workspace,
   type WorkspaceStore,
 } from '../../lib/stage';
+import { Button, Checkbox } from '../../ui';
 import {
   DEFAULT_ARRANGEMENTS,
   defaultDockStore,

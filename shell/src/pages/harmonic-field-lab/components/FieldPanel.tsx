@@ -1,6 +1,7 @@
 /** The field table: a compact block for the side column, and the full dense table in a large window. */
 import { useMemo, useState } from 'react';
-import { Button, Checkbox, Modal } from '@mantine/core';
+import { Modal } from '@mantine/core';
+import { Checkbox, Button } from '../../../ui';
 import { fieldRowsOf, type FieldRow } from '../state/derive';
 import { PlayIcon, TableIcon } from './icons';
 import { RootGlyph, rootLabel, useModeRoot } from './ModeRoot';

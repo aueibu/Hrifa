@@ -16,8 +16,6 @@
 }
 
 .root {
-  --input-height-xs: 1.625rem;
-
   background: var(--surface);
   color: var(--text);
   font-size: var(--lab-fs-body);

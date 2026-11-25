@@ -137,7 +137,9 @@ export function RingDiagram({
                 : undefined
             }
             onMouseEnter={showFifths ? () => setHoveredPc(pc) : undefined}
-            onMouseLeave={showFifths ? () => setHoveredPc((cur) => (cur === pc ? null : cur)) : undefined}
+            onMouseLeave={
+              showFifths ? () => setHoveredPc((cur) => (cur === pc ? null : cur)) : undefined
+            }
             style={{ cursor: interactive ? 'pointer' : 'default' }}
             role={interactive ? 'button' : undefined}
             aria-pressed={interactive ? isFiltered || isExcluded : undefined}
@@ -148,21 +150,11 @@ export function RingDiagram({
             }
           >
             {isFiltered && (
-              <circle
-                r={r + 3}
-                fill="none"
-                stroke="var(--mark-blue)"
-                strokeWidth={1.5}
-              />
+              <circle r={r + 3} fill="none" stroke="var(--mark-blue)" strokeWidth={1.5} />
             )}
             {isExcluded && (
               <>
-                <circle
-                  r={r + 3}
-                  fill="none"
-                  stroke="var(--mark-red)"
-                  strokeWidth={1.5}
-                />
+                <circle r={r + 3} fill="none" stroke="var(--mark-red)" strokeWidth={1.5} />
                 <line
                   x1={-(r + 3) * 0.7}
                   y1={-(r + 3) * 0.7}
@@ -225,7 +217,9 @@ export function RingDiagram({
                   stroke="var(--mark-teal)"
                   strokeWidth={0.8}
                 >
-                  <title>{aboveUsed ? '5th above: present' : '5th above: missing (imperfection)'}</title>
+                  <title>
+                    {aboveUsed ? '5th above: present' : '5th above: missing (imperfection)'}
+                  </title>
                 </circle>
                 <circle
                   cx={outwardX * belowDotOffset}

@@ -20,8 +20,9 @@
  * `readoutRows`, the one place to change it. The data comes from the lib's `libraryRing` (see `state/libraryPreview.ts`).
  */
 import { useCallback, useMemo, useState } from 'react';
-import { SegmentedControl, VisuallyHidden } from '@mantine/core';
+import { VisuallyHidden } from '@mantine/core';
 import type { LibraryRing, RingDot as LibRingDot } from '../../../lib/harmonic-field';
+import { SegmentedControl } from '../../../ui';
 import { fitList } from '../state/fitList';
 import type { Ghost } from '../state/ghosts';
 import { layoutLabels, leaderEnds, type Box } from '../state/labelLayout';

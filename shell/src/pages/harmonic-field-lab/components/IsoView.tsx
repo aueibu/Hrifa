@@ -3,7 +3,7 @@
  * generator 2. Each hexagon shows the field note nearest its pitch (within the tolerance) or stays blank.
  */
 import { useMemo } from 'react';
-import { NativeSelect } from '@mantine/core';
+import { NativeSelect } from '../../../ui';
 import { isoOf } from '../state/derive';
 import type { VizId } from '../state/layout';
 import { ISO_G1, ISO_G2, ISO_TOLS } from '../state/vizState';

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppShell, Group, MantineThemeProvider, Stack, Text, Title } from '@mantine/core';
+import { AppShell, Group, Stack, Text, Title } from '@mantine/core';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 import {
   addWorkspace,
@@ -17,7 +17,6 @@ import { Surface } from '../components/Surface/Surface';
 import { dockerHolding, type Workspace } from '../lib/stage';
 import { AudioEngineProvider } from './composition-workbench/audio/AudioEngineProvider';
 import { ChordPanelBridge } from './composition-workbench/chordInput/ChordPanelBridge';
-import { compactWorkbenchTheme } from './composition-workbench/compactTheme';
 import { CompositionCanvas } from './composition-workbench/components/CompositionCanvas';
 import { CompositionInspector } from './composition-workbench/components/CompositionInspector';
 import { CompositionSettingsPanel } from './composition-workbench/components/CompositionSettingsPanel';
@@ -556,139 +555,137 @@ export function CompositionWorkbenchPage() {
         >
           <AudioEngineProvider>
             <PreviewRegistryProvider>
-              <MantineThemeProvider theme={compactWorkbenchTheme}>
-                <InfoBarActiveContext.Provider value>
-                  <EvaluationStoreContext.Provider value={evaluationStore}>
-                    <EditorTargetGuard dataBlockId={editorTarget} onMissing={clearEditorTarget} />
-                    {/* Every placed node is evaluated and publishes here, whether or not its view is
+              <InfoBarActiveContext.Provider value>
+                <EvaluationStoreContext.Provider value={evaluationStore}>
+                  <EditorTargetGuard dataBlockId={editorTarget} onMissing={clearEditorTarget} />
+                  {/* Every placed node is evaluated and publishes here, whether or not its view is
                     mounted. Before the panels, so a view reads its evaluation on its first render. */}
-                    {compositionInstances.map(
-                      (instance) =>
-                        instance.nodeId in nodeEvaluators && (
-                          <NodeEvaluationRunner
-                            key={instance.id}
-                            outputStore={outputStore}
-                            evaluationStore={evaluationStore}
-                            instanceId={instance.id}
-                            nodeId={instance.nodeId as keyof typeof nodeEvaluators}
-                            instanceLabel={compositionInstanceLabel(instance, compositionInstances)}
-                            dataBlockId={instance.dataBlockId}
-                            routeState={nodeRouteStates[instance.id]}
-                          />
-                        )
-                    )}
-                    {/* The page-level sessions (chord, data-block editor, input scope, selection chain) sit
+                  {compositionInstances.map(
+                    (instance) =>
+                      instance.nodeId in nodeEvaluators && (
+                        <NodeEvaluationRunner
+                          key={instance.id}
+                          outputStore={outputStore}
+                          evaluationStore={evaluationStore}
+                          instanceId={instance.id}
+                          nodeId={instance.nodeId as keyof typeof nodeEvaluators}
+                          instanceLabel={compositionInstanceLabel(instance, compositionInstances)}
+                          dataBlockId={instance.dataBlockId}
+                          routeState={nodeRouteStates[instance.id]}
+                        />
+                      )
+                  )}
+                  {/* The page-level sessions (chord, data-block editor, input scope, selection chain) sit
                     above the Stage and every editor, with no key, so nothing below remounts. */}
-                    <WorkbenchSessions
-                      inspectorTarget={shownInspectorTarget}
-                      dataBlockId={editorTarget}
+                  <WorkbenchSessions
+                    inspectorTarget={shownInspectorTarget}
+                    dataBlockId={editorTarget}
+                  >
+                    {/* Shows the Chords panel while the Chords tool wants it, and reports the person closing it. */}
+                    <ChordPanelBridge workspace={workspace} api={stageApi} />
+                    <AppShell
+                      header={{ height: 40 }}
+                      footer={{ height: 39 }}
+                      padding={0}
+                      className={classes.workbench}
                     >
-                      {/* Shows the Chords panel while the Chords tool wants it, and reports the person closing it. */}
-                      <ChordPanelBridge workspace={workspace} api={stageApi} />
-                      <AppShell
-                        header={{ height: 40 }}
-                        footer={{ height: 39 }}
-                        padding={0}
-                        className={classes.workbench}
-                      >
-                        <AppShell.Header>
-                          <div className={classes.headerBar}>
-                            <Group gap="xs" wrap="nowrap">
-                              <Title order={1} className={classes.visuallyHidden}>
-                                Composition Workbench
-                              </Title>
-                              <div
-                                className={classes.headerTabs}
-                                data-info="Workspaces: arrangements of the canvas, desk, nodes and data-block editor. Switch, add, rename or duplicate them."
-                              >
-                                <WorkspaceTabs
-                                  store={workspaceStore}
-                                  onActivate={(id) =>
-                                    setWorkspaceStore((st) => setActiveWorkspace(st, id))
-                                  }
-                                  onAdd={() => setWorkspaceStore((st) => addWorkspace(st))}
-                                  onRename={(id, name) =>
-                                    setWorkspaceStore((st) => renameWorkspace(st, id, name))
-                                  }
-                                  onDuplicate={(id) =>
-                                    setWorkspaceStore((st) => duplicateWorkspace(st, id))
-                                  }
-                                  onDelete={(id) =>
-                                    setWorkspaceStore((st) => deleteWorkspace(st, id))
-                                  }
-                                />
-                              </div>
-                            </Group>
-                            <TransportBar selectedInstanceId={shownInstanceId} />
-                            <Group gap="xs" wrap="nowrap" justify="flex-end">
-                              <DeveloperMenu />
-                              <ProjectMenu />
-                              <ColorSchemeToggle />
-                            </Group>
-                          </div>
-                        </AppShell.Header>
-                        <AppShell.Main
-                          style={{ paddingBottom: 'var(--app-shell-footer-offset, 0px)' }}
-                        >
-                          <Stack gap="md">
-                            <>
-                              <div
-                                className={classes.compositionWorkspace}
-                                data-settings={settingsOpened}
-                              >
-                                <div className={classes.stageColumn} ref={stageBox.ref}>
-                                  <NodeInspectorSlotContext.Provider
-                                    value={inspectorShown ? nodeInspectorSlot : null}
-                                  >
-                                    <WorkbenchPanelsContext.Provider value={panelNodes}>
-                                      <DockStage
-                                        registry={WORKBENCH_REGISTRY}
-                                        workspace={workspace}
-                                        update={updateWorkspace}
-                                        widthRem={stageBox.widthRem}
-                                        heightRem={stageBox.heightRem}
-                                        onApi={onStageApi}
-                                      />
-                                    </WorkbenchPanelsContext.Provider>
-                                  </NodeInspectorSlotContext.Provider>
-                                </div>
-                                {settingsOpened && (
-                                  <div className={classes.settingsColumn}>
-                                    <CompositionSettingsPanel
-                                      onClose={() => setSettingsOpened(false)}
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          </Stack>
-                        </AppShell.Main>
-                        <AppShell.Footer>
-                          <WorkbenchStatusBar
-                            inspectorOpen={inspectorOpen}
-                            onToggleInspector={() => {
-                              if (inspectorOpen) {
-                                stageApi?.close(INSPECTOR_PANEL);
-                              } else {
-                                stageApi?.show(INSPECTOR_PANEL);
-                              }
-                            }}
-                            settingsOpen={settingsOpened}
-                            onToggleSettings={() => setSettingsOpened((open) => !open)}
-                            panelsMenu={
-                              <PanelsMenu
-                                registry={WORKBENCH_REGISTRY.meta}
-                                workspace={workspace}
-                                api={stageApi}
+                      <AppShell.Header>
+                        <div className={classes.headerBar}>
+                          <Group gap="xs" wrap="nowrap">
+                            <Title order={1} className={classes.visuallyHidden}>
+                              Composition Workbench
+                            </Title>
+                            <div
+                              className={classes.headerTabs}
+                              data-info="Workspaces: arrangements of the canvas, desk, nodes and data-block editor. Switch, add, rename or duplicate them."
+                            >
+                              <WorkspaceTabs
+                                store={workspaceStore}
+                                onActivate={(id) =>
+                                  setWorkspaceStore((st) => setActiveWorkspace(st, id))
+                                }
+                                onAdd={() => setWorkspaceStore((st) => addWorkspace(st))}
+                                onRename={(id, name) =>
+                                  setWorkspaceStore((st) => renameWorkspace(st, id, name))
+                                }
+                                onDuplicate={(id) =>
+                                  setWorkspaceStore((st) => duplicateWorkspace(st, id))
+                                }
+                                onDelete={(id) =>
+                                  setWorkspaceStore((st) => deleteWorkspace(st, id))
+                                }
                               />
+                            </div>
+                          </Group>
+                          <TransportBar selectedInstanceId={shownInstanceId} />
+                          <Group gap="xs" wrap="nowrap" justify="flex-end">
+                            <DeveloperMenu />
+                            <ProjectMenu />
+                            <ColorSchemeToggle />
+                          </Group>
+                        </div>
+                      </AppShell.Header>
+                      <AppShell.Main
+                        style={{ paddingBottom: 'var(--app-shell-footer-offset, 0px)' }}
+                      >
+                        <Stack gap="md">
+                          <>
+                            <div
+                              className={classes.compositionWorkspace}
+                              data-settings={settingsOpened}
+                            >
+                              <div className={classes.stageColumn} ref={stageBox.ref}>
+                                <NodeInspectorSlotContext.Provider
+                                  value={inspectorShown ? nodeInspectorSlot : null}
+                                >
+                                  <WorkbenchPanelsContext.Provider value={panelNodes}>
+                                    <DockStage
+                                      registry={WORKBENCH_REGISTRY}
+                                      workspace={workspace}
+                                      update={updateWorkspace}
+                                      widthRem={stageBox.widthRem}
+                                      heightRem={stageBox.heightRem}
+                                      onApi={onStageApi}
+                                    />
+                                  </WorkbenchPanelsContext.Provider>
+                                </NodeInspectorSlotContext.Provider>
+                              </div>
+                              {settingsOpened && (
+                                <div className={classes.settingsColumn}>
+                                  <CompositionSettingsPanel
+                                    onClose={() => setSettingsOpened(false)}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        </Stack>
+                      </AppShell.Main>
+                      <AppShell.Footer>
+                        <WorkbenchStatusBar
+                          inspectorOpen={inspectorOpen}
+                          onToggleInspector={() => {
+                            if (inspectorOpen) {
+                              stageApi?.close(INSPECTOR_PANEL);
+                            } else {
+                              stageApi?.show(INSPECTOR_PANEL);
                             }
-                          />
-                        </AppShell.Footer>
-                      </AppShell>
-                    </WorkbenchSessions>
-                  </EvaluationStoreContext.Provider>
-                </InfoBarActiveContext.Provider>
-              </MantineThemeProvider>
+                          }}
+                          settingsOpen={settingsOpened}
+                          onToggleSettings={() => setSettingsOpened((open) => !open)}
+                          panelsMenu={
+                            <PanelsMenu
+                              registry={WORKBENCH_REGISTRY.meta}
+                              workspace={workspace}
+                              api={stageApi}
+                            />
+                          }
+                        />
+                      </AppShell.Footer>
+                    </AppShell>
+                  </WorkbenchSessions>
+                </EvaluationStoreContext.Provider>
+              </InfoBarActiveContext.Provider>
             </PreviewRegistryProvider>
           </AudioEngineProvider>
         </DataBlockOpsProvider>

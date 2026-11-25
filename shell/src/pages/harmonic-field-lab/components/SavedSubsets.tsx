@@ -6,7 +6,6 @@
  * current subset sits in the header.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActionIcon, Button, Checkbox, TextInput } from '@mantine/core';
 import {
   analyzeSubset,
   indexField,
@@ -14,6 +13,7 @@ import {
   rotateSubset,
   toScl,
 } from '../../../lib/harmonic-field';
+import { Button, Checkbox, TextInput, ActionIcon } from '../../../ui';
 import type { PreviewTarget } from '../audio/plan';
 import { orphanSubsets, ownerLabel, type LibSubset } from '../state/generatorLibrary';
 import { tabName } from '../state/labState';

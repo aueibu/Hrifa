@@ -12,10 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  NumberInput,
   Text,
-  Textarea,
-  TextInput,
   Tooltip,
   type NumberInputProps,
   type TooltipProps,
@@ -386,6 +383,7 @@ export const SIGNED_BAND_LABELS = [
   '+30 c or more',
 ];
 
+import { Textarea, TextInput, NumberInput } from '../../../ui';
 import type { PreviewKind } from '../audio/plan';
 export { useLab, useViz } from '../state/context';
 

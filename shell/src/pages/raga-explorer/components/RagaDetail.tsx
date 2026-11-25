@@ -122,11 +122,10 @@ export function RagaDetail({ raga, index, playingNote, onSelect }: RagaDetailPro
               title={`${raga.name} pitch-class ring`}
             />
             <Text size="xs" c="dimmed" ta="center" maw={220}>
-              Each note carries two dots on its own spoke, colinear with it: <b>teal</b> just
-              inside the ring for its 5th above, <b>purple</b> just outside for its 5th below --
-              filled if that note is also used, hollow if not. Hollow teal only is an{' '}
-              <b>imperfection</b>; both hollow is <b>detached</b> (dashed red ring). Hover a note
-              to see the lines.
+              Each note carries two dots on its own spoke, colinear with it: <b>teal</b> just inside
+              the ring for its 5th above, <b>purple</b> just outside for its 5th below -- filled if
+              that note is also used, hollow if not. Hollow teal only is an <b>imperfection</b>;
+              both hollow is <b>detached</b> (dashed red ring). Hover a note to see the lines.
             </Text>
           </Stack>
         )}

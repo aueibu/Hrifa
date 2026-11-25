@@ -1,14 +1,5 @@
-import {
-  ActionIcon,
-  Divider,
-  Group,
-  NumberInput,
-  Select,
-  Slider,
-  Stack,
-  Switch,
-  Text,
-} from '@mantine/core';
+import { Divider, Group, Slider, Stack, Text } from '@mantine/core';
+import { ActionIcon, NumberInput, Select, Switch } from '../../../ui';
 import { COMMON_TONICS, MELODY_INSTRUMENTS, SARGAM_DEGREES, type Settings } from '../settings';
 import { TanpuraSequenceEditor } from './TanpuraSequenceEditor';
 

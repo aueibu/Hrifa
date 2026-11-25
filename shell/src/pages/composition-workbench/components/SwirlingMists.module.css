@@ -14,7 +14,7 @@
 .plot text {
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: 12px;
+  font-size: var(--mantine-font-size-md);
 }
 
 .column {

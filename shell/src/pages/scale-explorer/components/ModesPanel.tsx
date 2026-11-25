@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useRef } from 'react';
-import { Button, Group, Select, Stack, Table, Text, Tooltip } from '@mantine/core';
+import { Group, Stack, Table, Text, Tooltip } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
+import { Select, Button } from '../../../ui';
 import { chordsOf, noteNames, spellPcs, type NameMode } from '../chords';
 import { expansionLabel, joinSigned, sgn } from '../format';
 import { neighboursOf, type Mode } from '../pitchSets';

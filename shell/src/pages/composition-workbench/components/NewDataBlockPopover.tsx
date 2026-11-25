@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, NumberInput, Popover, Select, Stack, Text } from '@mantine/core';
+import { Popover, Stack, Text } from '@mantine/core';
+import { NumberInput, Select, Button } from '../../../ui';
 import { useCompositionSettings } from '../compositionSettings';
 import type { PacketBlock } from '../dataBlock';
 import {
@@ -49,7 +50,6 @@ export function NewDataBlockPopover({ onCreated }: { onCreated?(dataBlock: Packe
   return (
     <Button.Group>
       <Button
-        size="compact-xs"
         variant="default"
         disabled={refusal !== null}
         data-info={
@@ -70,7 +70,6 @@ export function NewDataBlockPopover({ onCreated }: { onCreated?(dataBlock: Packe
       >
         <Popover.Target>
           <Button
-            size="compact-xs"
             variant="default"
             px={4}
             aria-label="New data-block defaults"
@@ -84,7 +83,6 @@ export function NewDataBlockPopover({ onCreated }: { onCreated?(dataBlock: Packe
         <Popover.Dropdown>
           <Stack gap="xs" w={200}>
             <Select
-              size="xs"
               label="Type"
               allowDeselect={false}
               comboboxProps={{ withinPortal: false }}
@@ -93,7 +91,6 @@ export function NewDataBlockPopover({ onCreated }: { onCreated?(dataBlock: Packe
               onChange={(value) => value && writeDataBlockDefaults({ typeId: value })}
             />
             <NumberInput
-              size="xs"
               label="Length (bars)"
               min={MIN_DATA_BLOCK_BARS}
               max={MAX_DATA_BLOCK_BARS}
@@ -106,9 +103,7 @@ export function NewDataBlockPopover({ onCreated }: { onCreated?(dataBlock: Packe
                 }
               }}
             />
-            <Text size="xs" c="dimmed">
-              Bars of {settings.transport.meter}.
-            </Text>
+            <Text c="dimmed">Bars of {settings.transport.meter}.</Text>
           </Stack>
         </Popover.Dropdown>
       </Popover>

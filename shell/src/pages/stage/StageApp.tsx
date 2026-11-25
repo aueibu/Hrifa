@@ -7,26 +7,8 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Anchor,
-  AppShell,
-  Button,
-  Checkbox,
-  Group,
-  Menu,
-  NumberInput,
-  Popover,
-  SegmentedControl,
-  Text,
-} from '@mantine/core';
+import { Anchor, AppShell, Group, Menu, Popover, Text } from '@mantine/core';
 import { ColorSchemeToggle } from '../../components/ColorSchemeToggle/ColorSchemeToggle';
-import {
-  loadTipDelay,
-  MAX_TIP_DELAY,
-  parseTipDelay,
-  saveTipDelay,
-  TipDelayContext,
-} from '../../components/InspectorKit';
 import { Stage } from '../../components/Stage';
 import {
   browserStorage,
@@ -38,6 +20,17 @@ import type { StageRegistry } from '../../components/Stage/registry';
 import { addWithMin, moveToFront, shownColumnCount } from '../../components/Stage/stageOps';
 import { useWidthRem } from '../../components/Stage/useWidthRem';
 import { moduleIds, type Layout } from '../../lib/stage';
+import {
+  loadTipDelay,
+  MAX_TIP_DELAY,
+  parseTipDelay,
+  saveTipDelay,
+  TipDelayContext,
+  Button,
+  Checkbox,
+  NumberInput,
+  SegmentedControl,
+} from '../../ui';
 import {
   initialStore,
   layoutOf,

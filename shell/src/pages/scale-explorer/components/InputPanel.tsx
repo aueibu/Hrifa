@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Button, Group, Select, SimpleGrid, Stack, Text } from '@mantine/core';
+import { Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import { Surface } from '../../../components/Surface/Surface';
+import { Select, Button } from '../../../ui';
 import { axisLabel } from '../format';
 import type { InversionMode, SemitoneStats } from '../pitchSets';
 import type { NowPlaying } from '../usePlayback';

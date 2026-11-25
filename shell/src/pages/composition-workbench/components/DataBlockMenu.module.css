@@ -22,7 +22,7 @@
 
 .heading {
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: var(--mantine-font-size-xs);
   padding: 0.3rem 0.5rem 0.1rem;
 }
 
@@ -51,7 +51,7 @@
 }
 
 .glyph {
-  font-size: 0.85rem;
+  font-size: var(--mantine-font-size-md);
   text-align: center;
 }
 
@@ -62,7 +62,7 @@
 }
 
 .name {
-  font-size: 0.78rem;
+  font-size: var(--mantine-font-size-md);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -71,7 +71,7 @@
 
 .sub {
   color: var(--text-muted);
-  font-size: 0.66rem;
+  font-size: var(--mantine-font-size-xs);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -91,12 +91,12 @@
 
 .empty {
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: var(--mantine-font-size-md);
   padding: 0.6rem 0.5rem;
 }
 
 .footer {
   display: flex;
   gap: 0.25rem;
-  min-height: 1.6rem;
+  min-height: var(--ui-row-height);
 }

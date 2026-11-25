@@ -7,7 +7,8 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { ActionIcon, Menu } from '@mantine/core';
+import { Menu } from '@mantine/core';
+import { ActionIcon } from '../../../ui';
 import {
   MAX_STACK,
   canMove,

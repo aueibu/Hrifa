@@ -5,7 +5,6 @@
  * the Stage API through `DockStage`'s `onApi` prop.
  */
 import { useEffect, useState } from 'react';
-import { Button } from '@mantine/core';
 import { buildStageRegistry, type PanelKind } from '../../../components/Stage/dock';
 import type { StageRegistry } from '../../../components/Stage/registry';
 import {
@@ -17,6 +16,7 @@ import {
   type WorkspaceStore,
   type SlotSize,
 } from '../../../lib/stage';
+import { Button } from '../../../ui';
 import { NotesStandin } from '../standins/NotesStandin';
 import { PickerStandin } from '../standins/PickerStandin';
 import { RollStandin } from '../standins/RollStandin';

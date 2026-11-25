@@ -17,7 +17,7 @@
  * under `RADIAL_BELOW_ARC_PX`.
  */
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Button, Modal, SegmentedControl } from '@mantine/core';
+import { Modal } from '@mantine/core';
 import {
   fmtRatio,
   heCurveAt,
@@ -44,6 +44,7 @@ import {
   type Note,
   type RingRatio,
 } from '../../../lib/harmonic-field';
+import { SegmentedControl, Button } from '../../../ui';
 import { keyId } from '../audio/keymap';
 import { ARMED_DIGITS, type PreviewTarget } from '../audio/plan';
 import { SHORTCUTS } from '../audio/shortcuts';

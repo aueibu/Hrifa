@@ -1,5 +1,5 @@
+import { Button } from '../../../ui';
 /** The prime filter (label, All / None, one toggle chip per prime): shared by the generator's field settings and the meta ring panel. */
-import { Button } from '@mantine/core';
 import { PRIME_LABELS } from '../state/generate';
 import { Num, Tip } from './ui';
 import classes from './lab.module.css';

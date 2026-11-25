@@ -3,18 +3,13 @@
  * changes with the density); every colour is a theme role. No hex, no palette shades, no decorative shadows.
  */
 .scope {
-  --input-height-xs: var(--kit-row-height);
-  --button-height-xs: var(--kit-row-height);
-  --mantine-font-size-sm: var(--kit-font-small);
-  --mantine-font-size-xs: var(--kit-font-tiny);
-
   color: var(--text);
   font-size: var(--kit-font-base);
   line-height: var(--kit-line-height);
   min-width: 0;
 }
 
-.scope[data-fill="true"] {
+.scope[data-fill='true'] {
   display: flex;
   flex-direction: column;
   gap: var(--kit-panel-gap);
@@ -121,7 +116,7 @@
   text-align: right;
 }
 
-.rowValue[data-fill="true"] {
+.rowValue[data-fill='true'] {
   flex: 1;
 }
 
@@ -149,7 +144,7 @@
   width: var(--kit-number-width);
 }
 
-.fieldNumber[data-wide="true"] {
+.fieldNumber[data-wide='true'] {
   width: var(--kit-number-width-wide);
 }
 
@@ -174,7 +169,7 @@
   padding: 0 var(--kit-chip-padding-x);
 }
 
-.toggle[aria-pressed="true"] {
+.toggle[aria-pressed='true'] {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--mantine-primary-color-contrast);
@@ -184,6 +179,64 @@
 .tip:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
+}
+
+/* scrub number: Blender wcol_num (slot fill on drag/rest -> recessed --panel-well on text edit) */
+.scrub {
+  align-items: center;
+  background: var(--panel-slot);
+  border: 1px solid var(--grid);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  cursor: ew-resize;
+  display: flex;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--kit-font-small);
+  font-variant-numeric: tabular-nums;
+  height: var(--kit-row-height);
+  overflow: hidden;
+  padding: 0 0.5rem;
+  position: relative;
+  user-select: none;
+  width: 100%;
+}
+
+.scrub:hover {
+  background: var(--chrome);
+}
+
+.scrub:focus-visible,
+.scrub[data-dragging='true'] {
+  border-color: var(--focus-ring);
+  outline: none;
+}
+
+.scrubFill {
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
+.scrubValue {
+  position: relative;
+  z-index: 1;
+}
+
+.scrubInput {
+  background: var(--panel-well);
+  border: 1px solid var(--focus-ring);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: var(--kit-font-small);
+  font-variant-numeric: tabular-nums;
+  height: var(--kit-row-height);
+  outline: none;
+  padding: 0 0.5rem;
+  width: 100%;
 }
 
 /* actions: a panel's commands, right-aligned at the end of the body */

@@ -42,7 +42,7 @@
   background: var(--panel-well);
   border-left: 3px solid var(--text-muted);
   border-radius: var(--radius-hairline);
-  font-size: 0.68rem;
+  font-size: var(--mantine-font-size-xs);
   line-height: 1.35;
   margin: 0;
   overflow-wrap: anywhere;
