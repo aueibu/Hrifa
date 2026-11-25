@@ -39,7 +39,7 @@
 
 .caption {
   color: var(--text-muted);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
 }
 
 .caption[data-warn] {
@@ -72,7 +72,7 @@
   cursor: pointer;
   display: block;
   font: inherit;
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   font-variant-numeric: tabular-nums;
   height: 1.625rem;
   overflow: hidden;
@@ -148,7 +148,7 @@
   cursor: pointer;
   display: flex;
   font: inherit;
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
   position: fixed;

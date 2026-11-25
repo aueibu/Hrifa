@@ -63,7 +63,7 @@
 .svgLabel {
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-svg-fs-label);
+  font-size: var(--mantine-font-size-xs);
 }
 
 .svgLabel[data-on='true'] {

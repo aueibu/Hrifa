@@ -31,7 +31,7 @@
 .dirHint {
   color: var(--text-muted);
   flex: 1;
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   min-width: 0;
   overflow: hidden;
   text-align: center;
@@ -48,7 +48,7 @@
 
 .footLine {
   color: var(--text-muted);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   height: 1.3em;
   overflow: hidden;
   text-align: center;
@@ -81,11 +81,11 @@
 }
 
 .label {
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
 }
 
 .labelSmall {
-  font-size: var(--lab-fs-tiny);
+  font-size: var(--mantine-font-size-xs);
 }
 
 /* the boundary between two neighboring cells of a band: clearly visible, so each ratio reads as its own cell */
@@ -106,7 +106,7 @@
 .tag {
   fill: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-tiny);
+  font-size: var(--mantine-font-size-xs);
   paint-order: stroke;
   pointer-events: none;
   stroke: var(--panel);
@@ -146,7 +146,7 @@
   border: 1px solid var(--grid);
   border-radius: var(--radius-control);
   color: var(--text-muted);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   box-sizing: border-box;
   height: 26px;
   line-height: 20px;
@@ -164,7 +164,7 @@
 /* the current direction, next to the readout */
 .hint {
   color: var(--text-muted);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   white-space: nowrap;
 }
 
@@ -199,7 +199,7 @@
 
 .typedError {
   color: var(--text-danger);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   height: 1.3em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -221,7 +221,7 @@
   display: flex;
   flex: 1;
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   justify-content: center;
   min-width: 0;
 }
@@ -258,7 +258,7 @@
 .rowPrime {
   color: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   text-align: right;
   width: 2em;
 }
@@ -266,7 +266,7 @@
 .rowValue {
   color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   text-align: center;
   width: 2.5em;
 }
@@ -293,7 +293,7 @@
   cursor: pointer;
   display: flex;
   font-family: var(--mantine-font-family-monospace);
-  font-size: calc(var(--lab-fs-small) * 0.85);
+  font-size: var(--mantine-font-size-xs);
   justify-content: flex-end;
   margin: 0;
   padding: 0 4px 0 0;
@@ -337,7 +337,7 @@
   cursor: pointer;
   display: flex;
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   height: 100%;
   justify-content: center;
   line-height: 1;
@@ -390,7 +390,7 @@
   color: var(--text-muted);
   display: flex;
   font-family: var(--mantine-font-family-monospace);
-  font-size: calc(var(--lab-fs-small) * 0.85);
+  font-size: var(--mantine-font-size-xs);
   justify-content: center;
 }
 
@@ -562,7 +562,7 @@
 .metaGuideLabel {
   fill: var(--text-subtle);
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-tiny);
+  font-size: var(--mantine-font-size-xs);
   paint-order: stroke;
   pointer-events: none;
   stroke: var(--panel);
@@ -594,7 +594,7 @@
   color: var(--text-muted);
   cursor: pointer;
   display: flex;
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   gap: 6px;
 }
 
@@ -604,7 +604,7 @@
   display: flex;
   flex-wrap: wrap;
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-tiny);
+  font-size: var(--mantine-font-size-xs);
   gap: 2px 6px;
 }
 
@@ -625,14 +625,14 @@
 .metaTitle {
   color: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
 }
 
 .metaField {
   align-items: center;
   color: var(--text-muted);
   display: flex;
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   gap: 6px;
   justify-content: space-between;
 }
@@ -644,7 +644,7 @@
   box-sizing: border-box;
   color: var(--text);
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   padding: 1px 4px;
   text-align: right;
   width: 56px;
@@ -652,7 +652,7 @@
 
 .metaNote {
   color: var(--text-muted);
-  font-size: var(--lab-fs-tiny);
+  font-size: var(--mantine-font-size-xs);
 }
 
 .metaParent {
@@ -751,13 +751,13 @@
   color: var(--text-muted);
   display: flex;
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-tiny);
+  font-size: var(--mantine-font-size-xs);
   justify-content: space-between;
 }
 
 /* the Monzo typed box's error message: the lab's input error size (same rule as panels.module.css) */
 p.inputError {
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   line-height: 1.3;
 }
 
@@ -781,7 +781,7 @@ p.inputError {
   color: var(--text-muted);
   display: flex;
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-tiny);
+  font-size: var(--mantine-font-size-xs);
   font-variant-numeric: tabular-nums;
   justify-content: center;
   line-height: 1;
@@ -815,7 +815,7 @@ p.inputError {
   color: var(--text-muted);
   display: flex;
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-tiny);
+  font-size: var(--mantine-font-size-xs);
   font-variant-numeric: tabular-nums;
   justify-content: flex-end;
   line-height: 1;
@@ -837,7 +837,7 @@ p.inputError {
 .rowPct {
   color: var(--text-muted);
   font-family: var(--mantine-font-family-monospace);
-  font-size: var(--lab-fs-tiny);
+  font-size: var(--mantine-font-size-xs);
   font-variant-numeric: tabular-nums;
   text-align: right;
   width: 3ch;

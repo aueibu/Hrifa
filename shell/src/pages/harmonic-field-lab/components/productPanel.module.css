@@ -59,7 +59,7 @@
   align-items: center;
   color: var(--text-muted);
   display: flex;
-  font-size: var(--lab-fs-display);
+  font-size: var(--mantine-font-size-xl);
   height: 13.5rem;
   justify-content: center;
   margin: 0.25rem 0;
@@ -97,7 +97,7 @@
 
 /* fixed slot: the count never moves what is beside it (UI-CONVENTIONS 1) */
 .line {
-  font-size: var(--lab-fs-small);
+  font-size: var(--mantine-font-size-sm);
   font-variant-numeric: tabular-nums;
   min-height: 1.3em;
 }
