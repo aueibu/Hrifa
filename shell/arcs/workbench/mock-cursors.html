@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-scheme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hrifa Cursor Reference</title>
+  <style>
+    :root {
+      --font-sans: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      --accent: #00729f;
+      --mark-green: #3d9970;
+    }
+    [data-scheme='dark'] {
+      --surface: #2a2826; --panel: #32302e; --panel-raised: #3a3836; --panel-body: #464442;
+      --border: #464442; --control-border: #85827e;
+      --text: #e6e3df; --text-muted: #b4b1ad; --text-subtle: #a19e9a;
+      --accent-tint: #233b46; --accent-tint-text: #8fd4f2;
+    }
+    [data-scheme='light'] {
+      --surface: #ece8e0; --panel: #f3f0ea; --panel-raised: #fbf9f5; --panel-body: #ddd7cc;
+      --border: #ddd7cc; --control-border: #8a857d;
+      --text: #1d1b19; --text-muted: #464442; --text-subtle: #5e5b57;
+      --accent-tint: #d6e9f2; --accent-tint-text: #00506f;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: var(--surface); color: var(--text);
+      font: 13px/1.3 var(--font-sans);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    header {
+      display: flex; align-items: center; gap: 12px; padding: 8px 12px;
+      background: var(--panel); border-bottom: 1px solid var(--border); flex: none;
+    }
+    header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+    header .note { color: var(--text-muted); font-size: 12px; flex: 1; }
+    button.tool {
+      font: inherit; color: var(--text); background: var(--panel-raised);
+      border: 1px solid var(--control-border); border-radius: 3px; padding: 3px 10px; cursor: pointer;
+    }
+    .readout {
+      font-family: var(--font-mono); font-size: 12px; padding: 6px 12px; flex: none;
+      background: var(--accent-tint); color: var(--accent-tint-text); border-bottom: 1px solid var(--border);
+      min-height: 28px;
+    }
+    main { flex: 1; min-height: 0; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+    section { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; }
+    section > h2 {
+      margin: 0; padding: 6px 10px; font-size: 12px; font-weight: 600; letter-spacing: .02em;
+      color: var(--text-muted); background: var(--panel-body); border-radius: 4px 4px 0 0;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 10px; }
+    .cell {
+      border: 1px solid var(--control-border); border-radius: 3px; background: var(--panel-raised);
+      padding: 8px; height: 62px; display: flex; flex-direction: column; justify-content: space-between;
+      position: relative; user-select: none;
+    }
+    .cell:hover { outline: 2px solid var(--accent); outline-offset: -1px; }
+    .cell code { font-family: var(--font-mono); font-size: 12px; }
+    .cell .use { font-size: 11px; color: var(--text-subtle); }
+    .cell .badge {
+      position: absolute; top: 6px; right: 6px; font-size: 10px; padding: 0 5px; border-radius: 8px;
+      background: var(--accent-tint); color: var(--accent-tint-text);
+    }
+    .cell.copied::after {
+      content: 'copied'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: var(--mark-green); color: #fff; border-radius: 2px; font-size: 12px;
+    }
+    .drag { padding: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .drag .zone {
+      width: 220px; height: 70px; border: 1px dashed var(--control-border); border-radius: 3px;
+      display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 12px;
+    }
+    .custom { cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><circle cx='16' cy='16' r='9' fill='none' stroke='%2300729f' stroke-width='3'/><circle cx='16' cy='16' r='2' fill='%2300729f'/></svg>") 16 16, crosshair; }
+    .scrubdemo { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 32 32'%3E%3Cpath d='M5 3v17l4.3-4 3 6.8 2.6-1.2-3-6.6H18z' fill='%23111' stroke='%23fff' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M24 5l-3.2 4h2.4v8h-2.4l3.2 4 3.2-4h-2.4V9h2.4z' fill='%23111' stroke='%23fff' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E") 4 2, ns-resize; }
+    .scrubdemo:active { cursor: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cursor reference</h1>
+    <span class="note">Hover a tile to see your system's real cursor. Click a tile to copy <code>cursor: name</code>. The OS draws these, so a screenshot will not show them.</span>
+    <button class="tool" id="scheme">Light / dark</button>
+  </header>
+  <div class="readout" id="readout">Hover a tile.</div>
+  <main id="main"></main>
+
+  <script>
+    // [name, what it means in Hrifa, used in shell/src today?]
+    const GROUPS = [
+      ['Pointing and clicking', [
+        ['default', 'Plain arrow; static labels, panels', 1],
+        ['pointer', 'Hand; buttons, tabs, rows, menu items', 1],
+        ['auto', 'Browser decides from content', 1],
+        ['help', 'Question mark; hover for explanation', 1],
+        ['context-menu', 'Arrow with a menu; right-click available', 0],
+        ['progress', 'Arrow plus spinner; busy but usable', 0],
+        ['wait', 'Spinner; blocked while busy', 0],
+        ['none', 'Hidden; custom drawn cursor', 1],
+      ]],
+      ['Text and drawing', [
+        ['text', 'I-beam; editable or selectable text', 1],
+        ['vertical-text', 'Sideways I-beam', 0],
+        ['crosshair', 'Plus; draw, place a note, pick a point', 1],
+        ['cell', 'Thick plus; grid cell select', 1],
+        ['copy', 'Arrow with plus; drop or Ctrl-drag copies', 1],
+        ['alias', 'Arrow with link; drop makes a reference', 0],
+        ['no-drop', 'Hand with a stop; cannot drop here', 0],
+        ['not-allowed', 'Circle slash; disabled control', 1],
+      ]],
+      ['Moving', [
+        ['grab', 'Open hand; can be dragged', 1],
+        ['grabbing', 'Closed hand; dragging now', 1],
+        ['move', 'Four arrows; move whole object', 1],
+        ['all-scroll', 'Four arrows; pan in any direction', 0],
+        ['zoom-in', 'Magnifier plus', 0],
+        ['zoom-out', 'Magnifier minus', 0],
+      ]],
+      ['Resize: axes', [
+        ['col-resize', 'Split bar; column or panel width', 1],
+        ['row-resize', 'Split bar; row or panel height', 1],
+        ['ew-resize', 'Left-right arrow; note length, width', 1],
+        ['ns-resize', 'Up-down arrow; velocity, height', 1],
+        ['nesw-resize', 'Diagonal / arrow', 0],
+        ['nwse-resize', 'Diagonal \\ arrow', 0],
+      ]],
+      ['Resize: edges and corners', [
+        ['n-resize', 'Top edge', 0], ['s-resize', 'Bottom edge', 0],
+        ['e-resize', 'Right edge', 0], ['w-resize', 'Left edge', 0],
+        ['ne-resize', 'Top-right corner', 0], ['nw-resize', 'Top-left corner', 0],
+        ['se-resize', 'Bottom-right corner', 0], ['sw-resize', 'Bottom-left corner', 0],
+      ]],
+    ];
+
+    const main = document.getElementById('main');
+    const readout = document.getElementById('readout');
+
+    for (const [title, items] of GROUPS) {
+      const sec = document.createElement('section');
+      sec.innerHTML = `<h2>${title}</h2><div class="grid"></div>`;
+      const grid = sec.querySelector('.grid');
+      for (const [name, use, used] of items) {
+        const c = document.createElement('div');
+        c.className = 'cell';
+        c.style.cursor = name;
+        c.innerHTML = `<code>${name}</code><span class="use">${use}</span>` + (used ? '<span class="badge">in use</span>' : '');
+        c.addEventListener('mouseenter', () => {
+          readout.textContent = `cursor: ${name};   ${use}   ${used ? '(already used in shell/src)' : '(not used yet)'}`;
+        });
+        c.addEventListener('click', () => {
+          navigator.clipboard?.writeText(`cursor: ${name};`).catch(() => {});
+          c.classList.add('copied');
+          setTimeout(() => c.classList.remove('copied'), 700);
+        });
+        grid.appendChild(c);
+      }
+      main.appendChild(sec);
+    }
+
+    // Live states: how the cursor changes as you press and drag
+    const live = document.createElement('section');
+    live.innerHTML = `<h2>Live states (press and hold, drag)</h2>
+      <div class="drag">
+        <div class="zone" id="grabzone" style="cursor:grab">grab, then grabbing while pressed</div>
+        <div class="zone custom">custom SVG cursor (url(...) with fallback)</div>
+        <div class="zone scrubdemo">Hrifa scrub cursor (kit.module.css .scrub): arrow + up-down arrow. Press and hold: it hides.</div>
+        <div class="zone" style="cursor:not-allowed;opacity:.55">disabled: not-allowed</div>
+        <div class="zone" style="cursor:wait">wait (busy)</div>
+      </div>`;
+    main.appendChild(live);
+    const gz = live.querySelector('#grabzone');
+    gz.addEventListener('mousedown', () => { gz.style.cursor = 'grabbing'; });
+    window.addEventListener('mouseup', () => { gz.style.cursor = 'grab'; });
+
+    document.getElementById('scheme').addEventListener('click', () => {
+      const h = document.documentElement;
+      h.dataset.scheme = h.dataset.scheme === 'dark' ? 'light' : 'dark';
+    });
+  </script>
+</body>
+</html>
