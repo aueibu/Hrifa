@@ -128,6 +128,72 @@ describe('the Outliner and Properties panels (O2a)', () => {
     expect(value('High')).toBe('7200');
   });
 
+  it('Start: a bar drag and typed text land in the record', async () => {
+    await renderPanels();
+    await click('New scene');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add Empty' })).toBeEnabled());
+    await click('Add Empty');
+    await screen.findByRole('treeitem', { name: /Empty/ });
+
+    const spin = () => screen.getByRole('spinbutton', { name: 'Start' });
+    expect(spin()).toHaveAttribute('aria-valuetext', '1.1.1.00');
+    const bar = spin().querySelector('[data-part="bar"]') as HTMLElement;
+    fireEvent.pointerDown(bar, { button: 0, clientX: 100, clientY: 50 });
+    fireEvent.pointerMove(spin(), { clientX: 112, clientY: 50 });
+    fireEvent.pointerUp(spin(), { button: 0, clientX: 112, clientY: 50 });
+    await waitFor(() => expect(spin()).toHaveAttribute('aria-valuetext', '3.1.1.00'));
+
+    fireEvent.pointerDown(spin(), { button: 0, clientX: 10 });
+    fireEvent.pointerUp(spin(), { button: 0, clientX: 10 });
+    const input = await screen.findByRole('textbox', { name: 'Start' });
+    fireEvent.change(input, { target: { value: '1/4n' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(spin()).toHaveAttribute('aria-valuetext', '1.2.1.00'));
+  });
+
+  it('Duration: a bar drag and typed text land in the record', async () => {
+    await renderPanels();
+    await click('New scene');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add Empty' })).toBeEnabled());
+    await click('Add Empty');
+    await screen.findByRole('treeitem', { name: /Empty/ });
+
+    const spin = () => screen.getByRole('spinbutton', { name: 'Duration' });
+    expect(spin()).toHaveAttribute('aria-valuetext', '1.0.0.00');
+    const bar = spin().querySelector('[data-part="bar"]') as HTMLElement;
+    fireEvent.pointerDown(bar, { button: 0, clientX: 100, clientY: 50 });
+    fireEvent.pointerMove(spin(), { clientX: 106, clientY: 50 });
+    fireEvent.pointerUp(spin(), { button: 0, clientX: 106, clientY: 50 });
+    await waitFor(() => expect(spin()).toHaveAttribute('aria-valuetext', '2.0.0.00'));
+
+    fireEvent.pointerDown(spin(), { button: 0, clientX: 10 });
+    fireEvent.pointerUp(spin(), { button: 0, clientX: 10 });
+    const input = await screen.findByRole('textbox', { name: 'Duration' });
+    fireEvent.change(input, { target: { value: '3' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(spin()).toHaveAttribute('aria-valuetext', '3.0.0.00'));
+  });
+
+  it('one Start drag is one undo step: undo restores the value from before the drag', async () => {
+    await renderPanels();
+    await click('New scene');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add Empty' })).toBeEnabled());
+    await click('Add Empty');
+    await screen.findByRole('treeitem', { name: /Empty/ });
+
+    const spin = () => screen.getByRole('spinbutton', { name: 'Start' });
+    const bar = spin().querySelector('[data-part="bar"]') as HTMLElement;
+    fireEvent.pointerDown(bar, { button: 0, clientX: 100, clientY: 50 });
+    for (const x of [106, 112, 118]) {
+      fireEvent.pointerMove(spin(), { clientX: x, clientY: 50 });
+      await waitFor(() => expect(spin()).toHaveAttribute('aria-valuetext', expect.any(String)));
+    }
+    fireEvent.pointerUp(spin(), { button: 0, clientX: 118, clientY: 50 });
+    await waitFor(() => expect(spin()).toHaveAttribute('aria-valuetext', '4.1.1.00'));
+    act(() => undo());
+    await waitFor(() => expect(spin()).toHaveAttribute('aria-valuetext', '1.1.1.00'));
+  });
+
   it('deleting a parent keeps the child in place, and undo and redo restore and remove it', async () => {
     await renderPanels();
     await click('New scene');
@@ -213,7 +279,10 @@ describe('Duplicate Object and Duplicate Linked in Properties (W-77)', () => {
     await waitFor(() => expect(names()).toHaveLength(3));
     expect(screen.getByLabelText('Name')).toHaveValue('Empty.001.001');
     // The copy lands after the original in time: starts 0, then 4, then 8.
-    expect(screen.getByLabelText('Start')).toHaveValue('3.1.0');
+    expect(screen.getByRole('spinbutton', { name: 'Start' })).toHaveAttribute(
+      'aria-valuetext',
+      '3.1.1.00'
+    );
   });
 });
 

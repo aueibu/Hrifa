@@ -13,6 +13,7 @@ import {
   recordChange,
   recordGroup,
   redo,
+  registerHistoryApplier,
   resetHistory,
   undo,
 } from './history';
@@ -412,5 +413,92 @@ describe('Ctrl+Z in a focused field', () => {
     await userEvent.click(undoButton);
     expect(undoButton).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Redo' })).toBeEnabled();
+  });
+});
+
+describe('recordGroup coalesceKey (scrub drags)', () => {
+  const seen: string[] = [];
+  let stop: () => void = () => {};
+  const step = (previous: string, next: string, key?: string) =>
+    recordGroup(
+      () => recordChange({ key: 'scrub.v', previous, next, virtual: true }),
+      key === undefined ? undefined : { coalesceKey: key }
+    );
+  const undoAll = () => {
+    let count = 0;
+    while (canUndo()) {
+      undo();
+      count += 1;
+    }
+    return count;
+  };
+  beforeEach(() => {
+    resetHistory();
+    seen.length = 0;
+    stop = registerHistoryApplier('scrub.v', (raw) => {
+      seen.push(raw);
+      return true;
+    });
+  });
+  afterEach(() => {
+    stop?.();
+    resetHistory();
+  });
+
+  it('without a key every group is its own closed step', () => {
+    step('0', '1');
+    step('1', '2');
+    expect(undoAll()).toBe(2);
+  });
+
+  it('a keyed drag is one step and undo restores the value from before the drag', () => {
+    step('0', '1', 'a');
+    step('1', '2', 'a');
+    step('2', '3', 'a');
+    act(() => undo());
+    expect(seen.at(-1)).toBe('0');
+    expect(canUndo()).toBe(false);
+    act(() => redo());
+    expect(seen.at(-1)).toBe('3');
+  });
+
+  it('a pause longer than the window does not split a drag while the pointer is held', () => {
+    vi.useFakeTimers();
+    try {
+      fireEvent.pointerDown(window);
+      step('0', '1', 'a');
+      vi.advanceTimersByTime(COALESCE_WINDOW_MS * 3);
+      step('1', '2', 'a');
+      fireEvent.pointerUp(window);
+      expect(undoAll()).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('without a pointer held a pause past the window starts a new step', () => {
+    vi.useFakeTimers();
+    try {
+      step('0', '1', 'a');
+      vi.advanceTimersByTime(COALESCE_WINDOW_MS * 3);
+      step('1', '2', 'a');
+      expect(undoAll()).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('a different key starts a new step, and pointer up closes the group', () => {
+    step('0', '1', 'a');
+    step('1', '2', 'b');
+    fireEvent.pointerUp(window);
+    step('2', '3', 'b');
+    expect(undoAll()).toBe(3);
+  });
+
+  it('a drag back to the start value leaves no step', () => {
+    step('0', '1', 'a');
+    step('1', '0', 'a');
+    expect(canUndo()).toBe(false);
   });
 });

@@ -64,6 +64,8 @@ let foldDepth = 0;
 let version = 0;
 let changeCount = 0;
 let listenersInstalled = false;
+/** True between a pointer-down and the next pointer-up/cancel: a drag does not split on a pause. */
+let pointerHeld = false;
 const appliers = new Map<string, Set<Applier>>();
 const listeners = new Set<() => void>();
 
@@ -95,6 +97,10 @@ function installListeners() {
   // A finished drag or click, or leaving a field, ends the burst. Capture so nothing hides it.
   ['pointerup', 'pointercancel', 'focusout'].forEach((type) =>
     window.addEventListener(type, closeHistoryGroup, true)
+  );
+  window.addEventListener('pointerdown', () => (pointerHeld = true), true);
+  ['pointerup', 'pointercancel'].forEach((type) =>
+    window.addEventListener(type, () => (pointerHeld = false), true)
   );
 }
 
@@ -192,8 +198,13 @@ export function recordChange(change: HistoryChange, options: RecordOptions = {})
   notify();
 }
 
-/** Records every write made inside `fn` as one step. */
-export function recordGroup<T>(fn: () => T): T {
+/**
+ * Records every write made inside `fn` as one step. With `coalesceKey`, consecutive groups with the
+ * same key merge into one OPEN step (a scrub drag, repeated arrow keys) until the group is closed
+ * (pointer up, focus leaving), a different key or entry intervenes, or, with no pointer held, the
+ * coalescing window passes. Without a key the step is discrete and closed.
+ */
+export function recordGroup<T>(fn: () => T, options: { coalesceKey?: string } = {}): T {
   if (isReloading()) {
     return fn();
   }
@@ -208,9 +219,37 @@ export function recordGroup<T>(fn: () => T): T {
       groupChanges = [];
       if (changes.length) {
         changeCount += 1;
-        closeHistoryGroup();
-        pushEntry({ changes, open: false, at: Date.now() });
-        notify();
+        const key = options.coalesceKey;
+        const now = Date.now();
+        const entry = openEntry;
+        if (
+          key !== undefined &&
+          entry?.open &&
+          entry.coalesceKey === key &&
+          past[past.length - 1] === entry &&
+          (pointerHeld || now - entry.at <= COALESCE_WINDOW_MS)
+        ) {
+          changes.forEach((change) => mergeChange(entry.changes, change));
+          entry.at = now;
+          if (isNoop(entry)) {
+            past = past.filter((candidate) => candidate !== entry);
+            future = entry.discarded ?? future;
+            openEntry = null;
+            lastTouched = null;
+          }
+          notify();
+        } else {
+          closeHistoryGroup();
+          const created: HistoryEntry = {
+            changes,
+            open: key !== undefined,
+            at: now,
+            coalesceKey: key,
+          };
+          pushEntry(created);
+          openEntry = key !== undefined ? created : null;
+          notify();
+        }
       }
     }
   }
@@ -335,6 +374,7 @@ export function resetHistory() {
   future = [];
   openEntry = null;
   lastTouched = null;
+  pointerHeld = false;
   groupDepth = 0;
   groupChanges = [];
   foldDepth = 0;

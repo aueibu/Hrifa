@@ -21,8 +21,7 @@ import {
 } from '../dataBlocks/registry';
 import { newDataBlockId, useDesk } from '../desk';
 import { recordGroup } from '../history';
-import { formatLength, formatPosition, parseLength, parsePosition } from '../meterTime';
-import { rationalToNumber, type Rational } from '../musicalTime';
+import { rational } from '../musicalTime';
 import { formatMidicents } from '../pitch';
 import { transportRhythmContext } from '../rhythmRealization';
 import { modifierProblems } from '../scene/evaluateScene';
@@ -74,6 +73,7 @@ import { useSceneEvaluation, useScenePlayback } from '../scene/useScenePlayback'
 import { layerSound } from '../sounds';
 import { CompositionSettingsSections } from './CompositionSettingsPanel';
 import { DataBlockMenu } from './DataBlockMenu';
+import { PositionScrub } from './PositionScrub';
 import { IdRow, PathLine, PropertiesRail, TabIcon } from './PropertiesTabs';
 import { UsersTable } from './UsersTable';
 import tabsClasses from './PropertiesTabs.module.css';
@@ -103,15 +103,21 @@ export function useSceneEditor() {
   const writable = !desk.loading && !desk.locked;
 
   /** Runs an op on the LATEST list and applies the result as one undo step. */
-  function commit(run: (list: readonly StoredDataBlock[]) => SceneOpResult): SceneOpResult {
+  function commit(
+    run: (list: readonly StoredDataBlock[]) => SceneOpResult,
+    coalesceKey?: string
+  ): SceneOpResult {
     const result = run(latestDataBlockList());
     if (!result.ok) {
       return result;
     }
     let accepted = true;
-    recordGroup(() => {
-      accepted = applyDataBlockList(result.blocks);
-    });
+    recordGroup(
+      () => {
+        accepted = applyDataBlockList(result.blocks);
+      },
+      coalesceKey === undefined ? undefined : { coalesceKey }
+    );
     return accepted ? result : { ok: false, error: NO_DESK };
   }
 
@@ -145,8 +151,6 @@ export function useSceneEditor() {
 }
 
 /* --------------------------------------------------------------------------------------- Outliner */
-
-const quarters = (value: Rational) => rationalToNumber(value);
 
 export function OutlinerPanel() {
   return (
@@ -685,8 +689,12 @@ function PropertiesBody() {
     });
   }
 
-  function apply(run: (list: readonly StoredDataBlock[]) => SceneOpResult): string | null {
-    const result = editor.commit(run);
+  /** `coalesceKey`: repeated scrub steps with the same key are ONE undo step (until the pointer is released). */
+  function apply(
+    run: (list: readonly StoredDataBlock[]) => SceneOpResult,
+    coalesceKey?: string
+  ): string | null {
+    const result = editor.commit(run, coalesceKey);
     setMessage(result.ok ? '' : result.error);
     return result.ok ? null : result.error;
   }
@@ -705,16 +713,6 @@ function PropertiesBody() {
   const userRows =
     primary && editor.scene ? sharedUsersTable(project, primary.id, editor.scene.id) : [];
 
-  const timeText = (value: Rational | undefined, length: boolean) => {
-    if (!value) {
-      return '';
-    }
-    try {
-      return length ? formatLength(value, meter) : formatPosition(value, meter);
-    } catch {
-      return `${quarters(value)} quarter notes`;
-    }
-  };
   const parentOptions = [
     { value: NONE, label: 'None' },
     ...rows
@@ -801,7 +799,10 @@ function PropertiesBody() {
           disabled={lock('register') !== null}
           onChange={(value) => {
             const next = { ...span, [key]: Math.round(value) };
-            apply((list) => setRegisterSpan(list, id, next.lowMc, next.highMc));
+            apply(
+              (list) => setRegisterSpan(list, id, next.lowMc, next.highMc),
+              `${id}:register:${key}`
+            );
           }}
         />
       </div>
@@ -839,38 +840,39 @@ function PropertiesBody() {
             />
           </Field>
           <Field label="Start">
-            <CommitField
-              ariaLabel="Start"
-              value={timeText(object?.timeSpan.start, false)}
+            <PositionScrub
+              aria-label="Start"
+              className={classes.grow}
+              kind="position"
+              meter={meter}
+              value={object?.timeSpan.start ?? rational(0)}
+              defaultValue={rational(0)}
               disabled={lock('start') !== null}
               info={
                 lock('start') ??
-                `Start as bar.beat.tick in ${meter}, counted from the parent start (or the scene start).`
+                `Start as bar.beat.tick.% in ${meter}, counted from the parent start (or the scene start). Drag a part, or type 2, 1.3.5 or 1/4n.`
               }
-              onCommit={(text) => {
-                const parsed = parsePosition(text, meter);
-                if (!parsed.ok) {
-                  setMessage(parsed.error);
-                  return parsed.error;
-                }
-                return apply((list) => setTimeSpan(list, id, { start: parsed.value }));
-              }}
+              onError={setMessage}
+              onCommit={(start) => apply((list) => setTimeSpan(list, id, { start }), `${id}:start`)}
             />
           </Field>
           <Field label="Duration">
-            <CommitField
-              ariaLabel="Duration"
-              value={timeText(object?.timeSpan.duration, true)}
+            <PositionScrub
+              aria-label="Duration"
+              className={classes.grow}
+              kind="length"
+              meter={meter}
+              value={object?.timeSpan.duration ?? rational(4)}
+              defaultValue={rational(4)}
               disabled={lock('duration') !== null}
-              info={lock('duration') ?? `Length as bars.beats.ticks in ${meter}.`}
-              onCommit={(text) => {
-                const parsed = parseLength(text, meter);
-                if (!parsed.ok) {
-                  setMessage(parsed.error);
-                  return parsed.error;
-                }
-                return apply((list) => setTimeSpan(list, id, { duration: parsed.value }));
-              }}
+              info={
+                lock('duration') ??
+                `Length as bars.beats.ticks.% in ${meter}. Drag a part, or type 2, 0.1.2 or 1/4b.`
+              }
+              onError={setMessage}
+              onCommit={(duration) =>
+                apply((list) => setTimeSpan(list, id, { duration }), `${id}:duration`)
+              }
             />
           </Field>
           <Field label="Mapping">

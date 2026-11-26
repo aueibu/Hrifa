@@ -79,9 +79,13 @@ describe('the Arranger (O2b)', () => {
   it('a start change through the shared commit moves the block (and its child)', async () => {
     await renderArranger();
     await userEvent.click(block('Lead'));
-    const start = await screen.findByLabelText('Start');
-    await userEvent.clear(start);
-    await userEvent.type(start, '3.1.0{Enter}');
+    // Start is a scrub box: a click without a drag opens text entry (bar 3, beat 1, tick 1 = 8 quarters).
+    const start = await screen.findByRole('spinbutton', { name: 'Start' });
+    fireEvent.pointerDown(start, { button: 0, clientX: 10 });
+    fireEvent.pointerUp(start, { button: 0, clientX: 10 });
+    const input = await screen.findByRole('textbox', { name: 'Start' });
+    fireEvent.change(input, { target: { value: '3.1.1.00' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
     await waitFor(() => expect(leftOf('Lead')).toBe(8 * PIXELS_PER_QUARTER));
     // The child keeps its relative start, so it follows its parent.
     expect(leftOf('Bass')).toBe(10 * PIXELS_PER_QUARTER);

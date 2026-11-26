@@ -151,10 +151,10 @@ beforeEach(() => {
 describe('the notes properties panel', () => {
   it('shows a blank data-block with every property filled in', async () => {
     await open();
-    expect(field(/^Length/)).toHaveValue('1.0.0');
-    expect(field(/^Playback start/)).toHaveValue('1.1.0');
-    expect(loopField('Start')).toHaveValue('1.1.0');
-    expect(loopField('Length')).toHaveValue('1.0.0');
+    expect(field(/^Length/)).toHaveValue('1.0.0.00');
+    expect(field(/^Playback start/)).toHaveValue('1.1.1.00');
+    expect(loopField('Start')).toHaveValue('1.1.1.00');
+    expect(loopField('Length')).toHaveValue('1.0.0.00');
     expect(field(/^Time signature/)).toHaveValue('4/4');
     expect(looping()).toHaveAttribute('aria-pressed', 'true');
     expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toBeDefined();
@@ -175,7 +175,7 @@ describe('the notes properties panel', () => {
     await open(legacyDataBlock());
     // Old data-block: defaults on read, the frame's 8 quarters kept.
     expect(current()).toMatchObject({ length: rational(8), loopOn: true, timeSignature: '4/4' });
-    expect(field(/^Length/)).toHaveValue('2.0.0');
+    expect(field(/^Length/)).toHaveValue('2.0.0.00');
     expect(desk.dataBlocks[0].lineage).toBeUndefined();
 
     await enter(/^Length/, '3.0.0');
@@ -183,9 +183,9 @@ describe('the notes properties panel', () => {
     expect(desk.dataBlocks[0].payload.packet.frame).toMatchObject({ extent: 12 });
     expect(desk.dataBlocks[0].lineage!.versions).toHaveLength(2);
 
-    await enter(/^Playback start/, '1.2.480');
+    await enter(/^Playback start/, '1.2.3');
     expect(current().start).toEqual(rational(3, 2));
-    await enterLoop('Start', '2.1.0');
+    await enterLoop('Start', '2.1.1');
     await enterLoop('Length', '0.2.0');
     expect(current()).toMatchObject({ loopStart: rational(4), loopEnd: rational(6) });
     await userEvent.click(looping());
@@ -214,7 +214,7 @@ describe('the notes properties panel', () => {
     const changes = historyChangeCount();
 
     await enterLoop('Length', 'nonsense');
-    expect(await screen.findByText(/Enter a length as bars\.beats\.ticks/)).toBeVisible();
+    expect(await screen.findByText(/Enter time as BARs\.BEATs\.TICKs\.%/)).toBeVisible();
     expect(desk.dataBlocks[0]).toBe(before);
 
     await enterLoop('Length', '9.0.0');
@@ -225,13 +225,13 @@ describe('the notes properties panel', () => {
 
     // A Start at or after the data-block's end leaves no loop: refused. (A start that only makes the loop
     // run past the end is not an error: it shortens the length, see the loop controls tests.)
-    await enterLoop('Start', '3.1.0');
+    await enterLoop('Start', '3.1.1');
     expect(
       await screen.findByText(/loop start must be before the end of the data-block/)
     ).toBeVisible();
     expect(screen.queryAllByText(/loop length must be longer than zero/)).toHaveLength(1);
 
-    await enter(/^Playback start/, '3.1.0');
+    await enter(/^Playback start/, '3.1.1');
     expect(await screen.findByText(/start must be inside the data-block/)).toBeVisible();
 
     await enter(/^Length/, '1.0.0');
@@ -250,7 +250,7 @@ describe('the notes properties panel', () => {
     expect(screen.getByTestId('roll-loop-band').style.width).toBe('512px');
 
     await enterLoop('Length', '1.0.0');
-    await enterLoop('Start', '1.3.0');
+    await enterLoop('Start', '1.3.1');
     expect(screen.getByTestId('roll-loop-band').style.left).toBe('128px');
     expect(screen.getByTestId('roll-loop-band').style.width).toBe('256px');
     await userEvent.click(looping());
@@ -258,7 +258,7 @@ describe('the notes properties panel', () => {
 
     // Shorten the data-block below its last note: refused for the loop, so move the loop first.
     await userEvent.click(looping());
-    await enterLoop('Start', '1.1.0');
+    await enterLoop('Start', '1.1.1');
     await enterLoop('Length', '0.2.0');
     await enter(/^Length/, '0.2.0');
     expect(screen.getByTestId('roll-end-bracket').style.left).toBe('128px');
@@ -295,7 +295,7 @@ describe('notes properties robustness', () => {
     const input = field(/^Length/);
     await userEvent.clear(input);
     await userEvent.type(input, '9.0.0{Escape}');
-    expect(input).toHaveValue('2.0.0');
+    expect(input).toHaveValue('2.0.0.00');
     await userEvent.tab();
     expect(desk.dataBlocks[0]).toBe(before);
   });
@@ -304,10 +304,10 @@ describe('notes properties robustness', () => {
     await open(legacyDataBlock());
     const before = desk.dataBlocks[0];
     const changes = historyChangeCount();
-    await enter(/^Playback start/, '01.1.0');
+    await enter(/^Playback start/, '01.1.1');
     expect(desk.dataBlocks[0]).toBe(before);
     expect(historyChangeCount()).toBe(changes);
-    expect(field(/^Playback start/)).toHaveValue('1.1.0');
+    expect(field(/^Playback start/)).toHaveValue('1.1.1.00');
   });
 
   it('a refusal shows its message once', async () => {
@@ -401,7 +401,7 @@ describe('notes properties in storage', () => {
   it('round-trips an edited data-block through the stored desk and a saved project', async () => {
     await open(legacyDataBlock());
     await enter(/^Length/, '3.0.0');
-    await enterLoop('Start', '1.3.0');
+    await enterLoop('Start', '1.3.1');
     await userEvent.click(looping());
     await enter(/^Time signature/, '6/8');
     const edited = desk.dataBlocks;
@@ -455,7 +455,7 @@ describe('freezing an old data-block at its first edit', () => {
       rational(8)
     );
     expect(lengthOf()).toEqual(rational(8));
-    expect(field(/^Length/)).toHaveValue('2.0.0');
+    expect(field(/^Length/)).toHaveValue('2.0.0.00');
     expect(desk.dataBlocks[0].payload.packet.frame).toMatchObject({ extent: 8 });
     expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toMatchObject({
       loopEnd: rational(8),
@@ -626,22 +626,22 @@ describe('the loop controls', () => {
     await open(legacyDataBlock());
     await enterLoop('Length', '1.0.0');
     expect(current()).toMatchObject({ loopStart: rational(0), loopEnd: rational(4) });
-    await enterLoop('Start', '1.3.0');
+    await enterLoop('Start', '1.3.1');
     expect(current()).toMatchObject({ loopStart: rational(2), loopEnd: rational(6) });
-    expect(loopField('Length')).toHaveValue('1.0.0');
+    expect(loopField('Length')).toHaveValue('1.0.0.00');
     // Start plus length past the data-block's end shortens the length to fit (the end stops at the data-block's
     // end); it is not refused.
-    await enterLoop('Start', '2.3.0');
+    await enterLoop('Start', '2.3.1');
     expect(current()).toMatchObject({ loopStart: rational(6), loopEnd: rational(8) });
-    expect(loopField('Length')).toHaveValue('0.2.0');
+    expect(loopField('Length')).toHaveValue('0.2.0.00');
     expect(screen.queryByText(/loop must stay within the total length/)).toBeNull();
     // A start at or after the end of the data-block is still refused, and changes nothing.
-    await enterLoop('Start', '3.1.0');
+    await enterLoop('Start', '3.1.1');
     expect(
       await screen.findByText(/loop start must be before the end of the data-block/)
     ).toBeVisible();
     expect(current()).toMatchObject({ loopStart: rational(6), loopEnd: rational(8) });
-    await enterLoop('Start', '1.3.0');
+    await enterLoop('Start', '1.3.1');
     expect(current()).toMatchObject({ loopStart: rational(2), loopEnd: rational(4) });
     await enterLoop('Length', '1.2.0');
     expect(current().loopEnd).toEqual(rational(8));
