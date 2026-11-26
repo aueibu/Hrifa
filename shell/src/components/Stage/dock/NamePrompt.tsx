@@ -5,7 +5,8 @@
  * return it, `returnFocus` is off, so the caller can put it where its action leads).
  */
 import { useState } from 'react';
-import { Button, Group, Modal, TextInput } from '@mantine/core';
+import { Group, Modal } from '@mantine/core';
+import { Button, TextInput } from '../../../ui';
 import { validateName } from './dockerName';
 
 export interface NamePromptProps {

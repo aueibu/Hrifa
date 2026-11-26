@@ -157,7 +157,8 @@
 
 .pin {
   background: var(--stem-fill, var(--stem-color));
-  border: 1px solid color-mix(in srgb, var(--stem-fill, var(--stem-color)) 60%, var(--mantine-color-black));
+  border: 1px solid
+    color-mix(in srgb, var(--stem-fill, var(--stem-color)) 60%, var(--mantine-color-black));
   border-radius: 50%;
   cursor: ns-resize;
   height: 11px;

@@ -1,17 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import {
-  Alert,
-  Badge,
-  Box,
-  Button,
-  Group,
-  SimpleGrid,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core';
+import { Alert, Badge, Box, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { defaultThemeTokens } from '../../theme';
+import { Button, TextInput } from '../../ui';
 import { Surface } from './Surface';
 
 const meta = {

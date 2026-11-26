@@ -1,5 +1,10 @@
 import { Menu, Tooltip, UnstyledButton } from '@mantine/core';
-import { actionEnabled, type EditorAction, type EditorActionContext, type EditorTool } from './types';
+import {
+  actionEnabled,
+  type EditorAction,
+  type EditorActionContext,
+  type EditorTool,
+} from './types';
 import classes from './EditorPalette.module.css';
 
 interface EditorPaletteProps {
@@ -26,11 +31,21 @@ export function EditorPalette({
     return null;
   }
   return (
-    <div className={classes.palette} role="toolbar" aria-orientation="vertical" aria-label="Editor tools">
+    <div
+      className={classes.palette}
+      role="toolbar"
+      aria-orientation="vertical"
+      aria-label="Editor tools"
+    >
       {tools.length > 0 && (
         <div className={classes.group} role="radiogroup" aria-label="Tool">
           {tools.map((tool) => (
-            <Tooltip key={tool.id} label={hint(tool.label, tool.shortcut)} position="left" withArrow={false}>
+            <Tooltip
+              key={tool.id}
+              label={hint(tool.label, tool.shortcut)}
+              position="left"
+              withArrow={false}
+            >
               <UnstyledButton
                 className={classes.tool}
                 role="radio"
@@ -47,7 +62,12 @@ export function EditorPalette({
       {actions.length > 0 && (
         <div className={classes.group}>
           {actions.map((action) => (
-            <Tooltip key={action.id} label={hint(action.label, action.shortcut)} position="left" withArrow={false}>
+            <Tooltip
+              key={action.id}
+              label={hint(action.label, action.shortcut)}
+              position="left"
+              withArrow={false}
+            >
               <UnstyledButton
                 className={classes.action}
                 disabled={!actionEnabled(action, context)}

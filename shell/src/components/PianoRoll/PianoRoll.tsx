@@ -10,7 +10,8 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { ActionIcon, Button, Group, Switch, Text } from '@mantine/core';
+import { Group, Text } from '@mantine/core';
+import { ActionIcon, Button, Switch } from '../../ui';
 import {
   actionEnabled,
   EditorContextMenu,

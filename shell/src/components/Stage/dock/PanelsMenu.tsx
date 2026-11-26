@@ -8,8 +8,9 @@
  * The page gets `api` from `DockStage`'s `onApi` prop and passes the same `workspace` it gives the Stage.
  */
 import { Fragment, useRef } from 'react';
-import { Button, Menu } from '@mantine/core';
+import { Menu } from '@mantine/core';
 import { openPanels, treeDockers, type ModuleRegistry, type Workspace } from '../../../lib/stage';
+import { Button } from '../../../ui';
 import { isReservedPanelId } from './instances';
 import { dockerCommandFor, keyLabel } from './keyMap';
 import type { StageApi } from './stageApi';

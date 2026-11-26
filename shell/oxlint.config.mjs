@@ -7,7 +7,7 @@ export default defineConfig({
   overrides: [
     ...(oxlint.overrides ?? []),
     {
-      files: ['src/pages/**/*.{ts,tsx}'],
+      files: ['src/pages/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
       rules: {
         'no-restricted-imports': [
           'error',
