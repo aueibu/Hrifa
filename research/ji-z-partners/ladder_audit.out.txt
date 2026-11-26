@@ -1,0 +1,70 @@
+rows 909952 ladder-only 644915 proven 245707 exact 19330
+ladder runs: [{'limit': 7, 'q': 405, 'notes': '6-16', 'run': 'l7q405_on'}, {'limit': 7, 'q': 729, 'notes': '6-16', 'run': 'l7q729_on'}, {'limit': 11, 'q': 243, 'notes': '6-16', 'run': 'l11q243_on'}, {'limit': 11, 'q': 405, 'notes': '6-16', 'run': 'l11q405_on'}, {'limit': 13, 'q': 243, 'notes': '6-16', 'run': 'l13q243_on'}, {'limit': 13, 'q': 405, 'notes': '7-9', 'run': 'k789L_l13q405'}, {'limit': 17, 'q': 243, 'notes': '6-16', 'run': 'l17q243_on'}, {'limit': 17, 'q': 405, 'notes': '7-9', 'run': 'k789L_l17q405'}, {'limit': 19, 'q': 405, 'notes': '7-9', 'run': 'k789L_l19q405'}]
+
+ladder-only by note count:
+  k 9:   37545 rows, q 245 to 405
+  k 10:     158 rows, q 165 to 729
+  k 12:  177922 rows, q 143 to 729
+  k 14:     422 rows, q 231 to 729
+  k 15:  362986 rows, q 143 to 729
+  k 16:   65882 rows, q 143 to 729
+
+ladder-only by highest prime p (rows, max q) and the proven reach for that p (any k):
+  p 7:  369267 rows, q 343 to 729
+  p 11:  212220 rows, q 147 to 405
+  p 13:   24796 rows, q 143 to 405
+  p 17:   24226 rows, q 147 to 405
+  p 19:   14406 rows, q 245 to 405
+
+ladder-only by (p, k): rows and max q
+  p  7 k 10:     131 rows, max q 729
+  p  7 k 12:   98452 rows, max q 729
+  p  7 k 14:     384 rows, max q 729
+  p  7 k 15:  226864 rows, max q 729
+  p  7 k 16:   43436 rows, max q 729
+  p 11 k 10:      22 rows, max q 405
+  p 11 k 12:   68199 rows, max q 405
+  p 11 k 14:      38 rows, max q 405
+  p 11 k 15:  123452 rows, max q 405
+  p 11 k 16:   20509 rows, max q 405
+  p 13 k  9:   13046 rows, max q 405
+  p 13 k 10:       3 rows, max q 243
+  p 13 k 12:    5689 rows, max q 243
+  p 13 k 15:    5364 rows, max q 243
+  p 13 k 16:     694 rows, max q 243
+  p 17 k  9:   10093 rows, max q 405
+  p 17 k 10:       2 rows, max q 243
+  p 17 k 12:    5582 rows, max q 243
+  p 17 k 15:    7306 rows, max q 243
+  p 17 k 16:    1243 rows, max q 243
+  p 19 k  9:   14406 rows, max q 405
+
+proven coverage rectangles (limit, q, notes):
+  5-limit q<=3645 notes 6-16
+  5-limit q<=10935 notes 7-9
+  5-limit q<=98415 notes 6-9
+  5-limit q<=177147 notes 9
+  5-limit q<=885735 notes 6
+  5-limit q<=885735 notes 7
+  5-limit q<=885735 notes 8
+  7-limit q<=315 notes 6-16
+  7-limit q<=729 notes 7-9
+  7-limit q<=1215 notes 6-9
+  7-limit q<=3645 notes 8
+  7-limit q<=19683 notes 7
+  7-limit q<=98415 notes 6
+  11-limit q<=405 notes 7-9
+  11-limit q<=729 notes 8
+  11-limit q<=2187 notes 7
+  11-limit q<=6561 notes 6
+  13-limit q<=2187 notes 6
+  17-limit q<=405 notes 8
+  17-limit q<=729 notes 7
+  17-limit q<=1215 notes 6
+  19-limit q<=135 notes 6-16
+  19-limit q<=243 notes 7-9
+  19-limit q<=729 notes 6
+  23-limit q<=135 notes 7-9
+  23-limit q<=243 notes 6-9
+  23-limit q<=405 notes 6
+  23-limit q<=405 notes 7
