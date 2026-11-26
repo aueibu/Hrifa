@@ -3,6 +3,9 @@
 (merge) search, family by family, and what is left (with overlap.py's description).
 
 usage: python3 union_cov.py LIST_DIR PRIMES CHORDSUM_TSV HOLE_JSONL RUN_DIRS OVERLAP_TSV [--left OUT.tsv]
+           [--wide DIRS --classify OUT.tsv]
+       --classify gives every family ONE kind, in this order: chord sum, hole, merge (RUN_DIRS), wide (the --wide run dirs,
+       comma-separated: chord x factor with several minus signs, small factors 2,1 / 3,2), left; the summary is by note count.
        (PRIMES comma-separated, e.g. 3,5,7; RUN_DIRS: one or more factor-search run dirs, comma-separated;
        "small signed factor" below counts every family found in any of them)
 """
@@ -13,6 +16,8 @@ from chordgen import canon_TI
 
 lst, primes, cs_tsv, hole_js, merge_dir, ov_tsv = sys.argv[1:7]
 left_out = sys.argv[sys.argv.index("--left") + 1] if "--left" in sys.argv else None
+wide_dirs = sys.argv[sys.argv.index("--wide") + 1] if "--wide" in sys.argv else ""
+classify_out = sys.argv[sys.argv.index("--classify") + 1] if "--classify" in sys.argv else None
 primes = [int(p) for p in primes.split(",")]
 
 
@@ -64,6 +69,13 @@ for fn in [g for md in merge_dir.split(",") for g in glob.glob(os.path.join(md, 
         i = ids_of([[tuple(p) for p in m["lattice"]] for m in f["members"]])
         if i:
             merges.add(i)
+wide = set()
+for fn in [g for md in wide_dirs.split(",") if md for g in glob.glob(os.path.join(md, "k*", "families.jsonl"))]:
+    for line in open(fn):
+        f = json.loads(line)
+        i = ids_of([[tuple(p) for p in m["lattice"]] for m in f["members"]])
+        if i:
+            wide.add(i)
 desc = {}
 for line in open(ov_tsv):
     c = line.rstrip("\n").split("\t")
@@ -85,3 +97,18 @@ if left_out:
     with open(left_out, "w") as fo:
         for i in left:
             fo.write(f"{i[0]}\t{i[1]}\t{desc.get(i, '?')}\n")
+
+if classify_out:
+    kind_of = {}
+    for i in allf:
+        kind_of[i] = ("chord sum" if i in cs else "hole" if i in holes else "merge" if i in merges
+                      else "wide" if i in wide else "left")
+    by = collections.defaultdict(collections.Counter)
+    for i, kd in kind_of.items():
+        by[kd][i[0]] += 1
+    print(f"CLASSIFY {lab}: {len(allf):,} families")
+    for kd in ("chord sum", "hole", "merge", "wide", "left"):
+        print(f"   {kd:10} {sum(by[kd].values()):7,}  by notes {dict(sorted(by[kd].items()))}")
+    with open(classify_out, "w") as fo:
+        for i in sorted(allf):
+            fo.write(f"{i[0]}\t{i[1]}\t{kind_of[i]}\t{desc.get(i, '')}\n")

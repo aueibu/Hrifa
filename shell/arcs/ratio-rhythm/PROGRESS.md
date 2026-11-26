@@ -7,6 +7,12 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - Current milestone: D1 research side steps (V1 explorer, 6–9-note search) done; M3 not started (M1 and M2 done)
 - State: **explorer identity fix done and verified (see section below); k 8 still running. Older note: resume from "HANDOFF (2026-11-25 ~22:40 Eastern, PC restart)" below: VM ON running k 8 (tmux `tf8`) and the exact 6/7-note builds (tmux `bsrp`); explorer exact-data work half done (WIP commit).**
 
+## Classification of every family by kind (2026-11-26 ~13:00 Eastern; human: "yes sounds really good" to the classification table)
+- `research/ji-z-partners/CLASSIFICATION.md` (+ `union_cov.py --classify`, `classify_all.sh`, `tables/chordsum/classify_all.out`): each family in the nine proven lists gets exactly one kind in the order chord sum, hole, merge, wide, left over. **All but 9 families (all at 5-limit q <= 3,645) have a kind**: e.g. 5-limit q <= 3,645: 65,348 = 55,810 chord sums + 5,880 holes + 2,404 merges + 1,245 wide + 9 left over; the other eight lists have 0 left over (1 at 5q2187, one of the 9). 6-8 notes by shape: type 1 6,043; type 19 13,702 (+1 1-D); types 91 1,993, 94 7,821, s1 639 (c3 0).
+- Correction of an earlier chat simplification: groups G1/G2/G3 (chord x signed U / signed V x plain U / both signed) are sign patterns; hole and merge are mechanisms. G1 is almost all holes and G2 almost all merges, but at 5-limit some G1 families are merges.
+- Paper rev 92: subsection "Every family has a kind" (definitions, the nine-list table, note counts, shapes at 6-8 notes, caveat: a classification of what the generators find, not a completeness proof; the residue grows with q: 63 at 5-limit q <= 6,561).
+- Not done: a proof that the kinds are complete; classifying the ladder / generator rows beyond the proven lists (they are the generators' own output).
+
 ## One more family, step-c counts in the paper (2026-11-26 ~11:35 Eastern; human: "yes, that works")
 - Explorer **version 4** published (922,520 rows; +1 ladder family: the 15-note q 405 family from the no-budget rerun of the 11-limit q 405 5-term step; saved as `tables/chordsum/five_nb_new_2026-11-26.jsonl`; run3 self-check 128 lines still 0 mismatches). Paper rev 91: new "Ladder cross-check, 2026-11-26" paragraph and a table of the step-c chord-sum and hole counts. Step-c rows stay out of the explorer. VM stopped again.
 - Why the family was missed was not traced (probably one of the 280 stopped factors of the capped step; the rerun also used the newer binary).

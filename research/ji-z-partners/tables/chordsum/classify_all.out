@@ -1,0 +1,55 @@
+CLASSIFY e19q135_on: 3,735 families
+   chord sum    3,718  by notes {9: 1234, 12: 1547, 15: 845, 16: 92}
+   hole            16  by notes {6: 1, 9: 7, 12: 6, 15: 2}
+   merge            1  by notes {10: 1}
+   wide             0  by notes {}
+   left             0  by notes {}
+CLASSIFY ev2_11q135: 1,209 families
+   chord sum    1,200  by notes {9: 601, 12: 493, 15: 100, 16: 6}
+   hole             8  by notes {6: 1, 9: 5, 12: 2}
+   merge            1  by notes {10: 1}
+   wide             0  by notes {}
+   left             0  by notes {}
+CLASSIFY en13q135: 2,116 families
+   chord sum    2,099  by notes {9: 868, 12: 900, 15: 289, 16: 42}
+   hole            16  by notes {6: 1, 9: 7, 12: 6, 15: 2}
+   merge            1  by notes {10: 1}
+   wide             0  by notes {}
+   left             0  by notes {}
+CLASSIFY en17q135: 2,731 families
+   chord sum    2,714  by notes {9: 1033, 12: 1158, 15: 465, 16: 58}
+   hole            16  by notes {6: 1, 9: 7, 12: 6, 15: 2}
+   merge            1  by notes {10: 1}
+   wide             0  by notes {}
+   left             0  by notes {}
+CLASSIFY ev2_5q729: 2,376 families
+   chord sum    2,138  by notes {9: 584, 12: 1073, 15: 451, 16: 30}
+   hole           130  by notes {6: 3, 8: 3, 9: 34, 12: 76, 15: 14}
+   merge          103  by notes {10: 54, 12: 3, 14: 21, 15: 23, 16: 2}
+   wide             5  by notes {9: 2, 12: 3}
+   left             0  by notes {}
+CLASSIFY ev2_7q243: 6,233 families
+   chord sum    6,051  by notes {9: 1374, 12: 2906, 15: 1610, 16: 161}
+   hole           154  by notes {6: 2, 8: 1, 9: 24, 12: 76, 15: 50, 16: 1}
+   merge           28  by notes {10: 12, 14: 3, 15: 12, 16: 1}
+   wide             0  by notes {}
+   left             0  by notes {}
+CLASSIFY e7q315_on: 16,561 families
+   chord sum   16,244  by notes {9: 2338, 12: 6908, 15: 6121, 16: 877}
+   hole           263  by notes {6: 2, 8: 1, 9: 26, 12: 104, 15: 124, 16: 6}
+   merge           54  by notes {10: 20, 14: 11, 15: 22, 16: 1}
+   wide             0  by notes {}
+   left             0  by notes {}
+CLASSIFY e5q2187_on: 13,700 families
+   chord sum   11,839  by notes {9: 1594, 12: 5049, 15: 4608, 16: 588}
+   hole         1,066  by notes {6: 5, 8: 6, 9: 89, 12: 434, 15: 477, 16: 55}
+   merge          631  by notes {10: 149, 12: 17, 14: 187, 15: 227, 16: 51}
+   wide           163  by notes {7: 3, 8: 1, 9: 4, 10: 3, 11: 1, 12: 41, 15: 110}
+   left             1  by notes {14: 1}
+CLASSIFY e5q3645_on: 65,348 families
+   chord sum   55,810  by notes {9: 3856, 12: 18316, 15: 28280, 16: 5358}
+   hole         5,880  by notes {6: 8, 8: 10, 9: 196, 12: 1554, 15: 3706, 16: 406}
+   merge        2,404  by notes {10: 310, 12: 46, 14: 703, 15: 1038, 16: 307}
+   wide         1,245  by notes {7: 4, 8: 2, 9: 8, 10: 6, 11: 3, 12: 144, 13: 2, 15: 1060, 16: 16}
+   left             9  by notes {13: 1, 14: 1, 15: 5, 16: 2}
+CLASSIFY ALL DONE
