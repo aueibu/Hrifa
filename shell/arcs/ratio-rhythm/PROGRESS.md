@@ -13,6 +13,11 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - Network note: after the PC restart IPv6 was dead (router); gcloud IAP websocket timed out until the router was rebooted.
 - k 8 at 00:38 Eastern: 107,776 / 200,044 frontier flats, 4 type flats, ~2.5 h left at the observed pace.
 
+## Which q values 6-note families have (2026-11-26 ~01:30 Eastern; human: "sure you could work on that")
+- **Formula:** zgen type 1 in integer coordinates is P = (0,0) (2,0) (0,2) (1,-1) (-1,2) (2,1), Q = (0,0) (2,0) (0,2) (-1,1) (1,2) (2,-1). Placed in the lattice by x*a + y*b (a, b ratios), its 15 intervals have vectors (x,y) = (0,1) (0,2) (1,-3) (1,-2) (1,-1) (1,0) (1,1) (1,2) (2,-3) (2,-2) (2,-1) (2,0) (2,1) (3,-2) (3,-1), so **q(a,b) = max over these 15 of the odd limit of a^x b^y** (placement must keep the 6 notes distinct).
+- **Checked against the data** (`q_formula_type1.py`, run on the VM): over all a, b in 3/5/7 with odd limit <= 531,441, the formula gives 70 distinct q and the explorer data has exactly the same 70 for 6 notes, p <= 7, q <= 531,441 (no extras either way). Smallest: a = 5, b = 3 gives 125 = 5^3 (interval (3,-2) = 125/9 sets q); in general the first q of a new prime p is p^3.
+- Not done: a closed form for the admissible q set, and the same check for 7 notes (type 19 plus 4 rank-1 types, so first the vectors of type 19).
+
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |
 | --------- | ------ | ----------- | ---------------------- |
