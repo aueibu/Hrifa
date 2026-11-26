@@ -1,0 +1,11 @@
+# 1209 families
+#   U negmass 0: 1208
+#   U negmass 1: 1
+#   V 3,0 coeffs 1..1: 938
+#   V 3,1 coeffs -1..1: 1
+#   V 4,0 coeffs 1..1: 231
+#   V 4,1 coeffs -1..1: 5
+#   V 5,0 coeffs 1..1: 32
+#   V 5,1 coeffs -1..1: 2
+#   check ok: 1209
+#   flipped factors 1: 1209

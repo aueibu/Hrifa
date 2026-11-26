@@ -1,0 +1,5 @@
+# holes, primes [3, 5, 7] q 243: 170 allowed intervals, 15329 chords, 1 s
+# 154 hole families, 5 s
+# by notes: 6: 2, 8: 1, 9: 24, 12: 76, 15: 50, 16: 1
+# check /home/apoorbaugh_gmail_com/zruns/zprod/ev2_7q243: generated families found in the list 154, not in the list {}
+# holes in the list (one minus note, chord of [3, 4] notes): 154; generated 154; missed 0 by notes {}; generated leftovers of other descriptions 0

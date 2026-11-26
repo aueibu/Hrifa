@@ -1,0 +1,599 @@
+<title>Z-Pair Lattice</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column of three numbered stages (region -> shapes -> building a pair); diagrams are SVG lattices that scroll inside their own frames */
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --ink: #18212c;
+  --muted: #5b6878;
+  --line: #d7dde5;
+  --faint: #e9edf2;
+  --plus: #2c58c9;
+  --minus: #c23d6e;
+  --p: #13806a;
+  --q: #a8681a;
+  --region: rgba(44, 88, 201, 0.10);
+  --hull: rgba(19, 128, 106, 0.16);
+  --bad: #c23d3d;
+  --font-text: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161d; --panel: #18202a; --ink: #e6ebf1; --muted: #9aa7b6; --line: #2c3746; --faint: #212b37;
+    --plus: #7d9ff5; --minus: #f07aa5; --p: #45c7a6; --q: #e3a857;
+    --region: rgba(125, 159, 245, 0.13); --hull: rgba(69, 199, 166, 0.18); --bad: #f07a7a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161d; --panel: #18202a; --ink: #e6ebf1; --muted: #9aa7b6; --line: #2c3746; --faint: #212b37;
+  --plus: #7d9ff5; --minus: #f07aa5; --p: #45c7a6; --q: #e3a857;
+  --region: rgba(125, 159, 245, 0.13); --hull: rgba(69, 199, 166, 0.18); --bad: #f07a7a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-text); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+main { max-width: 980px; margin: 0 auto; display: grid; gap: 40px; }
+header { display: grid; gap: 8px; }
+h1 { font-size: 2rem; line-height: 1.15; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font-size: 1.3rem; margin: 0; text-wrap: balance; }
+h3 { font-size: 0.95rem; margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--muted); font-size: 1.02rem; }
+.stage { display: grid; gap: 14px; }
+.eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); font-weight: 600; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+label { font-size: 0.85rem; color: var(--muted); display: inline-flex; gap: 8px; align-items: center; }
+select, input[type="number"], button {
+  font: inherit; font-size: 0.88rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 6px; padding: 5px 9px;
+}
+input[type="range"] { width: 180px; accent-color: var(--plus); }
+button { cursor: pointer; }
+button:hover { border-color: var(--plus); }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--plus); outline-offset: 2px; }
+.frame { overflow-x: auto; }
+svg { display: block; max-width: none; }
+svg text { font-family: var(--font-mono); }
+.stats { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 0.8rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); font-variant-numeric: tabular-nums; }
+.chip.ok { border-color: var(--p); color: var(--p); }
+.chip.no { border-color: var(--bad); color: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--muted); align-items: center; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -1px; margin-right: 5px; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 8px; min-width: 0; }
+.card .pair { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.card .poly { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.mono { font-family: var(--font-mono); font-size: 0.85rem; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.chord { font-family: var(--font-mono); font-size: 0.86rem; word-break: break-word; }
+.chord.p { color: var(--p); } .chord.q { color: var(--q); }
+.note { font-size: 0.85rem; color: var(--muted); }
+kbd { font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+@media (max-width: 520px) { h1 { font-size: 1.6rem; } input[type="range"] { width: 130px; } }
+</style>
+
+<main>
+  <header>
+    <div class="eyebrow">JI Z-relation search · zprod</div>
+    <h1>Z-Pair Lattice</h1>
+    <p class="lede">The pictures behind the search: which intervals are allowed at a given q, what a factor shape like 3,1 looks like, and how one set U times a factor V and its flip V* gives two chords with the same intervals.</p>
+  </header>
+
+  <section class="stage" id="region">
+    <div class="eyebrow">1 · The allowed intervals</div>
+    <h2>Every allowed interval is a lattice point, and the hull adds none</h2>
+    <p>Each interval is a point: steps along one prime to the right, along the other prime up (octaves ignored). An interval is allowed when its numerator and denominator, with factors of 2 removed, are both at most q. On a log scale those two conditions are straight-edged, so they cut out a convex shape (dashed). Its lattice points are exactly the allowed intervals, which is why the search never needs to compute a hull.</p>
+    <div class="panel">
+      <div class="controls">
+        <label for="rAxes">Primes
+          <select id="rAxes"></select>
+        </label>
+        <label for="rQ">q
+          <input type="range" id="rQ" min="0" max="0" step="1">
+          <span class="mono" id="rQv"></span>
+        </label>
+      </div>
+      <div class="frame"><svg id="rSvg" role="img" aria-label="Lattice of allowed intervals"></svg></div>
+      <div class="legend">
+        <span><span class="sw" style="background: var(--plus)"></span>allowed interval</span>
+        <span><span class="sw" style="background: var(--faint); border: 1px solid var(--line)"></span>not allowed</span>
+        <span><span class="sw" style="background: var(--hull)"></span>hull of the allowed points</span>
+        <span><span class="sw" style="background: transparent; border: 1.5px dashed var(--plus)"></span>the convex limit shape</span>
+      </div>
+      <div class="stats" id="rStats"></div>
+      <p class="note">This is a two-prime slice: the other primes' exponents are 0. With more primes the shape gains a dimension per prime (11-limit is 4-D), and the same argument holds in every dimension.</p>
+    </div>
+  </section>
+
+  <section class="stage" id="shapes">
+    <div class="eyebrow">2 · Factor shapes</div>
+    <h2>What “3,1” means</h2>
+    <p>A factor V is a small pattern of points with signs. The shape <span class="mono">vp,vm</span> counts them: <span class="mono">vp</span> plus points (one sits at the origin) and <span class="mono">vm</span> minus points. A minus point must lie inside the plus points' outline, because something has to cancel it. The flip V* is V turned half a revolution. A factor that equals its own flip is useless (it gives P = Q), so it is skipped.</p>
+    <div class="legend">
+      <span><span class="sw" style="background: var(--plus)"></span>+1</span>
+      <span><span class="sw" style="background: transparent; border: 2px solid var(--minus)"></span>−1</span>
+      <span>outline: the plus points' hull</span>
+    </div>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section class="stage" id="build">
+    <div class="eyebrow">3 · Building a pair</div>
+    <h2>P = U · V and Q = U · V*</h2>
+    <p>Place a copy of V at every point of U and add the coefficients up; that is P. Do the same with the flip V* to get Q. When every coefficient in both comes out 0 or 1, P and Q are two sets of notes with exactly the same intervals: a Z-pair (unless Q is just P moved or turned over). Click the grids to edit. In U a click cycles 0 → 1 → 2 → −1; in V it cycles 0 → +1 → −1.</p>
+    <div class="panel">
+      <div class="controls">
+        <label for="bPreset">Example
+          <select id="bPreset"></select>
+        </label>
+        <label for="bAxes">Primes
+          <select id="bAxes"></select>
+        </label>
+        <button id="bClearU" type="button">Clear U</button>
+        <button id="bClearV" type="button">Clear V</button>
+      </div>
+      <p class="note" id="bPresetNote"></p>
+      <div class="two">
+        <div class="panel" style="padding: 12px">
+          <h3>U <span class="note">(the set the factor is placed on)</span></h3>
+          <div class="frame"><svg id="uSvg" role="img" aria-label="Editable grid for U"></svg></div>
+        </div>
+        <div class="panel" style="padding: 12px">
+          <h3>V <span class="note">(the factor) and its flip V*</span></h3>
+          <div class="frame" style="display: flex; gap: 10px; align-items: center"><svg id="vSvg" role="img" aria-label="Editable grid for V"></svg><svg id="vsSvg" role="img" aria-label="The flipped factor V star"></svg></div>
+        </div>
+      </div>
+      <div class="stats" id="bStats"></div>
+      <div class="two">
+        <div class="panel" style="padding: 12px">
+          <h3 style="color: var(--p)">P = U · V</h3>
+          <div class="frame"><svg id="pSvg" role="img" aria-label="Product P"></svg></div>
+          <div class="chord p" id="pChord"></div>
+        </div>
+        <div class="panel" style="padding: 12px">
+          <h3 style="color: var(--q)">Q = U · V*</h3>
+          <div class="frame"><svg id="qSvg" role="img" aria-label="Product Q"></svg></div>
+          <div class="chord q" id="qChord"></div>
+        </div>
+      </div>
+      <p class="note">Numbers on a point are coefficients other than 1. Anything other than 0 or 1 (red) means that product is not a set.</p>
+    </div>
+  </section>
+
+  <section class="stage" id="universal">
+    <div class="eyebrow">4 · Universal patterns</div>
+    <h2>Every 6- and 7-note pair is a copy of a few patterns</h2>
+    <p>Every 6-note Z-pair in any just-intonation lattice, at any prime limit, is a copy of one pattern (zgen type 1), placed by choosing two lattice steps. Every 7-note Z-pair is a copy of one flat pattern (zgen type 19) or of one of five patterns that lie on a single line.</p>
+    <div class="panel">
+      <div class="controls">
+        <label for="gPat">Pattern
+          <select id="gPat"><option value="6">6 notes</option><option value="7">7 notes</option></select>
+        </label>
+        <label for="gS1">Step 1 (right)
+          <select id="gS1"></select>
+        </label>
+        <label for="gS2">Step 2 (up)
+          <select id="gS2"></select>
+        </label>
+      </div>
+      <p class="note" id="gNote"></p>
+      <div class="two">
+        <div class="card">
+          <h3>The pattern</h3>
+          <div class="frame" style="display: flex; flex-wrap: wrap; gap: 10px">
+            <div><svg id="gPSvg" role="img" aria-label="Pattern member P"></svg><div class="poly">P</div></div>
+            <div><svg id="gQSvg" role="img" aria-label="Pattern member Q"></svg><div class="poly">Q</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Placed in the lattice</h3>
+          <div class="stats" id="gStats"></div>
+          <div class="chord p" id="gPChord"></div>
+          <div class="chord q" id="gQChord"></div>
+        </div>
+      </div>
+      <p class="note">Point (a, b) of the pattern becomes the note step 1<sup>a</sup> × step 2<sup>b</sup>, brought into one octave (from 1 up to 2). q is the largest odd number in any interval inside P or Q once factors of 2 are removed, the same q as in stage 1.</p>
+    </div>
+    <h3>Patterns on a single line (7 notes)</h3>
+    <p class="note">Here a pattern is a row of positions on one line, and position n becomes step<sup>n</sup>. On the chain of fifths (step 3) the widest interval is 3 to the power of the span, so each pattern first appears at that q.</p>
+    <div class="gallery" id="gLines"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const AXES = [[3, 5], [3, 7], [5, 7], [3, 11], [5, 11], [3, 13]];
+  const QS = [9, 15, 25, 27, 33, 45, 55, 63, 65, 75, 77, 81, 99, 125, 135, 175, 243, 405, 729];
+
+  const el = (tag, attrs = {}, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const key = (x, y) => x + "," + y;
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  // ---- ratios ---------------------------------------------------------------------------------------
+  const bpow = (p, e) => { let r = 1n; for (let i = 0; i < e; i++) r *= BigInt(p); return r; };
+  function ratioOf(vec, primes) {
+    let num = 1n, den = 1n;
+    vec.forEach((e, i) => { if (e > 0) num *= bpow(primes[i], e); else if (e < 0) den *= bpow(primes[i], -e); });
+    while (num >= 2n * den) den *= 2n;
+    while (num < den) num *= 2n;
+    let a = num, b = den; while (b) [a, b] = [b, a % b];
+    return [num / a, den / a];
+  }
+  const ratioStr = ([n, d]) => d === 1n ? String(n) : n + "/" + d;
+  const ratioVal = ([n, d]) => Number(n) / Number(d);
+  function oddPart(n) { while (n % 2n === 0n) n /= 2n; return n; }
+  function intervalOdd(vec, primes) {
+    let num = 1n, den = 1n;
+    vec.forEach((e, i) => { if (e > 0) num *= bpow(primes[i], e); else if (e < 0) den *= bpow(primes[i], -e); });
+    return oddPart(num) > oddPart(den) ? oddPart(num) : oddPart(den);
+  }
+
+  // ---- geometry --------------------------------------------------------------------------------------
+  function hull(points) {           // monotone chain, points as [x, y]
+    const pts = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    if (pts.length < 3) return pts;
+    const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lo = [], up = [];
+    for (const p of pts) { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+    for (const p of pts.slice().reverse()) { while (up.length >= 2 && cross(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
+  function inHull(h, x, y) {       // closed test, h counter-clockwise
+    if (h.length === 0) return false;
+    if (h.length === 1) return h[0][0] === x && h[0][1] === y;
+    if (h.length === 2) {
+      const [a, b] = h, c = (b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]);
+      return c === 0 && Math.min(a[0], b[0]) <= x && x <= Math.max(a[0], b[0]) && Math.min(a[1], b[1]) <= y && y <= Math.max(a[1], b[1]);
+    }
+    for (let i = 0; i < h.length; i++) {
+      const a = h[i], b = h[(i + 1) % h.length];
+      if ((b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]) < 0) return false;
+    }
+    return true;
+  }
+
+  // ---- a lattice drawing -----------------------------------------------------------------------------
+  function frameFor(svg, x0, x1, y0, y1, cell) {
+    const pad = 26;
+    const w = (x1 - x0) * cell + pad * 2, h = (y1 - y0) * cell + pad * 2;
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    svg.setAttribute("width", w); svg.setAttribute("height", h);
+    svg.replaceChildren();
+    const X = (x) => pad + (x - x0) * cell, Y = (y) => pad + (y1 - y) * cell;
+    for (let x = x0; x <= x1; x++) el("line", { x1: X(x), y1: Y(y0), x2: X(x), y2: Y(y1), stroke: x === 0 ? css("--line") : css("--faint"), "stroke-width": x === 0 ? 1.4 : 1 }, svg);
+    for (let y = y0; y <= y1; y++) el("line", { x1: X(x0), y1: Y(y), x2: X(x1), y2: Y(y), stroke: y === 0 ? css("--line") : css("--faint"), "stroke-width": y === 0 ? 1.4 : 1 }, svg);
+    return { X, Y };
+  }
+  function axisLabels(svg, f, x1, y1, primes) {
+    const t1 = el("text", { x: f.X(x1) + 4, y: f.Y(0) + 4, "font-size": 11, fill: css("--muted") }, svg); t1.textContent = "×" + primes[0];
+    const t2 = el("text", { x: f.X(0) - 6, y: f.Y(y1) - 8, "font-size": 11, fill: css("--muted"), "text-anchor": "middle" }, svg); t2.textContent = "×" + primes[1];
+  }
+
+  // ======================================== 1. region ===================================================
+  const rAxes = document.getElementById("rAxes"), rQ = document.getElementById("rQ"), rQv = document.getElementById("rQv");
+  AXES.forEach((a, i) => rAxes.add(new Option(`${a[0]} and ${a[1]}`, i)));
+  rQ.max = QS.length - 1; rQ.value = QS.indexOf(125);
+  function drawRegion() {
+    const primes = AXES[+rAxes.value], q = QS[+rQ.value];
+    rQv.textContent = q;
+    const L = Math.log(q), w = primes.map(Math.log);
+    const ax = Math.floor(L / w[0] + 1e-9), ay = Math.floor(L / w[1] + 1e-9);
+    const x0 = -ax - 1, x1 = ax + 1, y0 = -ay - 1, y1 = ay + 1;
+    const cell = Math.max(22, Math.min(44, Math.floor(620 / (x1 - x0 + 1))));
+    const svg = document.getElementById("rSvg");
+    const f = frameFor(svg, x0, x1, y0, y1, cell);
+    const allowed = [];
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+      if (intervalOdd([x, y], primes) <= BigInt(q)) allowed.push([x, y]);
+    }
+    const h = hull(allowed);
+    el("polygon", { points: h.map(([x, y]) => f.X(x) + "," + f.Y(y)).join(" "), fill: css("--hull"), stroke: css("--p"), "stroke-width": 1.2 }, svg);
+    const A = L / w[0], B = L / w[1];
+    const R = [[A, 0], [0, B], [-A, B], [-A, 0], [0, -B], [A, -B]];
+    el("polygon", { points: R.map(([x, y]) => f.X(x) + "," + f.Y(y)).join(" "), fill: css("--region"), stroke: css("--plus"), "stroke-width": 1.4, "stroke-dasharray": "5 4" }, svg);
+    const aset = new Set(allowed.map(([x, y]) => key(x, y)));
+    let inside = 0;
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+      const ok = aset.has(key(x, y));
+      if (inHull(h, x, y)) inside++;
+      const c = el("circle", { cx: f.X(x), cy: f.Y(y), r: ok ? 5 : 3, fill: ok ? css("--plus") : css("--faint"), stroke: ok ? "none" : css("--line") }, svg);
+      const t = el("title", {}, c);
+      const r = ratioOf([x, y], primes);
+      t.textContent = `${ratioStr(r)}  (${primes[0]}^${x} · ${primes[1]}^${y}), odd limit ${intervalOdd([x, y], primes)}`;
+    }
+    axisLabels(svg, f, x1, y1, primes);
+    document.getElementById("rStats").innerHTML =
+      `<span class="chip">${allowed.length} allowed intervals</span>` +
+      `<span class="chip">${inside} lattice points in their hull</span>` +
+      `<span class="chip ${inside === allowed.length ? "ok" : "no"}">${inside === allowed.length ? "hull adds no points" : "hull adds points"}</span>`;
+  }
+  rAxes.addEventListener("change", drawRegion);
+  rQ.addEventListener("input", drawRegion);
+
+  // ======================================== shared factor math ==========================================
+  // a factor or set: Map key "x,y" -> coefficient
+  const toMap = (list) => { const m = new Map(); for (const [x, y, c] of list) m.set(key(x, y), c); return m; };
+  const pts = (m) => [...m.entries()].map(([k, c]) => { const [x, y] = k.split(",").map(Number); return [x, y, c]; });
+  function normalize(m) {                    // shift so the lexicographically smallest point is the origin
+    const ps = pts(m); if (!ps.length) return new Map();
+    ps.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const [mx, my, mc] = ps[0], s = mc > 0 ? 1 : -1;
+    return toMap(ps.map(([x, y, c]) => [x - mx, y - my, s * c]));
+  }
+  const flip = (m) => normalize(toMap(pts(m).map(([x, y, c]) => [-x, -y, c])));
+  const sameMap = (a, b) => a.size === b.size && [...a].every(([k, c]) => b.get(k) === c);
+  function mul(a, b) {
+    const r = new Map();
+    for (const [ax, ay, ac] of pts(a)) for (const [bx, by, bc] of pts(b)) {
+      const k = key(ax + bx, ay + by); r.set(k, (r.get(k) || 0) + ac * bc);
+    }
+    for (const [k, c] of [...r]) if (c === 0) r.delete(k);
+    return r;
+  }
+  const shapeOf = (m) => { let p = 0, n = 0; for (const c of m.values()) { if (c > 0) p++; else n++; } return p + "," + n; };
+  function canon(set) {                      // up to transposition and inversion
+    const n = (s) => { const v = s.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]); const [mx, my] = v[0]; return v.map(([x, y]) => (x - mx) + "," + (y - my)).join(" "); };
+    const a = n(set), b = n(set.map(([x, y]) => [-x, -y]));
+    return a < b ? a : b;
+  }
+  function diffs(set) {
+    const out = [];
+    for (const a of set) for (const b of set) if (a !== b) out.push((a[0] - b[0]) + "," + (a[1] - b[1]));
+    return out.sort().join(" ");
+  }
+
+  function drawFactor(svg, m, opts = {}) {
+    const ps = pts(m);
+    const xs = ps.map((p) => p[0]).concat([0]), ys = ps.map((p) => p[1]).concat([0]);
+    const x0 = opts.x0 ?? Math.min(...xs) - 1, x1 = opts.x1 ?? Math.max(...xs) + 1;
+    const y0 = opts.y0 ?? Math.min(...ys) - 1, y1 = opts.y1 ?? Math.max(...ys) + 1;
+    const cell = opts.cell ?? 26;
+    const f = frameFor(svg, x0, x1, y0, y1, cell);
+    const plus = ps.filter((p) => p[2] > 0).map((p) => [p[0], p[1]]);
+    if (plus.length >= 2) {
+      const h = hull(plus);
+      el(h.length >= 3 ? "polygon" : "polyline", { points: h.map(([x, y]) => f.X(x) + "," + f.Y(y)).join(" "), fill: h.length >= 3 ? css("--region") : "none", stroke: css("--plus"), "stroke-width": 1.2 }, svg);
+    }
+    if (opts.click) {
+      for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+        const r = el("rect", { x: f.X(x) - cell / 2, y: f.Y(y) - cell / 2, width: cell, height: cell, fill: "transparent", style: "cursor: pointer", tabindex: 0 }, svg);
+        r.addEventListener("click", () => opts.click(x, y));
+        r.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); opts.click(x, y); } });
+      }
+    }
+    for (const [x, y, c] of ps) {
+      const g = el("g", { style: "pointer-events: none" }, svg);
+      const bad = opts.setCheck && c !== 1;
+      const color = bad ? css("--bad") : (opts.color || (c > 0 ? css("--plus") : css("--minus")));
+      if (c > 0) el("circle", { cx: f.X(x), cy: f.Y(y), r: Math.min(8, cell * 0.3), fill: color }, g);
+      else el("circle", { cx: f.X(x), cy: f.Y(y), r: Math.min(8, cell * 0.3) - 1, fill: css("--panel"), stroke: color, "stroke-width": 2.2 }, g);
+      if (c !== 1 && c !== -1 || (opts.setCheck && c !== 1)) {
+        const t = el("text", { x: f.X(x) + cell * 0.32, y: f.Y(y) - cell * 0.28, "font-size": 11, fill: color, "font-weight": 600 }, g);
+        t.textContent = String(c);
+      }
+    }
+    if (opts.primes) axisLabels(svg, f, x1, y1, opts.primes);
+    return f;
+  }
+
+  // ======================================== 2. gallery ==================================================
+  const SHAPES = [
+    { name: "2,1", note: "Three points on a line; the minus point is off-center, so the flip differs.", v: [[0, 0, 1], [3, 0, 1], [1, 0, -1]] },
+    { name: "3,0", note: "A plain triad: root, fifth, major third (1, 3/2, 5/4 on the 3·5 axes). Its flip is the minor triad.", v: [[0, 0, 1], [1, 0, 1], [0, 1, 1]] },
+    { name: "3,1", note: "Plus points around a minus point on one edge: x² − x + y + 1.", v: [[0, 0, 1], [2, 0, 1], [0, 1, 1], [1, 0, -1]] },
+    { name: "3,1", note: "A two-dimensional flipped factor: x² − xy + y² + 1 (minus point in the middle of an edge).", v: [[0, 0, 1], [2, 0, 1], [0, 2, 1], [1, 1, -1]] },
+    { name: "4,0", note: "A plain 4-note chord; any shape that is not centrally symmetric can be flipped.", v: [[0, 0, 1], [1, 0, 1], [2, 0, 1], [0, 1, 1]] },
+    { name: "4,2", note: "Two minus points inside a four-point outline.", v: [[0, 0, 1], [3, 0, 1], [0, 2, 1], [2, 2, 1], [1, 1, -1], [2, 1, -1]] },
+  ];
+  const gallery = document.getElementById("gallery");
+  function drawGallery() {
+    gallery.replaceChildren();
+    for (const s of SHAPES) {
+      const V = normalize(toMap(s.v)), Vs = flip(V);
+      const card = document.createElement("div"); card.className = "card";
+      const head = document.createElement("h3"); head.innerHTML = `Shape <span class="mono">${s.name}</span>`;
+      const pair = document.createElement("div"); pair.className = "pair";
+      const xs = [...pts(V), ...pts(Vs)].map((p) => p[0]), ys = [...pts(V), ...pts(Vs)].map((p) => p[1]);
+      const box = { x0: Math.min(0, ...xs) - 1, x1: Math.max(...xs) + 1, y0: Math.min(0, ...ys) - 1, y1: Math.max(...ys) + 1, cell: 22 };
+      const a = el("svg", { role: "img", "aria-label": "factor V" }), b = el("svg", { role: "img", "aria-label": "flipped factor V star" });
+      drawFactor(a, V, box); drawFactor(b, Vs, box);
+      const la = document.createElement("div"); la.className = "poly"; la.textContent = "V";
+      const lb = document.createElement("div"); lb.className = "poly"; lb.textContent = "V*";
+      const wa = document.createElement("div"); wa.append(a, la);
+      const wb = document.createElement("div"); wb.append(b, lb);
+      pair.append(wa, wb);
+      const note = document.createElement("p"); note.className = "note"; note.textContent = s.note;
+      card.append(head, pair, note);
+      gallery.append(card);
+    }
+  }
+
+  // ======================================== 3. builder ==================================================
+  const PRESETS = [
+    { name: "Triad flipped (9 notes)", axes: 0,
+      note: "U is three roots; V is the major triad. P puts a major triad on each root, Q a minor one. Both are 9-note sets with the same intervals.",
+      u: [[0, 0, 1], [2, 0, 1], [0, 2, 1]], v: [[0, 0, 1], [1, 0, 1], [0, 1, 1]] },
+    { name: "Two-dimensional factor (10 notes)", axes: 0,
+      note: "V = x² − xy + y² + 1 (shape 3,1) on a 5-point U. The minus point is cancelled in both P and Q.",
+      u: [[2, 0, 1], [1, 1, 1], [1, 0, 1], [0, 2, 1], [0, 1, 1]], v: [[2, 0, 1], [1, 1, -1], [0, 2, 1], [0, 0, 1]] },
+    { name: "Signed U (10 notes)", axes: 0,
+      note: "Both factors have a minus point: V = x² − x + y + 1, and U has one −1. The search allows this with --max-neg.",
+      u: [[6, 1, 1], [5, 1, 1], [3, 1, -1], [3, 0, 1], [2, 0, 1], [1, 2, 1], [0, 2, 1]], v: [[2, 0, 1], [1, 0, -1], [0, 1, 1], [0, 0, 1]] },
+    { name: "Not a pair: V is its own flip", axes: 0,
+      note: "A centrally symmetric V equals its flip, so Q is just P. The search skips these factors.",
+      u: [[0, 0, 1], [2, 1, 1]], v: [[0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]] },
+  ];
+  const bPreset = document.getElementById("bPreset"), bAxes = document.getElementById("bAxes");
+  PRESETS.forEach((p, i) => bPreset.add(new Option(p.name, i)));
+  AXES.forEach((a, i) => bAxes.add(new Option(`${a[0]} and ${a[1]}`, i)));
+  let U = new Map(), V = new Map();
+  const UB = { x0: -1, x1: 7, y0: -2, y1: 4, cell: 30 }, VB = { x0: -1, x1: 4, y0: -2, y1: 3, cell: 30 };
+  function loadPreset(i) {
+    const p = PRESETS[i];
+    U = toMap(p.u); V = toMap(p.v); bAxes.value = p.axes;
+    document.getElementById("bPresetNote").textContent = p.note;
+    drawBuilder();
+  }
+  const cycleU = { 0: 1, 1: 2, 2: -1, "-1": 0 }, cycleV = { 0: 1, 1: -1, "-1": 0 };
+  function toggle(m, x, y, cyc) {
+    const k = key(x, y), c = m.get(k) || 0, n = cyc[c] ?? 0;
+    if (n === 0) m.delete(k); else m.set(k, n);
+    document.getElementById("bPresetNote").textContent = "Edited. Pick an example to start over.";
+    drawBuilder();
+  }
+  function chordText(set, primes) {
+    if (!set.length) return "";
+    const s = set.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const [mx, my] = s[0];
+    return s.map(([x, y]) => ratioOf([x - mx, y - my], primes))
+      .sort((a, b) => ratioVal(a) - ratioVal(b)).map(ratioStr).join("  ");
+  }
+  function drawBuilder() {
+    const primes = AXES[+bAxes.value];
+    drawFactor(document.getElementById("uSvg"), U, { ...UB, click: (x, y) => toggle(U, x, y, cycleU), primes });
+    drawFactor(document.getElementById("vSvg"), V, { ...VB, click: (x, y) => toggle(V, x, y, cycleV), primes });
+    const Vn = V.size ? normalize(V) : new Map();
+    const Vs = V.size ? flip(V) : new Map();
+    const vsx = pts(Vs).map((p) => p[0]), vsy = pts(Vs).map((p) => p[1]);
+    drawFactor(document.getElementById("vsSvg"), Vs, { x0: Math.min(-1, ...vsx), x1: Math.max(3, ...vsx) + 1, y0: Math.min(-1, ...vsy) - 1, y1: Math.max(2, ...vsy) + 1, cell: 22 });
+    const P = mul(U, V), Q = mul(U, Vs);
+    const pAll = pts(P), qAll = pts(Q);
+    const box = (a) => { const xs = a.map((p) => p[0]).concat([0]), ys = a.map((p) => p[1]).concat([0]); return { x0: Math.min(...xs) - 1, x1: Math.max(...xs) + 1, y0: Math.min(...ys) - 1, y1: Math.max(...ys) + 1, cell: 28 }; };
+    drawFactor(document.getElementById("pSvg"), P, { ...box(pAll), color: css("--p"), setCheck: true, primes });
+    drawFactor(document.getElementById("qSvg"), Q, { ...box(qAll), color: css("--q"), setCheck: true, primes });
+    const pSet = pAll.every((p) => p[2] === 1) && pAll.length > 0, qSet = qAll.every((p) => p[2] === 1) && qAll.length > 0;
+    const sp = pAll.map(([x, y]) => [x, y]), sq = qAll.map(([x, y]) => [x, y]);
+    const selfFlip = V.size > 0 && sameMap(Vn, Vs);
+    const distinct = pSet && qSet && canon(sp) !== canon(sq);
+    const sameInt = pSet && qSet && diffs(sp) === diffs(sq);
+    let qmax = 0n;
+    if (pSet) for (const a of sp) for (const b of sp) if (a !== b) { const o = intervalOdd([a[0] - b[0], a[1] - b[1]], primes); if (o > qmax) qmax = o; }
+    const chips = [];
+    chips.push(`<span class="chip">V shape ${V.size ? shapeOf(V) : "–"}</span>`);
+    if (selfFlip) chips.push(`<span class="chip no">V equals its flip</span>`);
+    chips.push(`<span class="chip ${pSet ? "ok" : "no"}">P ${pSet ? "is a set of " + sp.length + " notes" : "is not a set"}</span>`);
+    chips.push(`<span class="chip ${qSet ? "ok" : "no"}">Q ${qSet ? "is a set of " + sq.length + " notes" : "is not a set"}</span>`);
+    if (pSet && qSet) {
+      chips.push(`<span class="chip ${sameInt ? "ok" : "no"}">${sameInt ? "same intervals" : "intervals differ"}</span>`);
+      chips.push(`<span class="chip ${distinct ? "ok" : "no"}">${distinct ? "Z-pair: different sets" : "Q is P moved or turned over"}</span>`);
+      chips.push(`<span class="chip">q = ${qmax}</span>`);
+    }
+    document.getElementById("bStats").innerHTML = chips.join("");
+    document.getElementById("pChord").textContent = pSet ? chordText(sp, primes) : "";
+    document.getElementById("qChord").textContent = qSet ? chordText(sq, primes) : "";
+  }
+  bPreset.addEventListener("change", () => loadPreset(+bPreset.value));
+  bAxes.addEventListener("change", drawBuilder);
+  document.getElementById("bClearU").addEventListener("click", () => { U = new Map([[key(0, 0), 1]]); drawBuilder(); });
+  document.getElementById("bClearV").addEventListener("click", () => { V = new Map([[key(0, 0), 1]]); drawBuilder(); });
+
+  // ======================================== 4. universal patterns =======================================
+  // -- pure (also read by the check script) --
+  const PR5 = [3, 5, 7, 11, 13];
+  const STEPS = [["3", [1, 0, 0, 0, 0]], ["5", [0, 1, 0, 0, 0]], ["7", [0, 0, 1, 0, 0]], ["11", [0, 0, 0, 1, 0]], ["13", [0, 0, 0, 0, 1]],
+    ["5/3", [-1, 1, 0, 0, 0]], ["7/3", [-1, 0, 1, 0, 0]], ["7/5", [0, -1, 1, 0, 0]], ["9/5", [2, -1, 0, 0, 0]], ["9/7", [2, 0, -1, 0, 0]],
+    ["11/9", [-2, 0, 0, 1, 0]], ["13/11", [0, 0, 0, -1, 1]]];
+  // zgen types redrawn on their smallest grid (a whole-number change of grid, so the same pattern):
+  // 6 notes: (a, b) -> (-4a - b, a) of k6 type 1; 7 notes: (a, b) -> (-9a - b, a) of k7 type 19
+  const PATTERNS = {
+    6: { note: "zgen type 1, the only 6-note pattern, shown on its smallest grid.",
+      P: [[0, 0], [0, 1], [1, -2], [2, -2], [2, 0], [3, -1]], Q: [[0, 0], [0, 1], [1, 2], [2, -1], [2, 1], [3, -1]] },
+    7: { note: "zgen type 19, the only 7-note pattern that needs two directions, shown on its smallest grid. The others lie on one line (below).",
+      P: [[0, 0], [3, 0], [5, 0], [6, 0], [0, 1], [4, 1], [5, 1]], Q: [[0, 0], [1, 0], [3, 0], [6, 0], [0, 1], [1, 1], [5, 1]] },
+  };
+  const LINES = [
+    { name: "zgen type 1", P: [0, 1, 2, 5, 7, 9, 12], Q: [0, 2, 4, 5, 7, 11, 12] },
+    { name: "#7", isNew: true, P: [0, 2, 3, 7, 9, 10, 15], Q: [0, 2, 7, 8, 9, 12, 15] },
+    { name: "#11", isNew: true, P: [0, 1, 3, 4, 9, 11, 15], Q: [0, 1, 7, 9, 11, 12, 15] },
+    { name: "#13", isNew: true, P: [0, 1, 4, 5, 11, 13, 16], Q: [0, 1, 5, 10, 12, 13, 16] },
+    { name: "#6", isNew: true, P: [0, 2, 4, 7, 11, 12, 17], Q: [0, 2, 7, 9, 12, 13, 17] },
+  ];
+  const place = (set, s1, s2) => set.map(([a, b]) => s1.map((e, i) => a * e + b * s2[i]));
+  const vdiffs = (v) => { const out = []; for (const a of v) for (const b of v) if (a !== b) out.push(a.map((e, i) => e - b[i]).join(",")); return out.sort().join(" "); };
+  const lex = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; };
+  const fromLow = (v) => { const m = v.slice().sort(lex)[0]; return v.map((p) => p.map((e, i) => e - m[i])); };
+  function vcanon(v) {                       // up to transposition and inversion
+    const n = (s) => fromLow(s).sort(lex).map(String).join(" ");
+    const a = n(v), b = n(v.map((p) => p.map((e) => -e)));
+    return a < b ? a : b;
+  }
+  function qOf(...members) {
+    let q = 0n;
+    for (const v of members) for (const a of v) for (const b of v) { const o = intervalOdd(a.map((e, i) => e - b[i]), PR5); if (o > q) q = o; }
+    return q;
+  }
+  // -- end pure --
+  const gPat = document.getElementById("gPat"), gS1 = document.getElementById("gS1"), gS2 = document.getElementById("gS2");
+  STEPS.forEach(([name], i) => { gS1.add(new Option(name, i)); gS2.add(new Option(name, i)); });
+  gS1.value = 0; gS2.value = 1;
+  const chordOf = (v) => fromLow(v).map((p) => ratioOf(p, PR5)).sort((a, b) => ratioVal(a) - ratioVal(b)).map(ratioStr).join("  ");
+  function drawUniversal() {
+    const pat = PATTERNS[gPat.value], s1 = STEPS[+gS1.value], s2 = STEPS[+gS2.value];
+    document.getElementById("gNote").textContent = pat.note;
+    const all = [...pat.P, ...pat.Q], xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+    const box = { x0: Math.min(0, ...xs) - 1, x1: Math.max(...xs) + 1, y0: Math.min(0, ...ys) - 1, y1: Math.max(...ys) + 1, cell: 22, primes: [s1[0], s2[0]] };
+    const asMap = (s) => toMap(s.map(([x, y]) => [x, y, 1]));
+    drawFactor(document.getElementById("gPSvg"), asMap(pat.P), { ...box, color: css("--p") });
+    drawFactor(document.getElementById("gQSvg"), asMap(pat.Q), { ...box, color: css("--q") });
+    const vp = place(pat.P, s1[1], s2[1]), vq = place(pat.Q, s1[1], s2[1]);
+    const clash = [vp, vq].some((v) => new Set(v.map(String)).size < v.length);
+    const uniq = (v) => [...new Map(v.map((p) => [String(p), p])).values()];   // the notes actually sounding
+    const same = vdiffs(uniq(vp)) === vdiffs(uniq(vq)), distinct = vcanon(vp) !== vcanon(vq);
+    const chips = [];
+    if (clash) chips.push(`<span class="chip no">these two steps make notes coincide; choose others</span>`);
+    chips.push(`<span class="chip ${same ? "ok" : "no"}">${same ? "same intervals" : "intervals differ"}</span>`);
+    if (same && !clash) chips.push(`<span class="chip ${distinct ? "ok" : "no"}">${distinct ? "Z-pair: different sets" : "Q is P moved or turned over"}</span>`);
+    if (!clash) chips.push(`<span class="chip">q = ${qOf(vp, vq).toLocaleString("en-US")}</span>`);
+    document.getElementById("gStats").innerHTML = chips.join("");
+    document.getElementById("gPChord").textContent = "P  " + chordOf(vp);
+    document.getElementById("gQChord").textContent = "Q  " + chordOf(vq);
+  }
+  function drawLines() {
+    const host = document.getElementById("gLines");
+    host.replaceChildren();
+    for (const L of LINES) {
+      const span = Math.max(...L.P, ...L.Q), cell = 16;
+      const card = document.createElement("div"); card.className = "card";
+      const head = document.createElement("h3"); head.textContent = L.name + " ";
+      if (L.isNew) { const c = document.createElement("span"); c.className = "chip ok"; c.textContent = "new (2026-11-25)"; head.append(c); }
+      const frame = document.createElement("div"); frame.className = "frame";
+      const svg = el("svg", { role: "img", "aria-label": "Pattern " + L.name + " on one line" }, frame);
+      const f = frameFor(svg, 0, span, 0, 1, cell);
+      [[L.P, 1, "--p", "P"], [L.Q, 0, "--q", "Q"]].forEach(([s, y, c, label]) => {
+        for (const x of s) el("circle", { cx: f.X(x), cy: f.Y(y), r: Math.min(8, cell * 0.3), fill: css(c) }, svg);
+        const t = el("text", { x: f.X(0) - 14, y: f.Y(y) + 4, "font-size": 11, fill: css(c), "text-anchor": "middle" }, svg); t.textContent = label;
+      });
+      const pos = document.createElement("div"); pos.className = "poly"; pos.textContent = `P ${L.P.join(" ")}  ·  Q ${L.Q.join(" ")}`;
+      const note = document.createElement("p"); note.className = "note";
+      note.textContent = `Span ${span}. First appears at q = 3^${span} = ${bpow(3, span).toLocaleString("en-US")} (chain of fifths).`;
+      card.append(head, frame, pos, note);
+      host.append(card);
+    }
+  }
+  [gPat, gS1, gS2].forEach((s) => s.addEventListener("change", drawUniversal));
+
+  function drawAll() { drawRegion(); drawGallery(); drawBuilder(); drawUniversal(); drawLines(); }
+  loadPreset(0);
+  drawRegion(); drawGallery(); drawUniversal(); drawLines();
+  // redraw when the theme changes (SVG colors are read from the tokens)
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+  new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+})();
+</script>

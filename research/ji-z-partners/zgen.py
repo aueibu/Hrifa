@@ -19,7 +19,9 @@ Examples:
   pypy3 zgen.py directsum  --primes 3 5 7 --odd 27 --sizes 3x3 3x4 --out run_7lim_odd27_ds
   pypy3 zgen.py selftest   # reproduces known 5-limit odd-123 results (k=6: 7 families; 3x3: 2823)
 """
-import argparse, itertools, json, os, sys, time
+import argparse, hashlib, itertools, json, os, sys, time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures.process import BrokenProcessPool
 from fractions import Fraction
 from math import gcd, comb
 from multiprocessing import Pool, cpu_count
@@ -505,28 +507,49 @@ def directsum(a):
 # `place` then lays each type into a real gamut: it maps the type's r basis intervals to intervals of
 # the gamut in every way, and keeps the placements where both P and Q fit and stay distinct.
 
-def _nullspace(rows, n):
-    """integer basis of {x in Q^n : rows . x = 0}"""
-    M = [[Fraction(c) for c in r] for r in rows]
-    piv_cols, r = [], 0
+def _int_rref(rows, n):
+    """reduced row echelon form in integers only (no Fraction): returns (pivot columns, rows), each row
+    primitive with a positive pivot and zeros in every other pivot column. The reduced form of a row
+    space is unique, so this equals the old Fraction version row for row (it was 3/4 of the run time)."""
+    M = [list(r) for r in rows]
+    piv, r = [], 0
     for c in range(n):
         p = next((i for i in range(r, len(M)) if M[i][c] != 0), None)
         if p is None: continue
         M[r], M[p] = M[p], M[r]
-        pv = M[r][c]
-        M[r] = [x / pv for x in M[r]]
+        pr = M[r]
+        pv = pr[c]
         for i in range(len(M)):
-            if i != r and M[i][c] != 0:
+            if i != r:
                 f = M[i][c]
-                M[i] = [x - f * y for x, y in zip(M[i], M[r])]
-        piv_cols.append(c); r += 1
+                if f:
+                    row = [pv * x - f * y for x, y in zip(M[i], pr)]
+                    g = 0
+                    for x in row: g = gcd(g, x)
+                    if g > 1: row = [x // g for x in row]
+                    M[i] = row
+        piv.append(c); r += 1
+    out = []
+    for i in range(r):
+        row = M[i]
+        g = 0
+        for x in row: g = gcd(g, x)
+        if row[piv[i]] < 0: g = -g
+        out.append(tuple(x // g for x in row))
+    return piv, out
+
+
+def _nullspace(rows, n):
+    """integer basis of {x in Q^n : rows . x = 0}"""
+    piv_cols, R = _int_rref(rows, n)
     free = [c for c in range(n) if c not in piv_cols]
     basis = []
     for fc in free:
         x = [Fraction(0)] * n
         x[fc] = Fraction(1)
         for i, pc in enumerate(piv_cols):
-            x[pc] = -M[i][fc]
+            if R[i][fc]:
+                x[pc] = Fraction(-R[i][fc], R[i][pc])
         den = 1
         for v in x: den = den * v.denominator // gcd(den, v.denominator)
         basis.append([int(v * den) for v in x])
@@ -582,6 +605,11 @@ def _nondegenerate(sym, B):
 def _rref_key(rows, n):
     """canonical form of the equation system (reduced row echelon form, primitive integer rows).
     Systems with the same key have the same solutions, so the search below them is identical."""
+    return tuple(_int_rref(rows, n)[1])
+
+
+def _rref_key_frac(rows, n):
+    """the original Fraction version of _rref_key, kept only as a reference to test _int_rref against"""
     M = [[Fraction(c) for c in r] for r in rows]
     r = 0
     for c in range(n):
@@ -606,17 +634,30 @@ def _rref_key(rows, n):
     return tuple(out)
 
 
-def _dfs(sym, rows, stage, flip, out, stats):
+def _dfs(sym, rows, stage, flip, out, stats, path=()):
     """stage 'P': cancel P's minus terms; stage 'Q': then cancel Q's.
     Pruning: (1) a system already explored (same solutions, reached in another order) is skipped;
     (2) labels that no equation mentions yet are interchangeable, so only the lowest-numbered one
-    of each group is tried as a new cancellation partner."""
-    key = (stage, _rref_key(rows, sym.n))
+    of each group is tried as a new cancellation partner.
+    Checkpoints (stats["ck"], optional): `path` names this node by the branch taken at each level
+    (an index into the fixed plus-term list, or "Q" for the switch to stage Q); the order is
+    deterministic, so a path names the same subtree in every run. Finished subtrees up to depth
+    ck["depth"] are recorded and skipped when a run resumes."""
+    # a 16-byte digest of the canonical system, not the system itself: the set of explored systems
+    # can hold millions of entries (collision chance ~ n^2 / 2^129, negligible)
+    key = hashlib.blake2b(repr((stage, _rref_key(rows, sym.n))).encode(), digest_size=16).digest()
     if key in stats["seen"]:
         stats["skipped"] += 1
         return
+    if len(stats["seen"]) >= stats.get("seen_max", 1 << 62):
+        # the set only prunes repeated work, so clearing it keeps results exact (some work repeats)
+        stats["seen"].clear()
+        stats["cleared"] = stats.get("cleared", 0) + 1
     stats["seen"].add(key)
     stats["nodes"] += 1
+    if stats.get("report") and time.time() - stats["t_last"] > 60:
+        stats["t_last"] = time.time()
+        stats["report"](stats)
     B = _realise(rows, sym.n)
     if not B or not _nondegenerate(sym, B):
         return
@@ -636,7 +677,13 @@ def _dfs(sym, rows, stage, flip, out, stats):
                 free = [j for j in g if j not in touched]
                 first_free.append((set(free), free[0] if free else None))
             tried = set()
-            for ps in plus_syms:
+            depth = len(rows)
+            for j, ps in enumerate(plus_syms):
+                if depth < 2 and stage == "P":
+                    # rough progress: which branch the search is in at the first two levels
+                    prog = stats.setdefault("prog", [])
+                    del prog[depth:]
+                    prog.append((j + 1, len(plus_syms)))
                 if any(any(ps[j] != 0 and j in free and j != f0 for j in free) for free, f0 in first_free):
                     stats["sym_skipped"] += 1
                     continue
@@ -645,18 +692,33 @@ def _dfs(sym, rows, stage, flip, out, stats):
                 tried.add(row)
                 q = _place_terms([(ps, 1)], B).popitem()[0]
                 if q == pt0: continue
-                _dfs(sym, rows + [list(row)], stage, flip, out, stats)
+                _ck_child(sym, rows + [list(row)], stage, flip, out, stats, path + (j,))
             return
         if any(c > 1 for c in val.values()):
             return
     if stage == "P":
-        _dfs(sym, rows, "Q", flip, out, stats)
+        _ck_child(sym, rows, "Q", flip, out, stats, path + ("Q",))
         return
     P = [pt for pt, c in _place_terms(sym.P(), B).items() if c == 1]
     Q = [pt for pt, c in _place_terms(sym.Q(flip), B).items() if c == 1]
     if len(P) != len(Q) or canon(P) == canon(Q):
         return
-    out.append((P, Q, flip, len(B)))
+    out(P, Q, flip, len(B))
+
+
+def _ck_child(sym, rows, stage, flip, out, stats, child):
+    """recurse into one child, skipping it if a checkpoint says it was finished, recording it after"""
+    ck = stats.get("ck")
+    if ck is None or len(child) > ck["depth"]:
+        _dfs(sym, rows, stage, flip, out, stats, child)
+        return
+    if child in ck["done"]:
+        ck["skipped"] += 1
+        return
+    _dfs(sym, rows, stage, flip, out, stats, child)
+    ck["done"].add(child)
+    if time.time() - ck["t_write"] > ck["every"]:
+        ck["write"]()
 
 
 def _joint_basis_coords(P, Q):
@@ -696,29 +758,175 @@ def _joint_basis_coords(P, Q):
     return r, best
 
 
+def _types_job(job):
+    """one independent search: one shape, one flip. Each search has its own pruning state (as it
+    always had), so running them in parallel loses no pruning."""
+    i, nu, vp, vm, flip, seen_max, ckopt = job
+    t = time.time()
+    sym = _Sym(nu, vp, vm)
+    # patterns are reduced to their type as soon as they are found (first occurrence kept, in order),
+    # so memory holds one entry per type instead of every raw pattern
+    pats = {}
+    count = [0]
+    untyped = []   # patterns whose type key could not be built (no basis of own intervals at the minimal det)
+    n_untyped = [0]
+    ck = None
+    if ckopt:
+        ck_dir, depth, every = ckopt
+        base = os.path.join(ck_dir, f"search{i}_U{nu}_V{vp}p{vm}m_{flip}")
+        done_path, ck_path = base + ".done.json", base + ".ckpt.json"
+        if os.path.exists(done_path):
+            with open(done_path) as fh:
+                r = json.load(fh)
+            print(f"    U {nu} x V {vp}+/{vm}-, flip {flip}: already finished (checkpoint)", flush=True)
+            return (i, tuple(r["stats"]), r["count"], [_pat_from_json(p) for p in r["pats"]], r["secs"],
+                    r["n_untyped"], r["untyped"])
+        ck = {"depth": depth, "every": every, "done": set(), "skipped": 0, "t_write": time.time()}
+        if os.path.exists(ck_path):
+            with open(ck_path) as fh:
+                r = json.load(fh)
+            ck["done"] = {tuple(p) for p in r["done"]}
+            for p in r["pats"]:
+                p = _pat_from_json(p)
+                pats[p[0]] = p
+            count[0], n_untyped[0], untyped = r["count"], r["n_untyped"], r["untyped"]
+            print(f"    U {nu} x V {vp}+/{vm}-, flip {flip}: resuming from checkpoint: {len(ck['done']):,} finished "
+                  f"branches, {len(pats)} types so far", flush=True)
+
+        def write_ck():
+            tmp = ck_path + ".tmp"
+            with open(tmp, "w") as fh:
+                json.dump({"done": sorted(list(p) for p in ck["done"]), "pats": [_pat_to_json(p) for p in pats.values()],
+                           "count": count[0], "n_untyped": n_untyped[0], "untyped": untyped}, fh)
+            os.replace(tmp, ck_path)
+            ck["t_write"] = time.time()
+        ck["write"] = write_ck
+
+    def found(P, Q, fl, r):
+        count[0] += 1
+        jb = _joint_basis_coords(P, Q)
+        if jb is None: return
+        rk, key = jb
+        if key is None:
+            n_untyped[0] += 1
+            if len(untyped) < 1000:
+                untyped.append({"rank": rk, "U_notes": nu, "V_plus": vp, "V_minus": vm, "flip": fl,
+                                "P": [list(x) for x in P], "Q": [list(x) for x in Q]})
+            return
+        if key not in pats:
+            pats[key] = (key, rk, len(P), fl)
+
+    def report(st):
+        prog = st.get("prog", [])
+        where = ""
+        if prog:
+            frac, scale = 0.0, 1.0
+            for i, n in prog:
+                frac += (i - 1) / n * scale
+                scale /= n
+            where = "branch " + " > ".join(f"{i}/{n}" for i, n in prog) + f" (~{100 * frac:.0f}%, rough), "
+        print(f"    U {nu} x V {vp}+/{vm}-, flip {flip}: {where}{st['nodes']:,} nodes, {len(st['seen']):,} systems kept, "
+              f"{count[0]:,} patterns, {len(pats)} types, {_rss_mb()} MB, "
+              f"{st.get('cleared', 0)} clears, {time.time()-t:.0f}s", flush=True)
+
+    stats = {"nodes": 0, "skipped": 0, "sym_skipped": 0, "seen": set(), "report": report, "t_last": time.time(),
+             "seen_max": seen_max, "ck": ck}
+    _dfs(sym, [], "P", flip, found, stats)
+    res = (i, (stats["nodes"], stats["skipped"], stats["sym_skipped"]), count[0], list(pats.values()),
+           time.time() - t, n_untyped[0], untyped)
+    if ck is not None:
+        tmp = done_path + ".tmp"
+        with open(tmp, "w") as fh:
+            json.dump({"stats": list(res[1]), "count": res[2], "pats": [_pat_to_json(p) for p in res[3]],
+                       "secs": res[4], "n_untyped": res[5], "untyped": res[6]}, fh)
+        os.replace(tmp, done_path)
+    return res
+
+
+def _pat_to_json(p):
+    key, rk, kp, fl = p
+    return [[list(x) for x in key[0]], [list(x) for x in key[1]], rk, kp, fl]
+
+
+def _pat_from_json(p):
+    A, Bq, rk, kp, fl = p
+    key = (tuple(tuple(x) for x in A), tuple(tuple(x) for x in Bq))
+    return (key, rk, kp, fl)
+
+
+def _rss_mb():
+    try:
+        with open("/proc/self/status") as fh:
+            for line in fh:
+                if line.startswith("VmRSS:"):
+                    return int(line.split()[1]) // 1024
+    except OSError:
+        pass
+    return "?"
+
+
 def types_mode(a):
     out_path = a.out
     os.makedirs(out_path, exist_ok=True)
     results = {}
     t0 = time.time()
-    for nu, vp, vm in a.shape:
-        sym = _Sym(nu, vp, vm)
+    ckopt = None
+    if a.checkpoint:
+        ck_dir = os.path.join(out_path, "ckpt")
+        os.makedirs(ck_dir, exist_ok=True)
+        ckopt = (ck_dir, a.ckpt_depth, a.ckpt_every)
+        print(f"checkpoints in {ck_dir} (branches to depth {a.ckpt_depth}, written every {a.ckpt_every}s); "
+              f"rerun the same command to resume", flush=True)
+    jobs = [(i, nu, vp, vm, flip, a.seen_max, ckopt) for i, ((nu, vp, vm), flip)
+            in enumerate((sh, f) for sh in a.shape for f in ("U", "V"))]
+    w = max(1, min(a.workers, len(jobs)))
+    print(f"{len(jobs)} independent searches (each shape x flip U/V) on {w} worker(s)", flush=True)
+    done = {}
+
+    def finished(res):
+        done[res[0]] = res
+        _, nu, vp, vm, flip, _, _ = jobs[res[0]]
+        print(f"  finished U {nu} x V {vp}+/{vm}-, flip {flip}: {res[1][0]:,} nodes in {res[4]:.0f}s "
+              f"({len(done)}/{len(jobs)} done, {time.time()-t0:.0f}s elapsed)", flush=True)
+
+    if w == 1:
+        for job in jobs:
+            finished(_types_job(job))
+    else:
+        # ProcessPoolExecutor, not Pool: if a worker is killed (for example by the out-of-memory killer)
+        # the run stops with an error instead of waiting forever for the lost search
+        with ProcessPoolExecutor(max_workers=w) as ex:
+            futs = [ex.submit(_types_job, job) for job in jobs]
+            try:
+                for f in as_completed(futs):
+                    finished(f.result())
+            except BrokenProcessPool:
+                print("ERROR: a search process died (out of memory? check `sudo dmesg | tail`); "
+                      "the types run is incomplete and nothing was written", flush=True)
+                sys.exit(3)
+    # merge in the fixed job order, so the output is identical to a one-worker run
+    untyped_all, n_untyped_all = [], 0
+    for i, nu, vp, vm, flip, _, _ in jobs:
+        _, (nodes, skipped, sym_skipped), nfound, pats, secs, n_untyped, untyped = done[i]
+        n_untyped_all += n_untyped
+        untyped_all.extend(untyped)
         k = nu * vp - nu * vm
-        for flip in ("U", "V"):
-            found, stats = [], {"nodes": 0, "skipped": 0, "sym_skipped": 0, "seen": set()}
-            _dfs(sym, [], "P", flip, found, stats)
-            new = 0
-            for P, Q, fl, r in found:
-                jb = _joint_basis_coords(P, Q)
-                if jb is None: continue
-                rk, key = jb
-                if key not in results:
-                    results[key] = {"k": len(P), "rank": rk, "U_notes": nu, "V_plus": vp, "V_minus": vm,
-                                    "flip": fl, "P": [list(x) for x in key[0]], "Q": [list(x) for x in key[1]]}
-                    new += 1
-            print(f"U {nu} notes x V {vp}+/{vm}- (k={k}), flip {flip}: {stats['nodes']:,} search nodes "
-                  f"({stats['skipped']:,} repeats and {stats['sym_skipped']:,} relabellings pruned), "
-                  f"{len(found)} patterns, {new} new types ({time.time()-t0:.0f}s)", flush=True)
+        new = 0
+        for key, rk, kp, fl in pats:
+            if key not in results:
+                results[key] = {"k": kp, "rank": rk, "U_notes": nu, "V_plus": vp, "V_minus": vm,
+                                "flip": fl, "P": [list(x) for x in key[0]], "Q": [list(x) for x in key[1]]}
+                new += 1
+        print(f"U {nu} notes x V {vp}+/{vm}- (k={k}), flip {flip}: {nodes:,} search nodes "
+              f"({skipped:,} repeats and {sym_skipped:,} relabellings pruned), "
+              f"{nfound} patterns, {new} new types ({secs:.0f}s)", flush=True)
+    if n_untyped_all:
+        with open(os.path.join(out_path, "untyped_patterns.jsonl"), "w") as fh:
+            for u in untyped_all:
+                fh.write(json.dumps(u) + "\n")
+        print(f"WARNING: {n_untyped_all:,} patterns had no type key (no basis of their own intervals reaches the "
+              f"minimal determinant); they are NOT in uv_types.jsonl, so placements may miss their families. "
+              f"First {len(untyped_all)} saved to untyped_patterns.jsonl", flush=True)
     with open(os.path.join(out_path, "uv_types.jsonl"), "w") as fh:
         for i, t in enumerate(sorted(results.values(), key=lambda t: (t["k"], t["rank"], t["P"])), 1):
             t["type"] = i
@@ -854,6 +1062,14 @@ def main():
             p.add_argument("--shape", nargs="+", required=True, metavar="U,V+,V-",
                            help="factor sizes, e.g. 3,3,1 = 3-note U times V with 3 plus terms (incl. 0) and 1 minus term")
             p.add_argument("--out", required=True)
+            p.add_argument("--seen-max", type=int, default=10_000_000,
+                           help="explored systems remembered per search (~100 bytes each) before the memory is "
+                                "cleared; only pruning, so results are exact at any value (default 10,000,000)")
+            p.add_argument("--checkpoint", action="store_true",
+                           help="save finished branches and types under OUT/ckpt; rerun the same command to resume "
+                                "after an interruption (output identical to an uninterrupted run)")
+            p.add_argument("--ckpt-depth", type=int, default=3, help="record finished branches down to this depth")
+            p.add_argument("--ckpt-every", type=int, default=30, help="seconds between checkpoint writes")
             continue
         p.add_argument("--primes", type=int, nargs="+", required=True)
         if name == "place":

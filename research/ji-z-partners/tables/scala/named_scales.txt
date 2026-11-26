@@ -1,0 +1,51 @@
+== 6 notes: 3 families
+   4 members collide on a semitone; 2 match no listed scale
+== 7 notes: 22 families
+       2 members  exact    harmonic minor, mode 4
+       2 members  exact    harmonic minor, mode 2
+       1 members  exact    harmonic major, mode 4
+       1 members  exact    harmonic major, mode 2
+   38 members collide on a semitone; 0 match no listed scale
+   both named, q=1215, 5-limit: 1 10/9 32/27 45/32 40/27 27/16 16/9 [harmonic minor, mode 4]  ~  1 9/8 32/27 45/32 40/27 27/16 15/8 [harmonic major, mode 4]
+   both named, q=2187, 7-limit: 1 28/27 32/27 21/16 112/81 27/16 16/9 [harmonic minor, mode 2]  ~  1 9/8 32/27 21/16 112/81 27/16 7/4 [harmonic major, mode 2]
+   both named, q=6561, 7-limit: 1 175/162 32/27 175/128 350/243 27/16 16/9 [harmonic minor, mode 2]  ~  1 192/175 32/27 243/175 256/175 27/16 16/9 [harmonic minor, mode 4]
+   simplest with a named member, q=1215: 1 10/9 32/27 45/32 40/27 27/16 16/9 [harmonic minor, mode 4]  ~  1 9/8 32/27 45/32 40/27 27/16 15/8 [harmonic major, mode 4]
+== 8 notes: 3 families
+   6 members collide on a semitone; 0 match no listed scale
+== 9 notes: 2471 families
+      25 members  exact    Messiaen mode 3, mode 2
+      14 members  exact    Messiaen mode 3
+       7 members  exact    blues nonatonic, mode 7
+       3 members  exact    Messiaen mode 3, mode 3
+       3 members  exact    blues nonatonic, mode 3
+       2 members  exact    blues nonatonic, mode 4
+       1 members  exact    blues nonatonic, mode 5
+       1 members  exact    blues nonatonic, mode 2
+       1 members  exact    blues nonatonic
+       1 members  exact    blues nonatonic, mode 6
+   4518 members collide on a semitone; 366 match no listed scale
+   both named, q=75, 7-limit: 1 21/20 9/8 9/7 27/20 7/5 8/5 42/25 7/4 [Messiaen mode 3, mode 2]  ~  1 8/7 6/5 5/4 10/7 3/2 14/9 16/9 28/15 [Messiaen mode 3]
+   both named, q=135, 7-limit: 1 9/8 6/5 9/7 7/5 3/2 8/5 7/4 27/14 [Messiaen mode 3]  ~  1 15/14 8/7 5/4 4/3 10/7 14/9 12/7 16/9 [Messiaen mode 3, mode 2]
+   both named, q=135, 7-limit: 1 21/20 9/8 9/7 21/16 7/5 8/5 27/16 7/4 [Messiaen mode 3, mode 2]  ~  1 8/7 7/6 5/4 10/7 3/2 14/9 16/9 15/8 [Messiaen mode 3]
+   both named, q=135, 7-limit: 1 16/15 10/9 9/7 4/3 10/7 8/5 12/7 16/9 [Messiaen mode 3, mode 2]  ~  1 15/14 10/9 9/7 4/3 10/7 8/5 5/3 16/9 [Messiaen mode 3, mode 2]
+   both named, q=135, 7-limit: 1 10/9 7/6 9/7 10/7 3/2 8/5 16/9 28/15 [Messiaen mode 3]  ~  1 21/20 7/6 9/7 27/20 3/2 8/5 42/25 28/15 [Messiaen mode 3, mode 3]
+   both named, q=147, 7-limit: 1 9/8 5/4 21/16 10/7 3/2 12/7 7/4 15/8 [blues nonatonic, mode 5]  ~  1 21/20 8/7 7/6 4/3 7/5 3/2 8/5 7/4 [blues nonatonic, mode 7]
+   simplest with a named member, q=65: 1 13/12 11/10 13/10 4/3 22/15 5/3 26/15 11/6 [collides]  ~  1 13/12 11/10 5/4 13/10 11/8 13/8 5/3 11/6 [Messiaen mode 3, mode 2]
+== 10 notes: 61 families
+   120 members collide on a semitone; 2 match no listed scale
+== 12 notes: 4631 families
+      40 members  exact    chromatic
+   9222 members collide on a semitone; 0 match no listed scale
+   both named, q=125, 7-limit: 1 25/24 9/8 6/5 5/4 21/16 7/5 3/2 25/16 5/3 7/4 15/8 [chromatic]  ~  1 15/14 8/7 6/5 5/4 4/3 10/7 3/2 8/5 5/3 9/5 48/25 [chromatic]
+   both named, q=135, 7-limit: 1 15/14 9/8 6/5 9/7 4/3 7/5 3/2 8/5 5/3 7/4 27/14 [chromatic]  ~  1 21/20 9/8 7/6 9/7 27/20 7/5 3/2 8/5 42/25 7/4 28/15 [chromatic]
+   both named, q=175, 7-limit: 1 15/14 8/7 6/5 9/7 48/35 7/5 3/2 8/5 5/3 25/14 40/21 [chromatic]  ~  1 15/14 8/7 7/6 5/4 4/3 7/5 3/2 8/5 42/25 9/5 48/25 [chromatic]
+   both named, q=189, 7-limit: 1 25/24 8/7 6/5 9/7 27/20 10/7 3/2 8/5 5/3 9/5 15/8 [chromatic]  ~  1 25/24 10/9 7/6 5/4 21/16 25/18 35/24 8/5 5/3 9/5 15/8 [chromatic]
+   both named, q=189, 7-limit: 1 21/20 10/9 7/6 5/4 4/3 25/18 3/2 8/5 5/3 9/5 28/15 [chromatic]  ~  1 27/25 8/7 6/5 9/7 4/3 10/7 3/2 8/5 5/3 9/5 48/25 [chromatic]
+   both named, q=225, 7-limit: 1 16/15 28/25 7/6 9/7 4/3 7/5 3/2 8/5 12/7 9/5 28/15 [chromatic]  ~  1 15/14 8/7 6/5 5/4 4/3 10/7 3/2 14/9 12/7 16/9 28/15 [chromatic]
+   simplest with a named member, q=125: 1 25/24 9/8 6/5 5/4 21/16 7/5 3/2 25/16 5/3 7/4 15/8 [chromatic]  ~  1 15/14 8/7 6/5 5/4 4/3 10/7 3/2 8/5 5/3 9/5 48/25 [chromatic]
+== 14 notes: 24 families
+   48 members collide on a semitone; 0 match no listed scale
+== 15 notes: 2295 families
+   4590 members collide on a semitone; 0 match no listed scale
+== 16 notes: 204 families
+   408 members collide on a semitone; 0 match no listed scale

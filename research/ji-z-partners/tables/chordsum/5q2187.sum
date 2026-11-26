@@ -1,0 +1,15 @@
+# 5q2187: 13700 families, chord sums 11839 (86.42%)
+#   by notes (chord sums / all): 6: 0/5, 7: 0/3, 8: 0/7, 9: 1594/1687, 10: 0/152, 11: 0/1, 12: 5049/5541, 14: 0/188, 15: 4608/5422, 16: 588/694
+#   (A, U) sizes: 3x3: 1594, 3x4: 5049, 3x5: 4608, 4x4: 588
+#   not chord sum: 481  V 3,0 U 7 terms min -1 | V min 1
+#   not chord sum: 389  V 3,0 U 6 terms min -1 | V min 1
+#   not chord sum: 227  V 4,1 U 5 terms min 1 | V min -1
+#   not chord sum: 180  V 3,1 U 7 terms min 1 | V min -1
+#   not chord sum: 144  V 3,1 U 5 terms min 1 | V min -1
+#   not chord sum: 89  V 3,0 U 5 terms min -1 | V min 1
+#   not chord sum: 58  V 3,0 U 9 terms min -1 | V min 1
+#   not chord sum: 57  V 3,1 U 8 terms min 1 | V min -1
+#   not chord sum: 50  V 5,0 U 7 terms min -1 | V min 1
+#   not chord sum: 48  V 4,0 U 6 terms min -1 | V min 1
+#   not chord sum: 45  V 4,0 U 5 terms min -1 | V min 1
+#   not chord sum: 33  V 3,0 U 8 terms min -1 | V min 1

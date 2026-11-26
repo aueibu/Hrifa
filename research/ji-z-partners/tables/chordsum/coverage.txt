@@ -1,0 +1,68 @@
+5q729: 2,376 families; chord sums 2,138; holes (1 hole, 3-4-note chord) 126 (+4 also hole-shaped under another split); explained 2,264 (95.29%); left 112
+       47  G2 merge 1: |T| 5, |S+| 3, |S-| 1
+       14  G2 merge 3: |T| 7, |S+| 3, |S-| 1
+       11  G2 merge 1: |T| 5, |S+| 4, |S-| 1
+       10  G2 merge 2: |T| 5, |S+| 4, |S-| 1
+        5  G2 merge 2: |T| 5, |S+| 3, |S-| 1
+        5  G2 merge 1: |T| 7, |S+| 3, |S-| 1
+        4  G2 merge 2: |T| 6, |S+| 3, |S-| 1
+        3  G1 hole: |T| 3, |S+| 6, |S-| 2
+        2  G2 hole: |T| 5, |S+| 3, |S-| 1
+        2  G2 hole: |T| 6, |S+| 3, |S-| 1
+        2  G2 hole: |T| 5, |S+| 4, |S-| 1
+        2  G1 hole: |T| 3, |S+| 5, |S-| 2
+        1  G2 merge 3: |T| 6, |S+| 3, |S-| 1
+        1  G2 merge 4: |T| 7, |S+| 3, |S-| 1
+5q2187: 13,700 families; chord sums 11,839; holes (1 hole, 3-4-note chord) 1,051 (+15 also hole-shaped under another split); explained 12,890 (94.09%); left 810
+      171  G2 merge 1: |T| 5, |S+| 4, |S-| 1
+      130  G2 merge 1: |T| 5, |S+| 3, |S-| 1
+       94  G2 merge 1: |T| 7, |S+| 3, |S-| 1
+       71  G2 merge 3: |T| 7, |S+| 3, |S-| 1
+       57  G1 hole: |T| 3, |S+| 7, |S-| 2
+       41  G2 merge 2: |T| 5, |S+| 4, |S-| 1
+       34  G2 merge 2: |T| 8, |S+| 3, |S-| 1
+       33  G1 hole: |T| 3, |S+| 6, |S-| 2
+       25  G1 merge 2: |T| 5, |S+| 5, |S-| 2
+       15  G1 merge 4: |T| 5, |S+| 5, |S-| 2
+       15  G2 hole: |T| 5, |S+| 4, |S-| 1
+       13  G2 hole: |T| 6, |S+| 3, |S-| 1
+       13  G2 merge 2: |T| 7, |S+| 3, |S-| 1
+       13  G2 merge 4: |T| 8, |S+| 3, |S-| 1
+5q3645: 65,348 families; chord sums 55,810; holes (1 hole, 3-4-note chord) 5,840 (+40 also hole-shaped under another split); explained 61,650 (94.34%); left 3,698
+      783  G2 merge 1: |T| 5, |S+| 4, |S-| 1
+      627  G1 hole: |T| 3, |S+| 7, |S-| 2
+      472  G2 merge 1: |T| 7, |S+| 3, |S-| 1
+      278  G2 merge 1: |T| 5, |S+| 3, |S-| 1
+      232  G2 merge 2: |T| 8, |S+| 3, |S-| 1
+      192  G1 merge 2: |T| 5, |S+| 5, |S-| 2
+      164  G2 merge 3: |T| 7, |S+| 3, |S-| 1
+      139  G2 hole: |T| 5, |S+| 4, |S-| 1
+      116  G2 merge 2: |T| 5, |S+| 4, |S-| 1
+      112  G1 hole: |T| 3, |S+| 6, |S-| 2
+       88  G1 hole: |T| 3, |S+| 8, |S-| 3
+       43  G1 merge 3: |T| 5, |S+| 5, |S-| 2
+       42  G1 merge 1: |T| 5, |S+| 5, |S-| 2
+       38  G2 hole: |T| 6, |S+| 3, |S-| 1
+7q243: 6,233 families; chord sums 6,051; holes (1 hole, 3-4-note chord) 154 (+0 also hole-shaped under another split); explained 6,205 (99.55%); left 28
+       11  G2 merge 1: |T| 5, |S+| 3, |S-| 1
+        9  G2 merge 1: |T| 5, |S+| 4, |S-| 1
+        3  G2 merge 1: |T| 7, |S+| 3, |S-| 1
+        3  G2 merge 2: |T| 5, |S+| 4, |S-| 1
+        1  G2 merge 2: |T| 5, |S+| 3, |S-| 1
+        1  G2 merge 2: |T| 8, |S+| 3, |S-| 1
+7q315: 16,561 families; chord sums 16,244; holes (1 hole, 3-4-note chord) 263 (+0 also hole-shaped under another split); explained 16,507 (99.67%); left 54
+       19  G2 merge 1: |T| 5, |S+| 3, |S-| 1
+       18  G2 merge 1: |T| 5, |S+| 4, |S-| 1
+        9  G2 merge 1: |T| 7, |S+| 3, |S-| 1
+        4  G2 merge 2: |T| 5, |S+| 4, |S-| 1
+        2  G2 merge 3: |T| 7, |S+| 3, |S-| 1
+        1  G2 merge 2: |T| 5, |S+| 3, |S-| 1
+        1  G2 merge 2: |T| 8, |S+| 3, |S-| 1
+11q135: 1,209 families; chord sums 1,200; holes (1 hole, 3-4-note chord) 8 (+0 also hole-shaped under another split); explained 1,208 (99.92%); left 1
+        1  G2 merge 1: |T| 5, |S+| 3, |S-| 1
+13q135: 2,116 families; chord sums 2,099; holes (1 hole, 3-4-note chord) 16 (+0 also hole-shaped under another split); explained 2,115 (99.95%); left 1
+        1  G2 merge 1: |T| 5, |S+| 3, |S-| 1
+17q135: 2,731 families; chord sums 2,714; holes (1 hole, 3-4-note chord) 16 (+0 also hole-shaped under another split); explained 2,730 (99.96%); left 1
+        1  G2 merge 1: |T| 5, |S+| 3, |S-| 1
+19q135: 3,735 families; chord sums 3,718; holes (1 hole, 3-4-note chord) 16 (+0 also hole-shaped under another split); explained 3,734 (99.97%); left 1
+        1  G2 merge 1: |T| 5, |S+| 3, |S-| 1
