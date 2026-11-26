@@ -13,6 +13,7 @@ export {
   SegmentedControl,
   Select,
   Switch,
+  Table,
   TextInput,
   Textarea,
   type ActionIconProps,
@@ -25,6 +26,7 @@ export {
   type SegmentedControlProps,
   type SelectProps,
   type SwitchProps,
+  type TableProps,
   type TextInputProps,
   type TextareaProps,
 } from '@mantine/core';

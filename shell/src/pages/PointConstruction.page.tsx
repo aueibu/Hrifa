@@ -9,7 +9,6 @@ import {
   SimpleGrid,
   Slider,
   Stack,
-  Table,
   Text,
   Title,
 } from '@mantine/core';
@@ -18,7 +17,7 @@ import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeTo
 import { Data } from '../components/Data/Data';
 import { Surface } from '../components/Surface/Surface';
 import { resolveDiagramStyle } from '../theme/diagram';
-import { Button, Select, Switch } from '../ui';
+import { Button, Select, Switch, Table } from '../ui';
 import {
   PointConstructionEngine,
   type PointConstructionInspector,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Badge, Group, Slider, Table, Text } from '@mantine/core';
+import { Alert, Badge, Group, Slider, Text } from '@mantine/core';
 import type { EditorAction, EditorTool } from '../../../components/EditorPalette';
 import {
   defaultPianoRollView,
@@ -7,7 +7,7 @@ import {
   type PianoRollGridLine,
   type PianoRollViewState,
 } from '../../../components/PianoRoll';
-import { Button, Select } from '../../../ui';
+import { Button, Select, Table } from '../../../ui';
 import { createNotePacketPerformancePlan } from '../audio/performancePlans';
 import {
   compositionOutputOptions,

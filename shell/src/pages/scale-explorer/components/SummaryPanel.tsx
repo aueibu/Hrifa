@@ -1,7 +1,7 @@
-import { Group, Table, Text, Tooltip } from '@mantine/core';
+import { Group, Text, Tooltip } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
-import { ActionIcon, Button } from '../../../ui';
+import { ActionIcon, Button, Table } from '../../../ui';
 import type { SummaryRow } from '../scaleView';
 import { useScaleStyle } from '../useScaleStyle';
 import { Swatch } from './Legend';

@@ -1,6 +1,7 @@
-import { Divider, Modal, Stack, Table, Text, Title } from '@mantine/core';
+import { Divider, Modal, Stack, Text, Title } from '@mantine/core';
 import { Equation } from '../../../components/Equation/Equation';
 import { Reading } from '../../../components/Reading/Reading';
+import { Table } from '../../../ui';
 
 interface ScoringInfoModalProps {
   opened: boolean;

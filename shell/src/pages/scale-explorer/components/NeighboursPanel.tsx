@@ -1,7 +1,7 @@
-import { Accordion, Group, Table, Text, Title } from '@mantine/core';
+import { Accordion, Group, Text, Title } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
-import { Select } from '../../../ui';
+import { Select, Table } from '../../../ui';
 import { sgn } from '../format';
 import { pathLayout } from '../neighbours';
 import { linkInfo, type Mode } from '../pitchSets';

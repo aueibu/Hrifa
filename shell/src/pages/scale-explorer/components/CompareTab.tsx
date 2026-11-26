@@ -4,7 +4,6 @@ import {
   Group,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   Title,
   Tooltip,
@@ -12,7 +11,7 @@ import {
 } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
-import { Button, Checkbox, Select, ActionIcon } from '../../../ui';
+import { Button, Checkbox, Select, ActionIcon, Table } from '../../../ui';
 import {
   barHasValue,
   COLUMNS,

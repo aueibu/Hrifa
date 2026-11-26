@@ -8,7 +8,6 @@ import {
   Card,
   Group,
   Stack,
-  Table,
   Text,
   Title,
   VisuallyHidden,
@@ -24,6 +23,7 @@ import {
   parseWordList,
   savedListsKey,
 } from '../lib/usernameSeeds';
+import { Table } from '../ui';
 import { Button, TextInput, Textarea } from '../ui';
 
 type Mode = 'live' | 'frozen' | 'manual';

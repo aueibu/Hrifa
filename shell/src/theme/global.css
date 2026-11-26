@@ -164,3 +164,18 @@ body {
   --chip-size-sm: 1.375rem;
   --chip-padding-sm: 0.5rem;
 }
+
+/* Tables (Blender Outliner style: subtle alternating row darkening, grid borders, compact padding) */
+.mantine-Table-table {
+  --table-striped-color: var(--row-alt);
+  --table-hover-color: var(--mantine-color-default-hover);
+  --table-border-color: var(--grid);
+
+  font-size: var(--mantine-font-size-sm);
+}
+
+.mantine-Table-th {
+  color: var(--text-muted);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+}

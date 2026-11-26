@@ -11,6 +11,7 @@ import {
   SegmentedControl,
   Select,
   Switch,
+  Table,
   Textarea,
   TextInput,
 } from '@mantine/core';
@@ -84,6 +85,16 @@ export function createAppTheme(tokens: ThemeTokens) {
       SegmentedControl: SegmentedControl.extend({ defaultProps: { size: 'sm' } }),
       Checkbox: Checkbox.extend({ defaultProps: { size: 'sm' } }),
       Switch: Switch.extend({ defaultProps: { size: 'sm' } }),
+      Table: Table.extend({
+        defaultProps: {
+          striped: 'even',
+          highlightOnHover: true,
+          withRowBorders: false,
+          tabularNums: true,
+          verticalSpacing: 3,
+          horizontalSpacing: 'sm',
+        },
+      }),
     },
   });
 }

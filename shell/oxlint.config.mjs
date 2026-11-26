@@ -26,6 +26,7 @@ export default defineConfig({
                   'MultiSelect',
                   'SegmentedControl',
                   'Switch',
+                  'Table',
                   'Checkbox',
                   'Radio',
                   'Chip',

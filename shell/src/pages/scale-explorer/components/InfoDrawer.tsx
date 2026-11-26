@@ -1,6 +1,7 @@
-import { Accordion, ScrollArea, SimpleGrid, Table, Text, Title } from '@mantine/core';
+import { Accordion, ScrollArea, SimpleGrid, Text, Title } from '@mantine/core';
 import { Data } from '../../../components/Data/Data';
 import { Surface } from '../../../components/Surface/Surface';
+import { Table } from '../../../ui';
 import { CHORDS } from '../chords';
 import { CALCULATION_HINT, CHORD_VOCABULARY_HINT } from '../texts';
 

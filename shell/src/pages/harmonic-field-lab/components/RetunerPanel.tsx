@@ -4,9 +4,9 @@
  * The main views stay on the tab; this panel shows the active card.
  */
 import { useMemo, useState } from 'react';
-import { Table, Text } from '@mantine/core';
+import { Text } from '@mantine/core';
 import { compareScorers, type RetuneWhyEntry } from '../../../lib/harmonic-field';
-import { Button, NativeSelect, SegmentedControl, Switch, ActionIcon } from '../../../ui';
+import { Button, NativeSelect, SegmentedControl, Switch, ActionIcon, Table } from '../../../ui';
 import { KEYS } from '../audio/keymap';
 import type { Action } from '../state/labState';
 import {

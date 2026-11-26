@@ -133,6 +133,7 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--panel-header': 'var(--mantine-color-gray-1)',
       '--grid': 'color-mix(in srgb, var(--mantine-color-gray-3) 45%, var(--mantine-color-gray-2))',
       '--chrome': 'var(--mantine-color-white)',
+      '--row-alt': 'color-mix(in srgb, var(--mantine-color-black) 3.5%, transparent)',
       '--control-border': 'var(--mantine-color-gray-4)',
       '--text-danger': 'color-mix(in srgb, var(--mark-red) 85%, var(--text))',
       '--mantine-color-error': 'var(--text-danger)',
@@ -153,6 +154,7 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--grid': 'color-mix(in srgb, var(--mantine-color-dark-4) 24%, var(--mantine-color-dark-5))',
       '--chrome':
         'color-mix(in srgb, var(--mantine-color-dark-4) 10%, var(--mantine-color-dark-5))',
+      '--row-alt': 'color-mix(in srgb, var(--mantine-color-black) 10%, transparent)',
       '--control-border': 'var(--mantine-color-dark-4)',
       '--text-danger': 'var(--tint-red-text)',
       '--mantine-color-error': 'var(--text-danger)',

@@ -1,6 +1,7 @@
-import { Box, Group, SimpleGrid, Slider, Stack, Table, Text, Title } from '@mantine/core';
+import { Box, Group, SimpleGrid, Slider, Stack, Text, Title } from '@mantine/core';
 import { Data } from '../../components/Data/Data';
 import { Surface } from '../../components/Surface/Surface';
+import { Table } from '../../ui';
 import { buildRotationSets, distortionScore, edoSweep, pcOf } from './ratioAnalysis';
 
 export interface SegmentRatios {
