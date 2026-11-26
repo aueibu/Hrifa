@@ -47,6 +47,9 @@ export function HomePage() {
             Hrifa / Workbench
           </Mono>
           <Group gap="md">
+            <Anchor component={Link} to="/ui" size="sm">
+              UI showcase
+            </Anchor>
             <Anchor component={Link} to="/theme" size="sm">
               Theme editor
             </Anchor>

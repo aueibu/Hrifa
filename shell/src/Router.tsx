@@ -12,6 +12,7 @@ import { ScaleExplorerPage } from './pages/ScaleExplorer.page';
 import { SegmentTangentConstructionPage } from './pages/SegmentTangentConstruction.page';
 import { StagePage } from './pages/Stage.page';
 import { ThemeEditorPage } from './pages/ThemeEditor.page';
+import { UiShowcasePage } from './pages/UiShowcase.page';
 import { UsernameSeedsPage } from './pages/UsernameSeeds.page';
 
 const router = createBrowserRouter(
@@ -54,6 +55,11 @@ const router = createBrowserRouter(
     {
       path: '/theme',
       element: <ThemeEditorPage />,
+      errorElement: <NotFoundPage />,
+    },
+    {
+      path: '/ui',
+      element: <UiShowcasePage />,
       errorElement: <NotFoundPage />,
     },
     {
