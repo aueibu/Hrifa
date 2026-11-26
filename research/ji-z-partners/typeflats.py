@@ -142,9 +142,13 @@ class Search:
         off the equality classes of the ordered intervals, so the colored graph (notes, ordered intervals with
         a tail marker, equality classes) determines the flat up to these symmetries. Canonical labeling by
         bliss (igraph); the smallest key over the 8 mirror/swap variants."""
-        import hashlib
-        import igraph
+        from igraph._igraph import GraphBase
+        from math import lcm
         k = self.k
+        # only equalities of intervals matter: scale to integers once (Fractions are slow)
+        den = lcm(*(x.denominator for p in P + Q for x in p))
+        P = [tuple(int(x * den) for x in p) for p in P]
+        Q = [tuple(int(x * den) for x in q) for q in Q]
         arcs = [(i, j) for i in range(k) for j in range(k) if i != j]
         na = len(arcs)
         best = None
@@ -165,12 +169,17 @@ class Search:
                             edges.append((a, 2 * k + 4 * na + c))
                     nv = 2 * k + 4 * na + len(cls)
                     colors = [0] * k + [1] * k + [2] * (2 * na) + [3] * (2 * na) + [4] * len(cls)
-                    g = igraph.Graph(n=nv, edges=edges)
-                    g.vs["c"] = colors
-                    perm = g.canonical_permutation(color=colors)
-                    h = g.permute_vertices(perm)
-                    ce = sorted(tuple(sorted(e)) for e in h.get_edgelist())
-                    key = hashlib.blake2b(repr((nv, len(cls), tuple(h.vs["c"]), ce)).encode(), digest_size=16).digest()
+                    # the C-level GraphBase: igraph.Graph() costs ~0.5 ms per build in Python overhead
+                    g = GraphBase(nv, edges)
+                    lab = g.canonical_permutation(color=colors)  # lab[i] = old vertex placed at new index i
+                    perm = [0] * nv  # perm[v] = new index of old vertex v
+                    for i, v in enumerate(lab):
+                        perm[v] = i
+                    newc = [0] * nv
+                    for v, c in enumerate(colors):
+                        newc[perm[v]] = c
+                    ce = sorted((min(perm[u], perm[v]), max(perm[u], perm[v])) for u, v in edges)
+                    key = hashlib.blake2b(repr((nv, len(cls), newc, ce)).encode(), digest_size=16).digest()
                     if best is None or key < best:
                         best = key
         return best
@@ -219,6 +228,8 @@ class Search:
                     dup += 1
                     continue
                 shared = getattr(self, "shared", None)
+                if shared is not None:
+                    shared = shared[key[0] % len(shared)]  # one of several Manager dicts (sharded by key byte)
                 if getattr(self, "frozen", False):
                     if shared is not None and key in shared:
                         dup += 1  # claimed before the freeze: its subtree is (being) searched
@@ -357,8 +368,9 @@ def main():
         dlog = open(dpath, "a") if dpath else None
         todo = [(i, b) for i, b in enumerate(front) if i not in done]
         complete = True
-        mgr = mp.Manager()
-        shared = mgr.dict()
+        # several Manager processes: one alone tops out near a few 10^4 lookups/s
+        mgrs = [mp.Manager() for _ in range(max(1, min(8, a.workers // 8)))]
+        shared = [m.dict() for m in mgrs]
         ctr = mp.Value("q", 0)
         freeze = mp.Value("b", 1 if a.min_free_gb >= 1e6 else 0)  # test hook: --min-free-gb 1e6 freezes at once
         last = time.time()
