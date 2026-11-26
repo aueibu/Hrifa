@@ -3,14 +3,7 @@ import { Stack, Text } from '@mantine/core';
 import { TextInput, Button } from '../../../ui';
 import type { PacketBlock } from '../dataBlock';
 import { useDesk } from '../desk';
-import {
-  formatLength,
-  formatPosition,
-  parseLength,
-  parsePosition,
-  type ParseResult,
-} from '../meterTime';
-import { addRational, compareRational, subtractRational } from '../musicalTime';
+import { addRational, compareRational, subtractRational, type Rational } from '../musicalTime';
 import {
   editNotesProperties,
   hasNotesProperties,
@@ -18,6 +11,8 @@ import {
   type NotesProperties,
 } from '../notesProperties';
 import { isValidMeter } from '../transport';
+import { PositionScrub } from './PositionScrub';
+import classes from './ScenePanels.module.css';
 
 /** The operator name of a property edit. Not a hand edit: each one is a version of its own. */
 export const NOTES_PROPERTIES_OPERATION = 'edit-properties';
@@ -96,7 +91,7 @@ export function NotesPropertiesPanel({ dataBlock }: { dataBlock: PacketBlock }) 
   const disabled = loading || locked;
 
   /** Applies a change; the problem as text when it was refused. */
-  function apply(change: Partial<NotesProperties>): string | null {
+  function apply(change: Partial<NotesProperties>, coalesceKey?: string): string | null {
     // Built from the desk's packet as it is now, so a commit that landed since the last render
     // (the editor's, or another tab's) is not reverted.
     const latest = latestDataBlockById(dataBlock.id)?.payload.packet ?? dataBlock.payload.packet;
@@ -107,7 +102,12 @@ export function NotesPropertiesPanel({ dataBlock }: { dataBlock: PacketBlock }) 
     if (edit.packet === latest) {
       return null;
     }
-    const result = commitDataBlockEditById(dataBlock.id, edit.packet, NOTES_PROPERTIES_OPERATION);
+    const result = commitDataBlockEditById(
+      dataBlock.id,
+      edit.packet,
+      NOTES_PROPERTIES_OPERATION,
+      coalesceKey === undefined ? undefined : { coalesceKey }
+    );
     return result.ok ? null : result.error;
   }
 
@@ -118,36 +118,36 @@ export function NotesPropertiesPanel({ dataBlock }: { dataBlock: PacketBlock }) 
     );
   }
 
-  const positionField = (key: 'start' | 'loopStart', label: string, description: string) => (
-    <PropertyField
-      key={`${key}:${meter}`}
-      label={label}
-      ariaLabel={key === 'loopStart' ? 'Loop start' : undefined}
-      description={description}
-      disabled={disabled}
-      value={formatPosition(properties[key], meter)}
-      onCommit={(text) => {
-        const parsed: ParseResult = parsePosition(text, meter);
-        if (!parsed.ok) {
-          return parsed.error;
-        }
-        if (key === 'loopStart') {
-          // Moving the loop's start keeps its length (the end moves with it), from the latest
-          // packet; where that would pass the data-block's end the length is shortened to fit. A start at
-          // or after the end of the data-block leaves no loop at all and is refused.
-          const latest = latestProperties();
-          if (compareRational(parsed.value, latest.length) >= 0) {
-            return 'The loop start must be before the end of the data-block.';
-          }
-          const end = addRational(parsed.value, subtractRational(latest.loopEnd, latest.loopStart));
-          return apply({
-            loopStart: parsed.value,
-            loopEnd: compareRational(end, latest.length) > 0 ? latest.length : end,
-          });
-        }
-        return apply({ [key]: parsed.value });
-      }}
-    />
+  const timeField = (
+    key: 'length' | 'start' | 'loopStart' | 'loopLength',
+    label: string,
+    ariaLabel: string,
+    kind: 'position' | 'length',
+    value: Rational,
+    info: string,
+    onCommit: (value: Rational) => string | null
+  ) => (
+    <div className={classes.field}>
+      <span className={classes.fieldLabel}>{label}</span>
+      <div className={classes.controls}>
+        <PositionScrub
+          key={`${key}:${meter}`}
+          aria-label={ariaLabel}
+          className={classes.grow}
+          kind={kind}
+          meter={meter}
+          value={value}
+          disabled={disabled}
+          info={info}
+          onError={setNotice}
+          onCommit={(next) => {
+            const problem = onCommit(next);
+            setNotice(problem);
+            return problem;
+          }}
+        />
+      </div>
+    </div>
   );
 
   if (!applies) {
@@ -156,18 +156,24 @@ export function NotesPropertiesPanel({ dataBlock }: { dataBlock: PacketBlock }) 
 
   return (
     <Stack gap="xs" aria-label="Notes properties" role="group">
-      <PropertyField
-        key={`length:${meter}`}
-        label="Length"
-        description="bars.beats.ticks"
-        disabled={disabled}
-        value={formatLength(properties.length, meter)}
-        onCommit={(text) => {
-          const parsed = parseLength(text, meter);
-          return parsed.ok ? apply({ length: parsed.value }) : parsed.error;
-        }}
-      />
-      {positionField('start', 'Playback start', 'bar.beat.tick')}
+      {timeField(
+        'length',
+        'Length',
+        'Length',
+        'length',
+        properties.length,
+        'Total length as bars.beats.ticks.%. Drag a part, or type 2, 0.1.2 or 1/4b.',
+        (length) => apply({ length }, `${dataBlock.id}:length`)
+      )}
+      {timeField(
+        'start',
+        'Playback start',
+        'Playback start',
+        'position',
+        properties.start,
+        'Playback start as bar.beat.tick.%. Drag a part, or type 2, 1.3.5 or 1/4n.',
+        (start) => apply({ start }, `${dataBlock.id}:start`)
+      )}
       <Stack gap="xs" role="group" aria-label="Loop">
         <Button
           // On is the accent fill (a switch-class control); off is the plain outlined button.
@@ -179,22 +185,42 @@ export function NotesPropertiesPanel({ dataBlock }: { dataBlock: PacketBlock }) 
         >
           Looping
         </Button>
-        {positionField('loopStart', 'Start', 'bar.beat.tick')}
-        <PropertyField
-          key={`loopLength:${meter}`}
-          label="Length"
-          ariaLabel="Loop length"
-          description="bars.beats.ticks"
-          disabled={disabled}
-          value={formatLength(subtractRational(properties.loopEnd, properties.loopStart), meter)}
-          onCommit={(text) => {
-            const parsed = parseLength(text, meter);
-            // The loop's length is a duration; the end stored is the start plus it.
-            return parsed.ok
-              ? apply({ loopEnd: addRational(latestProperties().loopStart, parsed.value) })
-              : parsed.error;
-          }}
-        />
+        {timeField(
+          'loopStart',
+          'Start',
+          'Loop start',
+          'position',
+          properties.loopStart,
+          'Loop start as bar.beat.tick.%. The loop end moves with it.',
+          (loopStart) => {
+            // Moving the loop's start keeps its length (the end moves with it), from the latest
+            // packet; where that would pass the data-block's end the length is shortened to fit. A start at
+            // or after the end of the data-block leaves no loop at all and is refused.
+            const latest = latestProperties();
+            if (compareRational(loopStart, latest.length) >= 0) {
+              return 'The loop start must be before the end of the data-block.';
+            }
+            const end = addRational(loopStart, subtractRational(latest.loopEnd, latest.loopStart));
+            return apply(
+              { loopStart, loopEnd: compareRational(end, latest.length) > 0 ? latest.length : end },
+              `${dataBlock.id}:loopStart`
+            );
+          }
+        )}
+        {timeField(
+          'loopLength',
+          'Length',
+          'Loop length',
+          'length',
+          subtractRational(properties.loopEnd, properties.loopStart),
+          'Loop length as bars.beats.ticks.%.',
+          // The loop's length is a duration; the end stored is the start plus it.
+          (length) =>
+            apply(
+              { loopEnd: addRational(latestProperties().loopStart, length) },
+              `${dataBlock.id}:loopLength`
+            )
+        )}
       </Stack>
       <PropertyField
         label="Time signature"

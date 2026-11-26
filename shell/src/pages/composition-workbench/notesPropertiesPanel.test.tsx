@@ -120,26 +120,38 @@ async function open(seed?: PacketBlock) {
 }
 
 const inLoop = (element: HTMLElement) => element.closest('[aria-label="Loop"]') !== null;
-/** A block-level field (the loop's own Start and Length are `loopField`). */
+/** A block-level scrub box (the loop's own Start and Length are `loopField`). */
 const field = (name: RegExp | string) =>
-  screen.getAllByRole('textbox', { name }).find((element) => !inLoop(element))!;
+  screen.getAllByRole('spinbutton', { name }).find((element) => !inLoop(element))!;
 const loopField = (name: 'Start' | 'Length') =>
-  within(screen.getByRole('group', { name: 'Loop' })).getByRole('textbox', {
+  within(screen.getByRole('group', { name: 'Loop' })).getByRole('spinbutton', {
     name: name === 'Start' ? 'Loop start' : 'Loop length',
   });
 const looping = () => screen.getByRole('button', { name: 'Looping' });
 
-async function enter(name: RegExp | string, text: string) {
-  const input = field(name);
+/** Opens a scrub box's text entry (a click without movement) and returns the text box. */
+function openEntry(box: HTMLElement) {
+  fireEvent.pointerDown(box, { button: 0, clientX: 10, pointerId: 1 });
+  fireEvent.pointerUp(box, { button: 0, clientX: 10, pointerId: 1 });
+  return screen.getByRole('textbox', { name: box.getAttribute('aria-label')! });
+}
+
+async function typeInto(box: HTMLElement, text: string) {
+  const input = openEntry(box);
   await userEvent.clear(input);
   await userEvent.type(input, `${text}{Enter}`);
 }
 
-async function enterLoop(name: 'Start' | 'Length', text: string) {
-  const input = loopField(name);
+/** The time signature stays a text field. */
+async function enterMeter(text: string) {
+  const input = screen.getByRole('textbox', { name: /^Time signature/ });
   await userEvent.clear(input);
   await userEvent.type(input, `${text}{Enter}`);
 }
+
+const enter = (name: RegExp | string, text: string) => typeInto(field(name), text);
+const enterLoop = (name: 'Start' | 'Length', text: string) => typeInto(loopField(name), text);
+const shown = (box: HTMLElement) => box.getAttribute('aria-valuetext');
 
 const current = () => readNotesProperties(desk.dataBlocks[0].payload.packet);
 
@@ -151,11 +163,11 @@ beforeEach(() => {
 describe('the notes properties panel', () => {
   it('shows a blank data-block with every property filled in', async () => {
     await open();
-    expect(field(/^Length/)).toHaveValue('1.0.0.00');
-    expect(field(/^Playback start/)).toHaveValue('1.1.1.00');
-    expect(loopField('Start')).toHaveValue('1.1.1.00');
-    expect(loopField('Length')).toHaveValue('1.0.0.00');
-    expect(field(/^Time signature/)).toHaveValue('4/4');
+    expect(shown(field(/^Length/))).toBe('1.0.0.00');
+    expect(shown(field(/^Playback start/))).toBe('1.1.1.00');
+    expect(shown(loopField('Start'))).toBe('1.1.1.00');
+    expect(shown(loopField('Length'))).toBe('1.0.0.00');
+    expect(screen.getByRole('textbox', { name: /^Time signature/ })).toHaveValue('4/4');
     expect(looping()).toHaveAttribute('aria-pressed', 'true');
     expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toBeDefined();
   });
@@ -175,7 +187,7 @@ describe('the notes properties panel', () => {
     await open(legacyDataBlock());
     // Old data-block: defaults on read, the frame's 8 quarters kept.
     expect(current()).toMatchObject({ length: rational(8), loopOn: true, timeSignature: '4/4' });
-    expect(field(/^Length/)).toHaveValue('2.0.0.00');
+    expect(shown(field(/^Length/))).toBe('2.0.0.00');
     expect(desk.dataBlocks[0].lineage).toBeUndefined();
 
     await enter(/^Length/, '3.0.0');
@@ -190,7 +202,7 @@ describe('the notes properties panel', () => {
     expect(current()).toMatchObject({ loopStart: rational(4), loopEnd: rational(6) });
     await userEvent.click(looping());
     expect(current().loopOn).toBe(false);
-    await enter(/^Time signature/, '7/8');
+    await enterMeter('7/8');
     expect(current().timeSignature).toBe('7/8');
 
     const lineage = desk.dataBlocks[0].lineage!;
@@ -229,7 +241,8 @@ describe('the notes properties panel', () => {
     expect(
       await screen.findByText(/loop start must be before the end of the data-block/)
     ).toBeVisible();
-    expect(screen.queryAllByText(/loop length must be longer than zero/)).toHaveLength(1);
+    // One message line: the newest refusal replaces the previous one.
+    expect(screen.queryByText(/loop length must be longer than zero/)).toBeNull();
 
     await enter(/^Playback start/, '3.1.1');
     expect(await screen.findByText(/start must be inside the data-block/)).toBeVisible();
@@ -237,7 +250,7 @@ describe('the notes properties panel', () => {
     await enter(/^Length/, '1.0.0');
     expect(await screen.findAllByText(/loop must stay within the total length/)).toHaveLength(1);
 
-    await enter(/^Time signature/, '4/3');
+    await enterMeter('4/3');
     expect(await screen.findByText(/time signature must be like 4\/4/)).toBeVisible();
     expect(desk.dataBlocks[0]).toBe(before);
     expect(historyChangeCount()).toBe(changes);
@@ -292,10 +305,10 @@ describe('notes properties robustness', () => {
   it('Escape puts the stored value back and changes nothing', async () => {
     await open(legacyDataBlock());
     const before = desk.dataBlocks[0];
-    const input = field(/^Length/);
+    const input = openEntry(field(/^Length/));
     await userEvent.clear(input);
     await userEvent.type(input, '9.0.0{Escape}');
-    expect(input).toHaveValue('2.0.0.00');
+    expect(shown(field(/^Length/))).toBe('2.0.0.00');
     await userEvent.tab();
     expect(desk.dataBlocks[0]).toBe(before);
   });
@@ -307,7 +320,7 @@ describe('notes properties robustness', () => {
     await enter(/^Playback start/, '01.1.1');
     expect(desk.dataBlocks[0]).toBe(before);
     expect(historyChangeCount()).toBe(changes);
-    expect(field(/^Playback start/)).toHaveValue('1.1.1.00');
+    expect(shown(field(/^Playback start/))).toBe('1.1.1.00');
   });
 
   it('a refusal shows its message once', async () => {
@@ -318,7 +331,7 @@ describe('notes properties robustness', () => {
 
   it('an editor commit that lands before the panel re-renders survives the property edit', async () => {
     await open(legacyDataBlock());
-    const input = field(/^Length/);
+    const input = openEntry(field(/^Length/));
     await userEvent.clear(input);
     await userEvent.type(input, '3.0.0');
     const stale = desk.dataBlocks[0];
@@ -403,7 +416,7 @@ describe('notes properties in storage', () => {
     await enter(/^Length/, '3.0.0');
     await enterLoop('Start', '1.3.1');
     await userEvent.click(looping());
-    await enter(/^Time signature/, '6/8');
+    await enterMeter('6/8');
     const edited = desk.dataBlocks;
     const expected = readNotesProperties(edited[0].payload.packet);
     expect(expected).toMatchObject({ loopOn: false, timeSignature: '6/8' });
@@ -455,7 +468,7 @@ describe('freezing an old data-block at its first edit', () => {
       rational(8)
     );
     expect(lengthOf()).toEqual(rational(8));
-    expect(field(/^Length/)).toHaveValue('2.0.0.00');
+    expect(shown(field(/^Length/))).toBe('2.0.0.00');
     expect(desk.dataBlocks[0].payload.packet.frame).toMatchObject({ extent: 8 });
     expect(desk.dataBlocks[0].payload.packet.metadata?.notes).toMatchObject({
       loopEnd: rational(8),
@@ -524,7 +537,7 @@ describe('the data-block inspector', () => {
     expect(await screen.findByRole('heading', { name: 'pulsed' })).toBeInTheDocument();
     expect(screen.getByText('events | note')).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Notes properties' })).toBeNull();
-    expect(screen.queryByRole('textbox', { name: /^Length/ })).toBeNull();
+    expect(screen.queryByRole('spinbutton', { name: /^Length/ })).toBeNull();
   });
 
   it('shows no panel for a cyclic quarter-note note packet (melodicization)', async () => {
@@ -604,11 +617,8 @@ describe('the loop controls', () => {
   it('Looping is a toggle button, and Start and Length are listed beneath it', async () => {
     await open(legacyDataBlock());
     const group = screen.getByRole('group', { name: 'Loop' });
-    const labels = [...group.querySelectorAll('button, input')].map(
-      (element) =>
-        element.textContent ||
-        element.getAttribute('aria-label') ||
-        (element as HTMLInputElement).value
+    const labels = [...group.querySelectorAll('button, [role="spinbutton"]')].map(
+      (element) => element.textContent || element.getAttribute('aria-label')
     );
     expect(within(group).getByRole('button', { name: 'Looping' })).toBe(looping());
     expect(within(group).queryByRole('switch')).toBeNull();
@@ -628,12 +638,12 @@ describe('the loop controls', () => {
     expect(current()).toMatchObject({ loopStart: rational(0), loopEnd: rational(4) });
     await enterLoop('Start', '1.3.1');
     expect(current()).toMatchObject({ loopStart: rational(2), loopEnd: rational(6) });
-    expect(loopField('Length')).toHaveValue('1.0.0.00');
+    expect(shown(loopField('Length'))).toBe('1.0.0.00');
     // Start plus length past the data-block's end shortens the length to fit (the end stops at the data-block's
     // end); it is not refused.
     await enterLoop('Start', '2.3.1');
     expect(current()).toMatchObject({ loopStart: rational(6), loopEnd: rational(8) });
-    expect(loopField('Length')).toHaveValue('0.2.0.00');
+    expect(shown(loopField('Length'))).toBe('0.2.0.00');
     expect(screen.queryByText(/loop must stay within the total length/)).toBeNull();
     // A start at or after the end of the data-block is still refused, and changes nothing.
     await enterLoop('Start', '3.1.1');
@@ -654,7 +664,7 @@ describe('the loop controls', () => {
 
   it('a Length edit reads the loop start from the latest packet, not the render', async () => {
     await open(legacyDataBlock());
-    const input = loopField('Length');
+    const input = openEntry(loopField('Length'));
     await userEvent.clear(input);
     await userEvent.type(input, '0.2.0');
     // The loop start lands behind the panel's back (as the editor or another tab could commit).
@@ -693,8 +703,8 @@ describe('the loop controls', () => {
 
   it('the two Length fields have different names', async () => {
     await open(legacyDataBlock());
-    expect(screen.getByRole('textbox', { name: 'Loop length' })).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: 'Loop start' })).toBeInTheDocument();
-    expect(screen.getAllByRole('textbox', { name: /^Length/ })).toHaveLength(1);
+    expect(screen.getByRole('spinbutton', { name: 'Loop length' })).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'Loop start' })).toBeInTheDocument();
+    expect(screen.getAllByRole('spinbutton', { name: /^Length/ })).toHaveLength(1);
   });
 });
