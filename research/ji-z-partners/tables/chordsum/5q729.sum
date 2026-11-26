@@ -1,0 +1,15 @@
+# 5q729: 2376 families, chord sums 2138 (89.98%)
+#   by notes (chord sums / all): 6: 0/3, 8: 0/3, 9: 584/620, 10: 0/54, 12: 1073/1155, 14: 0/21, 15: 451/488, 16: 30/32
+#   (A, U) sizes: 3x3: 584, 3x4: 1073, 3x5: 451, 4x4: 30
+#   not chord sum: 67  V 3,0 U 6 terms min -1 | V min 1
+#   not chord sum: 54  V 3,1 U 5 terms min 1 | V min -1
+#   not chord sum: 34  V 3,0 U 5 terms min -1 | V min 1
+#   not chord sum: 23  V 4,1 U 5 terms min 1 | V min -1
+#   not chord sum: 21  V 3,1 U 7 terms min 1 | V min -1
+#   not chord sum: 16  V 3,0 U 7 terms min -1 | V min 1
+#   not chord sum: 9  V 4,0 U 5 terms min -1 | V min 1
+#   not chord sum: 3  V 3,0 U 8 terms min -1 | V min 1
+#   not chord sum: 3  V 3,1 U 6 terms min 1 | V min -1
+#   not chord sum: 3  V 3,0 U 4 terms min -1 | V min 1
+#   not chord sum: 3  V 3,1 U 4 terms min 1 | V min -1
+#   not chord sum: 2  V 3,1 U 8 terms min 1 | V min -1

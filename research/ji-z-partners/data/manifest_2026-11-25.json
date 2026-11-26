@@ -1,0 +1,721 @@
+{
+ "created": "2026-11-25",
+ "project": "night queue 2026-11-25 (6-8 notes mainly; PROGRESS 'Night queue')",
+ "bucket": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25",
+ "runs": [
+  {
+   "name": "n25_l5q295245k6",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 295245,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 46
+   },
+   "families": 46,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 1,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q295245k6/"
+  },
+  {
+   "name": "n25_l5q531441k6",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 531441,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 74
+   },
+   "families": 74,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 1,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q531441k6/"
+  },
+  {
+   "name": "n25_l5q885735k6",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 885735,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 78
+   },
+   "families": 78,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 1,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q885735k6/"
+  },
+  {
+   "name": "n25_l5q177147k7",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 177147,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 72
+   },
+   "families": 72,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 2,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q177147k7/"
+  },
+  {
+   "name": "n25_l5q295245k7",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 295245,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 78
+   },
+   "families": 78,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 2,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q295245k7/"
+  },
+  {
+   "name": "n25_l5q531441k7",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 531441,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 126
+   },
+   "families": 126,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 4,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q531441k7/"
+  },
+  {
+   "name": "n25_l5q885735k7",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 885735,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 134
+   },
+   "families": 134,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 5,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q885735k7/"
+  },
+  {
+   "name": "n25_l5q177147k8",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 177147,
+   "note_counts": "8",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "8": 115
+   },
+   "families": 115,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 13,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q177147k8/"
+  },
+  {
+   "name": "n25_l5q295245k8",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 295245,
+   "note_counts": "8",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "8": 126
+   },
+   "families": 126,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 15,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q295245k8/"
+  },
+  {
+   "name": "n25_l5q531441k8",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 531441,
+   "note_counts": "8",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "8": 185
+   },
+   "families": 185,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 39,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q531441k8/"
+  },
+  {
+   "name": "n25_l5q885735k8",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 885735,
+   "note_counts": "8",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "8": 196
+   },
+   "families": 196,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 43,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q885735k8/"
+  },
+  {
+   "name": "n25_l5q177147k9",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 177147,
+   "note_counts": "9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "9": 111465
+   },
+   "families": 111465,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 52,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l5q177147k9/"
+  },
+  {
+   "name": "n25_l7q32805k6",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 32805,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 115
+   },
+   "families": 115,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 36,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l7q32805k6/"
+  },
+  {
+   "name": "n25_l7q59049k6",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 59049,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 158
+   },
+   "families": 158,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 75,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l7q59049k6/"
+  },
+  {
+   "name": "n25_l7q98415k6",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 98415,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 191
+   },
+   "families": 191,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 168,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l7q98415k6/"
+  },
+  {
+   "name": "n25_l7q19683k7",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 19683,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 59
+   },
+   "families": 59,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 293,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l7q19683k7/"
+  },
+  {
+   "name": "n25_l7q2187k8",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 2187,
+   "note_counts": "8",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "8": 12
+   },
+   "families": 12,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 49,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l7q2187k8/"
+  },
+  {
+   "name": "n25_l7q3645k8",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 3645,
+   "note_counts": "8",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "8": 22
+   },
+   "families": 22,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 131,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l7q3645k8/"
+  },
+  {
+   "name": "n25_l11q3645k6",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 3645,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 41
+   },
+   "families": 41,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 61,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l11q3645k6/"
+  },
+  {
+   "name": "n25_l11q6561k6",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 6561,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 54
+   },
+   "families": 54,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 272,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l11q6561k6/"
+  },
+  {
+   "name": "n25_l11q2187k7",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 2187,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 6
+   },
+   "families": 6,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 260,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l11q2187k7/"
+  },
+  {
+   "name": "n25_l11q729k8",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 729,
+   "note_counts": "8",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "8": 4
+   },
+   "families": 4,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 100,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l11q729k8/"
+  },
+  {
+   "name": "n25_l13q2187k6",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 2187,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 27
+   },
+   "families": 27,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 343,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l13q2187k6/"
+  },
+  {
+   "name": "n25_l13q1215k7",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 1215,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "paused",
+   "families_per_size": {},
+   "families": null,
+   "verified": null,
+   "checkpointed_slices": 200,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l13q1215k7/"
+  },
+  {
+   "name": "n25_l13q405k8",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 405,
+   "note_counts": "8",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "8": 2
+   },
+   "families": 2,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 88,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l13q405k8/"
+  },
+  {
+   "name": "n25_l13q405k9",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 405,
+   "note_counts": "9",
+   "method": "enumeration",
+   "status": "paused",
+   "families_per_size": {},
+   "families": null,
+   "verified": null,
+   "checkpointed_slices": 3,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l13q405k9/"
+  },
+  {
+   "name": "n25_l17q1215k6",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 1215,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 12
+   },
+   "families": 12,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 201,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l17q1215k6/"
+  },
+  {
+   "name": "n25_l17q405k7",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 405,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0
+   },
+   "families": 0,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 31,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l17q405k7/"
+  },
+  {
+   "name": "n25_l17q729k7",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 729,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0
+   },
+   "families": 0,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 402,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l17q729k7/"
+  },
+  {
+   "name": "n25_l17q405k8",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 405,
+   "note_counts": "8",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "8": 2
+   },
+   "families": 2,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 207,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l17q405k8/"
+  },
+  {
+   "name": "n25_l19q729k6",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 729,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 9
+   },
+   "families": 9,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 74,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l19q729k6/"
+  },
+  {
+   "name": "n25_l19q405k7",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 405,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0
+   },
+   "families": 0,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 100,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l19q405k7/"
+  },
+  {
+   "name": "n25_l23q405k7",
+   "limit": 23,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23
+   ],
+   "q": 405,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0
+   },
+   "families": 0,
+   "verified": "verify_families.py: 0 bad",
+   "checkpointed_slices": 182,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-25/n25_runs_2026-11-25.tar.xz",
+   "vm_path": "~/zruns/zprod/n25_l23q405k7/"
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+# 2116 families
+#   U negmass 0: 2115
+#   U negmass 1: 1
+#   V 3,0 coeffs 1..1: 1632
+#   V 3,1 coeffs -1..1: 1
+#   V 4,0 coeffs 1..1: 398
+#   V 4,1 coeffs -1..1: 7
+#   V 5,0 coeffs 1..1: 70
+#   V 5,1 coeffs -1..1: 6
+#   V 6,1 coeffs -1..1: 2
+#   check ok: 2116
+#   flipped factors 1: 2116

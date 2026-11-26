@@ -1,0 +1,803 @@
+{
+ "created": "2026-11-23",
+ "bucket": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23",
+ "q": "intervallic odd limit: every interval's odd numerator and denominator <= q",
+ "runs": [
+  {
+   "name": "e19q135_on",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 135,
+   "note_counts": "6-16",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs, bitsets to 2,048 vertices (6de4de9)",
+   "families_per_size": {
+    "6": 1,
+    "9": 1241,
+    "10": 1,
+    "12": 1553,
+    "15": 847,
+    "16": 92
+   },
+   "families": 3735,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/e19q135_on.tar.xz",
+   "md5": "81be23595757e4ac5d7478f292f12eac",
+   "vm_path": "~/zruns/zprod/e19q135_on/",
+   "repo_archive": "research/ji-z-partners/data/proven/e19q135_on.tar.xz"
+  },
+  {
+   "name": "e5q2187_on",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 2187,
+   "note_counts": "6-16",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs, bitsets to 2,048 vertices (6de4de9)",
+   "families_per_size": {
+    "6": 5,
+    "7": 3,
+    "8": 7,
+    "9": 1687,
+    "10": 152,
+    "11": 1,
+    "12": 5541,
+    "14": 188,
+    "15": 5422,
+    "16": 694
+   },
+   "families": 13700,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/e5q2187_on.tar.xz",
+   "md5": "fae85eb66dbcd560010fba161c106bad",
+   "vm_path": "~/zruns/zprod/e5q2187_on/",
+   "repo_archive": "research/ji-z-partners/data/proven/e5q2187_on.tar.xz"
+  },
+  {
+   "name": "e5q3645_on",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 3645,
+   "note_counts": "6-16",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs, bitsets to 2,048 vertices (6de4de9)",
+   "families_per_size": {
+    "6": 8,
+    "7": 4,
+    "8": 12,
+    "9": 4060,
+    "10": 316,
+    "11": 3,
+    "12": 20060,
+    "13": 3,
+    "14": 704,
+    "15": 34089,
+    "16": 6089
+   },
+   "families": 65348,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/e5q3645_on.tar.xz",
+   "md5": "05a5deb748deda1c214e2eb6fe5ef9c5",
+   "vm_path": "~/zruns/zprod/e5q3645_on/",
+   "repo_archive": "research/ji-z-partners/data/proven/e5q3645_on.tar.xz",
+   "note": "the widened ladder misses 25 of these (signed cofactors)"
+  },
+  {
+   "name": "e7q315_on",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 315,
+   "note_counts": "6-16",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs, bitsets to 2,048 vertices (6de4de9)",
+   "families_per_size": {
+    "6": 2,
+    "8": 1,
+    "9": 2364,
+    "10": 20,
+    "12": 7012,
+    "14": 11,
+    "15": 6267,
+    "16": 884
+   },
+   "families": 16561,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/e7q315_on.tar.xz",
+   "md5": "3eff2cbbcef56e65e5ecd18426ff27fd",
+   "vm_path": "~/zruns/zprod/e7q315_on/",
+   "repo_archive": "research/ji-z-partners/data/proven/e7q315_on.tar.xz"
+  },
+  {
+   "name": "en13q135",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 135,
+   "note_counts": "6-16",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs enumerator v2 (f89df52)",
+   "families_per_size": {
+    "6": 1,
+    "9": 875,
+    "10": 1,
+    "12": 906,
+    "15": 291,
+    "16": 42
+   },
+   "families": 2116,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/en13q135.tar.xz",
+   "md5": "973e541acadf5bdf09b95eec41f91bb5",
+   "vm_path": "~/zruns/zprod/en13q135/",
+   "repo_archive": "research/ji-z-partners/data/proven/en13q135.tar.xz"
+  },
+  {
+   "name": "en17q135",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 135,
+   "note_counts": "6-16",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs enumerator v2 (f89df52)",
+   "families_per_size": {
+    "6": 1,
+    "9": 1040,
+    "10": 1,
+    "12": 1164,
+    "15": 467,
+    "16": 58
+   },
+   "families": 2731,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/en17q135.tar.xz",
+   "md5": "9f5b0c282a1c2a829ff82ebada6d1b40",
+   "vm_path": "~/zruns/zprod/en17q135/",
+   "repo_archive": "research/ji-z-partners/data/proven/en17q135.tar.xz"
+  },
+  {
+   "name": "en7_11q1215",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 1215,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs hybrid enumerator (cf55666)",
+   "families_per_size": {
+    "7": 1
+   },
+   "families": 1,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/en7_11q1215.tar.xz",
+   "md5": "35780047cd0e58948e28fbdaa866d8e4",
+   "vm_path": "~/zruns/zprod/en7_11q1215/",
+   "repo_archive": "research/ji-z-partners/data/proven/en7_11q1215.tar.xz",
+   "note": "7-note sets only"
+  },
+  {
+   "name": "en7_13q729",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 729,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs hybrid enumerator (cf55666)",
+   "families_per_size": {},
+   "families": 0,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/en7_13q729.tar.xz",
+   "md5": "bd56d3ff556f4e1a8cc7569db6305d43",
+   "vm_path": "~/zruns/zprod/en7_13q729/",
+   "repo_archive": "research/ji-z-partners/data/proven/en7_13q729.tar.xz",
+   "note": "7-note sets only; no family"
+  },
+  {
+   "name": "en7_7q2187",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 2187,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs hybrid enumerator (cf55666)",
+   "families_per_size": {
+    "7": 5
+   },
+   "families": 5,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/en7_7q2187.tar.xz",
+   "md5": "a4c7c1256b0988744c72836b343f1029",
+   "vm_path": "~/zruns/zprod/en7_7q2187/",
+   "repo_archive": "research/ji-z-partners/data/proven/en7_7q2187.tar.xz",
+   "note": "7-note sets only"
+  },
+  {
+   "name": "ev2_11q135",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 135,
+   "note_counts": "6-16",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs enumerator v2 (f89df52)",
+   "families_per_size": {
+    "6": 1,
+    "9": 606,
+    "10": 1,
+    "12": 495,
+    "15": 100,
+    "16": 6
+   },
+   "families": 1209,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/ev2_11q135.tar.xz",
+   "md5": "b77d5c7f45f7406f8674f67b2d954c29",
+   "vm_path": "~/zruns/zprod/ev2_11q135/",
+   "repo_archive": "research/ji-z-partners/data/proven/ev2_11q135.tar.xz"
+  },
+  {
+   "name": "ev2_5q729",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 729,
+   "note_counts": "6-16",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs enumerator v2 (f89df52)",
+   "families_per_size": {
+    "6": 3,
+    "8": 3,
+    "9": 620,
+    "10": 54,
+    "12": 1155,
+    "14": 21,
+    "15": 488,
+    "16": 32
+   },
+   "families": 2376,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/ev2_5q729.tar.xz",
+   "md5": "08a3b5229d3b8d2481c49fd1c59b0b4e",
+   "vm_path": "~/zruns/zprod/ev2_5q729/",
+   "repo_archive": "research/ji-z-partners/data/proven/ev2_5q729.tar.xz"
+  },
+  {
+   "name": "ev2_7q243",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 243,
+   "note_counts": "6-16",
+   "method": "enumeration",
+   "status": "proven",
+   "tool": "zprod-rs enumerator v2 (f89df52)",
+   "families_per_size": {
+    "6": 2,
+    "8": 1,
+    "9": 1398,
+    "10": 12,
+    "12": 2982,
+    "14": 3,
+    "15": 1672,
+    "16": 163
+   },
+   "families": 6233,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/proven/ev2_7q243.tar.xz",
+   "md5": "66bb1c63ab8f91eaa9113f718e107363",
+   "vm_path": "~/zruns/zprod/ev2_7q243/",
+   "repo_archive": "research/ji-z-partners/data/proven/ev2_7q243.tar.xz"
+  },
+  {
+   "name": "l11q135_rs",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 135,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "equals proven ev2_11q135",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 1,
+    "9": 606,
+    "10": 1,
+    "12": 495,
+    "15": 100,
+    "16": 6
+   },
+   "families": 1209,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l11q135_rs.tar.xz",
+   "md5": "5a474db29baaa2328d2ec8827539ec97",
+   "vm_path": "~/zruns/zprod/l11q135_rs/"
+  },
+  {
+   "name": "l11q243_on",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 243,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "lower bound, fully checked",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 2,
+    "8": 1,
+    "9": 3231,
+    "10": 16,
+    "12": 7066,
+    "14": 4,
+    "15": 4692,
+    "16": 467
+   },
+   "families": 15479,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l11q243_on.tar.xz",
+   "md5": "7f62c3cd757448461c469f9d0a23aa91",
+   "vm_path": "~/zruns/zprod/l11q243_on/"
+  },
+  {
+   "name": "l11q405_on",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 405,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "lower bound; 5,1/5,2 step stopped by hand, budget stops remain",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 6,
+    "8": 2,
+    "9": 19357,
+    "10": 58,
+    "12": 89258,
+    "14": 71,
+    "15": 149864,
+    "16": 24546
+   },
+   "families": 283162,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l11q405_on.tar.xz",
+   "md5": "8605e78b27e6ca180b717809980f3f43",
+   "vm_path": "~/zruns/zprod/l11q405_on/"
+  },
+  {
+   "name": "l13q135_rs",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 135,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "equals proven en13q135",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 1,
+    "9": 875,
+    "10": 1,
+    "12": 906,
+    "15": 291,
+    "16": 42
+   },
+   "families": 2116,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l13q135_rs.tar.xz",
+   "md5": "3fc5abc3e60875376137140b48de31d6",
+   "vm_path": "~/zruns/zprod/l13q135_rs/"
+  },
+  {
+   "name": "l13q243_on",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 243,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "lower bound, fully checked except the 5,1/5,2 step",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 2,
+    "8": 1,
+    "9": 5847,
+    "10": 19,
+    "12": 13166,
+    "14": 4,
+    "15": 10247,
+    "16": 1197
+   },
+   "families": 30483,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l13q243_on.tar.xz",
+   "md5": "9a57c052255fa09650407a228f35ce95",
+   "vm_path": "~/zruns/zprod/l13q243_on/"
+  },
+  {
+   "name": "l17q135_rs",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 135,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "equals proven en17q135",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 1,
+    "9": 1040,
+    "10": 1,
+    "12": 1164,
+    "15": 467,
+    "16": 58
+   },
+   "families": 2731,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l17q135_rs.tar.xz",
+   "md5": "519fa8c69ffe92da320eb96fe1bf3baa",
+   "vm_path": "~/zruns/zprod/l17q135_rs/"
+  },
+  {
+   "name": "l17q243_on",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 243,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "lower bound; 5,1/5,2 step stopped by hand, budget stops remain",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 2,
+    "8": 1,
+    "9": 7827,
+    "10": 20,
+    "12": 19006,
+    "14": 4,
+    "15": 17729,
+    "16": 2455
+   },
+   "families": 47044,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l17q243_on.tar.xz",
+   "md5": "dc7537cca02628df1b6e96270c9e53b3",
+   "vm_path": "~/zruns/zprod/l17q243_on/"
+  },
+  {
+   "name": "l19q135_on",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 135,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "equals proven e19q135_on",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 1,
+    "9": 1241,
+    "10": 1,
+    "12": 1553,
+    "15": 847,
+    "16": 92
+   },
+   "families": 3735,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l19q135_on.tar.xz",
+   "md5": "11476f6f4c0d4651669b4b6cb7bf6669",
+   "vm_path": "~/zruns/zprod/l19q135_on/"
+  },
+  {
+   "name": "l5q1215_on",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 1215,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "fully checked (no budget stops, widened steps)",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 4,
+    "7": 1,
+    "8": 3,
+    "9": 843,
+    "10": 73,
+    "12": 1947,
+    "14": 38,
+    "15": 1157,
+    "16": 99
+   },
+   "families": 4165,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l5q1215_on.tar.xz",
+   "md5": "6fbe60954854d5b9689253f82f4f965a",
+   "vm_path": "~/zruns/zprod/l5q1215_on/",
+   "note": "inside proven e5q3645_on"
+  },
+  {
+   "name": "l5q2187_on",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 2187,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "equals proven e5q2187_on after widened steps",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 5,
+    "7": 3,
+    "8": 7,
+    "9": 1687,
+    "10": 152,
+    "11": 1,
+    "12": 5541,
+    "14": 188,
+    "15": 5422,
+    "16": 694
+   },
+   "families": 13700,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l5q2187_on.tar.xz",
+   "md5": "28354211e8ddf6659794c200b4627fad",
+   "vm_path": "~/zruns/zprod/l5q2187_on/"
+  },
+  {
+   "name": "l5q3645_on",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 3645,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "lower bound: 65,343 of the proven 65,348 (union includes the signed-U 4,0 / 5,0 / 4,1 test steps; the widened recipe alone gives 65,323)",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 8,
+    "7": 4,
+    "8": 12,
+    "9": 4060,
+    "10": 316,
+    "11": 3,
+    "12": 20060,
+    "13": 3,
+    "14": 704,
+    "15": 34086,
+    "16": 6087
+   },
+   "families": 65343,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l5q3645_on.tar.xz",
+   "md5": "d4dec1a9354964b958db80db575c534e",
+   "vm_path": "~/zruns/zprod/l5q3645_on/"
+  },
+  {
+   "name": "l5q729_rs_v6",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 729,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "equals proven ev2_5q729",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 3,
+    "8": 3,
+    "9": 620,
+    "10": 54,
+    "12": 1155,
+    "14": 21,
+    "15": 488,
+    "16": 32
+   },
+   "families": 2376,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l5q729_rs_v6.tar.xz",
+   "md5": "cdbaa4b9fc58404908d109da9707678e",
+   "vm_path": "~/zruns/zprod/l5q729_rs_v6/"
+  },
+  {
+   "name": "l7q243_rs_v6",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 243,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "equals proven ev2_7q243",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 2,
+    "8": 1,
+    "9": 1398,
+    "10": 12,
+    "12": 2982,
+    "14": 3,
+    "15": 1672,
+    "16": 163
+   },
+   "families": 6233,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l7q243_rs_v6.tar.xz",
+   "md5": "bfbc0f38b6b41d78586bf85fe0596ba6",
+   "vm_path": "~/zruns/zprod/l7q243_rs_v6/"
+  },
+  {
+   "name": "l7q315_on",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 315,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "equals proven e7q315_on",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 2,
+    "8": 1,
+    "9": 2364,
+    "10": 20,
+    "12": 7012,
+    "14": 11,
+    "15": 6267,
+    "16": 884
+   },
+   "families": 16561,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l7q315_on.tar.xz",
+   "md5": "ac9b51bb5790911973729dd47c386e53",
+   "vm_path": "~/zruns/zprod/l7q315_on/"
+  },
+  {
+   "name": "l7q405_on",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 405,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "lower bound, fully checked (no budget stops, widened steps)",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 6,
+    "8": 2,
+    "9": 5355,
+    "10": 36,
+    "12": 20852,
+    "14": 33,
+    "15": 26748,
+    "16": 4091
+   },
+   "families": 57123,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l7q405_on.tar.xz",
+   "md5": "680886aa7b62294a532e70aabe4ee8c7",
+   "vm_path": "~/zruns/zprod/l7q405_on/"
+  },
+  {
+   "name": "l7q729_on",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 729,
+   "note_counts": "6-16",
+   "method": "ladder",
+   "status": "lower bound; 5,1/5,2 step stopped by hand, base steps not rerun without budget",
+   "tool": "zprod-rs ladder via zprod_rs.py (bin11, recipe of run_ladder_fast.sh)",
+   "families_per_size": {
+    "6": 9,
+    "8": 4,
+    "9": 17928,
+    "10": 200,
+    "12": 106602,
+    "14": 416,
+    "15": 233618,
+    "16": 44292
+   },
+   "families": 403069,
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-23/ladder/l7q729_on.tar.xz",
+   "md5": "cb96023159138ae989352a4b6b753316",
+   "vm_path": "~/zruns/zprod/l7q729_on/"
+  }
+ ]
+}

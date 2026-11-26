@@ -1,0 +1,18 @@
+16:44 chordneg 5q729: exit 0 5s 
+16:44 s1 5q729: exit 0 0s 
+ev2_5q729: 2,376 families; chord sums 2,138, holes 130, small signed factor 2,376 (overlaps: holes&merges 130, cs&others 2138); union 2,376 (100.00%); left 0 by notes {}
+16:45 chordneg 5q2187: exit 0 20s 
+16:45 s1 5q2187: exit 0 1s 
+e5q2187_on: 13,700 families; chord sums 11,839, holes 1,066, small signed factor 13,699 (overlaps: holes&merges 1066, cs&others 11839); union 13,699 (99.99%); left 1 by notes {14: 1}
+       1  G3 
+16:47 chordneg 5q3645: exit 0 98s 
+16:47 s1 5q3645: exit 0 1s 
+e5q3645_on: 65,348 families; chord sums 55,810, holes 5,880, small signed factor 65,328 (overlaps: holes&merges 5880, cs&others 55810); union 65,328 (99.97%); left 20 by notes {12: 2, 13: 1, 14: 1, 15: 14, 16: 2}
+       7  G1 |T| 3, |S+| 9, |S-| 4, stack (1, 0, 0, 12, 0, 1, True)
+       5  G3 
+       2  G1 |T| 3, |S+| 8, |S-| 4, stack (1, 0, 0, 12, 0, 1, True)
+       2  G1x T [1] S [-1, 1, 2]
+       2  G1 |T| 3, |S+| 9, |S-| 4, stack (2, 3, 3, 9, 0, 1, True)
+       1  G2x T [1, 2] S [-1, 1]
+       1  G2x T [1, 2] S [-2, 1]
+WIDE ALL DONE

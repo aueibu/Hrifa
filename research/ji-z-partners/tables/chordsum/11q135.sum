@@ -1,0 +1,7 @@
+# 11q135: 1209 families, chord sums 1200 (99.26%)
+#   by notes (chord sums / all): 6: 0/1, 9: 601/606, 10: 0/1, 12: 493/495, 15: 100/100, 16: 6/6
+#   (A, U) sizes: 3x3: 601, 3x4: 493, 3x5: 100, 4x4: 6
+#   not chord sum: 5  V 3,0 U 5 terms min -1 | V min 1
+#   not chord sum: 2  V 3,0 U 6 terms min -1 | V min 1
+#   not chord sum: 1  V 3,1 U 5 terms min 1 | V min -1
+#   not chord sum: 1  V 3,0 U 4 terms min -1 | V min 1

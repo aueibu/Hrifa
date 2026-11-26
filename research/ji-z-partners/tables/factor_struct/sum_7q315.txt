@@ -1,0 +1,14 @@
+# 16561 families
+#   U negmass 0: 16391
+#   U negmass 1: 170
+#   V 3,0 coeffs 1..1: 8698
+#   V 3,1 coeffs -1..1: 37
+#   V 4,0 coeffs 1..1: 4416
+#   V 4,1 coeffs -1..1: 25
+#   V 5,0 coeffs 1..1: 3273
+#   V 5,1 coeffs -1..1: 52
+#   V 6,1 coeffs -1..1: 53
+#   V 7,0 coeffs 1..1: 6
+#   V 8,0 coeffs 1..1: 1
+#   check ok: 16561
+#   flipped factors 1: 16561

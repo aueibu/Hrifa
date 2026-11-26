@@ -1,0 +1,36 @@
+e19q135_on: 3,735 families; chord sums 3,718, holes 16, small signed factor 9 (overlaps: holes&merges 8, cs&others 0); union 3,735 (100.00%); left 0 by notes {}
+ev2_11q135: 1,209 families; chord sums 1,200, holes 8, small signed factor 7 (overlaps: holes&merges 6, cs&others 0); union 1,209 (100.00%); left 0 by notes {}
+en13q135: 2,116 families; chord sums 2,099, holes 16, small signed factor 9 (overlaps: holes&merges 8, cs&others 0); union 2,116 (100.00%); left 0 by notes {}
+en17q135: 2,731 families; chord sums 2,714, holes 16, small signed factor 9 (overlaps: holes&merges 8, cs&others 0); union 2,731 (100.00%); left 0 by notes {}
+ev2_5q729: 2,376 families; chord sums 2,138, holes 130, small signed factor 189 (overlaps: holes&merges 56, cs&others 30); union 2,371 (99.79%); left 5 by notes {9: 2, 12: 3}
+       3  G1 |T| 3, |S+| 6, |S-| 2, stack (1, 0, 0, 6, 0, 1, True)
+       2  G1 |T| 3, |S+| 5, |S-| 2, stack (1, 0, 0, 6, 0, 1, True)
+ev2_7q243: 6,233 families; chord sums 6,051, holes 154, small signed factor 73 (overlaps: holes&merges 32, cs&others 13); union 6,233 (100.00%); left 0 by notes {}
+e7q315_on: 16,561 families; chord sums 16,244, holes 263, small signed factor 120 (overlaps: holes&merges 34, cs&others 32); union 16,561 (100.00%); left 0 by notes {}
+e5q2187_on: 13,700 families; chord sums 11,839, holes 1,066, small signed factor 1,009 (overlaps: holes&merges 174, cs&others 204); union 13,536 (98.80%); left 164 by notes {7: 3, 8: 1, 9: 4, 10: 3, 11: 1, 12: 41, 14: 1, 15: 110}
+      57  G1 |T| 3, |S+| 7, |S-| 2, stack (1, 0, 0, 6, 0, 1, True)
+      33  G1 |T| 3, |S+| 6, |S-| 2, stack (1, 0, 0, 6, 0, 1, True)
+      25  G1 |T| 5, |S+| 5, |S-| 2, stack (2, 2, 2, 8, 0, 1, True)
+      15  G1 |T| 5, |S+| 5, |S-| 2, stack (2, 4, 4, 6, 0, 1, True)
+       7  G1 |T| 5, |S+| 5, |S-| 2, stack (2, 3, 3, 7, 0, 1, True)
+       5  G1 |T| 4, |S+| 5, |S-| 2, stack (1, 0, 0, 8, 0, 1, True)
+       4  G1 |T| 3, |S+| 5, |S-| 2, stack (1, 0, 0, 6, 0, 1, True)
+       3  G2 |T| 7, |S+| 2, |S-| 1, stack (2, 1, 1, 6, 0, 1, True)
+       3  G2 |T| 10, |S+| 2, |S-| 1, stack (2, 1, 1, 9, 0, 1, True)
+       3  G1 |T| 3, |S+| 7, |S-| 3, stack (1, 0, 0, 9, 0, 1, True)
+       3  G1 |T| 5, |S+| 5, |S-| 2, stack (2, 1, 1, 9, 0, 1, True)
+       2  G3 
+e5q3645_on: 65,348 families; chord sums 55,810, holes 5,880, small signed factor 3,731 (overlaps: holes&merges 432, cs&others 895); union 64,094 (98.08%); left 1254 by notes {7: 4, 8: 2, 9: 8, 10: 6, 11: 3, 12: 144, 13: 3, 14: 1, 15: 1065, 16: 18}
+     627  G1 |T| 3, |S+| 7, |S-| 2, stack (1, 0, 0, 6, 0, 1, True)
+     192  G1 |T| 5, |S+| 5, |S-| 2, stack (2, 2, 2, 8, 0, 1, True)
+     112  G1 |T| 3, |S+| 6, |S-| 2, stack (1, 0, 0, 6, 0, 1, True)
+      88  G1 |T| 3, |S+| 8, |S-| 3, stack (1, 0, 0, 9, 0, 1, True)
+      43  G1 |T| 5, |S+| 5, |S-| 2, stack (2, 3, 3, 7, 0, 1, True)
+      42  G1 |T| 5, |S+| 5, |S-| 2, stack (2, 1, 1, 9, 0, 1, True)
+      36  G1 |T| 5, |S+| 5, |S-| 2, stack (2, 4, 4, 6, 0, 1, True)
+      21  G1 |T| 3, |S+| 7, |S-| 3, stack (1, 0, 0, 9, 0, 1, True)
+      13  G1 |T| 4, |S+| 6, |S-| 2, stack (1, 0, 0, 8, 0, 1, True)
+      11  G3 
+       9  G1 |T| 3, |S+| 8, |S-| 3, stack (2, 3, 3, 6, 0, 1, True)
+       7  G1 |T| 4, |S+| 5, |S-| 2, stack (1, 0, 0, 8, 0, 1, True)
+UNION ALL DONE

@@ -1,0 +1,1635 @@
+{
+ "created": "2026-11-24",
+ "project": "6/7/8/9-note Z-pairs, limits 5..23 (PROGRESS: Overnight 7/8/9-note project)",
+ "bucket": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24",
+ "runs": [
+  {
+   "name": "k6_l5q6561",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 6561,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 12
+   },
+   "families": 12,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l5q6561/"
+  },
+  {
+   "name": "k6_l5q10935",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 10935,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 14
+   },
+   "families": 14,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l5q10935/"
+  },
+  {
+   "name": "k6_l5q19683",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 19683,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 24
+   },
+   "families": 24,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l5q19683/"
+  },
+  {
+   "name": "k6_l7q405",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 6
+   },
+   "families": 6,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l7q405/"
+  },
+  {
+   "name": "k6_l7q729",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 729,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 9
+   },
+   "families": 9,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l7q729/"
+  },
+  {
+   "name": "k6_l7q1215",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 1215,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 12
+   },
+   "families": 12,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l7q1215/"
+  },
+  {
+   "name": "k6_l11q243",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 243,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 2
+   },
+   "families": 2,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l11q243/"
+  },
+  {
+   "name": "k6_l11q405",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 6
+   },
+   "families": 6,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l11q405/"
+  },
+  {
+   "name": "k6_l11q729",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 729,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 9
+   },
+   "families": 9,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l11q729/"
+  },
+  {
+   "name": "k6_l13q243",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 243,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 2
+   },
+   "families": 2,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l13q243/"
+  },
+  {
+   "name": "k6_l13q405",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 6
+   },
+   "families": 6,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l13q405/"
+  },
+  {
+   "name": "k6_l13q729",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 729,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 9
+   },
+   "families": 9,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l13q729/"
+  },
+  {
+   "name": "k6_l17q243",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 243,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 2
+   },
+   "families": 2,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l17q243/"
+  },
+  {
+   "name": "k6_l17q405",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 6
+   },
+   "families": 6,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l17q405/"
+  },
+  {
+   "name": "k6_l17q729",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 729,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 9
+   },
+   "families": 9,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l17q729/"
+  },
+  {
+   "name": "k6_l19q243",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 243,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 2
+   },
+   "families": 2,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l19q243/"
+  },
+  {
+   "name": "k6_l19q405",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 6
+   },
+   "families": 6,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l19q405/"
+  },
+  {
+   "name": "k6_l19q729",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 729,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "capped or failed (not a proof)",
+   "families_per_size": {},
+   "families": null,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l19q729/"
+  },
+  {
+   "name": "k6_l23q135",
+   "limit": 23,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23
+   ],
+   "q": 135,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 1
+   },
+   "families": 1,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l23q135/"
+  },
+  {
+   "name": "k6_l23q243",
+   "limit": 23,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23
+   ],
+   "q": 243,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 2
+   },
+   "families": 2,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6_l23q243/"
+  },
+  {
+   "name": "k6789_l5q19683",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 19683,
+   "note_counts": "6-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 24,
+    "7": 24,
+    "8": 34,
+    "9": 23796
+   },
+   "families": 23878,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6789_l5q19683/"
+  },
+  {
+   "name": "k6789_l5q32805",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 32805,
+   "note_counts": "6-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 25,
+    "7": 28,
+    "8": 39,
+    "9": 27896
+   },
+   "families": 27988,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6789_l5q32805/"
+  },
+  {
+   "name": "k6789_l5q59049",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 59049,
+   "note_counts": "6-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 31,
+    "7": 39,
+    "8": 58,
+    "9": 43177
+   },
+   "families": 43305,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6789_l5q59049/"
+  },
+  {
+   "name": "k6789_l5q98415",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 98415,
+   "note_counts": "6-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 32,
+    "7": 56,
+    "8": 92,
+    "9": 75149
+   },
+   "families": 75329,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6789_l5q98415/"
+  },
+  {
+   "name": "k6789_l7q1215",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 1215,
+   "note_counts": "6-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 12,
+    "7": 1,
+    "8": 4,
+    "9": 35314
+   },
+   "families": 35331,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6789_l7q1215/"
+  },
+  {
+   "name": "k6789_l13q405",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 405,
+   "note_counts": "6-9",
+   "method": "enumeration",
+   "status": "capped or failed (not a proof)",
+   "families_per_size": {},
+   "families": null,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6789_l13q405/"
+  },
+  {
+   "name": "k6789_l23q243",
+   "limit": 23,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23
+   ],
+   "q": 243,
+   "note_counts": "6-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 2,
+    "7": 0,
+    "8": 1,
+    "9": 10526
+   },
+   "families": 10529,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6789_l23q243/"
+  },
+  {
+   "name": "k6only_l5q59049",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 59049,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 31
+   },
+   "families": 31,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6only_l5q59049/"
+  },
+  {
+   "name": "k6only_l5q177147",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 177147,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 42
+   },
+   "families": 42,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6only_l5q177147/"
+  },
+  {
+   "name": "k6only_l7q3645",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 3645,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 23
+   },
+   "families": 23,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6only_l7q3645/"
+  },
+  {
+   "name": "k6only_l7q10935",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 10935,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 52
+   },
+   "families": 52,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6only_l7q10935/"
+  },
+  {
+   "name": "k6only_l11q2187",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 2187,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 27
+   },
+   "families": 27,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6only_l11q2187/"
+  },
+  {
+   "name": "k6only_l11q6561",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 6561,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "capped or failed (not a proof)",
+   "families_per_size": {},
+   "families": null,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6only_l11q6561/"
+  },
+  {
+   "name": "k6only_l13q1215",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 1215,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 12
+   },
+   "families": 12,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6only_l13q1215/"
+  },
+  {
+   "name": "k6only_l17q1215",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 1215,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "capped or failed (not a proof)",
+   "families_per_size": {},
+   "families": null,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6only_l17q1215/"
+  },
+  {
+   "name": "k6only_l19q1215",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 1215,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "capped or failed (not a proof)",
+   "families_per_size": {},
+   "families": null,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6only_l19q1215/"
+  },
+  {
+   "name": "k6only_l23q405",
+   "limit": 23,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "6": 6
+   },
+   "families": 6,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k6only_l23q405/"
+  },
+  {
+   "name": "k789_l5q6561",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 6561,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 8,
+    "8": 17,
+    "9": 7243
+   },
+   "families": 7268,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l5q6561/"
+  },
+  {
+   "name": "k789_l5q10935",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 10935,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 10,
+    "8": 21,
+    "9": 8804
+   },
+   "families": 8835,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l5q10935/"
+  },
+  {
+   "name": "k789_l7q405",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 405,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0,
+    "8": 2,
+    "9": 5355
+   },
+   "families": 5357,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l7q405/"
+  },
+  {
+   "name": "k789_l7q729",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 729,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0,
+    "8": 4,
+    "9": 17928
+   },
+   "families": 17932,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l7q729/"
+  },
+  {
+   "name": "k789_l11q243",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 243,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0,
+    "8": 1,
+    "9": 3231
+   },
+   "families": 3232,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l11q243/"
+  },
+  {
+   "name": "k789_l11q405",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 405,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0,
+    "8": 2,
+    "9": 19358
+   },
+   "families": 19360,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l11q405/"
+  },
+  {
+   "name": "k789_l13q243",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 243,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0,
+    "8": 1,
+    "9": 5847
+   },
+   "families": 5848,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l13q243/"
+  },
+  {
+   "name": "k789_l13q405",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 405,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "capped or failed (not a proof)",
+   "families_per_size": {},
+   "families": null,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l13q405/"
+  },
+  {
+   "name": "k789_l17q243",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 243,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0,
+    "8": 1,
+    "9": 7827
+   },
+   "families": 7828,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l17q243/"
+  },
+  {
+   "name": "k789_l17q405",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 405,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "capped or failed (not a proof)",
+   "families_per_size": {},
+   "families": null,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l17q405/"
+  },
+  {
+   "name": "k789_l19q243",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 243,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0,
+    "8": 1,
+    "9": 9422
+   },
+   "families": 9423,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l19q243/"
+  },
+  {
+   "name": "k789_l23q135",
+   "limit": 23,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23
+   ],
+   "q": 135,
+   "note_counts": "7-9",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 0,
+    "8": 0,
+    "9": 1317
+   },
+   "families": 1317,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k789_l23q135/"
+  },
+  {
+   "name": "k7only_l5q32805",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 32805,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 28
+   },
+   "families": 28,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k7only_l5q32805/"
+  },
+  {
+   "name": "k7only_l7q6561",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 6561,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 20
+   },
+   "families": 20,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k7only_l7q6561/"
+  },
+  {
+   "name": "k7only_l7q10935",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 10935,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "proven",
+   "families_per_size": {
+    "7": 27
+   },
+   "families": 27,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k7only_l7q10935/"
+  },
+  {
+   "name": "k7only_l11q3645",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 3645,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "capped or failed (not a proof)",
+   "families_per_size": {},
+   "families": null,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k7only_l11q3645/"
+  },
+  {
+   "name": "k7only_l13q1215",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 1215,
+   "note_counts": "7",
+   "method": "enumeration",
+   "status": "capped or failed (not a proof)",
+   "families_per_size": {},
+   "families": null,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_proofs.tar.xz",
+   "md5": "a5906c91c543f3929d1e7367227ca34c",
+   "vm_path": "~/zruns/zprod/k7only_l13q1215/"
+  },
+  {
+   "name": "k6L_l5q10935",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 10935,
+   "note_counts": "6",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "6": 14
+   },
+   "families": 14,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k6L_l5q10935/"
+  },
+  {
+   "name": "k6L_l5q19683",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 19683,
+   "note_counts": "6",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "6": 24
+   },
+   "families": 24,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k6L_l5q19683/"
+  },
+  {
+   "name": "k6L_l7q729",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 729,
+   "note_counts": "6",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "6": 9
+   },
+   "families": 9,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k6L_l7q729/"
+  },
+  {
+   "name": "k6L_l7q1215",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 1215,
+   "note_counts": "6",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "6": 12
+   },
+   "families": 12,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k6L_l7q1215/"
+  },
+  {
+   "name": "k6L_l11q405",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "6": 6
+   },
+   "families": 6,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k6L_l11q405/"
+  },
+  {
+   "name": "k6L_l13q405",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "6": 6
+   },
+   "families": 6,
+   "note": "steps without a result (45-min cap): five",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k6L_l13q405/"
+  },
+  {
+   "name": "k6L_l17q405",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "6": 6
+   },
+   "families": 6,
+   "note": "steps without a result (45-min cap): five, main",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k6L_l17q405/"
+  },
+  {
+   "name": "k6L_l19q405",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "6": 0
+   },
+   "families": 0,
+   "note": "steps without a result (45-min cap): five, main, neg",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k6L_l19q405/"
+  },
+  {
+   "name": "k6L_l23q405",
+   "limit": 23,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23
+   ],
+   "q": 405,
+   "note_counts": "6",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "6": 0
+   },
+   "families": 0,
+   "note": "steps without a result (45-min cap): five, main, neg",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k6L_l23q405/"
+  },
+  {
+   "name": "k789L_l5q10935",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 10935,
+   "note_counts": "7-9",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "7": 10,
+    "8": 21,
+    "9": 8804
+   },
+   "families": 8835,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k789L_l5q10935/"
+  },
+  {
+   "name": "k789L_l5q19683",
+   "limit": 5,
+   "primes": [
+    3,
+    5
+   ],
+   "q": 19683,
+   "note_counts": "7-9",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "7": 24,
+    "8": 34,
+    "9": 23796
+   },
+   "families": 23854,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k789L_l5q19683/"
+  },
+  {
+   "name": "k789L_l7q729",
+   "limit": 7,
+   "primes": [
+    3,
+    5,
+    7
+   ],
+   "q": 729,
+   "note_counts": "7-9",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "7": 0,
+    "8": 4,
+    "9": 17928
+   },
+   "families": 17932,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k789L_l7q729/"
+  },
+  {
+   "name": "k789L_l11q405",
+   "limit": 11,
+   "primes": [
+    3,
+    5,
+    7,
+    11
+   ],
+   "q": 405,
+   "note_counts": "7-9",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "7": 0,
+    "8": 2,
+    "9": 19358
+   },
+   "families": 19360,
+   "note": "",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k789L_l11q405/"
+  },
+  {
+   "name": "k789L_l13q405",
+   "limit": 13,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13
+   ],
+   "q": 405,
+   "note_counts": "7-9",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "7": 0,
+    "8": 2,
+    "9": 35020
+   },
+   "families": 35022,
+   "note": "steps without a result (45-min cap): five",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k789L_l13q405/"
+  },
+  {
+   "name": "k789L_l17q405",
+   "limit": 17,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17
+   ],
+   "q": 405,
+   "note_counts": "7-9",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "7": 0,
+    "8": 0,
+    "9": 44830
+   },
+   "families": 44830,
+   "note": "steps without a result (45-min cap): five, main",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k789L_l17q405/"
+  },
+  {
+   "name": "k789L_l19q405",
+   "limit": 19,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+   ],
+   "q": 405,
+   "note_counts": "7-9",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "7": 0,
+    "8": 0,
+    "9": 57845
+   },
+   "families": 57845,
+   "note": "steps without a result (45-min cap): five, main",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k789L_l19q405/"
+  },
+  {
+   "name": "k789L_l23q405",
+   "limit": 23,
+   "primes": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23
+   ],
+   "q": 405,
+   "note_counts": "7-9",
+   "method": "ladder",
+   "status": "lower bound",
+   "families_per_size": {
+    "7": 0,
+    "8": 0,
+    "9": 0
+   },
+   "families": 0,
+   "note": "steps without a result (45-min cap): five, main, neg",
+   "archive": "gs://project-f5757a43-c874-4e0b-8f8-ji-zpairs/archive_2026-11-24/k6789_ladders.tar.xz",
+   "md5": "4d5d7f63c121bd3bcb828970083c347b",
+   "vm_path": "~/zruns/zprod/k789L_l23q405/"
+  }
+ ]
+}

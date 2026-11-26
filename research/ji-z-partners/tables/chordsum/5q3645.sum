@@ -1,0 +1,15 @@
+# 5q3645: 65348 families, chord sums 55810 (85.40%)
+#   by notes (chord sums / all): 6: 0/8, 7: 0/4, 8: 0/12, 9: 3856/4060, 10: 0/316, 11: 0/3, 12: 18316/20060, 13: 0/3, 14: 0/704, 15: 28280/34089, 16: 5358/6089
+#   (A, U) sizes: 3x3: 3856, 3x4: 18316, 3x5: 28280, 4x4: 5358
+#   not chord sum: 3712  V 3,0 U 7 terms min -1 | V min 1
+#   not chord sum: 1413  V 3,0 U 6 terms min -1 | V min 1
+#   not chord sum: 1038  V 4,1 U 5 terms min 1 | V min -1
+#   not chord sum: 682  V 3,1 U 7 terms min 1 | V min -1
+#   not chord sum: 632  V 3,0 U 9 terms min -1 | V min 1
+#   not chord sum: 371  V 4,0 U 6 terms min -1 | V min 1
+#   not chord sum: 330  V 3,1 U 8 terms min 1 | V min -1
+#   not chord sum: 316  V 5,0 U 7 terms min -1 | V min 1
+#   not chord sum: 304  V 3,1 U 5 terms min 1 | V min -1
+#   not chord sum: 196  V 3,0 U 5 terms min -1 | V min 1
+#   not chord sum: 141  V 4,0 U 5 terms min -1 | V min 1
+#   not chord sum: 113  V 3,0 U 8 terms min -1 | V min 1

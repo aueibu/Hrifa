@@ -1,0 +1,283 @@
+archive: 4496 octave scales parsed (2386 with exact ratios)
+named modes: 6-EDO 3, 7-EDO 5, 8-EDO 1, 9-EDO 5, 10-EDO 7, 11-EDO 9, 12-EDO 190, 13-EDO 20, 14-EDO 10, 15-EDO 22, 16-EDO 20, 17-EDO 43, 18-EDO 12, 19-EDO 45, 20-EDO 14, 21-EDO 20, 22-EDO 50, 23-EDO 25, 24-EDO 70, 25-EDO 17, 26-EDO 22, 27-EDO 22, 28-EDO 17, 29-EDO 28, 30-EDO 19, 31-EDO 101, 32-EDO 15, 33-EDO 17, 34-EDO 31, 35-EDO 9, 36-EDO 40, 37-EDO 31, 38-EDO 10, 39-EDO 20, 40-EDO 15, 41-EDO 35, 42-EDO 13, 43-EDO 19, 44-EDO 22, 45-EDO 15, 46-EDO 31, 47-EDO 12, 48-EDO 21, 49-EDO 13, 50-EDO 24, 51-EDO 22, 52-EDO 15, 53-EDO 95, 54-EDO 14, 55-EDO 22, 56-EDO 16, 57-EDO 17, 58-EDO 24, 59-EDO 11, 60-EDO 18, 61-EDO 14, 62-EDO 13, 63-EDO 19, 64-EDO 14, 65-EDO 18, 66-EDO 14, 67-EDO 12, 68-EDO 24, 69-EDO 12, 70-EDO 13, 71-EDO 13, 72-EDO 44, 73-EDO 12, 74-EDO 10, 75-EDO 13, 76-EDO 10, 77-EDO 23, 78-EDO 12, 79-EDO 11, 80-EDO 15, 81-EDO 16, 82-EDO 10, 83-EDO 13, 84-EDO 40, 85-EDO 24, 86-EDO 11, 87-EDO 16, 88-EDO 10, 89-EDO 10, 90-EDO 10, 91-EDO 11, 92-EDO 5, 93-EDO 11, 94-EDO 12, 95-EDO 8, 96-EDO 10, 97-EDO 7, 98-EDO 7, 99-EDO 19, 100-EDO 13, 101-EDO 11, 102-EDO 6, 103-EDO 7, 104-EDO 6, 105-EDO 3, 106-EDO 19, 107-EDO 7, 108-EDO 6, 109-EDO 7, 110-EDO 5, 111-EDO 7, 112-EDO 7, 113-EDO 9, 114-EDO 3, 115-EDO 6, 116-EDO 5, 117-EDO 2, 118-EDO 12, 119-EDO 3, 120-EDO 3, 121-EDO 9, 122-EDO 5, 123-EDO 4, 124-EDO 3, 125-EDO 6, 126-EDO 6, 127-EDO 2, 128-EDO 5, 129-EDO 1, 130-EDO 1, 131-EDO 3, 133-EDO 3, 134-EDO 1, 135-EDO 2, 136-EDO 1, 137-EDO 4, 138-EDO 3, 139-EDO 2, 140-EDO 7, 141-EDO 3, 142-EDO 1, 143-EDO 1, 144-EDO 3, 145-EDO 6, 146-EDO 1, 147-EDO 4, 148-EDO 3, 149-EDO 2, 150-EDO 1, 151-EDO 2, 152-EDO 7, 153-EDO 1, 155-EDO 1, 159-EDO 1, 160-EDO 1, 161-EDO 2, 162-EDO 1, 163-EDO 1, 164-EDO 2, 166-EDO 4, 167-EDO 2, 169-EDO 2, 170-EDO 1, 171-EDO 7, 174-EDO 4, 175-EDO 3, 176-EDO 2, 177-EDO 3, 180-EDO 1, 181-EDO 1, 183-EDO 3, 185-EDO 3, 187-EDO 1, 190-EDO 5, 196-EDO 1, 197-EDO 7, 198-EDO 2, 200-EDO 4, 202-EDO 3, 205-EDO 5
+families: 9714
+
+== 6 notes: 3 families; members with: 12-EDO named mode 1, subset 6
+   q=125 (5-limit):
+      1 27/25 9/8 36/25 8/5 15/8
+         IN ariel2 [12 notes] (Ariel 2), harrison_cinna [12 notes] (Lou Harrison, "Incidental Music for Corn), hexany4 [12 notes] (Hexany Cluster 4)
+      1 9/8 5/4 27/20 36/25 48/25
+         IN corrette3 [12 notes] (Corrette's monochord (1753), also Marpur), coul_12 [12 notes] (Scale 1 5/4 3/2 2 successively split lar), coul_12a [12 notes] (Scale 1 6/5 3/2 2 successively split lar)
+         MODE 12-EDO rotation: Raga Saanjh Ki Hindol
+   q=243 (5-limit):
+      1 16/15 27/25 10/9 36/25 16/9
+         IN mcclain_18 [18 notes] (McClain's 18-tone scale, see page 143 of), dekany_jove [19 notes] (Dekany jove {243/242, 441/440} oblique t), tri19-2 [19 notes] (3:5:9 Tritriadic 19-Tone Matrix)
+      1 25/24 10/9 9/8 27/20 25/18
+         IN mcclain_18 [18 notes] (McClain's 18-tone scale, see page 143 of), tri19-2 [19 notes] (3:5:9 Tritriadic 19-Tone Matrix), ellis_24 [24 notes] (Ellis, from p. 421 of Helmholtz, 24 tone)
+   q=729 (5-limit):
+      1 100/81 45/32 125/81 25/16 16/9
+         IN tri19-4 [19 notes] (4:5:9 Tritriadic 19-Tone Matrix), ptolemy_prod [21 notes] (Product of Intense Diatonic with its int), indian-sarana2 [26 notes] (26 saranas by Vidhyadhar Oak, 1/1=240 Hz)
+      1 9/8 100/81 25/16 125/72 160/81
+         IN tri19-4 [19 notes] (4:5:9 Tritriadic 19-Tone Matrix), smithgw_scj22b [22 notes] (<2048/2025, 250/243> Fokker block), ellis_24 [24 notes] (Ellis, from p. 421 of Helmholtz, 24 tone)
+
+== 7 notes: 22 families; members with: 12-EDO named mode 6, other-EDO named mode 6, subset 34
+   q=1215 (5-limit):
+      1 10/9 32/27 45/32 40/27 27/16 16/9
+         IN newton_15_out_of_53 [15 notes] (from drawing: Cambridge Univ.Lib.,Ms.Add), safi_arabic_s [17 notes] (Schismatically altered Arabic 17-tone Py), wilson_17 [17 notes] (Wilson 17-tone 5-limit scale. Also calle)
+         MODE 12-EDO exact: Mela Hemavati, Raga Desisimharavam, Madhukant, Maqam Nakriz, | 19-EDO rotation: Nineteen-tone Harmonic Minor | 31-EDO rotation: Thirty-one tone Harmonic Minor
+      1 9/8 32/27 45/32 40/27 27/16 15/8
+         IN newton_15_out_of_53 [15 notes] (from drawing: Cambridge Univ.Lib.,Ms.Add), safi_arabic_s [17 notes] (Schismatically altered Arabic 17-tone Py), wilson_17 [17 notes] (Wilson 17-tone 5-limit scale. Also calle)
+         MODE 12-EDO exact: Lydian Diminished, Mela Dharmavati, Raga Ambika, Anjani Kaly | 17-EDO rotation: Turkish Minor | 19-EDO rotation: Nineteen-tone Harmonic Major
+   q=1701 (7-limit):
+      1 28/27 32/27 14/9 27/16 16/9 63/32
+         IN semmeanflat1 [19 notes] (Semaphore-meantone-flattone wakalix), white [22 notes] (Justin White's 22-tone scale based on Al), efg333333333337 [24 notes] (Genus [333333333337])
+      1 28/27 9/8 32/27 21/16 27/16 63/32
+         IN semmeanflat1 [19 notes] (Semaphore-meantone-flattone wakalix), white [22 notes] (Justin White's 22-tone scale based on Al), efg333333333337 [24 notes] (Genus [333333333337])
+   q=2187 (7-limit):
+      1 28/27 32/27 21/16 112/81 27/16 16/9
+         IN semmeanflat1 [19 notes] (Semaphore-meantone-flattone wakalix), white [22 notes] (Justin White's 22-tone scale based on Al), efg333333333337 [24 notes] (Genus [333333333337])
+         MODE 12-EDO exact: Locrian natural 6, Maqam Tarznauyn, Raga Laliteshwari | 17-EDO rotation: Seventeen-tone Harmonic Minor
+      1 9/8 32/27 21/16 112/81 27/16 7/4
+         IN semmeanflat1 [19 notes] (Semaphore-meantone-flattone wakalix), white [22 notes] (Justin White's 22-tone scale based on Al), efg333333333337 [24 notes] (Genus [333333333337])
+         MODE 12-EDO exact: Dorian flat 5, Blues Heptatonic, Makam Karcigar, Maqam Nahaw | 17-EDO rotation: Seventeen-tone Harmonic Major
+   q=2187 (5-limit):
+      1 32/27 40/27 27/16 16/9 15/8 160/81
+         IN newton_15_out_of_53 [15 notes] (from drawing: Cambridge Univ.Lib.,Ms.Add), safi_arabic_s [17 notes] (Schismatically altered Arabic 17-tone Py), wilson_17 [17 notes] (Wilson 17-tone 5-limit scale. Also calle)
+      1 9/8 32/27 5/4 27/16 15/8 160/81
+         IN newton_15_out_of_53 [15 notes] (from drawing: Cambridge Univ.Lib.,Ms.Add), safi_arabic_s [17 notes] (Schismatically altered Arabic 17-tone Py), wilson_17 [17 notes] (Wilson 17-tone 5-limit scale. Also calle)
+   q=2187 (5-limit):
+      1 75/64 32/27 100/81 27/16 16/9 50/27
+         IN efg333333355 [24 notes] (Genus [333333355]), smithj24 [24 notes] (Jon Lyle Smith 5-limit JI scale, TL 8-4-), indian-sarana [26 notes] (26 saranas (shrutis) by Acharekar and Ac)
+      1 9/8 75/64 32/27 100/81 25/16 27/16
+         IN efg333333355 [24 notes] (Genus [333333355]), smithj24 [24 notes] (Jon Lyle Smith 5-limit JI scale, TL 8-4-), turkish_29 [29 notes] (Gültekin Oransay, 29-tone Turkish gamut,)
+   q=2835 (7-limit):
+      1 32/27 35/27 105/64 27/16 140/81 16/9
+         IN vogel_21 [21 notes] (Martin Vogel's 21-tone Archytas system, ), collangettes [24 notes] (d'Erlanger vol.5, p. 23. Père Maurice Co)
+      1 35/32 9/8 32/27 105/64 27/16 140/81
+         IN vogel_21 [21 notes] (Martin Vogel's 21-tone Archytas system, ), collangettes [24 notes] (d'Erlanger vol.5, p. 23. Père Maurice Co)
+   q=3645 (7-limit):
+      1 21/20 9/8 32/27 63/40 224/135 27/16
+         IN white [22 notes] (Justin White's 22-tone scale based on Al)
+      1 32/27 56/45 63/40 224/135 27/16 16/9
+         IN white [22 notes] (Justin White's 22-tone scale based on Al)
+   q=3645 (5-limit):
+      1 45/32 3/2 128/81 5/3 15/8 160/81
+         IN newton_15_out_of_53 [15 notes] (from drawing: Cambridge Univ.Lib.,Ms.Add), safi_arabic_s [17 notes] (Schismatically altered Arabic 17-tone Py), wilson_17 [17 notes] (Wilson 17-tone 5-limit scale. Also calle)
+      1 81/80 16/15 9/8 4/3 8/5 243/128
+         IN newton_15_out_of_53 [15 notes] (from drawing: Cambridge Univ.Lib.,Ms.Add), safi_arabic_s [17 notes] (Schismatically altered Arabic 17-tone Py), wilson_17 [17 notes] (Wilson 17-tone 5-limit scale. Also calle)
+
+== 8 notes: 3 families; members with: subset 6
+   q=243 (5-limit):
+      1 27/25 64/45 36/25 3/2 5/3 16/9 48/25
+         IN werck1 [20 notes] (Werckmeister I (just intonation)), ptolemy_prod [21 notes] (Product of Intense Diatonic with its int), hexlesfip22seed [22 notes] (Scale square of 5-limit diamond plus {27)
+      1 81/80 27/25 9/8 4/3 36/25 5/3 48/25
+         IN mcclain_18 [18 notes] (McClain's 18-tone scale, see page 143 of), dekany_jove [19 notes] (Dekany jove {243/242, 441/440} oblique t), indian-hahn [22 notes] (Indian shrutis Paul Hahn proposal)
+   q=625 (5-limit):
+      1 144/125 32/27 6/5 32/25 40/27 5/3 16/9
+         IN mcclain_18 [18 notes] (McClain's 18-tone scale, see page 143 of), mersenne_26 [26 notes] (26-note choice system of Mersenne, Trait), diamond9_875 [27 notes] (9-limit diamond keemic (875/864) 5-limit)
+      1 16/15 6/5 32/25 64/45 36/25 40/27 50/27
+         IN mersenne_26 [26 notes] (26-note choice system of Mersenne, Trait), diamond9_875 [27 notes] (9-limit diamond keemic (875/864) 5-limit), gann_cinderella [30 notes] (Kyle Gann, scale for Cinderella's Bad Ma)
+   q=675 (5-limit):
+      1 25/24 32/27 25/18 64/45 16/9 50/27 15/8
+         IN majmin [17 notes] (Malcolm & Marpurg 4 (Yamaha major & mino), mersen-ban [18 notes] (For keyboard designs of Mersenne (1635) ), dekany_sensamagic [19 notes] (Dekany sensamagic {245/243, 385/384} obl)
+      1 81/80 32/25 36/25 3/2 27/16 15/8 48/25
+         IN battaglia_16 [16 notes] (Mike Battaglia 5-limit 16-tone scale), mcclain_18 [18 notes] (McClain's 18-tone scale, see page 143 of), darreg [19 notes] (This set of 19 ratios in 5-limit JI is f)
+
+== 9 notes: 2471 families; members with: 12-EDO named mode 291, other-EDO named mode 251, subset 3235
+   q=45 (7-limit):
+      1 10/9 7/6 5/4 4/3 3/2 14/9 16/9 35/18
+         IN hexanys [12 notes] (Hexanys 1 3 5 7 9), jonsson1 [12 notes] (Magnus Jonsson [1 3 5 7] x [1 3 5 9] cro), harmf10 [13 notes] (6/7/8/9/10 harmonics)
+      1 9/8 7/6 4/3 7/5 3/2 8/5 7/4 9/5
+         IN boomsliter [12 notes] (Boomsliter & Creel basic set of their re), wilson-grady_1-3-5-7-9-doubledekany [14 notes] (Constant structure scale of the 2)5 and ), mclaren_cps [15 notes] (2)12 [1,2,3,4,5,6,8,9,10,12,14,15] a deg)
+   q=45 (7-limit):
+      1 7/6 6/5 4/3 7/5 3/2 5/3 9/5 28/15
+         IN jonsson1 [12 notes] (Magnus Jonsson [1 3 5 7] x [1 3 5 9] cro), corner9 [14 notes] (First 9 harmonics of 5th through 9th har), mclaren_cps [15 notes] (2)12 [1,2,3,4,5,6,8,9,10,12,14,15] a deg)
+      1 9/8 7/6 5/4 7/5 3/2 5/3 7/4 9/5
+         IN boomsliter [12 notes] (Boomsliter & Creel basic set of their re), dekany_union [14 notes] (Union of 2)5 and 3)5 1.3.5.7.9 dekanies,), mclaren_cps [15 notes] (2)12 [1,2,3,4,5,6,8,9,10,12,14,15] a deg)
+   q=45 (7-limit):
+      1 15/14 6/5 5/4 9/7 4/3 10/7 3/2 5/3
+         IN dekany_union [14 notes] (Union of 2)5 and 3)5 1.3.5.7.9 dekanies,), stellarhex [16 notes] (mandala/stelhex/cube(2) plus 7/6 and 7/5), sternbrocot4 [16 notes] (Level 4 of the Stern-Brocot tree)
+      1 6/5 9/7 4/3 10/7 3/2 8/5 5/3 12/7
+         IN stellarhex [16 notes] (mandala/stelhex/cube(2) plus 7/6 and 7/5), smithgw_18 [18 notes] (Gene Ward Smith chord analogue to period), steldia [18 notes] (Stellated hexany plus diamond; superpart)
+   q=49 (7-limit):
+      1 15/14 6/5 5/4 9/7 10/7 12/7 7/4 15/8
+         IN mandela [14 notes] (One of the 195 other denizens of the dom), stelhex1 [14 notes] (Stellated two out of 1 3 5 7 hexany <14 ), stellarhex [16 notes] (mandala/stelhex/cube(2) plus 7/6 and 7/5)
+      1 7/6 6/5 5/4 4/3 10/7 8/5 12/7 7/4
+         IN diamond7 [13 notes] (7-limit diamond, also double-tie circula), diaconv225 [15 notes] (convex closure of 7-limit diamond with r), zesster_mix [16 notes] (Harmonic six-star, groups A, B and C mix)
+   q=49 (7-limit):
+      1 16/15 28/25 8/7 7/6 6/5 4/3 7/5 28/15
+         IN stelhex1 [14 notes] (Stellated two out of 1 3 5 7 hexany <14 ), stellarhex [16 notes] (mandala/stelhex/cube(2) plus 7/6 and 7/5), steldia [18 notes] (Stellated hexany plus diamond; superpart)
+      1 8/7 7/6 6/5 5/4 4/3 7/5 10/7 3/2
+         IN max3 [12 notes] (31 intervals 26 triads 6 tetrads 2 penta), max5 [12 notes] (31 intervals 26 triads 6 tetrads two pen), diamond7 [13 notes] (7-limit diamond, also double-tie circula)
+   q=49 (7-limit):
+      1 15/14 7/6 5/4 4/3 3/2 5/3 12/7 7/4
+         IN dwarf13_7d [13 notes] (Dwarf(<13 21 30 37|)), corner9 [14 notes] (First 9 harmonics of 5th through 9th har), diaconv225 [15 notes] (convex closure of 7-limit diamond with r)
+      1 15/14 8/7 7/6 4/3 10/7 3/2 5/3 12/7
+         IN diaconv225 [15 notes] (convex closure of 7-limit diamond with r), steltet2 [16 notes] (Stellated three out of 1 3 5 7 tetrany), vitale1 [16 notes] (Rami Vitale's 7-limit just scale)
+   q=49 (7-limit):
+      1 15/14 7/6 5/4 9/7 4/3 10/7 3/2 12/7
+         IN vitale2 [16 notes] (Rami Vitale, inverse mode of vitale1.scl), rectsp7 [18 notes] (Rectangle minimal beats spectrum of orde), smithgw_18 [18 notes] (Gene Ward Smith chord analogue to period)
+      1 7/6 6/5 9/7 4/3 7/5 3/2 8/5 12/7
+         IN vitale1 [16 notes] (Rami Vitale's 7-limit just scale), smithgw_18 [18 notes] (Gene Ward Smith chord analogue to period), steldia [18 notes] (Stellated hexany plus diamond; superpart)
+   q=49 (7-limit):
+      1 21/20 6/5 5/4 21/16 7/5 12/7 7/4 9/5
+         IN stelhex1 [14 notes] (Stellated two out of 1 3 5 7 hexany <14 ), stellarhex [16 notes] (mandala/stelhex/cube(2) plus 7/6 and 7/5), steldia [18 notes] (Stellated hexany plus diamond; superpart)
+      1 8/7 7/6 6/5 10/7 3/2 8/5 5/3 7/4
+         IN diamond7 [13 notes] (7-limit diamond, also double-tie circula), diaconv225 [15 notes] (convex closure of 7-limit diamond with r), cons17 [16 notes] (Set of intervals with num + den <= 17 no)
+
+== 10 notes: 61 families; members with: other-EDO named mode 1, subset 95
+   q=135 (7-limit):
+      1 10/9 9/8 7/6 35/24 14/9 7/4 16/9 15/8 35/18
+         IN superclipgenus19 [19 notes] (Mode of Genus [333357] with 567/512 remo), efg333357 [20 notes] (Genus [333357]), phillips_22 [22 notes] (All-key 19-limit JI scale (2002), TL 21-)
+      1 16/15 9/8 7/6 7/5 14/9 7/4 16/9 9/5 28/15
+         IN superclipgenus19 [19 notes] (Mode of Genus [333357] with 567/512 remo), efg333357 [20 notes] (Genus [333357]), diaconv5120 [29 notes] (convex closure of 7-limit diamond with r)
+   q=189 (7-limit):
+      1 10/9 9/8 5/4 21/16 35/24 14/9 5/3 16/9 35/18
+         IN superclipgenus19 [19 notes] (Mode of Genus [333357] with 567/512 remo), efg333357 [20 notes] (Genus [333357]), phillips_ji [21 notes] (Pauline Phillips, JI 0 #/b "C" scale (20)
+      1 21/20 9/8 6/5 21/16 7/5 14/9 8/5 16/9 9/5
+         IN superclipgenus19 [19 notes] (Mode of Genus [333357] with 567/512 remo), efg333357 [20 notes] (Genus [333357]), diaconv5120 [29 notes] (convex closure of 7-limit diamond with r)
+   q=225 (5-limit):
+      1 25/24 10/9 6/5 25/16 8/5 5/3 16/9 9/5 15/8
+         IN majmin [17 notes] (Malcolm & Marpurg 4 (Yamaha major & mino), mcclain_18 [18 notes] (McClain's 18-tone scale, see page 143 of), mersen-ban [18 notes] (For keyboard designs of Mersenne (1635) )
+      1 25/24 16/15 10/9 9/8 6/5 5/4 25/18 8/5 15/8
+         IN majmin [17 notes] (Malcolm & Marpurg 4 (Yamaha major & mino), mersen-ban [18 notes] (For keyboard designs of Mersenne (1635) ), ji_19 [19 notes] (5-limit 19-tone scale, subset of genus [)
+   q=225 (7-limit):
+      1 15/14 10/9 9/8 25/21 10/7 16/9 25/14 15/8 40/21
+         IN meyer_29 [29 notes] (Max Meyer, see David Doty, 1/1, August 1), steldek1 [30 notes] (Stellated two out of 1 3 5 7 9 dekany), stelpent1 [30 notes] (Stellated one out of 1 3 5 7 9 pentany)
+      1 21/20 10/9 9/8 7/6 7/5 7/4 16/9 28/15 15/8
+         IN meyer_29 [29 notes] (Max Meyer, see David Doty, 1/1, August 1), gann_suntune [30 notes] (Kyle Gann, tuning for Sun Dance / Battle)
+   q=243 (5-limit):
+      1 5/4 32/25 4/3 27/20 36/25 3/2 8/5 81/50 5/3
+         IN mcclain_18 [18 notes] (McClain's 18-tone scale, see page 143 of), torb24 [24 notes] (detempering C2 x C12 {648/625, 2048/2025), mersenne_26 [26 notes] (26-note choice system of Mersenne, Trait)
+      1 6/5 40/27 3/2 25/16 8/5 5/3 9/5 50/27 15/8
+         IN mersenne_26 [26 notes] (26-note choice system of Mersenne, Trait), tanaka [26 notes] (26-note choice system of Shohé Tanaka, S), mersenne_31 [31 notes] (31-note choice system of Mersenne, Harmo)
+   q=243 (5-limit):
+      1 25/24 16/15 10/9 6/5 4/3 27/20 25/18 3/2 15/8
+         IN mcclain_18 [18 notes] (McClain's 18-tone scale, see page 143 of), torb24 [24 notes] (detempering C2 x C12 {648/625, 2048/2025), mersenne_26 [26 notes] (26-note choice system of Mersenne, Trait)
+      1 27/25 10/9 9/8 6/5 5/4 32/25 8/5 5/3 16/9
+         IN torb24 [24 notes] (detempering C2 x C12 {648/625, 2048/2025), mersenne_26 [26 notes] (26-note choice system of Mersenne, Trait), tanaka [26 notes] (26-note choice system of Shohé Tanaka, S)
+   q=243 (5-limit):
+      1 10/9 32/27 5/4 25/18 64/45 8/5 5/3 9/5 50/27
+         IN mcclain_18 [18 notes] (McClain's 18-tone scale, see page 143 of), torb24 [24 notes] (detempering C2 x C12 {648/625, 2048/2025), mersenne_26 [26 notes] (26-note choice system of Mersenne, Trait)
+      1 25/24 9/8 5/4 27/20 25/18 25/16 8/5 16/9 15/8
+         IN torb24 [24 notes] (detempering C2 x C12 {648/625, 2048/2025), mersenne_26 [26 notes] (26-note choice system of Mersenne, Trait), tanaka [26 notes] (26-note choice system of Shohé Tanaka, S)
+   q=243 (5-limit):
+      1 16/15 10/9 9/8 6/5 25/18 40/27 8/5 50/27 15/8
+         IN werck1 [20 notes] (Werckmeister I (just intonation)), ptolemy_prod [21 notes] (Product of Intense Diatonic with its int), hexlesfip22seed [22 notes] (Scale square of 5-limit diamond plus {27)
+      1 16/15 27/25 9/8 5/4 4/3 27/20 36/25 81/50 15/8
+         IN indian-hahn [22 notes] (Indian shrutis Paul Hahn proposal), smithgw_scj22b [22 notes] (<2048/2025, 250/243> Fokker block), ellis_24 [24 notes] (Ellis, from p. 421 of Helmholtz, 24 tone)
+
+== 12 notes: 4631 families; members with: 12-EDO named mode 40, other-EDO named mode 36, subset 3833
+   q=55 (11-limit):
+      1 11/10 9/8 7/6 4/3 11/8 7/5 3/2 8/5 7/4 9/5 11/6
+         IN harmf12 [20 notes] (First 12 harmonics of 6th through 12th h), gann_love [21 notes] (Kyle Gann, scale for Love Scene), prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+      1 21/20 11/10 9/8 6/5 27/20 11/8 7/5 8/5 33/20 7/4 9/5
+         IN lumma_22 [22 notes] (Carl Lumma, intervals of attraction by t), indian-mystical22 [23 notes] (Srinivasan Nambirajan, 11-limit shruti s), cons21 [24 notes] (Set of intervals with num + den <= 21 no)
+   q=55 (11-limit):
+      1 11/10 7/6 6/5 4/3 7/5 22/15 3/2 5/3 9/5 11/6 28/15
+         IN harmf12 [20 notes] (First 12 harmonics of 6th through 12th h), gann_love [21 notes] (Kyle Gann, scale for Love Scene), prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+      1 11/10 9/8 7/6 5/4 11/8 7/5 3/2 5/3 7/4 9/5 11/6
+         IN lumma_17 [17 notes] (Carl Lumma, intervals of attraction, min), lumma_22 [22 notes] (Carl Lumma, intervals of attraction by t), indian-mystical22 [23 notes] (Srinivasan Nambirajan, 11-limit shruti s)
+   q=65 (13-limit):
+      1 13/12 11/10 7/6 13/10 4/3 11/8 7/5 8/5 13/8 7/4 11/6
+         IN corner13 [21 notes] (Quadratic Corner 13-limit, John Chalmers), prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1), corner17 [28 notes] (Quadratic Corner 17-limit)
+   q=65 (13-limit):
+      1 11/10 9/8 6/5 13/10 27/20 11/8 8/5 13/8 33/20 9/5 39/20
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+   q=65 (13-limit):
+      1 13/12 9/8 7/6 13/10 4/3 7/5 3/2 8/5 13/8 7/4 9/5
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+   q=65 (13-limit):
+      1 13/12 11/10 7/6 13/10 4/3 7/5 22/15 5/3 26/15 11/6 28/15
+         IN corner13 [21 notes] (Quadratic Corner 13-limit, John Chalmers), prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1), corner17 [28 notes] (Quadratic Corner 17-limit)
+   q=65 (13-limit):
+      1 13/12 11/10 7/6 6/5 13/10 11/8 7/5 3/2 13/8 7/4 11/6
+         IN 21-any [21 notes] (2)7 1.3.5.7.9.11.13 21-any, 1.3 tonic), corner13 [21 notes] (Quadratic Corner 13-limit, John Chalmers), prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+   q=65 (13-limit):
+      1 13/12 11/10 6/5 13/10 4/3 22/15 3/2 5/3 26/15 9/5 11/6
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+
+== 14 notes: 24 families; members with: other-EDO named mode 1, subset 15
+   q=243 (7-limit):
+      1 21/20 27/25 28/25 9/8 7/6 32/25 27/20 7/5 14/9 8/5 42/25 7/4 16/9
+         IN meyer_29 [29 notes] (Max Meyer, see David Doty, 1/1, August 1)
+   q=243 (7-limit):
+      1 16/15 9/8 7/6 5/4 35/27 7/5 40/27 14/9 7/4 16/9 9/5 28/15 35/18
+         IN meyer_29 [29 notes] (Max Meyer, see David Doty, 1/1, August 1)
+   q=243 (7-limit):
+      1 16/15 27/25 28/25 9/8 7/6 32/25 7/5 14/9 42/25 7/4 16/9 9/5 28/15
+         IN meyer_29 [29 notes] (Max Meyer, see David Doty, 1/1, August 1)
+   q=675 (5-limit):
+      1 25/24 16/15 10/9 32/27 6/5 4/3 25/18 40/27 25/16 8/5 5/3 9/5 15/8
+         IN werck1 [20 notes] (Werckmeister I (just intonation)), ptolemy_prod [21 notes] (Product of Intense Diatonic with its int), hexlesfip22seed [22 notes] (Scale square of 5-limit diamond plus {27)
+      1 25/24 16/15 10/9 6/5 5/4 25/18 45/32 3/2 25/16 8/5 27/16 9/5 15/8
+         IN indian-hahn [22 notes] (Indian shrutis Paul Hahn proposal), ptolemy_exp [24 notes] (Intense Diatonic expanded: all interval ), torb24 [24 notes] (detempering C2 x C12 {648/625, 2048/2025)
+   q=675 (5-limit):
+      1 25/24 27/25 10/9 5/4 4/3 27/20 64/45 36/25 3/2 16/9 9/5 15/8 48/25
+         IN mersenne_31 [31 notes] (31-note choice system of Mersenne, Harmo)
+   q=729 (5-limit):
+      1 27/25 10/9 32/27 6/5 5/4 32/25 4/3 40/27 3/2 8/5 5/3 27/16 15/8
+         IN meyer_29 [29 notes] (Max Meyer, see David Doty, 1/1, August 1)
+      1 81/80 25/24 10/9 9/8 6/5 4/3 25/18 64/45 3/2 8/5 16/9 9/5 15/8
+         IN mersenne_31 [31 notes] (31-note choice system of Mersenne, Harmo)
+   q=729 (5-limit):
+      1 25/24 10/9 9/8 6/5 5/4 27/20 25/18 64/45 40/27 8/5 5/3 16/9 50/27
+         IN torb24 [24 notes] (detempering C2 x C12 {648/625, 2048/2025)
+      1 27/25 9/8 32/27 6/5 32/25 4/3 36/25 40/27 8/5 5/3 9/5 15/8 48/25
+         IN mersenne_31 [31 notes] (31-note choice system of Mersenne, Harmo)
+   q=729 (5-limit):
+      1 25/24 16/15 6/5 5/4 4/3 27/20 25/18 45/32 40/27 3/2 25/16 5/3 50/27
+         IN torb24 [24 notes] (detempering C2 x C12 {648/625, 2048/2025)
+
+== 15 notes: 2295 families; members with: other-EDO named mode 4, subset 878
+   q=65 (13-limit):
+      1 13/12 11/10 9/8 7/6 13/10 4/3 11/8 7/5 3/2 8/5 13/8 7/4 9/5 11/6
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+   q=65 (13-limit):
+      1 13/12 11/10 7/6 6/5 13/10 4/3 7/5 22/15 3/2 5/3 26/15 9/5 11/6 28/15
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+   q=85 (17-limit):
+      1 17/16 13/12 11/10 7/6 13/10 4/3 11/8 7/5 17/12 8/5 13/8 17/10 7/4 11/6
+         IN corner17 [28 notes] (Quadratic Corner 17-limit)
+   q=85 (17-limit):
+      1 13/12 11/10 17/15 7/6 13/10 4/3 7/5 17/12 22/15 5/3 17/10 26/15 11/6 28/15
+         IN corner17 [28 notes] (Quadratic Corner 17-limit)
+   q=85 (17-limit):
+      1 13/12 11/10 17/15 7/6 6/5 13/10 7/5 17/12 22/15 8/5 17/10 26/15 11/6 28/15
+         IN corner17 [28 notes] (Quadratic Corner 17-limit)
+   q=91 (13-limit):
+      1 13/12 11/10 8/7 7/6 9/7 13/10 4/3 7/5 3/2 11/7 8/5 9/5 11/6 13/7
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+   q=91 (13-limit):
+      1 11/10 9/8 8/7 6/5 9/7 13/10 11/8 3/2 11/7 8/5 13/8 12/7 9/5 13/7
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+   q=91 (13-limit):
+      1 13/12 9/8 8/7 5/4 9/7 4/3 11/8 10/7 3/2 11/7 13/8 5/3 11/6 13/7
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+
+== 16 notes: 204 families; members with: subset 56
+   q=91 (13-limit):
+      1 13/12 11/10 9/8 8/7 9/7 13/10 4/3 11/8 3/2 11/7 8/5 13/8 9/5 11/6 13/7
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+   q=91 (13-limit):
+      1 13/12 11/10 9/8 7/6 9/7 13/10 11/8 7/5 3/2 11/7 13/8 7/4 9/5 11/6 13/7
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+   q=91 (13-limit):
+      1 13/12 11/10 9/8 5/4 9/7 13/10 11/8 10/7 3/2 11/7 13/8 5/3 9/5 11/6 13/7
+         IN prod13 [27 notes] (13-limit binary products [1 3 5 7 9 11 1)
+   q=135 (11-limit):
+      1 21/20 16/15 11/10 9/8 7/6 6/5 5/4 4/3 7/5 22/15 3/2 8/5 33/20 11/6 28/15
+         IN diamond11a [31 notes] (11-limit Diamond (partch_29.scl) with ad), gann_custer [31 notes] (Kyle Gann, scale from Custer's Ghost to )
+   q=189 (7-limit):
+      1 21/20 7/6 6/5 5/4 9/7 4/3 7/5 10/7 3/2 14/9 8/5 7/4 16/9 9/5 28/15
+         IN stelpent1 [30 notes] (Stellated one out of 1 3 5 7 9 pentany)
+   q=189 (7-limit):
+      1 21/20 35/32 10/9 7/6 6/5 5/4 21/16 7/5 3/2 8/5 5/3 42/25 7/4 15/8 35/18
+         IN pipedum_29a [29 notes] (49/48, 55/54, 65/64, 91/90, 100/99)
+   q=189 (7-limit):
+      1 21/20 9/8 7/6 6/5 21/16 4/3 27/20 7/5 10/7 3/2 5/3 12/7 7/4 9/5 28/15
+         IN stelpent1 [30 notes] (Stellated one out of 1 3 5 7 9 pentany)
+   q=189 (7-limit):
+      1 10/9 8/7 7/6 25/21 6/5 5/4 4/3 3/2 14/9 8/5 5/3 7/4 9/5 15/8 40/21
+         IN steldek1 [30 notes] (Stellated two out of 1 3 5 7 9 dekany)
+TIME 65.01 s

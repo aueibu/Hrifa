@@ -1,0 +1,10 @@
+16:41 19q135: exit 0 44s;  merge_19q135: generated families in the list 9, not in the list {}; targets 1 (merge S 3,1 1); generated 1; missed 0 by notes {}; generated families of other descriptions 8 
+16:41 11q135: exit 0 3s;  merge_11q135: generated families in the list 7, not in the list {}; targets 1 (merge S 3,1 1); generated 1; missed 0 by notes {}; generated families of other descriptions 6 
+16:41 13q135: exit 0 5s;  merge_13q135: generated families in the list 9, not in the list {}; targets 1 (merge S 3,1 1); generated 1; missed 0 by notes {}; generated families of other descriptions 8 
+16:42 17q135: exit 0 14s;  merge_17q135: generated families in the list 9, not in the list {}; targets 1 (merge S 3,1 1); generated 1; missed 0 by notes {}; generated families of other descriptions 8 
+16:42 5q729: exit 0 3s;  merge_5q729: generated families in the list 189, not in the list {}; targets 110 (hole S 3,1 7, hole S 4,1 2, merge S 3,1 80, merge S 4,1 21); generated 110; missed 0 by notes {}; generated families of other descriptions 79 
+16:42 7q243: exit 0 3s;  merge_7q243: generated families in the list 73, not in the list {}; targets 29 (hole S 3,1 1, merge S 3,1 16, merge S 4,1 12); generated 29; missed 0 by notes {}; generated families of other descriptions 44 
+16:42 7q315: exit 0 4s;  merge_7q315: generated families in the list 120, not in the list {}; targets 55 (hole S 3,1 1, merge S 3,1 32, merge S 4,1 22); generated 55; missed 0 by notes {}; generated families of other descriptions 65 
+16:42 5q2187: exit 0 7s;  merge_5q2187: generated families in the list 1009, not in the list {}; targets 652 (hole S 3,1 26, hole S 4,1 15, merge S 3,1 386, merge S 4,1 212, merge S 4,2 13); generated 652; missed 0 by notes {}; generated families of other descriptions 357 
+16:42 5q3645: exit 0 17s;  merge_5q3645: generated families in the list 3731, not in the list {}; targets 2453 (hole S 3,1 96, hole S 4,1 139, hole S 4,2 1, merge S 3,1 1280, merge S 4,1 899, merge S 4,2 38); generated 2453; missed 0 by notes {}; generated families of other descriptions 1278 
+MERGE ALL DONE

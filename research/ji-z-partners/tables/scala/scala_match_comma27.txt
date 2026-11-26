@@ -1,0 +1,140 @@
+archive: 4496 octave scales parsed (2386 with exact ratios)
+named modes: 6-EDO 3, 7-EDO 5, 8-EDO 1, 9-EDO 5, 10-EDO 7, 11-EDO 9, 12-EDO 190, 13-EDO 20, 14-EDO 10, 15-EDO 22, 16-EDO 20, 17-EDO 43, 18-EDO 12, 19-EDO 45, 20-EDO 14, 21-EDO 20, 22-EDO 50, 23-EDO 25, 24-EDO 70, 25-EDO 17, 26-EDO 22, 27-EDO 22, 28-EDO 17, 29-EDO 28, 30-EDO 19, 31-EDO 101, 32-EDO 15, 33-EDO 17, 34-EDO 31, 35-EDO 9, 36-EDO 40, 37-EDO 31, 38-EDO 10, 39-EDO 20, 40-EDO 15, 41-EDO 35, 42-EDO 13, 43-EDO 19, 44-EDO 22, 45-EDO 15, 46-EDO 31, 47-EDO 12, 48-EDO 21, 49-EDO 13, 50-EDO 24, 51-EDO 22, 52-EDO 15, 53-EDO 95, 54-EDO 14, 55-EDO 22, 56-EDO 16, 57-EDO 17, 58-EDO 24, 59-EDO 11, 60-EDO 18, 61-EDO 14, 62-EDO 13, 63-EDO 19, 64-EDO 14, 65-EDO 18, 66-EDO 14, 67-EDO 12, 68-EDO 24, 69-EDO 12, 70-EDO 13, 71-EDO 13, 72-EDO 44, 73-EDO 12, 74-EDO 10, 75-EDO 13, 76-EDO 10, 77-EDO 23, 78-EDO 12, 79-EDO 11, 80-EDO 15, 81-EDO 16, 82-EDO 10, 83-EDO 13, 84-EDO 40, 85-EDO 24, 86-EDO 11, 87-EDO 16, 88-EDO 10, 89-EDO 10, 90-EDO 10, 91-EDO 11, 92-EDO 5, 93-EDO 11, 94-EDO 12, 95-EDO 8, 96-EDO 10, 97-EDO 7, 98-EDO 7, 99-EDO 19, 100-EDO 13, 101-EDO 11, 102-EDO 6, 103-EDO 7, 104-EDO 6, 105-EDO 3, 106-EDO 19, 107-EDO 7, 108-EDO 6, 109-EDO 7, 110-EDO 5, 111-EDO 7, 112-EDO 7, 113-EDO 9, 114-EDO 3, 115-EDO 6, 116-EDO 5, 117-EDO 2, 118-EDO 12, 119-EDO 3, 120-EDO 3, 121-EDO 9, 122-EDO 5, 123-EDO 4, 124-EDO 3, 125-EDO 6, 126-EDO 6, 127-EDO 2, 128-EDO 5, 129-EDO 1, 130-EDO 1, 131-EDO 3, 133-EDO 3, 134-EDO 1, 135-EDO 2, 136-EDO 1, 137-EDO 4, 138-EDO 3, 139-EDO 2, 140-EDO 7, 141-EDO 3, 142-EDO 1, 143-EDO 1, 144-EDO 3, 145-EDO 6, 146-EDO 1, 147-EDO 4, 148-EDO 3, 149-EDO 2, 150-EDO 1, 151-EDO 2, 152-EDO 7, 153-EDO 1, 155-EDO 1, 159-EDO 1, 160-EDO 1, 161-EDO 2, 162-EDO 1, 163-EDO 1, 164-EDO 2, 166-EDO 4, 167-EDO 2, 169-EDO 2, 170-EDO 1, 171-EDO 7, 174-EDO 4, 175-EDO 3, 176-EDO 2, 177-EDO 3, 180-EDO 1, 181-EDO 1, 183-EDO 3, 185-EDO 3, 187-EDO 1, 190-EDO 5, 196-EDO 1, 197-EDO 7, 198-EDO 2, 200-EDO 4, 202-EDO 3, 205-EDO 5
+families: 9714
+
+== 6 notes: 3 families; members with: 12-EDO named mode 1
+   q=125 (5-limit):
+      1 9/8 5/4 27/20 36/25 48/25
+         MODE 12-EDO rotation: Raga Saanjh Ki Hindol
+
+== 7 notes: 22 families; members with: 12-EDO named mode 6, near 2, other-EDO named mode 6
+   q=1215 (5-limit):
+      1 10/9 32/27 45/32 40/27 27/16 16/9
+         NEAR(<=27.26c) prop7d (7 note proper scale, 9-limit optimized)
+         MODE 12-EDO exact: Mela Hemavati, Raga Desisimharavam, Madhukant, Maqam Nakriz, | 19-EDO rotation: Nineteen-tone Harmonic Minor | 31-EDO rotation: Thirty-one tone Harmonic Minor
+      1 9/8 32/27 45/32 40/27 27/16 15/8
+         NEAR(<=27.26c) turkish (Turkish, 5-limit from Palmer on a Turkish music re)
+         MODE 12-EDO exact: Lydian Diminished, Mela Dharmavati, Raga Ambika, Anjani Kaly | 17-EDO rotation: Turkish Minor | 19-EDO rotation: Nineteen-tone Harmonic Major
+   q=2187 (7-limit):
+      1 28/27 32/27 21/16 112/81 27/16 16/9
+         MODE 12-EDO exact: Locrian natural 6, Maqam Tarznauyn, Raga Laliteshwari | 17-EDO rotation: Seventeen-tone Harmonic Minor
+      1 9/8 32/27 21/16 112/81 27/16 7/4
+         MODE 12-EDO exact: Dorian flat 5, Blues Heptatonic, Makam Karcigar, Maqam Nahaw | 17-EDO rotation: Seventeen-tone Harmonic Major
+   q=6561 (7-limit):
+      1 175/162 32/27 175/128 350/243 27/16 16/9
+         MODE 12-EDO exact: Locrian natural 6, Maqam Tarznauyn, Raga Laliteshwari
+      1 192/175 32/27 243/175 256/175 27/16 16/9
+         MODE 12-EDO exact: Mela Hemavati, Raga Desisimharavam, Madhukant, Maqam Nakriz, | 19-EDO rotation: Harmonic Major sharp 5
+
+== 8 notes: 3 families; members with: 
+
+== 9 notes: 2471 families; members with: 12-EDO named mode 291, near 45, other-EDO named mode 251
+   q=55 (11-limit):
+      1 11/10 7/6 4/3 7/5 22/15 5/3 11/6 28/15
+         MODE 12-EDO exact: Raga Rang Malhar
+   q=55 (11-limit):
+      1 11/10 9/8 5/4 11/8 3/2 5/3 9/5 11/6
+         NEAR(<=27.26c) dekany5 (2)5 Dekany 3.5.9.11.15)
+   q=63 (7-limit):
+      1 15/14 8/7 7/6 9/7 4/3 3/2 5/3 40/21
+         MODE 12-EDO rotation: Triple Neapolitan
+      1 8/7 7/6 9/7 4/3 7/5 3/2 8/5 9/5
+         MODE 12-EDO rotation: Triple Neapolitan
+   q=63 (7-limit):
+      1 8/7 7/6 5/4 3/2 14/9 5/3 16/9 40/21
+         MODE 12-EDO rotation: Raga Lalit Mangal, Purba, Saajgiri (Sazgiri), Sonakshi, Sour
+   q=63 (7-limit):
+      1 10/9 6/5 5/4 4/3 7/5 3/2 14/9 7/4
+         MODE 12-EDO rotation: Triple Neapolitan
+      1 21/20 7/6 4/3 3/2 8/5 5/3 9/5 28/15
+         MODE 12-EDO rotation: Triple Neapolitan
+   q=65 (13-limit):
+      1 13/12 11/10 5/4 13/10 11/8 13/8 5/3 11/6
+         MODE 12-EDO exact: Messiaen mode 3, Tcherepnin Nonatonic mode 3
+   q=65 (13-limit):
+      1 13/12 11/10 6/5 13/10 22/15 8/5 26/15 11/6
+         MODE 12-EDO exact: Locrian/Aeolian mixed
+   q=65 (13-limit):
+      1 13/12 7/6 5/4 13/10 7/5 13/8 5/3 7/4
+         MODE 12-EDO rotation: Moorish Phrygian, Raga Bhavmat Bhairav, Shivmat Bhairav, Phr
+
+== 10 notes: 61 families; members with: other-EDO named mode 1
+
+== 12 notes: 4631 families; members with: 12-EDO named mode 40, near 85, other-EDO named mode 36
+   q=125 (7-limit):
+      1 21/20 9/8 6/5 5/4 27/20 7/5 25/16 8/5 7/4 9/5 15/8
+         NEAR(<=27.26c) lucy57tuned7b0sAbbGbb (0A440Lucy57Tuned 7b BbEbAbDbGbAbbGbb RootKeyA = CD)
+   q=125 (7-limit):
+      1 15/14 8/7 6/5 5/4 4/3 10/7 3/2 8/5 5/3 9/5 48/25
+         NEAR(<=27.26c) 12-yarman24c (12-tones out of Yarman24c, circulating in the styl), abell3 (Ross Abell's French Baroque Meantone 3, a'=520 Hz), abell4 (Ross Abell's French Baroque Meantone 4, a'=520 Hz)
+         MODE 12-EDO exact: Twelve-tone Chromatic (1/11-comma), Raga Patmanjari | 17-EDO rotation: Twelve-tone Chromatic (2/11-comma positive) | 31-EDO rotation: Hexy
+      1 25/24 9/8 6/5 5/4 21/16 7/5 3/2 25/16 5/3 7/4 15/8
+         NEAR(<=27.26c) 12-27 (12 out of 27, Herman Miller's Galticeran scale), 12-46 (12 out of 46-tET, diaschismic), 12-79mos159et (12-tones out of 79 MOS 159ET, Splendid Beat Rates )
+         MODE 12-EDO exact: Twelve-tone Chromatic (1/11-comma), Raga Patmanjari | 31-EDO rotation: Hexy
+   q=135 (7-limit):
+      1 15/14 9/8 6/5 9/7 4/3 7/5 3/2 8/5 5/3 7/4 27/14
+         NEAR(<=27.26c) abell2 (Ross Abell's French Baroque Meantone 2, a'=520 Hz), starling12 (Starling[12] hobbit in <135 214 314 379| tuning)
+         MODE 12-EDO exact: Twelve-tone Chromatic (1/11-comma), Raga Patmanjari
+      1 21/20 9/8 7/6 9/7 27/20 7/5 3/2 8/5 42/25 7/4 28/15
+         NEAR(<=27.26c) 12-27 (12 out of 27, Herman Miller's Galticeran scale), meanpi (Pi-based meantone with Harrison's major third by E), moantone12 (Moantone[12] (Passion) in 86-tET)
+         MODE 12-EDO exact: Twelve-tone Chromatic (1/11-comma), Raga Patmanjari
+   q=175 (7-limit):
+      1 35/32 7/6 6/5 5/4 4/3 10/7 3/2 8/5 7/4 25/14 40/21
+         NEAR(<=27.26c) lucy50Bbbtuned6b1sFs (0A440Lucy50Tuned 6b1s RootKeyA (resetAtoBbb=+54.1))
+   q=175 (7-limit):
+      1 15/14 8/7 6/5 9/7 48/35 7/5 3/2 8/5 5/3 25/14 40/21
+         NEAR(<=27.26c) abell5 (Ross Abell's French Baroque Meantone 5, a'=520 Hz), duodene_r-45 (Ellis's Duodene rotated -45 degrees), ligon (Jacky Ligon, strictly proper all prime scale, TL 0)
+         MODE 12-EDO exact: Twelve-tone Chromatic (1/11-comma), Raga Patmanjari
+      1 15/14 8/7 7/6 5/4 4/3 7/5 3/2 8/5 42/25 9/5 48/25
+         NEAR(<=27.26c) duodene_r-45 (Ellis's Duodene rotated -45 degrees), ligon (Jacky Ligon, strictly proper all prime scale, TL 0), smithgw_majraj1 (Majraj 648/625 6561/6250 scale)
+         MODE 12-EDO exact: Twelve-tone Chromatic (1/11-comma), Raga Patmanjari
+   q=175 (7-limit):
+      1 35/32 7/6 6/5 21/16 4/3 3/2 14/9 5/3 7/4 9/5 35/18
+         NEAR(<=27.26c) lucy57tuned7b0sAbbGbb (0A440Lucy57Tuned 7b BbEbAbDbGbAbbGbb RootKeyA = CD)
+   q=189 (7-limit):
+      1 27/25 8/7 7/6 9/7 4/3 7/5 3/2 8/5 42/25 9/5 48/25
+         NEAR(<=27.26c) smithgw_starrb (12 note {126/125, 176/175} scale, 328-tET version )
+         MODE 12-EDO exact: Twelve-tone Chromatic (1/11-comma), Raga Patmanjari
+   q=189 (7-limit):
+      1 10/9 5/4 21/16 7/5 35/24 14/9 5/3 7/4 16/9 15/8 35/18
+         NEAR(<=27.26c) simp12-amity (simp12 tempered in amity, 99-tET tuning)
+
+== 14 notes: 24 families; members with: other-EDO named mode 1
+
+== 15 notes: 2295 families; members with: near 13, other-EDO named mode 4
+   q=189 (7-limit):
+      1 21/20 16/15 9/8 7/6 6/5 5/4 4/3 7/5 3/2 14/9 8/5 5/3 16/9 28/15
+         NEAR(<=27.26c) mean14_15 (15 of 3/14-comma meantone scale), mean2nine_15 (15 of 2/9-comma meantone scale), mean2sev_15 (15 of 2/7-comma meantone scale)
+      1 21/20 9/8 7/6 6/5 5/4 4/3 7/5 3/2 14/9 8/5 5/3 7/4 16/9 15/8
+         NEAR(<=27.26c) mean14_15 (15 of 3/14-comma meantone scale), mean2nine_15 (15 of 2/9-comma meantone scale), mean2sev_15 (15 of 2/7-comma meantone scale)
+   q=189 (7-limit):
+      1 21/20 10/9 6/5 5/4 4/3 7/5 36/25 3/2 14/9 8/5 42/25 7/4 9/5 28/15
+         MODE 19-EDO rotation: Nineteen-tone Melodic Minor Union | 31-EDO rotation: Thirty-one tone Melodic Minor Union
+      1 21/20 10/9 7/6 5/4 4/3 25/18 3/2 14/9 8/5 5/3 7/4 9/5 28/15 35/18
+         MODE 19-EDO rotation: Nineteen-tone Melodic Minor Union | 31-EDO rotation: Thirty-one tone Melodic Minor Union
+   q=729 (5-limit):
+      1 25/24 16/15 9/8 6/5 5/4 27/20 36/25 40/27 8/5 5/3 128/75 9/5 50/27 48/25
+         MODE 19-EDO exact: Nineteen-tone Melodic Minor Union | 31-EDO exact: Thirty-one tone Melodic Minor Union
+      1 27/25 10/9 32/27 5/4 32/25 4/3 25/18 36/25 40/27 25/16 8/5 5/3 9/5 15/8
+         MODE 19-EDO rotation: Nineteen-tone Melodic Minor Union | 31-EDO rotation: Thirty-one tone Melodic Minor Union
+   q=729 (5-limit):
+      1 16/15 27/25 10/9 6/5 5/4 4/3 25/18 64/45 3/2 8/5 5/3 9/5 50/27 48/25
+         NEAR(<=27.26c) meanquar_15 (1/4-comma meantone scale with split C#/Db, D#/Eb a), munakata (Nobuo Munakata, shamisen Ritsu Yang and Yin tuning)
+      1 27/25 10/9 6/5 5/4 32/25 4/3 64/45 36/25 3/2 8/5 5/3 9/5 50/27 48/25
+         NEAR(<=27.26c) mean2nine_15 (15 of 2/9-comma meantone scale), meanquar_15 (1/4-comma meantone scale with split C#/Db, D#/Eb a)
+   q=729 (5-limit):
+      1 16/15 10/9 6/5 5/4 32/25 27/20 25/18 36/25 3/2 8/5 5/3 9/5 50/27 48/25
+         NEAR(<=27.26c) mean2sev_15 (15 of 2/7-comma meantone scale), meanquar_15 (1/4-comma meantone scale with split C#/Db, D#/Eb a)
+      1 25/24 27/25 10/9 6/5 5/4 4/3 25/18 36/25 40/27 8/5 5/3 16/9 15/8 48/25
+         NEAR(<=27.26c) mean2nine_15 (15 of 2/9-comma meantone scale), mean2sev_15 (15 of 2/7-comma meantone scale), meanquar_15 (1/4-comma meantone scale with split C#/Db, D#/Eb a)
+   q=729 (5-limit):
+      1 25/24 10/9 9/8 6/5 81/64 27/20 25/18 45/32 3/2 25/16 5/3 125/72 16/9 15/8
+         NEAR(<=27.26c) pipedum_15f (126/125, 64/63 comma, 28/27 chroma)
+   q=729 (5-limit):
+      1 27/25 10/9 32/27 6/5 32/25 4/3 36/25 40/27 3/2 8/5 27/16 16/9 15/8 48/25
+         NEAR(<=27.26c) pipedum_15f (126/125, 64/63 comma, 28/27 chroma), pipedum_15g (128/125, 250/243)
+   q=729 (5-limit):
+      1 27/25 10/9 32/27 5/4 32/25 4/3 25/18 36/25 40/27 8/5 5/3 16/9 15/8 48/25
+         NEAR(<=27.26c) mean14_15 (15 of 3/14-comma meantone scale), mean2nine_15 (15 of 2/9-comma meantone scale), mean2sev_15 (15 of 2/7-comma meantone scale)
+
+== 16 notes: 204 families; members with: 

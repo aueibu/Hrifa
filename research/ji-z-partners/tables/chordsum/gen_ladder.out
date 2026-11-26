@@ -1,0 +1,5 @@
+15:25 13q243: exit 0 126s; # 30057 families, 100 s # check l13q243_on: 30483 families in the list, 30057 generated, generated pairs not in the list: {} 
+15:32 17q243: exit 0 392s; # 46460 families, 349 s # check l17q243_on: 47044 families in the list, 46460 generated, generated pairs not in the list: {} 
+15:38 7q729: exit 0 386s; # 391458 families, 53 s # check l7q729_on: 403069 families in the list, 391458 generated, generated pairs not in the list: {} 
+15:44 11q405: exit 0 348s; # 280969 families, 101 s # check l11q405_on: 283162 families in the list, 280968 generated, generated pairs not in the list: {9: 1} 
+GEN LADDER DONE
