@@ -12,8 +12,10 @@
 //! --f2 test, where an overflow just means "do not prune" (sound).
 //!
 //! usage: typeflats-rs K [--threads T] [--frontier F] [--state DIR] [--out FILE.json] [--min-free-gb G]
-//!                       [--no-canon] [--no-f2] [--single] [--max-nodes N]
+//!                       [--no-canon] [--no-f2] [--single] [--max-nodes N] [--min-dim D]
 //! --single: one thread, the exact traversal order of typeflats.py (node counts comparable with it).
+//! --min-dim D: find only types of dimension >= D (sound for those: flats below D are never entered). D = 2
+//! finds every rank >= 2 type; the rank-1 (single-line) types are then left to a 1-D enumeration by span.
 
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -113,6 +115,9 @@ struct Search {
     np: usize,
     use_canon: bool,
     f2: bool,
+    /// smallest dimension of a type flat to look for: flats below it are never entered (sound for types of at
+    /// least this dimension: every flat on a descent to a type contains it, so has at least its dimension)
+    min_dim: usize,
 }
 
 /// shared state of a parallel run
@@ -149,7 +154,7 @@ struct Stats {
 }
 
 impl Search {
-    fn new(k: usize, use_canon: bool, f2: bool) -> Self {
+    fn new(k: usize, use_canon: bool, f2: bool, min_dim: usize) -> Self {
         let mut pairs = vec![];
         for i in 0..k {
             for j in i + 1..k {
@@ -157,7 +162,7 @@ impl Search {
             }
         }
         let np = pairs.len();
-        Search { k, n: 2 * (k - 1), pairs, np, use_canon, f2 }
+        Search { k, n: 2 * (k - 1), pairs, np, use_canon, f2, min_dim: min_dim.max(1) }
     }
 
     fn point(&self, b: &Basis, side: usize, i: usize) -> Pt {
@@ -197,7 +202,87 @@ impl Search {
         Some(Analysis { p, q, adj })
     }
 
+    /// largest dimension of a subspace of the flat on which F2 = sum P-int^2 - sum Q-int^2 vanishes identically:
+    /// nullity + min(positive, negative) of its inertia (exact rationals in i128; None on overflow). A type flat
+    /// lies in such a subspace (on it the interval multisets agree, so F2 = 0 there), so a flat whose value is
+    /// below min_dim holds no type of dimension >= min_dim. With min_dim 1 this is exactly "F2 definite".
+    fn isotropic_dim(&self, p: &[Pt], q: &[Pt]) -> Option<usize> {
+        let m = p[0].len();
+        if m == 0 {
+            return Some(0);
+        }
+        let mut g = vec![vec![0i128; m]; m];
+        for (pts, sg) in [(p, 1i128), (q, -1i128)] {
+            for &(i, j) in &self.pairs {
+                let d: Vec<i128> = (0..m).map(|r| (pts[j][r] - pts[i][r]) as i128).collect();
+                for r in 0..m {
+                    if d[r] != 0 {
+                        for c in 0..m {
+                            if d[c] != 0 {
+                                g[r][c] += sg * d[r] * d[c];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        type R = (i128, i128); // num / den, den > 0, reduced
+        fn norm(n: i128, d: i128) -> R {
+            let g = gcd(n, d).max(1);
+            let (n, d) = (n / g, d / g);
+            if d < 0 { (-n, -d) } else { (n, d) }
+        }
+        fn add(x: R, y: R) -> Option<R> {
+            Some(norm(x.0.checked_mul(y.1)?.checked_add(y.0.checked_mul(x.1)?)?, x.1.checked_mul(y.1)?))
+        }
+        fn sub(x: R, y: R) -> Option<R> {
+            add(x, (y.0.checked_neg()?, y.1))
+        }
+        fn mul(x: R, y: R) -> Option<R> {
+            Some(norm(x.0.checked_mul(y.0)?, x.1.checked_mul(y.1)?))
+        }
+        fn div(x: R, y: R) -> Option<R> {
+            Some(norm(x.0.checked_mul(y.1)?, x.1.checked_mul(y.0)?))
+        }
+        let mut a: Vec<Vec<R>> = g.into_iter().map(|r| r.into_iter().map(|x| (x, 1)).collect()).collect();
+        let mut act: Vec<usize> = (0..m).collect();
+        let (mut pos, mut neg, mut null) = (0usize, 0usize, 0usize);
+        while !act.is_empty() {
+            let c = match act.iter().copied().find(|&c| a[c][c].0 != 0) {
+                Some(c) => c,
+                None => {
+                    // every remaining diagonal is 0: use an off-diagonal entry (congruence row/col i += row/col j)
+                    let Some((i, j)) = act.iter().flat_map(|&i| act.iter().map(move |&j| (i, j))).find(|&(i, j)| i != j && a[i][j].0 != 0) else {
+                        null += act.len();
+                        break;
+                    };
+                    for &t in &act {
+                        a[i][t] = add(a[i][t], a[j][t])?;
+                    }
+                    for &t in &act {
+                        a[t][i] = if t == i { a[i][i] } else { a[i][t] };
+                    }
+                    a[i][i] = add(a[i][i], a[j][i])?;
+                    i
+                }
+            };
+            if a[c][c].0 > 0 { pos += 1 } else { neg += 1 }
+            act.retain(|&t| t != c);
+            for &r in &act {
+                if a[r][c].0 == 0 {
+                    continue;
+                }
+                let f = div(a[r][c], a[c][c])?;
+                for &s in &act {
+                    a[r][s] = sub(a[r][s], mul(f, a[c][s])?)?;
+                }
+            }
+        }
+        Some(null + pos.min(neg))
+    }
+
     /// F2 = sum P-int^2 - sum Q-int^2 definite on the flat? (exact rationals in i128; overflow -> false)
+    #[allow(dead_code)]
     fn square_sum_definite(&self, p: &[Pt], q: &[Pt]) -> bool {
         let m = p[0].len();
         if m == 0 {
@@ -381,7 +466,7 @@ impl Search {
                 st.bad += 1;
                 continue;
             };
-            if self.f2 && self.square_sum_definite(&an.p, &an.q) {
+            if self.f2 && self.isotropic_dim(&an.p, &an.q).map_or(false, |d| d < self.min_dim) {
                 st.bad += 1;
                 st.f2cut += 1;
                 continue;
@@ -432,15 +517,15 @@ impl Search {
                     }
                 }
             }
-            if basis.len() <= 1 {
-                continue; // a 1-dim flat cut again is 0-dim
+            if basis.len() <= self.min_dim {
+                continue; // its children have dimension below min_dim (default 1: a 1-dim flat cut again is 0-dim)
             }
             if seen.len() > seen_cap {
                 seen.clear(); // dedup is only a speed-up
             }
             for (u, v, s) in opts {
                 let child = self.cut(&basis, &self.edge_form(u, v, s));
-                if child.is_empty() {
+                if child.len() < self.min_dim {
                     continue;
                 }
                 let h = h128(&child);
@@ -607,7 +692,8 @@ fn main() {
     let min_free: f64 = opt("--min-free-gb").map(|x| x.parse().unwrap()).unwrap_or(4.0);
     let state = opt("--state");
     let out = opt("--out");
-    let s = Search::new(k, !flag("--no-canon"), !flag("--no-f2"));
+    let min_dim: usize = opt("--min-dim").map(|x| x.parse().unwrap()).unwrap_or(1);
+    let s = Search::new(k, !flag("--no-canon"), !flag("--no-f2"), min_dim);
     let shared = Shared::new();
     let t0 = Instant::now();
     let mut types: Vec<Basis> = vec![];
