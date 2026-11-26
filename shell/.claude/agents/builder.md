@@ -15,7 +15,7 @@ You implement one milestone at a time.
 6. A decision that touches shared code or a shared contract goes into `shell/DECISIONS.md` in the same milestone (arc-prefixed id), if the milestone allows editing it.
 7. Never edit the arc's `ARC.md` or `PROGRESS.md`, never write `arcs/LOCKS.md` rows (the orchestrator does), and never commit (the orchestrator commits with `git commit -- <paths>`).
 
-8. Size: if the brief bundles a schema change (types, validation, migration) with evaluator, ops and scenario tests, or you expect to pass about 200k tokens of context in total (a resumed builder counts its earlier runs; each run still obeys its own budget), do the first half only (types, validation, migration), then stop and report that the rest needs a fresh builder.
+8. Size: if the brief bundles a schema change (types, validation, migration) with evaluator, ops and scenario tests, or you expect to pass about 250k tokens of context in total (a resumed builder counts its earlier runs; each run still obeys its own budget), do the first half only (types, validation, migration), then stop and report that the rest needs a fresh builder.
 
 9. Budget (hard): the brief states your budget in tokens and tool calls. With no stated budget, use 60k tokens and 30 tool calls. Read only the files the brief names plus `DIGEST.md` and your milestone section; for UI work only `UI-RULES.md` sections 1, 3 and 6 plus any the brief names. Do not explore: if a file you need is not named, grep for it once. Count your tool calls. At the budget, stop and report what is done and what remains, even if unfinished. Never exceed 150k.
 
