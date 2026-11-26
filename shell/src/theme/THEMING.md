@@ -88,8 +88,10 @@ or more on the panel; the panel separable from the page; each ramp in strict lig
 
 Apps that use several colors to mean different things draw from four separate roles:
 
-- **Accent**: the primary color (the blue ramp). Focus, selection, links, primary actions. It never
-  encodes data.
+- **Accent**: the primary color (`tokens.primary`, `#4772b3` at step 6). Focus, selection, links,
+  primary actions. It never encodes data. `--mantine-primary-color-light*` uses `tokens.primary`
+  directly (26% `--accent` matching `ScrubNumber` with `primary[9]` text in light mode; 38%
+  `primary[5]` over `--panel-slot` with `primary[0]` text in dark mode), never Radix blue.
 - **Status**: success, warning, danger and info are green, orange, red and blue tints, always with an
   icon and a word, never color alone.
 - **Categories**: eight core hues (red, orange, yellow, green, cyan, blue, violet, pink) spaced at
@@ -98,7 +100,9 @@ Apps that use several colors to mean different things draw from four separate ro
   those neighbours. Address a category by hue name through `--mark-<hue>` or `markHue`.
 - **Tints**: `--tint-<hue>-bg`, `-bg-hover` and `-text`: a faint fill with hue-colored text at 7:1 or
   more, for chips and badges that say what kind of thing something is. Mantine's "light" variants use
-  the same values.
+  the same values. `radixVariables` mixes Radix step 8 over `dark[7]` (`--panel`) in dark mode
+  (30%/42%) and step 6 over `white` in light mode (28%/40%) so tints stay in our warm-neutral value
+  ladder instead of Radix's dark or neon step 3/4.
 
 `--mark-<hue>` is the hue as a mark (line, dot, text) on a panel. Its lightness is set per scheme
 (`markLightness` in `markers.ts`): about 72% in dark and 52% in light, staggered between neighbouring
