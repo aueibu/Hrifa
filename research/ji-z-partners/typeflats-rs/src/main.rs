@@ -1186,14 +1186,55 @@ fn search_leaves2(k: usize, cls: &[u16], ncls: usize, col: Vec<u32>, best: &mut 
         }
         return;
     };
+    // twin pruning: if swapping v with an already explored u (same cell) is an automorphism of the class structure
+    // (the transposition fixes every other note, so it fixes the individualized prefix and maps the refined
+    // coloring to itself), v's subtree is the image of u's and gives the same certificates: skip it. This
+    // collapses the interchangeable notes of nearly generic flats (k 9 root: 7!^2 leaves -> a handful).
+    let mut explored: Vec<usize> = vec![];
     for v in 0..nv {
         if col[v] != cell {
+            continue;
+        }
+        if explored.iter().any(|&u| swap_is_automorphism(k, cls, ncls, u, v)) {
             continue;
         }
         let ind: Vec<u32> = (0..nv).map(|w| 2 * col[w] + (w == v) as u32).collect();
         let (c2, _) = refine2(k, cls, ncls, ind);
         search_leaves2(k, cls, ncls, c2, best);
+        explored.push(v);
     }
+}
+
+/// is the transposition of notes u, v (same side) an automorphism of the arc class structure, i.e. is the
+/// swapped class table a relabeling of the class ids?
+fn swap_is_automorphism(k: usize, cls: &[u16], ncls: usize, u: usize, v: usize) -> bool {
+    if u / k != v / k {
+        return false;
+    }
+    let side = u / k;
+    let (a, b) = (u % k, v % k);
+    let pi = |i: usize| if i == a { b } else if i == b { a } else { i };
+    let mut fwd = vec![u16::MAX; ncls];
+    let mut bwd = vec![u16::MAX; ncls];
+    for s in 0..2 {
+        for i in 0..k {
+            for j in 0..k {
+                if i == j {
+                    continue;
+                }
+                let x = cls[s * k * k + i * k + j];
+                let y = if s == side { cls[s * k * k + pi(i) * k + pi(j)] } else { x };
+                let (fx, by) = (fwd[x as usize], bwd[y as usize]);
+                if fx == u16::MAX && by == u16::MAX {
+                    fwd[x as usize] = y;
+                    bwd[y as usize] = x;
+                } else if fx != y || by != x {
+                    return false;
+                }
+            }
+        }
+    }
+    true
 }
 
 fn canon2(k: usize, p: &[Pt], q: &[Pt]) -> u128 {
