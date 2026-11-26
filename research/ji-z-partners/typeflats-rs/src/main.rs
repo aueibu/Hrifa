@@ -16,6 +16,9 @@
 //! --single: one thread, the exact traversal order of typeflats.py (node counts comparable with it).
 //! --min-dim D: find only types of dimension >= D (sound for those: flats below D are never entered). D = 2
 //! finds every rank >= 2 type; the rank-1 (single-line) types are then left to a 1-D enumeration by span.
+//! --precut / --fast / --check-fast (2026-11-26): decide children at the parent (exact); --fast uses the parent's
+//! F2 factorization (O(m^2) per child), --check-fast asserts it against the slow test.
+//! --canon2 (2026-11-26): faster canonical key (canon2), same symmetry classes.
 //! --f4 M (2026-11-26): also prune flats of dimension <= M by the fourth-power test (f4_isotropic; sound).
 
 use std::collections::hash_map::DefaultHasher;
@@ -43,6 +46,158 @@ fn mul(a: i128, b: i128) -> i128 {
 }
 fn sub(a: i128, b: i128) -> i128 {
     a.checked_sub(b).expect("integer overflow (sub)")
+}
+
+/// exact rationals (num, den), den > 0, reduced; None on overflow
+type Rat = (i128, i128);
+fn rnorm(n: i128, d: i128) -> Rat {
+    let g = gcd(n, d).max(1);
+    let (n, d) = (n / g, d / g);
+    if d < 0 { (-n, -d) } else { (n, d) }
+}
+fn radd(x: Rat, y: Rat) -> Option<Rat> {
+    Some(rnorm(x.0.checked_mul(y.1)?.checked_add(y.0.checked_mul(x.1)?)?, x.1.checked_mul(y.1)?))
+}
+fn rsub(x: Rat, y: Rat) -> Option<Rat> {
+    radd(x, (y.0.checked_neg()?, y.1))
+}
+fn rmul(x: Rat, y: Rat) -> Option<Rat> {
+    Some(rnorm(x.0.checked_mul(y.0)?, x.1.checked_mul(y.1)?))
+}
+fn rdiv(x: Rat, y: Rat) -> Option<Rat> {
+    Some(rnorm(x.0.checked_mul(y.1)?, x.1.checked_mul(y.0)?))
+}
+
+/// the parent's F2 form factored once, T G T^T = diag(D) (T rational, kept as integer rows: row_i = T_i * den_i),
+/// so that each child {l . x = 0} is decided in O(m^2) integer work (`child_iso`). Restricting a form with inertia
+/// (pos, neg, null) to a hyperplane l = 0, with l' = T l: if l' is nonzero on a null coordinate, the child has
+/// (pos, neg, null - 1); else with s = sum over pivots l'_c^2 / D_c: s > 0 -> (pos - 1, neg, null), s < 0 ->
+/// (pos, neg - 1, null), s = 0 -> (pos - 1, neg - 1, null + 1) (bordered matrix [[G, l], [l^T, 0]] has the
+/// child's inertia + (1, 1, 0); its Schur complement over the nonsingular part is -s).
+struct F2Fact {
+    pos: usize,
+    neg: usize,
+    null: usize,
+    null_rows: Vec<Vec<i128>>,
+    piv_rows: Vec<Vec<i128>>,
+    /// integer weights w_c > 0 * 1 / (den_c^2 D_c): sign(sum w_c (row_c . l)^2) = sign(s)
+    w: Vec<i128>,
+}
+
+impl F2Fact {
+    fn new(g: &[Vec<i128>]) -> Option<F2Fact> {
+        let m = g.len();
+        let mut a: Vec<Vec<Rat>> = g.iter().map(|r| r.iter().map(|&x| (x, 1)).collect()).collect();
+        let mut t: Vec<Vec<Rat>> = (0..m).map(|i| (0..m).map(|j| ((i == j) as i128, 1)).collect()).collect();
+        let mut act: Vec<usize> = (0..m).collect();
+        let mut pivs: Vec<(usize, Rat)> = vec![];
+        let mut nulls: Vec<usize> = vec![];
+        while !act.is_empty() {
+            let c = match act.iter().copied().find(|&c| a[c][c].0 != 0) {
+                Some(c) => c,
+                None => {
+                    let Some((i, j)) = act.iter().flat_map(|&i| act.iter().map(move |&j| (i, j))).find(|&(i, j)| i != j && a[i][j].0 != 0) else {
+                        nulls.extend(act.iter().copied());
+                        break;
+                    };
+                    for &x in &act {
+                        a[i][x] = radd(a[i][x], a[j][x])?;
+                    }
+                    for &x in &act {
+                        a[x][i] = if x == i { a[i][i] } else { a[i][x] };
+                    }
+                    a[i][i] = radd(a[i][i], a[j][i])?;
+                    for x in 0..m {
+                        t[i][x] = radd(t[i][x], t[j][x])?;
+                    }
+                    i
+                }
+            };
+            pivs.push((c, a[c][c]));
+            act.retain(|&x| x != c);
+            for &r in &act {
+                if a[r][c].0 == 0 {
+                    continue;
+                }
+                let f = rdiv(a[r][c], a[c][c])?;
+                for &x in &act {
+                    a[r][x] = rsub(a[r][x], rmul(f, a[c][x])?)?;
+                }
+                for x in 0..m {
+                    t[r][x] = rsub(t[r][x], rmul(f, t[c][x])?)?;
+                }
+            }
+        }
+        // integer rows: row * lcm of its denominators
+        let int_row = |row: &Vec<Rat>| -> Option<(Vec<i128>, i128)> {
+            let mut den = 1i128;
+            for &(_, d) in row {
+                den = (den / gcd(den, d)).checked_mul(d)?;
+            }
+            Some((row.iter().map(|&(n, d)| n.checked_mul(den / d)).collect::<Option<Vec<_>>>()?, den))
+        };
+        let null_rows = nulls.iter().map(|&i| int_row(&t[i]).map(|x| x.0)).collect::<Option<Vec<_>>>()?;
+        let mut piv_rows = vec![];
+        let mut wr: Vec<Rat> = vec![];
+        let (mut pos, mut neg) = (0, 0);
+        for &(c, dc) in &pivs {
+            if dc.0 > 0 { pos += 1 } else { neg += 1 }
+            let (row, den) = int_row(&t[c])?;
+            piv_rows.push(row);
+            wr.push(rdiv((1, 1), rmul(dc, (den.checked_mul(den)?, 1))?)?);
+        }
+        let mut l = 1i128;
+        for &(_, d) in &wr {
+            l = (l / gcd(l, d)).checked_mul(d)?;
+        }
+        let w = wr.iter().map(|&(n, d)| n.checked_mul(l / d)).collect::<Option<Vec<_>>>()?;
+        Some(F2Fact { pos, neg, null: nulls.len(), null_rows, piv_rows, w })
+    }
+
+    fn iso(&self) -> usize {
+        self.null + self.pos.min(self.neg)
+    }
+
+    /// isotropic dimension of the child {l . x = 0}; None on overflow
+    fn child_iso(&self, l: &[i128]) -> Option<usize> {
+        let dot = |r: &Vec<i128>| -> Option<i128> {
+            let mut s = 0i128;
+            for (a, b) in r.iter().zip(l) {
+                s = s.checked_add(a.checked_mul(*b)?)?;
+            }
+            Some(s)
+        };
+        for r in &self.null_rows {
+            if dot(r)? != 0 {
+                return Some(self.null - 1 + self.pos.min(self.neg));
+            }
+        }
+        let mut s = 0i128;
+        for (r, &w) in self.piv_rows.iter().zip(&self.w) {
+            let d = dot(r)?;
+            s = s.checked_add(w.checked_mul(d.checked_mul(d)?)?)?;
+        }
+        let (p, n) = (self.pos as i64, self.neg as i64);
+        Some(if s > 0 {
+            self.null + (p - 1).min(n) as usize
+        } else if s < 0 {
+            self.null + p.min(n - 1) as usize
+        } else {
+            self.null + 1 + (p - 1).min(n - 1) as usize
+        })
+    }
+}
+
+/// direction of a nonzero integer vector: primitive, first nonzero entry positive
+fn direction(v: &[i128]) -> Vec<i128> {
+    let mut d = v.to_vec();
+    primitive(&mut d);
+    if d.iter().find(|&&x| x != 0).map_or(false, |&x| x < 0) {
+        for x in d.iter_mut() {
+            *x = -*x;
+        }
+    }
+    d
 }
 
 fn primitive(r: &mut [i128]) {
@@ -123,7 +278,16 @@ struct Search {
     f4_max_m: usize,
     /// --precut: decide BAD / F2 for each child from the parent before building it (same result, fewer nodes)
     precut: bool,
+    /// --fast (with --precut): collisions by one lookup, F2 by the parent's factorization (F2Fact), repeated
+    /// hyperplanes skipped; Q = +-P + t left to the child. --check-fast: also compute the slow answers and assert
+    fast: bool,
+    check_fast: bool,
+    /// --canon2: the allocation-light canonical key (same classes, different key values)
+    canon2: bool,
 }
+
+static PRECUT_REPEAT: AtomicU64 = AtomicU64::new(0);
+static CHECKED: AtomicU64 = AtomicU64::new(0);
 
 /// flats cut by the fourth-power test (all threads)
 static F4CUT: AtomicU64 = AtomicU64::new(0);
@@ -173,7 +337,7 @@ impl Search {
             }
         }
         let np = pairs.len();
-        Search { k, n: 2 * (k - 1), pairs, np, use_canon, f2, min_dim: min_dim.max(1), f4_max_m: 0, precut: false }
+        Search { k, n: 2 * (k - 1), pairs, np, use_canon, f2, min_dim: min_dim.max(1), f4_max_m: 0, precut: false, fast: false, check_fast: false, canon2: false }
     }
 
     fn point(&self, b: &Basis, side: usize, i: usize) -> Pt {
@@ -247,6 +411,27 @@ impl Search {
     /// nullity + min(positive, negative) of its inertia (exact rationals in i128; None on overflow). A type flat
     /// lies in such a subspace (on it the interval multisets agree, so F2 = 0 there), so a flat whose value is
     /// below min_dim holds no type of dimension >= min_dim. With min_dim 1 this is exactly "F2 definite".
+    /// the F2 matrix on the flat's parameters (checked; None on overflow)
+    fn f2_gram(&self, p: &[Pt], q: &[Pt]) -> Option<Vec<Vec<i128>>> {
+        let m = p[0].len();
+        let mut g = vec![vec![0i128; m]; m];
+        for (pts, sg) in [(p, 1i128), (q, -1i128)] {
+            for &(i, j) in &self.pairs {
+                let d: Vec<i128> = (0..m).map(|r| pts[j][r] as i128 - pts[i][r] as i128).collect();
+                for r in 0..m {
+                    if d[r] != 0 {
+                        for c in 0..m {
+                            if d[c] != 0 {
+                                g[r][c] = g[r][c].checked_add(sg * d[r].checked_mul(d[c])?)?;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Some(g)
+    }
+
     fn isotropic_dim(&self, p: &[Pt], q: &[Pt]) -> Option<usize> {
         let m = p[0].len();
         if m == 0 {
@@ -512,6 +697,9 @@ impl Search {
 
     /// canonical certificate of the flat up to relabeling notes of each set, mirroring either set, swapping
     fn canon(&self, p: &[Pt], q: &[Pt]) -> u128 {
+        if self.canon2 {
+            return canon2(self.k, p, q);
+        }
         let mut best: Option<Vec<u8>> = None;
         for sp in [1i64, -1] {
             for sq in [1i64, -1] {
@@ -617,8 +805,82 @@ impl Search {
             if seen.len() > seen_cap {
                 seen.clear(); // dedup is only a speed-up
             }
+            // --fast: the parent's note-difference directions (a child with l parallel to one forces two notes
+            // equal) and, when the parent is tight for F2, its factorization (child_iso in O(m^2))
+            let fast = if self.precut && self.fast {
+                let mut dirs: HashSet<Vec<i128>> = HashSet::new();
+                for pts in [&an.p, &an.q] {
+                    for &(i, j) in &self.pairs {
+                        let d: Vec<i128> = (0..m).map(|r| pts[j][r] as i128 - pts[i][r] as i128).collect();
+                        dirs.insert(direction(&d));
+                    }
+                }
+                let fact = if self.f2 && piso.map_or(true, |d| d <= self.min_dim) {
+                    self.f2_gram(&an.p, &an.q).and_then(|g| F2Fact::new(&g))
+                } else {
+                    None
+                };
+                Some((dirs, fact))
+            } else {
+                None
+            };
+            let mut ls: HashSet<Vec<i128>> = HashSet::new();
             for (u, v, s) in opts {
-                if self.precut {
+                if let Some((dirs, fact)) = &fast {
+                    let ((i, j), (a, b)) = (self.pairs[u], self.pairs[v]);
+                    let l: Vec<i128> = (0..m)
+                        .map(|r| {
+                            (an.p[j][r] as i128 - an.p[i][r] as i128) - s as i128 * (an.q[b][r] as i128 - an.q[a][r] as i128)
+                        })
+                        .collect();
+                    let dl = direction(&l);
+                    if !ls.insert(dl.clone()) {
+                        PRECUT_REPEAT.fetch_add(1, Ordering::Relaxed);
+                        continue; // the same hyperplane on this parent: the same child
+                    }
+                    let collide = dirs.contains(&dl);
+                    let tight = self.f2 && piso.map_or(true, |d| d <= self.min_dim);
+                    let f2cut = if collide || !tight {
+                        Some(false)
+                    } else {
+                        fact.as_ref().and_then(|f| f.child_iso(&l)).map(|d| d < self.min_dim)
+                    };
+                    if self.check_fast {
+                        // the slow exact answers on the child's own forms
+                        let cp = Self::child_points(&an.p, &l).expect("check: overflow");
+                        let cq = Self::child_points(&an.q, &l).expect("check: overflow");
+                        let slow_collide = cp.iter().collect::<HashSet<_>>().len() < self.k || cq.iter().collect::<HashSet<_>>().len() < self.k;
+                        assert_eq!(collide, slow_collide, "collision mismatch: l {l:?}");
+                        if !collide && tight {
+                            let slow = self.isotropic_dim(&cp, &cq);
+                            let fastv = fact.as_ref().and_then(|f| f.child_iso(&l));
+                            if let (Some(sv), Some(fv)) = (slow, fastv) {
+                                assert_eq!(sv, fv, "F2 child mismatch: l {l:?}, parent {:?}", fact.as_ref().map(|f| (f.pos, f.neg, f.null)));
+                                CHECKED.fetch_add(1, Ordering::Relaxed);
+                            }
+                        }
+                    }
+                    if collide {
+                        PRECUT_BAD.fetch_add(1, Ordering::Relaxed);
+                        continue;
+                    }
+                    match f2cut {
+                        Some(true) => {
+                            PRECUT_F2.fetch_add(1, Ordering::Relaxed);
+                            continue;
+                        }
+                        Some(false) => {}
+                        None => {
+                            // overflow in the fast path: the slow exact test on the child's forms
+                            if let (Some(cp), Some(cq)) = (Self::child_points(&an.p, &l), Self::child_points(&an.q, &l)) {
+                                if self.isotropic_dim(&cp, &cq).map_or(false, |d| d < self.min_dim) {
+                                    PRECUT_F2.fetch_add(1, Ordering::Relaxed);
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                } else if self.precut {
                     // decide BAD / F2 for the child from the parent's note forms, without building the child.
                     // l = the edge form on the parent's parameters: (p_j - p_i) - s (q_b - q_a)
                     let ((i, j), (a, b)) = (self.pairs[u], self.pairs[v]);
@@ -782,6 +1044,181 @@ fn search_leaves(k: usize, cls: &[u16], ncls: usize, col: Vec<u32>, best: &mut O
     }
 }
 
+// ---- canon2 (2026-11-26): the same canonical classes, allocation-light ----------------------------------------
+// Profile (k 7 --min-dim 2 --fast): ~75% of the time was canon (refine's Vec signatures, sorts, binary searches,
+// malloc/free). canon2 keeps the method (color refinement on the 2k notes + individualization, certificate =
+// arc classes relabeled in leaf order, min over leaves and variants) with: class colors = order-free 64-bit hashes
+// of their arc multisets; note colors = ranks of (old color, hash of its arcs) (an exact refinement: the old color
+// is part of the key; a hash collision only merges colors = more leaves, never a wrong certificate, since the
+// certificate spells out the whole class structure); the leaf search runs only on the variants (mirror / swap)
+// whose refinement trace is smallest (the trace is an invariant, so isomorphic inputs choose matching variants).
+
+fn mix(mut x: u64) -> u64 {
+    x = x.wrapping_add(0x9e3779b97f4a7c15);
+    x = (x ^ (x >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+    x = (x ^ (x >> 27)).wrapping_mul(0x94d049bb133111eb);
+    x ^ (x >> 31)
+}
+
+fn mix3(a: u64, b: u64, c: u64) -> u64 {
+    mix(mix(mix(a) ^ b) ^ c)
+}
+
+/// arc classes of variant (a, b): cls[side*k*k + i*k + j] = id of the difference vector b_j - b_i (u16::MAX on
+/// the diagonal), ids numbered by sorting the differences (no per-arc allocation)
+fn class_table(k: usize, a: &[Pt], b: &[Pt], sa: i64, sb: i64) -> (Vec<u16>, usize) {
+    let m = a[0].len();
+    let mut diffs: Vec<i64> = vec![0; 2 * k * k * m];
+    let mut arcs: Vec<usize> = Vec::with_capacity(2 * k * (k - 1));
+    for (side, (pts, sg)) in [(a, sa), (b, sb)].into_iter().enumerate() {
+        for i in 0..k {
+            for j in 0..k {
+                if i != j {
+                    let x = side * k * k + i * k + j;
+                    for r in 0..m {
+                        diffs[x * m + r] = sg * (pts[j][r] - pts[i][r]);
+                    }
+                    arcs.push(x);
+                }
+            }
+        }
+    }
+    let key = |x: usize| &diffs[x * m..x * m + m];
+    arcs.sort_unstable_by(|&x, &y| key(x).cmp(key(y)));
+    let mut cls = vec![u16::MAX; 2 * k * k];
+    let mut n = 0usize;
+    for t in 0..arcs.len() {
+        if t > 0 && key(arcs[t]) != key(arcs[t - 1]) {
+            n += 1;
+        }
+        cls[arcs[t]] = n as u16;
+    }
+    (cls, n + 1)
+}
+
+/// stable refinement of note colors (ranks); returns the colors and an invariant trace of the refinement
+fn refine2(k: usize, cls: &[u16], ncls: usize, mut col: Vec<u32>) -> (Vec<u32>, u64) {
+    let nv = 2 * k;
+    let mut trace = 0u64;
+    let mut csig = vec![0u64; ncls];
+    let mut acc = vec![0u64; nv];
+    let mut keys: Vec<(u32, u64, usize)> = Vec::with_capacity(nv);
+    loop {
+        let ncol_before = {
+            let mut c = col.clone();
+            c.sort_unstable();
+            c.dedup();
+            c.len()
+        };
+        csig.iter_mut().for_each(|x| *x = 0);
+        for side in 0..2 {
+            for i in 0..k {
+                for j in 0..k {
+                    if i != j {
+                        let c = cls[side * k * k + i * k + j] as usize;
+                        csig[c] = csig[c].wrapping_add(mix3(side as u64, col[side * k + i] as u64, col[side * k + j] as u64));
+                    }
+                }
+            }
+        }
+        acc.iter_mut().for_each(|x| *x = 0);
+        for side in 0..2 {
+            for i in 0..k {
+                for j in 0..k {
+                    if i != j {
+                        let c = csig[cls[side * k * k + i * k + j] as usize];
+                        let (vi, vj) = (side * k + i, side * k + j);
+                        acc[vi] = acc[vi].wrapping_add(mix3(c, 0, col[vj] as u64));
+                        acc[vj] = acc[vj].wrapping_add(mix3(c, 1, col[vi] as u64));
+                    }
+                }
+            }
+        }
+        keys.clear();
+        keys.extend((0..nv).map(|v| (col[v], acc[v], v)));
+        keys.sort_unstable();
+        let mut newcol = vec![0u32; nv];
+        let mut r = 0u32;
+        for t in 0..nv {
+            if t > 0 && (keys[t].0, keys[t].1) != (keys[t - 1].0, keys[t - 1].1) {
+                r += 1;
+            }
+            newcol[keys[t].2] = r;
+            trace = mix3(trace, keys[t].0 as u64, keys[t].1);
+        }
+        let stable = (r as usize + 1) == ncol_before;
+        col = newcol;
+        if stable {
+            return (col, trace);
+        }
+    }
+}
+
+fn search_leaves2(k: usize, cls: &[u16], ncls: usize, col: Vec<u32>, best: &mut Option<Vec<u8>>) {
+    let nv = 2 * k;
+    // first (smallest color) non-singleton cell
+    let mut sorted = col.clone();
+    sorted.sort_unstable();
+    let cell = (1..nv).filter(|&t| sorted[t] == sorted[t - 1]).map(|t| sorted[t]).next();
+    let Some(cell) = cell else {
+        let mut order: Vec<usize> = (0..nv).collect();
+        order.sort_unstable_by_key(|&v| col[v]);
+        let mut relabel = vec![u8::MAX; ncls];
+        let mut next = 0u8;
+        let mut cert = Vec::with_capacity(2 * k * (k - 1));
+        for side in 0..2 {
+            let ord: Vec<usize> = order.iter().filter(|&&v| v / k == side).map(|&v| v - side * k).collect();
+            for &i in &ord {
+                for &j in &ord {
+                    if i != j {
+                        let c = cls[side * k * k + i * k + j] as usize;
+                        if relabel[c] == u8::MAX {
+                            relabel[c] = next;
+                            next += 1;
+                        }
+                        cert.push(relabel[c]);
+                    }
+                }
+            }
+        }
+        if best.as_ref().map_or(true, |b| cert < *b) {
+            *best = Some(cert);
+        }
+        return;
+    };
+    for v in 0..nv {
+        if col[v] != cell {
+            continue;
+        }
+        let ind: Vec<u32> = (0..nv).map(|w| 2 * col[w] + (w == v) as u32).collect();
+        let (c2, _) = refine2(k, cls, ncls, ind);
+        search_leaves2(k, cls, ncls, c2, best);
+    }
+}
+
+fn canon2(k: usize, p: &[Pt], q: &[Pt]) -> u128 {
+    let init: Vec<u32> = (0..2 * k).map(|v| (v / k) as u32).collect();
+    let mut cand: Vec<(u64, Vec<u16>, usize, Vec<u32>)> = Vec::with_capacity(8);
+    for sp in [1i64, -1] {
+        for sq in [1i64, -1] {
+            for (x, y, sx, sy) in [(p, q, sp, sq), (q, p, sq, sp)] {
+                let (cls, ncls) = class_table(k, x, y, sx, sy);
+                let (col, trace) = refine2(k, &cls, ncls, init.clone());
+                // the number of classes is part of the invariant too
+                cand.push((mix3(trace, ncls as u64, 0), cls, ncls, col));
+            }
+        }
+    }
+    let tmin = cand.iter().map(|c| c.0).min().unwrap();
+    let mut best: Option<Vec<u8>> = None;
+    for (t, cls, ncls, col) in cand {
+        if t == tmin {
+            search_leaves2(k, &cls, ncls, col, &mut best);
+        }
+    }
+    h128(&best.unwrap())
+}
+
 fn mem_available_gb() -> Option<f64> {
     let s = std::fs::read_to_string("/proc/meminfo").ok()?;
     for line in s.lines() {
@@ -814,7 +1251,10 @@ fn main() {
     let min_dim: usize = opt("--min-dim").map(|x| x.parse().unwrap()).unwrap_or(1);
     let mut s = Search::new(k, !flag("--no-canon"), !flag("--no-f2"), min_dim);
     s.f4_max_m = opt("--f4").map(|x| x.parse().unwrap()).unwrap_or(0);
-    s.precut = flag("--precut");
+    s.precut = flag("--precut") || flag("--fast") || flag("--check-fast");
+    s.fast = flag("--fast") || flag("--check-fast");
+    s.check_fast = flag("--check-fast");
+    s.canon2 = flag("--canon2");
     let shared = Shared::new();
     let t0 = Instant::now();
     let mut types: Vec<Basis> = vec![];
@@ -959,10 +1399,10 @@ fn main() {
             reps.push((key, b));
         }
     }
-    println!("k {k}: {} nodes, {} bad ({} by f2, {} by f4), {} dups, {} cut at the parent ({} bad, {} f2), good nodes {}, {} type flats, {} maximal classes, {}, {:.1} s",
+    println!("k {k}: {} nodes, {} bad ({} by f2, {} by f4), {} dups, {} cut at the parent ({} bad, {} f2, {} repeats; {} fast checks verified), good nodes {}, {} type flats, {} maximal classes, {}, {:.1} s",
              total.nodes, total.bad, total.f2cut, F4CUT.load(Ordering::Relaxed), total.dup,
              PRECUT_BAD.load(Ordering::Relaxed) + PRECUT_F2.load(Ordering::Relaxed), PRECUT_BAD.load(Ordering::Relaxed),
-             PRECUT_F2.load(Ordering::Relaxed), total.nodes - total.bad, types.len(), reps.len(),
+             PRECUT_F2.load(Ordering::Relaxed), PRECUT_REPEAT.load(Ordering::Relaxed), CHECKED.load(Ordering::Relaxed), total.nodes - total.bad, types.len(), reps.len(),
              if complete { "COMPLETE" } else { "INCOMPLETE" }, t0.elapsed().as_secs_f64());
     let mut js = vec![];
     for (_, b) in &reps {
