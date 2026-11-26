@@ -55,6 +55,7 @@ describe('the three record types', () => {
       timeSpan: { start: rational(0), duration: rational(4) },
       contentOffset: rational(0),
       registerSpan: { lowMc: 0, highMc: 12700 },
+      registerMapping: 'show',
       primaryDataRef: null,
       mapping: 'loop',
       modifiers: [],
@@ -77,6 +78,11 @@ describe('the three record types', () => {
     ).not.toBeNull();
     expect(bad({ ...good, registerSpan: { lowMc: 5, highMc: 1 } })).not.toBeNull();
     expect(bad({ ...good, mapping: 'bounce' })).not.toBeNull();
+    expect(bad({ ...good, registerMapping: 'bounce' })).not.toBeNull();
+    expect(bad({ ...good, registerMapping: undefined })).not.toBeNull();
+    for (const registerMapping of ['show', 'filter', 'fold']) {
+      expect(bad({ ...good, registerMapping })).toBeNull();
+    }
     expect(bad({ ...good, modifiers: 'x' })).not.toBeNull();
     // An object saved before modifiers had references (an empty list) stays valid.
     expect(bad({ ...good, modifiers: [] })).toBeNull();

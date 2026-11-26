@@ -17,5 +17,3 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
-| CLAUDE.md | workbench | 2026-11-25 | rule 8: cap 250k, drop unrelated-concern clause (human OK) |
-| .claude/agents/builder.md | workbench | 2026-11-25 | step 8 threshold 200k to 250k |

@@ -70,6 +70,7 @@ interface ObjectPatch {
   lane?: number;
   contentOffset?: Rational;
   registerSpan?: ObjectData['registerSpan'];
+  registerMapping?: ObjectData['registerMapping'];
   modifiers?: ModifierInstance[];
   mute?: boolean;
 }

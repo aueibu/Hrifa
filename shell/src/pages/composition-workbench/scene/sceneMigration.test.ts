@@ -135,6 +135,7 @@ describe('a stored object with ONE strip unwraps into the same object', () => {
       timeSpan: { start: rational(2), duration: rational(8) },
       contentOffset: rational(1),
       registerSpan: { lowMc: 0, highMc: 12700 },
+      registerMapping: 'show',
       primaryDataRef: { id: 'clave' },
       mapping: 'one-shot',
       modifiers: [modifier],
@@ -251,6 +252,7 @@ describe('an object with no strips becomes an Empty', () => {
       timeSpan: { start: rational(0), duration: rational(4) },
       contentOffset: rational(0),
       registerSpan: { lowMc: 1, highMc: 2 },
+      registerMapping: 'show',
       primaryDataRef: null,
       mapping: 'loop',
       modifiers: [],
@@ -312,8 +314,23 @@ describe('old shapes and idempotence', () => {
     });
   });
 
+  it('an object with no registerMapping gets show and keeps its span; a stored value is kept', () => {
+    const span = { lowMc: 3600, highMc: 7200 };
+    const list = migrated(
+      stored([
+        oldObject('o', { contentOffset: rational(0), registerSpan: span }),
+        oldObject('f', { contentOffset: rational(0), registerMapping: 'fold' }),
+      ])
+    );
+    expect(validateBlock(find(list, 'o'))).toBeNull();
+    expect(data(list, 'o')).toMatchObject({ registerMapping: 'show', registerSpan: span });
+    expect(data(list, 'f').registerMapping).toBe('fold');
+  });
+
   it('an object already in the new shape keeps its identity', () => {
-    const once = migrated(stored([oldObject('o', { contentOffset: rational(1, 2) })]));
+    const once = migrated(
+      stored([oldObject('o', { contentOffset: rational(1, 2), registerMapping: 'show' })])
+    );
     const twice = migrateStoredBlocks(once);
     expect(twice).toBe(once);
   });
@@ -356,6 +373,7 @@ const shape: (keyof ObjectData)[] = [
   'timeSpan',
   'contentOffset',
   'registerSpan',
+  'registerMapping',
   'primaryDataRef',
   'mapping',
   'modifiers',

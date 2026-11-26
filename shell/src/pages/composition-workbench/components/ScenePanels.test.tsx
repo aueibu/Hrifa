@@ -1,4 +1,4 @@
-import { act, render, screen, userEvent, waitFor, within } from '@test-utils';
+import { act, fireEvent, render, screen, userEvent, waitFor, within } from '@test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MusicalPerformancePlan } from '../audio/types';
 import { CompositionSettingsProvider } from '../compositionSettings';
@@ -88,6 +88,44 @@ describe('the Outliner and Properties panels (O2a)', () => {
     expect(played[0].loop).toBeFalsy();
     await userEvent.click(await screen.findByRole('button', { name: '■ Stop' }));
     expect(mockEngineState.stopped).toBe(1);
+  });
+
+  it('Register: Fold and the span land in the record, the readout follows, and Low cannot pass High', async () => {
+    await renderPanels();
+    await click('New scene');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add Empty' })).toBeEnabled());
+    await click('Add Empty');
+    await screen.findByRole('treeitem', { name: /Empty/ });
+
+    expect(screen.getByText('Data range')).toBeInTheDocument();
+    expect(screen.getByText('none')).toBeInTheDocument();
+    expect(screen.queryByText(/moved/)).not.toBeInTheDocument();
+
+    const mapping = screen.getByRole('radiogroup', { name: 'Register mapping' });
+    await userEvent.click(within(mapping).getByText('Fold'));
+    expect(await screen.findByText('0 moved, 0 dropped')).toBeInTheDocument();
+    expect(within(mapping).getByLabelText('Fold')).toBeChecked();
+
+    const scrub = async (name: string, text: string) => {
+      const spin = screen.getByRole('spinbutton', { name });
+      fireEvent.pointerDown(spin, { button: 0, clientX: 10 });
+      fireEvent.pointerUp(spin, { button: 0, clientX: 10 });
+      const input = await screen.findByRole('textbox', { name });
+      fireEvent.change(input, { target: { value: text } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+    };
+    const value = (name: string) =>
+      screen.getByRole('spinbutton', { name }).getAttribute('aria-valuenow');
+    expect(value('High')).toBe('12700');
+    await scrub('High', '7200');
+    await waitFor(() => expect(value('High')).toBe('7200'));
+    await scrub('Low', '3600');
+    await waitFor(() => expect(value('Low')).toBe('3600'));
+
+    // Low is clamped by High: it can never pass it, so nothing is refused.
+    await scrub('Low', '9000');
+    await waitFor(() => expect(value('Low')).toBe('7200'));
+    expect(value('High')).toBe('7200');
   });
 
   it('deleting a parent keeps the child in place, and undo and redo restore and remove it', async () => {

@@ -37,7 +37,9 @@ import {
  *
  * Per object, in order: world start (parent chain of relative starts) -> the object data's ONE cycle
  * (`auditionBlock`) -> mapping (Loop tiles it, Stretch scales it to the span, One-shot plays it once)
- * -> the end bound -> merge. `registerSpan` is stored but IGNORED here (undecided).
+ * -> the end bound -> the register step (`registerMapping` show, filter or fold, over `registerSpan`;
+ * realization only, never the data block; counts and the data's pitch range are reported per object in
+ * `SceneEvaluation.objects`) -> merge.
  *
  * Modifiers (O3, W-72): the primary data's PACKET goes through the unmuted modifiers top to bottom on
  * one cycle (`runModifierStack`), and the resulting packet is made audible by the same audition build
@@ -82,6 +84,109 @@ type CycleOutcome =
 export interface SceneEvaluation {
   plan: MusicalPerformancePlan;
   warnings: string[];
+  /** What each object that played (or would, when muted events are included) did with its register. */
+  objects: Record<string, ObjectRealization>;
+}
+
+/** What the register step did to one object's notes (U7b-1). */
+export interface RegisterCounts {
+  /** Notes folded to another octave (filter never moves). */
+  moved: number;
+  /** Notes removed: outside the span (filter), or with no octave inside it (fold). */
+  dropped: number;
+  /** Fold only: notes removed because a folded note already sounded the same pitch at the same start. */
+  merged: number;
+}
+
+export interface ObjectRealization extends RegisterCounts {
+  /** Lowest and highest sounding pitch after modifiers, before the register step; null when silent. */
+  range: { lowMc: number; highMc: number } | null;
+}
+
+/** Percussion and click sounds carry a placeholder pitch; the register step leaves them alone. */
+const UNPITCHED = new Set<string>([
+  'preview.click',
+  'preview.click-accent',
+  'sound.click',
+  'sound.woodblock',
+  'sound.drum',
+]);
+const isPitched = (event: MusicalPerformanceEvent) => !UNPITCHED.has(event.instrumentId);
+
+const OCTAVE_MC = 1200;
+const EPSILON = 1e-9;
+
+/** The lowest and highest pitch (midicents) of the pitched events, or null when there are none. */
+export function pitchRange(
+  events: readonly MusicalPerformanceEvent[]
+): { lowMc: number; highMc: number } | null {
+  let lowMc = Infinity;
+  let highMc = -Infinity;
+  for (const event of events) {
+    if (isPitched(event)) {
+      lowMc = Math.min(lowMc, event.pitchMidicents);
+      highMc = Math.max(highMc, event.pitchMidicents);
+    }
+  }
+  return lowMc === Infinity ? null : { lowMc, highMc };
+}
+
+/**
+ * The register step on one object's realized events (never on the data block). `span` is inclusive.
+ * Show: unchanged. Filter: drops pitched notes outside the span. Fold: moves each pitched note by whole
+ * octaves to the octave inside the span nearest its own pitch (a note with none is dropped), then merges
+ * notes with the same start and pitch (the longer duration wins). Unpitched events are untouched.
+ */
+export function applyRegister(
+  events: readonly MusicalPerformanceEvent[],
+  span: { lowMc: number; highMc: number },
+  mapping: ObjectData['registerMapping']
+): { events: MusicalPerformanceEvent[]; counts: RegisterCounts } {
+  const counts: RegisterCounts = { moved: 0, dropped: 0, merged: 0 };
+  if (mapping === 'show') {
+    return { events: [...events], counts };
+  }
+  const { lowMc, highMc } = span;
+  const out: MusicalPerformanceEvent[] = [];
+  const seen = new Map<string, number>();
+  for (const event of events) {
+    if (!isPitched(event)) {
+      out.push(event);
+      continue;
+    }
+    const pitch = event.pitchMidicents;
+    if (mapping === 'filter') {
+      if (pitch < lowMc || pitch > highMc) {
+        counts.dropped += 1;
+      } else {
+        out.push(event);
+      }
+      continue;
+    }
+    const lowest = Math.ceil((lowMc - pitch) / OCTAVE_MC - EPSILON);
+    const highest = Math.floor((highMc - pitch) / OCTAVE_MC + EPSILON);
+    if (lowest > highest) {
+      counts.dropped += 1;
+      continue;
+    }
+    const shift = Math.min(Math.max(0, lowest), highest);
+    const placed = shift === 0 ? event : { ...event, pitchMidicents: pitch + shift * OCTAVE_MC };
+    const key = `${placed.at.quarterNotes.numerator}/${placed.at.quarterNotes.denominator}|${placed.pitchMidicents}`;
+    const twin = seen.get(key);
+    if (twin !== undefined) {
+      counts.merged += 1;
+      if (compareRational(placed.duration.quarterNotes, out[twin].duration.quarterNotes) > 0) {
+        out[twin] = { ...out[twin], duration: placed.duration };
+      }
+      continue;
+    }
+    if (shift !== 0) {
+      counts.moved += 1;
+    }
+    seen.set(key, out.length);
+    out.push(placed);
+  }
+  return { events: out, counts };
 }
 
 export interface EvaluateSceneOptions {
@@ -319,8 +424,10 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
     const includeMuted = evaluateOptions?.includeMuted ?? false;
     const byId = new Map(blocks.map((block) => [block.id, block]));
     const warnings: string[] = [];
+    const objects: Record<string, ObjectRealization> = {};
     const empty = (duration: Rational): SceneEvaluation => ({
       warnings,
+      objects,
       plan: {
         id: `${sceneId}:scene`,
         sourceId: sceneId,
@@ -414,8 +521,8 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
       }
       const built = outcome.built;
       built.plan.warnings.forEach((warning) => warnings.push(`Object "${block.name}": ${warning}`));
-      events.push(
-        ...placedEvents(
+      const registered = applyRegister(
+        placedEvents(
           built,
           block.id,
           start,
@@ -423,12 +530,17 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
           data.mapping,
           bound,
           data.contentOffset
-        )
+        ),
+        data.registerSpan,
+        data.registerMapping
       );
+      objects[block.id] = { ...registered.counts, range: pitchRange(built.plan.events) };
+      events.push(...registered.events);
     }
     events.sort((left, right) => compareRational(left.at.quarterNotes, right.at.quarterNotes));
     return {
       warnings,
+      objects,
       plan: { ...empty(formEnd).plan, events },
     };
   };

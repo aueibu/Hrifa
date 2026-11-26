@@ -34,6 +34,7 @@ import {
   type ModifierInstance,
   type ObjectData,
   type ObjectMapping,
+  type RegisterMapping,
 } from './sceneTypes';
 import { layoutSubLanes, type SubLaneLayout } from './subLanes';
 
@@ -477,6 +478,27 @@ export function setTimeSpan(
 
 export function setMapping(blocks: Blocks, id: string, mapping: ObjectMapping): SceneOpResult {
   return editObject(blocks, id, (data) => ({ ...data, mapping }));
+}
+
+/** The register span (midicents, inclusive); low above high is refused, as validation does. */
+export function setRegisterSpan(
+  blocks: Blocks,
+  id: string,
+  lowMc: number,
+  highMc: number
+): SceneOpResult {
+  if (!Number.isFinite(lowMc) || !Number.isFinite(highMc) || lowMc > highMc) {
+    return fail('The low end of a register must not be above its high end.');
+  }
+  return editObject(blocks, id, (data) => ({ ...data, registerSpan: { lowMc, highMc } }));
+}
+
+export function setRegisterMapping(
+  blocks: Blocks,
+  id: string,
+  registerMapping: RegisterMapping
+): SceneOpResult {
+  return editObject(blocks, id, (data) => ({ ...data, registerMapping }));
 }
 
 /** The primary data-block (null: Empty). */

@@ -382,3 +382,116 @@ describe('the two-stage memo', () => {
     expect(second).toBe(first);
   });
 });
+
+describe('U7b-1: the register step (realization only)', () => {
+  const C4 = 6000;
+  const E4 = 6400;
+  const G4 = 6700;
+  const C5 = 7200;
+  // A clave cycle with its events replaced by pitched notes: [at (quarters), pitch].
+  const cycleWith = (notes: [number, number][], instrumentId = 'preview.triangle') => {
+    const base = auditionBlock(claveBlock());
+    if (!base.ok) {
+      throw new Error('clave must build');
+    }
+    const model = base.plan.events[0];
+    return (() => ({
+      ...base,
+      plan: {
+        ...base.plan,
+        events: notes.map(([at, pitch], index) => ({
+          ...model,
+          id: `n${index}`,
+          pitchMidicents: pitch,
+          instrumentId: instrumentId as typeof model.instrumentId,
+          at: { quarterNotes: rational(at) },
+          duration: { quarterNotes: rational(1) },
+        })),
+      },
+    })) as unknown as typeof auditionBlock;
+  };
+  const run = (
+    notes: [number, number][],
+    lowMc: number,
+    highMc: number,
+    registerMapping: 'show' | 'filter' | 'fold',
+    instrumentId?: string
+  ) => {
+    const blocks = sceneOf(
+      clave('o', {
+        mapping: 'one-shot',
+        registerSpan: { lowMc, highMc },
+        registerMapping,
+      })
+    );
+    const result = createSceneEvaluator({ buildCycle: cycleWith(notes, instrumentId) }).evaluate(
+      blocks,
+      'scene'
+    );
+    return {
+      pitches: result.plan.events.map((event) => event.pitchMidicents),
+      object: result.objects.o,
+    };
+  };
+  const chord: [number, number][] = [
+    [0, C4],
+    [0, E4],
+    [0, G4],
+    [0, C5],
+  ];
+
+  it('show changes nothing and reports the data range', () => {
+    const { pitches, object } = run(chord, 6200, 7000, 'show');
+    expect(pitches).toEqual([C4, E4, G4, C5]);
+    expect(object).toMatchObject({ moved: 0, dropped: 0, range: { lowMc: C4, highMc: C5 } });
+  });
+
+  it('filter 6200-7000 keeps E4 G4 and counts the dropped', () => {
+    const { pitches, object } = run(chord, 6200, 7000, 'filter');
+    expect(pitches).toEqual([E4, G4]);
+    expect(object).toMatchObject({ moved: 0, dropped: 2 });
+  });
+
+  it('fold 6200-7000 drops both Cs (no octave of C fits)', () => {
+    const { pitches, object } = run(chord, 6200, 7000, 'fold');
+    expect(pitches).toEqual([E4, G4]);
+    expect(object).toMatchObject({ moved: 0, dropped: 2 });
+  });
+
+  it('fold 6000-7100 chord (one start): C4 E4 G4, the C5 merges into C4', () => {
+    const { pitches, object } = run(chord, 6000, 7100, 'fold');
+    expect(pitches).toEqual([C4, E4, G4]);
+    expect(object).toMatchObject({ dropped: 0, merged: 1 });
+  });
+
+  it('fold 6000-7100 melody (different starts): C4 E4 G4 C4', () => {
+    const { pitches, object } = run(
+      [
+        [0, C4],
+        [1, E4],
+        [2, G4],
+        [3, C5],
+      ],
+      6000,
+      7100,
+      'fold'
+    );
+    expect(pitches).toEqual([C4, E4, G4, C4]);
+    expect(object).toMatchObject({ moved: 1, dropped: 0, merged: 0 });
+  });
+
+  it('fold picks the octave nearest the note', () => {
+    expect(run([[0, 9000]], 6000, 7100, 'fold').pitches).toEqual([6600]);
+    expect(run([[0, 4200]], 6000, 7100, 'fold').pitches).toEqual([6600]);
+  });
+
+  it('unpitched (click) events are left alone', () => {
+    const { pitches } = run(chord, 6200, 7000, 'filter', 'sound.click');
+    expect(pitches).toHaveLength(4);
+  });
+
+  it('an object that plays nothing reports nothing', () => {
+    const blocks = sceneOf(objectBlock('o', { registerMapping: 'fold' }));
+    expect(evaluateScene(blocks, 'scene').objects.o).toBeUndefined();
+  });
+});

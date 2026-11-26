@@ -16,6 +16,8 @@ import {
   setMute,
   setParent,
   setPrimaryData,
+  setRegisterMapping,
+  setRegisterSpan,
   setTimeSpan,
   type OpEnv,
   type SceneOpResult,
@@ -234,5 +236,21 @@ describe('renaming keeps names unique per type', () => {
     expect(byId(taken.blocks, second.created[0])?.name).toBe('Empty.001');
     const same = ok(renameBlock(taken.blocks, first.created[0], 'Empty'));
     expect(byId(same.blocks, first.created[0])?.name).toBe('Empty');
+  });
+});
+
+describe('U7b-1: register ops', () => {
+  it('sets the register span and mapping; refuses low above high and a non-object', () => {
+    const { e, blocks, sceneId } = start();
+    const added = ok(addEmpty(blocks, e, sceneId, null));
+    const id = added.created[0];
+    const made = added.blocks;
+    let next = ok(setRegisterSpan(made, id, 6200, 7000)).blocks;
+    next = ok(setRegisterMapping(next, id, 'fold')).blocks;
+    const object = objectDataOf(byId(next, id));
+    expect(object?.registerSpan).toEqual({ lowMc: 6200, highMc: 7000 });
+    expect(object?.registerMapping).toBe('fold');
+    expect(setRegisterSpan(made, id, 7000, 6200).ok).toBe(false);
+    expect(setRegisterMapping(made, 'nope', 'filter').ok).toBe(false);
   });
 });

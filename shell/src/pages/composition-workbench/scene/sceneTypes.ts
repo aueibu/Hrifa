@@ -20,6 +20,7 @@ export const OBJECT_TYPE_ID = 'object';
 export const COLLECTION_TYPE_ID = 'collection';
 
 export type ObjectMapping = 'loop' | 'stretch' | 'one-shot';
+export type RegisterMapping = 'show' | 'filter' | 'fold';
 
 /**
  * A modifier on an object (O3, W-72). `type` is a registered modifier id (`scene/modifiers`),
@@ -70,8 +71,10 @@ export interface ObjectData {
    * sub-lane that is free where it plays). It never changes playback, only where blocks may overlap.
    */
   lane?: number;
-  /** Stored and validated, NOT applied yet (what it does to notes outside it is undecided). */
+  /** Stored and validated; applied by `registerMapping` (U7b). */
   registerSpan: { lowMc: number; highMc: number };
+  /** What the register span does to notes outside it: show (nothing), filter (drop) or fold (move in). */
+  registerMapping: RegisterMapping;
   primaryDataRef: Ref | null;
   mapping: ObjectMapping;
   modifiers: ModifierInstance[];
@@ -79,6 +82,7 @@ export interface ObjectData {
 }
 
 const MAPPINGS: readonly ObjectMapping[] = ['loop', 'stretch', 'one-shot'];
+export const REGISTER_MAPPINGS: readonly RegisterMapping[] = ['show', 'filter', 'fold'];
 
 function isRecordOf(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -143,6 +147,7 @@ export const blankObjectData = (): ObjectData => ({
   timeSpan: { start: rational(0), duration: rational(4) },
   contentOffset: rational(0),
   registerSpan: { lowMc: 0, highMc: 12700 },
+  registerMapping: 'show',
   primaryDataRef: null,
   mapping: 'loop',
   modifiers: [],
@@ -260,6 +265,9 @@ function validateObjectData(data: unknown): string | null {
   }
   if (!MAPPINGS.includes(data.mapping as ObjectMapping)) {
     return 'An object maps its data as loop, stretch or one-shot.';
+  }
+  if (!REGISTER_MAPPINGS.includes(data.registerMapping as RegisterMapping)) {
+    return 'An object shows, filters or folds notes outside its register span.';
   }
   if (typeof data.mute !== 'boolean') {
     return 'An object has a mute flag.';

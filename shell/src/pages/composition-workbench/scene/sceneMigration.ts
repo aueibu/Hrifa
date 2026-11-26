@@ -19,6 +19,8 @@ import { COLLECTION_TYPE_ID, OBJECT_TYPE_ID } from './sceneTypes';
  *   is missing or closes a parent loop becomes null.
  * - An object from before strips has the one-placement shape already; only a missing `contentOffset`
  *   is added (0).
+ * - An object with no `registerMapping` gets `'show'` (U7a: the register span is kept, nothing is
+ *   hidden or moved, so existing scenes sound the same).
  */
 
 type Loose = Record<string, unknown>;
@@ -62,7 +64,9 @@ export function migrateStoredBlocks<T>(entries: readonly T[]): T[] {
     });
   }
   const needsContentOffset = (data: Loose) =>
-    !Array.isArray(data.strips) && isRecord(data.timeSpan) && data.contentOffset === undefined;
+    !Array.isArray(data.strips) &&
+    isRecord(data.timeSpan) &&
+    (data.contentOffset === undefined || data.registerMapping === undefined);
   if (
     stripped.size === 0 &&
     !entries.some((entry) => {
@@ -143,6 +147,7 @@ export function migrateStoredBlocks<T>(entries: readonly T[]): T[] {
         timeSpan: { start: strip.start, duration: strip.duration },
         contentOffset: strip.contentOffset ?? rational(0),
         registerSpan: data.registerSpan,
+        registerMapping: data.registerMapping ?? 'show',
         primaryDataRef: strip.dataRef ?? null,
         mapping: strip.mapping,
         modifiers: Array.isArray(strip.modifiers) ? strip.modifiers : [],
@@ -164,7 +169,14 @@ export function migrateStoredBlocks<T>(entries: readonly T[]): T[] {
         needsContentOffset(objectData)
           ? {
               ...entry,
-              payload: { kind: 'record', data: { ...objectData, contentOffset: rational(0) } },
+              payload: {
+                kind: 'record',
+                data: {
+                  ...objectData,
+                  contentOffset: objectData.contentOffset ?? rational(0),
+                  registerMapping: objectData.registerMapping ?? 'show',
+                },
+              },
             }
           : entry
       );
@@ -181,6 +193,7 @@ export function migrateStoredBlocks<T>(entries: readonly T[]): T[] {
             timeSpan: { start: rational(0), duration: rational(4) },
             contentOffset: rational(0),
             registerSpan: objectData.registerSpan,
+            registerMapping: objectData.registerMapping ?? 'show',
             primaryDataRef: null,
             mapping: 'loop',
             modifiers: [],

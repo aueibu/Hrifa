@@ -3,6 +3,7 @@ import { Collapse, Menu, Popover, Text, UnstyledButton } from '@mantine/core';
 import {
   KitScope,
   Section,
+  ScrubNumber,
   SegmentedControl,
   Select,
   Switch,
@@ -22,6 +23,7 @@ import { newDataBlockId, useDesk } from '../desk';
 import { recordGroup } from '../history';
 import { formatLength, formatPosition, parseLength, parsePosition } from '../meterTime';
 import { rationalToNumber, type Rational } from '../musicalTime';
+import { formatMidicents } from '../pitch';
 import { transportRhythmContext } from '../rhythmRealization';
 import { modifierProblems } from '../scene/evaluateScene';
 import { HARMONIZE_ID, MELODICIZE_ID, getModifierDef, modifierDefs } from '../scene/modifiers';
@@ -48,6 +50,8 @@ import {
   setMute,
   setParent,
   setPrimaryData,
+  setRegisterMapping,
+  setRegisterSpan,
   setTimeSpan,
   type SceneOpResult,
 } from '../scene/sceneOps';
@@ -63,6 +67,7 @@ import {
   sceneDataOf,
   type ModifierInstance,
   type ObjectMapping,
+  type RegisterMapping,
 } from '../scene/sceneTypes';
 import { sharedUsersTable } from '../scene/sharedUsersTable';
 import { useSceneEvaluation, useScenePlayback } from '../scene/useScenePlayback';
@@ -564,6 +569,15 @@ const MAPPING_OPTIONS: { value: ObjectMapping; label: string }[] = [
   { value: 'one-shot', label: 'One-shot' },
 ];
 
+/** The top of the stored register span (midicents), the Object default. */
+const REGISTER_MAX_MC = 12700;
+
+const REGISTER_OPTIONS: { value: RegisterMapping; label: string }[] = [
+  { value: 'show', label: 'Show' },
+  { value: 'filter', label: 'Filter' },
+  { value: 'fold', label: 'Fold' },
+];
+
 const NONE = '__none__';
 
 /** A text field that commits on Enter or blur; the reason for a refusal goes to the panel's line. */
@@ -645,6 +659,7 @@ function PropertiesBody() {
   const { settings } = useCompositionSettings();
   const ops = useDataBlockOps();
   const [message, setMessage] = useState('');
+  const evaluation = useSceneEvaluation(blocks, scene?.id ?? null);
   const meter = settings.transport.meter;
   const selectedId = selected?.id;
   useEffect(() => {
@@ -767,6 +782,32 @@ function PropertiesBody() {
     );
   }
 
+  const realization = evaluation?.objects[id];
+  const range = realization?.range ?? null;
+  /**
+   * Midicents on a ScrubNumber (UI-RULES: numeric fields are scrub boxes). Each end is clamped by the
+   * other, so Low can never pass High and no edit is refused.
+   */
+  const registerField = (label: string, key: 'lowMc' | 'highMc', info: string) => {
+    const span = object?.registerSpan ?? { lowMc: 0, highMc: REGISTER_MAX_MC };
+    return (
+      <div className={classes.grow} data-info={lock('register') ?? info}>
+        <ScrubNumber
+          aria-label={label}
+          value={span[key]}
+          step={100}
+          clamp={key === 'lowMc' ? [0, span.highMc] : [span.lowMc, REGISTER_MAX_MC]}
+          defaultValue={key === 'lowMc' ? 0 : REGISTER_MAX_MC}
+          disabled={lock('register') !== null}
+          onChange={(value) => {
+            const next = { ...span, [key]: Math.round(value) };
+            apply((list) => setRegisterSpan(list, id, next.lowMc, next.highMc));
+          }}
+        />
+      </div>
+    );
+  };
+
   function objectTab() {
     return (
       <>
@@ -844,6 +885,53 @@ function PropertiesBody() {
               }
               onChange={(value) => apply((list) => setMapping(list, id, value as ObjectMapping))}
             />
+          </Field>
+        </Section>
+        <Section heading="Register">
+          <Field label="Low">
+            {registerField(
+              'Low',
+              'lowMc',
+              'The lowest pitch of the span, in midicents (6000 is middle C).'
+            )}
+          </Field>
+          <Field label="High">
+            {registerField(
+              'High',
+              'highMc',
+              'The highest pitch of the span, in midicents (6000 is middle C).'
+            )}
+          </Field>
+          <Field label="Mapping">
+            <SegmentedControl
+              aria-label="Register mapping"
+              data={REGISTER_OPTIONS}
+              value={object?.registerMapping ?? 'show'}
+              disabled={lock('register') !== null}
+              data-info={
+                lock('register') ??
+                'Show leaves the notes alone. Filter drops notes outside the span. Fold moves them in by octaves; a note with no octave inside the span is dropped.'
+              }
+              onChange={(value) =>
+                apply((list) => setRegisterMapping(list, id, value as RegisterMapping))
+              }
+            />
+          </Field>
+          <Field label="Data range">
+            <div className={classes.grow}>
+              <Text size="sm">
+                {range
+                  ? `${formatMidicents(range.lowMc)} to ${formatMidicents(range.highMc)}`
+                  : 'none'}
+              </Text>
+              <Text size="xs" c="dimmed">
+                {object?.registerMapping === 'filter'
+                  ? `${realization?.dropped ?? 0} dropped`
+                  : object?.registerMapping === 'fold'
+                    ? `${realization?.moved ?? 0} moved, ${realization?.dropped ?? 0} dropped`
+                    : ' '}
+              </Text>
+            </div>
           </Field>
         </Section>
         <Section heading="Playback">
