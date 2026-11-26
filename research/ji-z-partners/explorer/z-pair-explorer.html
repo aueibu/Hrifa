@@ -218,6 +218,7 @@ input[type="number"] {
       <span class="name">to</span>
       <input type="number" id="qmax" min="1" max="885735" value="885735" aria-label="Largest q">
     </div>
+    <label class="check"><input type="checkbox" id="exact" checked> Pattern results (exact)</label>
     <label class="check"><input type="checkbox" id="ladder"> Ladder results (at least)</label>
     <div class="readout" id="readout">Loading families…</div>
   </section>
@@ -247,7 +248,7 @@ input[type="number"] {
   </section>
 
   <section class="panel" aria-label="Families by q">
-    <div class="head"><h2>Families by q</h2><span class="note">cumulative, every family using primes up to the limit · solid proven, dashed at least</span></div>
+    <div class="head"><h2>Families by q</h2><span class="note">cumulative, every family using primes up to the limit · solid complete (proven or exact), dashed at least</span></div>
     <div class="screen" id="linesBox"><canvas id="lines"></canvas></div>
   </section>
 
@@ -281,8 +282,12 @@ function spacedTicks(list, f) {
 const fmt = (n) => n.toLocaleString('en-US');
 const $ = (id) => document.getElementById(id);
 
-const state = { limits: new Set(PRIMES), notes: new Set(NOTES), qmin: 1, qmax: 885735, ladder: false, sel: [] }; // sel: every family at the clicked point
-let D = null; // { n, proven, p, k, lb, q, gmin, gmax, members[], coverage, ladderCoverage, limit3, gmaxAll, qminAll }
+const state = { limits: new Set(PRIMES), notes: new Set(NOTES), qmin: 1, qmax: 885735, exact: true, ladder: false, sel: [] }; // sel: every family at the clicked point
+let D = null; // { n, proven, exact, p, k, lb, q, gmin, gmax, members[], coverage, exactCoverage, ladderCoverage, limit3, gmaxAll, qminAll }
+// lb: 0 proven list, 2 exact from the patterns (complete, like proven), 1 ladder only (at least)
+const lbShown = (lb) => lb === 0 || (lb === 2 ? state.exact : state.ladder);
+const LB_RANK = [0, 2, 1]; // display order: proven, exact, ladder
+const LB_FROM = ['proven list', 'ladder (at least)', 'exact (from the patterns)'];
 
 async function gunzip(b64) {
   const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -301,8 +306,10 @@ async function load() {
   const u = new Uint16Array(raw.buffer, raw.byteOffset + 4 * n, 5 * n);
   const col = (i) => u.subarray(i * n, (i + 1) * n);
   const mem = new TextDecoder().decode(await gunzip(j.members)).split('\n');
-  D = { n, proven: j.proven, p: col(0), k: col(1), lb: col(2), q, gmin: col(3), gmax: col(4), members: mem,
-        coverage: j.coverage, ladderCoverage: j.ladderCoverage, limit3: j.limit3, ladderChunks: j.ladderChunks || [] };
+  // members: proven rows, then exact rows (rows 0 .. proven+exact-1); ladder rows load from chunks
+  D = { n, proven: j.proven, exact: j.exact || 0, p: col(0), k: col(1), lb: col(2), q, gmin: col(3), gmax: col(4), members: mem,
+        coverage: j.coverage, exactCoverage: j.exactCoverage || [], ladderCoverage: j.ladderCoverage, limit3: j.limit3,
+        ladderChunks: j.ladderChunks || [] };
   // fixed axis ranges over all families (not the filters), so axes stay put while filtering
   let g0 = 0, g1 = 0, sp = 0, q0 = 1e9, q1 = 0;
   for (let i = 0; i < n; i++) {
@@ -321,9 +328,12 @@ async function load() {
 
 /* ---------------------------------------------------------------- coverage */
 const noteRange = (s) => { const [a, b] = s.split('-').map(Number); return [a, b ?? a]; };
+/* complete to: proven rectangles, plus the pattern (exact) rectangles when Pattern results is on */
 function provenTo(p, k) {
   let best = 0;
-  for (const c of D.coverage) { const [a, b] = noteRange(c.notes); if (c.limit >= p && k >= a && k <= b) best = Math.max(best, c.q); }
+  for (const c of state.exact ? [...D.coverage, ...D.exactCoverage] : D.coverage) {
+    const [a, b] = noteRange(c.notes); if (c.limit >= p && k >= a && k <= b) best = Math.max(best, c.q);
+  }
   return best;
 }
 function ladderTo(p, k) {
@@ -366,7 +376,7 @@ function cssExpr(expr) {
 /* ---------------------------------------------------------------- filters */
 function visible(i) {
   return state.limits.has(D.p[i]) && state.notes.has(D.k[i]) && D.q[i] >= state.qmin && D.q[i] <= state.qmax
-    && (state.ladder || D.lb[i] === 0);
+    && lbShown(D.lb[i]);
 }
 
 function buildControls() {
@@ -395,6 +405,7 @@ function buildControls() {
     state.qmin = a; state.qmax = z; render();
   };
   $('qmin').addEventListener('change', onQ); $('qmax').addEventListener('change', onQ);
+  $('exact').addEventListener('change', (e) => { state.exact = e.target.checked; render(); });
   $('ladder').addEventListener('change', (e) => { state.ladder = e.target.checked; render(); });
   // scatter axes and color: any field a family has
   const AXIS_KEYS = ['q', 'gmin', 'gmax', 'spread', 'k', 'p'];
@@ -557,24 +568,25 @@ function drawScatter() {
       ctx.strokeStyle = colorCache['--text-subtle'];
       ctx.beginPath(); ctx.moveTo(px, M.t); ctx.lineTo(px, h - M.b); ctx.stroke();
       ctx.fillStyle = colorCache['--text-muted']; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-      ctx.fillText(`${ps.join(', ')}: all sizes proven to ${fmt(e)}`, px - 4, M.t + 4 + 13 * (labelRow++ % 3));
+      ctx.fillText(`${ps.join(', ')}: all sizes complete to ${fmt(e)}`, px - 4, M.t + 4 + 13 * (labelRow++ % 3));
     }
     ctx.setLineDash([]);
   }
-  // points: one mark per pixel and color group; proven filled first, ladder-only hollow on top;
+  // points: one mark per pixel and color group; proven and exact (complete) filled first, ladder-only hollow on top;
   // within each, the low groups first (low primes, faint intensity) so the rarer and stronger ones sit on top
   const W = Math.ceil(w), H = Math.ceil(h);
   const idx = new Int32Array(W * H), cnt = new Uint16Array(W * H);
   const nG = axes.c === 'p' ? PRIMES.length : axes.c === 'none' ? 1 : RAMP;
-  const groups = [0, 1].map(() => Array.from({ length: nG }, () => []));
+  const groups = [0, 1, 2].map(() => Array.from({ length: nG }, () => []));
   for (let i = 0; i < D.n; i++) if (visible(i)) groups[D.lb[i]][colorGroup(i)].push(i);
-  for (const lbPass of [0, 1]) {
+  for (const lbPass of [0, 2, 1]) {
+    const hollow = lbPass === 1;
     for (let g = 0; g < nG; g++) {
       const rows = groups[lbPass][g];
       if (!rows.length) continue;
       const occ = new Uint8Array(W * H);
       ctx.fillStyle = groupColor(g); ctx.strokeStyle = groupColor(g); ctx.lineWidth = 1;
-      if (lbPass) ctx.beginPath();
+      if (hollow) ctx.beginPath();
       for (const i of rows) {
         const [px, py] = posOf(i);
         if (px < 0 || py < 0 || px >= W || py >= H) continue;
@@ -583,9 +595,9 @@ function drawScatter() {
         idx[o] = i + 1;
         if (occ[o]) continue;
         occ[o] = 1;
-        if (lbPass) ctx.rect(px - 1.5, py - 1.5, 3, 3); else ctx.fillRect(px - 1, py - 1, 2.5, 2.5);
+        if (hollow) ctx.rect(px - 1.5, py - 1.5, 3, 3); else ctx.fillRect(px - 1, py - 1, 2.5, 2.5);
       }
-      if (lbPass) ctx.stroke();
+      if (hollow) ctx.stroke();
     }
   }
   hit = { w: W, h: H, idx, cnt, posOf };
@@ -649,7 +661,7 @@ function drawHeat() {
   const counts = NOTES.map(() => QBINS.map(() => 0));
   for (let i = 0; i < D.n; i++) {
     if (!state.limits.has(D.p[i]) || !state.notes.has(D.k[i]) || D.q[i] < state.qmin || D.q[i] > state.qmax) continue;
-    if (D.lb[i] && !state.ladder) continue;
+    if (!lbShown(D.lb[i])) continue;
     counts[NOTES.indexOf(D.k[i])][binOf(D.q[i])]++;
   }
   const el = $('heat');
@@ -685,7 +697,7 @@ function drawHeat() {
       if (out) cls += ' out';
       c.className = cls; c.textContent = text;
       const status = !searched ? 'not searched' : none ? 'searched for some selected primes only (at least)'
-        : ladder ? 'at least (ladder)' : 'proven complete';
+        : ladder ? 'at least (ladder)' : 'complete (proven or exact)';
       c.dataset.tip = `${k} notes, q ${fmt(lo)}–${fmt(hi)}|${searched ? fmt(n) + ' families' : '—'}|${status}`;
       el.appendChild(c);
     });
@@ -702,7 +714,7 @@ function drawLines() {
   const hist = {};
   for (const p of PRIMES) hist[p] = new Uint32Array(D.max.q + 1);
   for (let i = 0; i < D.n; i++) {
-    if (!state.notes.has(D.k[i]) || (D.lb[i] && !state.ladder)) continue;
+    if (!state.notes.has(D.k[i]) || !lbShown(D.lb[i])) continue;
     hist[D.p[i]][D.q[i]]++;
   }
   const curves = [];
@@ -796,7 +808,7 @@ function ladderLines(c) {
   return chunkCache.get(c.file);
 }
 async function membersOf(i) {
-  if (i < D.proven) return D.members[i];
+  if (i < D.proven + D.exact) return D.members[i];
   const c = D.ladderChunks.find((ch) => i >= ch.start && i < ch.start + ch.count);
   if (!c) throw new Error('no ratio file for this row');
   return (await ladderLines(c))[i - c.start];
@@ -807,7 +819,7 @@ function familyBlock(i) {
   const add = (name, val) => { const s = document.createElement('span'); s.textContent = name + ' '; const b = document.createElement('b'); b.textContent = val; s.appendChild(b); kv.appendChild(s); };
   add('Notes', D.k[i]); add('q', fmt(D.q[i])); add('Highest prime', D.p[i]);
   add('Smallest gap', (D.gmin[i] / 10).toFixed(1) + ' c'); add('Largest gap', (D.gmax[i] / 10).toFixed(1) + ' c');
-  add('From', D.lb[i] ? 'ladder (at least)' : 'proven list');
+  add('From', LB_FROM[D.lb[i]]);
   box.appendChild(kv);
   const ratios = [];
   for (const label of ['Set A', 'Set B (same intervals)']) {
@@ -828,9 +840,9 @@ function showDetail(rows) {
     p.textContent = 'Click a point in Smallest gap by q to list every family there with its ratios.';
     el.appendChild(p); $('detailNote').textContent = ''; return;
   }
-  const nL = rows.filter((i) => D.lb[i]).length;
+  const nE = rows.filter((i) => D.lb[i] === 2).length, nL = rows.filter((i) => D.lb[i] === 1).length;
   $('detailNote').textContent = `${fmt(rows.length)} ${rows.length === 1 ? 'family' : 'families'} at this point`
-    + (nL ? ` · ${fmt(nL)} ladder only` : '');
+    + (nE ? ` · ${fmt(nE)} exact` : '') + (nL ? ` · ${fmt(nL)} ladder only` : '');
   let shown = 0;
   const more = document.createElement('button'); more.type = 'button'; more.className = 'chip more';
   const addPage = () => {
@@ -874,7 +886,7 @@ function wireHover() {
     showTip(ev, [
       { text: `${D.k[i]} notes · q ${fmt(D.q[i])} · ${D.p[i]}-limit`, cls: 't-v', key: colorCache[D.p[i]] },
       { text: `gaps ${(D.gmin[i] / 10).toFixed(1)} to ${(D.gmax[i] / 10).toFixed(1)} c` },
-      { text: (D.lb[i] ? 'ladder only (at least)' : 'proven list') + (n > 1 ? ` · ${fmt(n)} families here, click to list them` : ''), cls: 't-n' },
+      { text: ['proven list', 'ladder only (at least)', 'exact (from the patterns)'][D.lb[i]] + (n > 1 ? ` · ${fmt(n)} families here, click to list them` : ''), cls: 't-n' },
     ]);
   });
   sc.addEventListener('pointerleave', hideTip);
@@ -888,7 +900,7 @@ function wireHover() {
         const [px, py] = hit.posOf(i);
         if (py * hit.w + px === o) rows.push(i);
       }
-      rows.sort((a, b) => D.lb[a] - D.lb[b] || D.k[a] - D.k[b] || D.q[a] - D.q[b] || D.gmin[a] - D.gmin[b]);
+      rows.sort((a, b) => LB_RANK[D.lb[a]] - LB_RANK[D.lb[b]] || D.k[a] - D.k[b] || D.q[a] - D.q[b] || D.gmin[a] - D.gmin[b]);
     }
     state.sel = rows; showDetail(rows); drawScatter();
   });
@@ -921,11 +933,15 @@ function wireHover() {
 /* ---------------------------------------------------------------- render */
 function render() {
   if (!D) return;
-  let total = 0, lbn = 0;
-  for (let i = 0; i < D.n; i++) if (visible(i)) { total++; if (D.lb[i]) lbn++; }
+  const byLb = [0, 0, 0];
+  for (let i = 0; i < D.n; i++) if (visible(i)) byLb[D.lb[i]]++;
+  const total = byLb[0] + byLb[1] + byLb[2];
+  const parts = [`${fmt(byLb[0])} proven`];
+  if (state.exact) parts.push(`${fmt(byLb[2])} exact (patterns)`);
+  if (state.ladder) parts.push(`${fmt(byLb[1])} ladder only`);
   const ro = $('readout'); ro.textContent = '';
   const b = document.createElement('b'); b.textContent = fmt(total);
-  ro.append(b, document.createTextNode(state.ladder ? ` families shown · ${fmt(total - lbn)} proven, ${fmt(lbn)} ladder only` : ` families shown · all from proven lists`));
+  ro.append(b, document.createTextNode(parts.length > 1 ? ` families shown · ${parts.join(', ')}` : ` families shown · all from proven lists`));
   drawScatter(); drawHeat(); drawLines();
 }
 

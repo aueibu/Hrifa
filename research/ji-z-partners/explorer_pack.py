@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """explorer_pack.py: pack explorer_data.py's JSON (built with --members) into the files the Z-pair explorer fetches.
 
-OUTDIR/zdata.json: n, proven, coverage, ladderCoverage, limit3 ({span: {notes: families}} from
+OUTDIR/zdata.json: n, proven, exact, coverage, exactCoverage, ladderCoverage, limit3 ({span: {notes: families}} from
   tables/limit3/enum3_span20.txt), cols (base64 of gzip of little-endian columns, each n long: q as uint32, then
-  p, k, lb, gmin*10, gmax*10 as uint16), members (base64 of gzip of UTF-8 text, one line per proven family in row order:
-  set A, "|", set B), ladderChunks ([{p, start, count, file}]: where each ladder chunk's rows sit).
+  p, k, lb, gmin*10, gmax*10 as uint16; lb 0 proven, 2 exact from the patterns, 1 ladder), members (base64 of gzip of
+  UTF-8 text, one line per proven or exact family in row order, rows 0 .. proven+exact-1: set A, "|", set B),
+  ladderChunks ([{p, start, count, file}]: where each ladder chunk's rows sit).
 OUTDIR/zmem-l<p>[-<part>].json: one per highest prime (split further when large), {p, start, count, members} with
   members as above for the ladder-only rows start .. start+count-1. The page loads a chunk only when a ladder family
   is opened.
-Rows are sorted by (lb, p, k, q, gmin) in explorer_data.py, so each (lb = 1, p) group is contiguous.
+Rows are grouped proven, exact, ladder and sorted by (p, k, q, gmin) inside each group in explorer_data.py, so each
+(lb = 1, p) group is contiguous.
 
 usage: python explorer_pack.py explorer_all.json OUTDIR
 """
@@ -35,9 +37,11 @@ def main():
     src, outdir = sys.argv[1:]
     os.makedirs(outdir, exist_ok=True)
     d = json.load(open(src, encoding="utf-8"))
-    n, proven = d["count"], d["proven"]
+    n, proven, exact = d["count"], d["proven"], d.get("exact", 0)
+    head = proven + exact  # rows whose ratios stay inline in zdata.json
     assert len(d["m"]) == n, "explorer_data.py must be run with --members (all rows)"
-    assert all(v == 0 for v in d["lb"][:proven]) and all(v == 1 for v in d["lb"][proven:]), "rows not sorted by lb"
+    assert (all(v == 0 for v in d["lb"][:proven]) and all(v == 2 for v in d["lb"][proven:head])
+            and all(v == 1 for v in d["lb"][head:])), "rows not grouped proven, exact, ladder"
     # q first as uint32 (5-limit 6-note proofs reach q 177,147, past uint16), then the uint16 columns
     cols = [d["p"], d["k"], d["lb"], [round(g * 10) for g in d["gmin"]], [round(g * 10) for g in d["gmax"]]]
     raw = struct.pack(f"<{n}I", *d["q"]) + b"".join(struct.pack(f"<{n}H", *c) for c in cols)
@@ -46,7 +50,7 @@ def main():
     assert sum(sum(v.values()) for v in l3.values()) == 1106, "3-limit total must be 1,106"
 
     chunks = []
-    i = proven
+    i = head
     while i < n:
         p = d["p"][i]
         j = i
@@ -62,13 +66,15 @@ def main():
             print(f"  {name}: rows {a}..{b - 1}, {os.path.getsize(os.path.join(outdir, name)):,} bytes")
         i = j
 
-    data = {"n": n, "proven": proven, "coverage": d["coverage"], "ladderCoverage": d["ladderCoverage"], "limit3": l3,
+    data = {"n": n, "proven": proven, "exact": exact, "coverage": d["coverage"],
+            "exactCoverage": d.get("exactCoverage", []), "ladderCoverage": d["ladderCoverage"], "limit3": l3,
             "cols": base64.b64encode(gzip.compress(raw, 9)).decode("ascii"),
-            "members": pack_text(lines[:proven]), "ladderChunks": chunks}
+            "members": pack_text(lines[:head]), "ladderChunks": chunks}
     out = os.path.join(outdir, "zdata.json")
     with open(out, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(data, fh, separators=(",", ":"))
-    print(f"wrote {out}: {n} rows ({proven} proven), {os.path.getsize(out):,} bytes; {len(chunks)} ladder chunks")
+    print(f"wrote {out}: {n} rows ({proven} proven, {exact} exact, {n - head} ladder), "
+          f"{os.path.getsize(out):,} bytes; {len(chunks)} ladder chunks")
 
 
 if __name__ == "__main__":
