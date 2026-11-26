@@ -17,5 +17,3 @@ Adding or removing your own row needs no lock on this file; any session may `git
 ## Active locks
 | Path | Arc | Since | Reason |
 | ---- | --- | ----- | ------ |
-| CLAUDE.md | workbench | 2026-11-25 | rule 7: tokens are the limit, tool calls a target (human OK) |
-| .claude/agents/builder.md | workbench | 2026-11-25 | step 9 same |
