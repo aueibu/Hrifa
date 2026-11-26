@@ -69,7 +69,6 @@ interface ObjectPatch {
   start?: number;
   duration?: number;
   mapping?: ObjectData['mapping'];
-  lane?: number;
   trackRef?: Ref | null;
   contentOffset?: Rational;
   registerSpan?: ObjectData['registerSpan'];
@@ -91,6 +90,14 @@ export function objectBlock(id: string, patch: ObjectPatch = {}, name = id): Rec
     },
   };
   return record(id, OBJECT_TYPE_ID, name, data);
+}
+
+/** An object block as an OLD save stored it: with a `lane` number (the field is gone from `ObjectData`). */
+export function withLegacyLane(block: RecordBlock, lane: number): RecordBlock {
+  return {
+    ...block,
+    payload: { ...block.payload, data: { ...(block.payload.data as object), lane } },
+  };
 }
 
 export function collectionBlock(

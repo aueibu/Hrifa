@@ -11,6 +11,7 @@ import {
 } from './deskStore';
 import { setReloading } from './reloading';
 import { migrateStoredBlocks } from './scene/sceneMigration';
+import { migrateTracks } from './scene/trackMigration';
 
 /**
  * Saved projects. Everything the workbench remembers (nodes, their settings, routes, the
@@ -309,7 +310,9 @@ export function parseProjectFile(text: string): ProjectRecord[] {
   }
   return (file.projects as ProjectRecord[]).filter(isProjectShape).map((project, index) => {
     // Objects saved with strips are unwrapped to one placement each before the desk is checked (W-77).
-    const desk = Array.isArray(project.desk) ? migrateStoredBlocks(project.desk) : project.desk;
+    const desk = Array.isArray(project.desk)
+      ? migrateTracks(migrateStoredBlocks(project.desk))
+      : project.desk;
     return {
       id: `project-${stamp}-import-${index}`,
       name: project.name,

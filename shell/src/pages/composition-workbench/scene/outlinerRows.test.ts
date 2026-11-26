@@ -9,7 +9,7 @@ import {
 } from './sceneTestHelpers';
 
 describe('outlinerRows', () => {
-  it('ignores a Track block in a collection: no row, and a collection holding only Tracks has no children', () => {
+  it('lists Tracks between a Collection and its objects, in the Collection order (scenario 7)', () => {
     const blocks = [
       sceneBlock('s', 'root'),
       collectionBlock('root', ['t', 'g', 'a']),
@@ -19,34 +19,61 @@ describe('outlinerRows', () => {
       objectBlock('a', { trackRef: { id: 't' } }, 'Bass'),
     ];
     const rows = outlinerRows(blocks, 's');
-    expect(rows.map((row) => [row.name, row.kind])).toEqual([
-      ['g', 'collection'],
-      ['Bass', 'object'],
+    expect(rows.map((row) => [row.name, row.kind, row.depth])).toEqual([
+      ['t', 'track', 0],
+      ['Bass', 'object', 1],
+      ['g', 'collection', 0],
+      ['t2', 'track', 1],
     ]);
-    expect(rows[0].hasChildren).toBe(false);
+    // The root also lists 'a' directly (an old shape): the Track row holds it, so it shows once.
+    expect(rows[0].hasChildren).toBe(true);
   });
 
-  it('hides the root, nests a child under its parent in the same collection, and shows data', () => {
+  it('nests a child under its parent on the same Track, shows data, orders by start time', () => {
+    const on = { trackRef: { id: 't' } };
     const blocks = [
       claveBlock(),
       sceneBlock('s', 'root'),
-      collectionBlock('root', ['a', 'b', 'g']),
-      collectionBlock('g', ['c']),
-      objectBlock('a', { primaryDataRef: { id: 'clave' } }, 'Bass'),
-      objectBlock('b', { parentRef: { id: 'a' } }, 'Fill'),
-      objectBlock('c', { parentRef: { id: 'a' } }, 'Elsewhere'),
+      collectionBlock('root', ['g']),
+      collectionBlock('g', ['t']),
+      trackBlock('t', false, 'RH'),
+      objectBlock('late', { ...on, start: 8 }, 'Late'),
+      objectBlock('a', { ...on, primaryDataRef: { id: 'clave' }, start: 0 }, 'Bass'),
+      objectBlock('b', { ...on, parentRef: { id: 'a' }, start: 1 }, 'Fill'),
+    ];
+    const rows = outlinerRows(blocks, 's');
+    expect(rows.map((row) => [row.name, row.kind, row.depth])).toEqual([
+      ['g', 'collection', 0],
+      ['RH', 'track', 1],
+      ['Bass', 'object', 2],
+      ['Fill', 'object', 3],
+      ['Late', 'object', 2],
+    ]);
+    expect(rows[2]).toMatchObject({ data: 'Clave', hasChildren: true, childOf: null });
+    expect(rows[3].parentRowId).toBe('a');
+    expect(rows[1].parentRowId).toBe('g');
+  });
+
+  it('scenario 9: a child whose parent is on another Track stays at its Track level with a child-of mark', () => {
+    const blocks = [
+      sceneBlock('s', 'root'),
+      collectionBlock('root', ['rh', 'lh']),
+      trackBlock('rh', false, 'RH'),
+      trackBlock('lh', false, 'LH'),
+      objectBlock('theme', { trackRef: { id: 'rh' } }, 'Theme A'),
+      objectBlock('chords', { trackRef: { id: 'lh' }, parentRef: { id: 'theme' } }, 'Chord stack'),
     ];
     const rows = outlinerRows(blocks, 's');
     expect(rows.map((row) => [row.name, row.depth])).toEqual([
-      ['Bass', 0],
-      ['Fill', 1],
-      ['g', 0],
-      ['Elsewhere', 1],
+      ['RH', 0],
+      ['Theme A', 1],
+      ['LH', 0],
+      ['Chord stack', 1],
     ]);
-    expect(rows[0]).toMatchObject({ data: 'Clave', hasChildren: true, kind: 'object' });
-    expect(rows[1].parentRowId).toBe('a');
-    expect(rows[2]).toMatchObject({ kind: 'collection', hasChildren: true });
-    expect(rows[3].data).toBe('');
+    expect(rows[3].childOf).toEqual({ id: 'theme', name: 'Theme A' });
+    expect(rows[3].parentRowId).toBe('lh');
+    expect(rows[1].childOf).toBeNull();
+    expect(rows[1].hasChildren).toBe(false);
   });
 
   it('shows inherited mute separately from the own flag', () => {

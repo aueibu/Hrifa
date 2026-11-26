@@ -105,13 +105,24 @@ export interface LaneBox {
   subHeight: number;
 }
 
+/** A row that takes height above the lanes below it: a lane (sub-lanes) or a band (`fixedRem`, no box). */
+export interface StackRow {
+  id: string;
+  subLanes: number;
+  fixedRem?: number;
+}
+
 export function laneBoxes(
-  lanes: readonly ArrangerLane[],
+  lanes: readonly StackRow[],
   subHeightRem: (laneId: string) => number
 ): Map<string, LaneBox> {
   const out = new Map<string, LaneBox>();
   let top = 0;
   for (const lane of lanes) {
+    if (lane.fixedRem !== undefined) {
+      top += lane.fixedRem;
+      continue;
+    }
     const subHeight = subHeightRem(lane.id);
     out.set(lane.id, { top, subHeight });
     top += subHeight * lane.subLanes;

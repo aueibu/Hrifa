@@ -35,7 +35,7 @@ export function allUsersTable(project: RefsProject, dataId: string): SharedUserR
   for (const scene of blocks.filter((block) => sceneDataOf(block))) {
     for (const lane of arrangerLanes(blocks, scene.id)) {
       for (const object of lane.objects) {
-        collectionOf.set(object.id, lane.name);
+        collectionOf.set(object.id, lane.collectionName);
       }
     }
   }
@@ -82,7 +82,7 @@ export function sharedUsersTable(
   const collectionOf = new Map<string, string>();
   for (const lane of arrangerLanes(blocks, sceneId)) {
     for (const object of lane.objects) {
-      collectionOf.set(object.id, lane.name);
+      collectionOf.set(object.id, lane.collectionName);
     }
   }
   const objects: SharedUserRow[] = [];

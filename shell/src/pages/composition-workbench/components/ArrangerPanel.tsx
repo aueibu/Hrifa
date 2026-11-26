@@ -16,7 +16,7 @@ import { useCompositionSettings } from '../compositionSettings';
 import { EnsureDataBlockOps } from '../dataBlockOps';
 import { newDataBlockId } from '../desk';
 import { compareRational, rationalToNumber, subtractRational, type Rational } from '../musicalTime';
-import { applyDrop, dropLanding, laneAtY, subLaneAtY } from '../scene/arrangerDrop';
+import { applyDrop, dropLanding, laneAtY } from '../scene/arrangerDrop';
 import {
   DRAG_THRESHOLD_PX,
   PIXELS_PER_QUARTER,
@@ -36,7 +36,7 @@ import {
   type DragKind,
   type DragState,
 } from '../scene/arrangerGeometry';
-import { arrangerLanes, touchingPairs } from '../scene/arrangerLanes';
+import { arrangerEntries, touchingPairs } from '../scene/arrangerLanes';
 import {
   PREVIEW_HEIGHT,
   groupEventsByObject,
@@ -57,11 +57,9 @@ import {
 import {
   duplicateObject,
   duplicateObjectLinked,
-  objectRoom,
   resizeSharedEdge,
   setMute,
   setTimeSpan,
-  type DropLane,
   type SceneOpResult,
 } from '../scene/sceneOps';
 import { ROW_HEIGHT_MAX_REM, ROW_HEIGHT_MIN_REM, rowHeightRem } from '../scene/sceneSession';
@@ -82,10 +80,10 @@ import { useSceneEditor } from './ScenePanels';
 import classes from './ArrangerPanel.module.css';
 
 /**
- * The Arranger (workbench O2b, lanes in L1a, W-77). ONE lane per Collection of the scene (the root and
- * empty collections too, in the Outliner's order); the objects of a collection are the blocks on its lane,
- * and objects that overlap in time (a parent and its children) draw on sub-lanes that appear only when
- * needed. It follows Bitwig's Arranger Timeline for dragging and snapping (drag a block to move it
+ * The Arranger (workbench O2b, Tracks in TK2, W-82). A thin band per Collection (name, fold, mute) with
+ * its Tracks indented below; ONE lane per Track (empty ones too); the objects on a Track are the blocks on
+ * its lane, and objects that overlap in time (a parent and its children, or anything the human drops on
+ * another) draw on automatic sub-lanes that appear only when needed. It follows Bitwig's Arranger Timeline for dragging and snapping (drag a block to move it
  * freely, drag an edge to resize, snap to the beat grid, Shift turns snapping off). It reads and writes
  * through the same editor as the Outliner and Properties (`useSceneEditor`): a drag shows from local
  * state and is ONE commit on release.
@@ -97,8 +95,8 @@ const NAME_REM = 8;
 /** The gap above and below a block inside its sub-lane, in rem (the same value the CSS had). */
 const BLOCK_GAP_REM = 0.15;
 
-/** The height of the new-lane strip at the bottom of every lane, shown only while a block is dragged. */
-const NEW_LANE_STRIP_REM = 0.5;
+/** The height of a Collection band in rem (the same as the ruler header). */
+const BAND_REM = 1.5;
 
 /** One object's placement: world start and duration, plus the objects from itself up its parents. */
 interface PlacedRowObject {
@@ -122,8 +120,6 @@ interface MoveExtra {
   startY: number;
   y: number;
   over: string | null;
-  /** The sub-lane (or the new-lane strip) under the pointer; null = the block's own sub-lane. */
-  sub: DropLane | null;
 }
 
 /** A drag of the edge two touching blocks share. */
@@ -179,8 +175,18 @@ function ArrangerBody() {
   const byId = useMemo(() => new Map(blocks.map((block) => [block.id, block])), [blocks]);
   const step = beatStep(meter);
 
-  /** The lanes, from the COMMITTED placement only (a live drag never changes a lane's size). */
-  const lanes = useMemo(() => (scene ? arrangerLanes(blocks, scene.id) : []), [blocks, scene]);
+  /** The bands and lanes, from the COMMITTED placement only (a live drag never changes a lane's size). */
+  const entries = useMemo(() => (scene ? arrangerEntries(blocks, scene.id) : []), [blocks, scene]);
+  const lanes = useMemo(
+    () => entries.flatMap((entry) => (entry.kind === 'track' ? [entry.lane] : [])),
+    [entries]
+  );
+  const collapsed = useMemo(() => new Set(session.collapsedBands), [session.collapsedBands]);
+  /** What is drawn: everything except what sits under a folded band. */
+  const shownEntries = useMemo(
+    () => entries.filter((entry) => !entry.ancestors.some((id) => collapsed.has(id))),
+    [entries, collapsed]
+  );
   const laneOf = useMemo(() => {
     const out = new Map<string, string>();
     lanes.forEach((lane) => lane.objects.forEach((object) => out.set(object.id, lane.id)));
@@ -376,29 +382,18 @@ function ArrangerBody() {
   }
 
   /**
-   * The lane and sub-lane (or the new-lane strip) under a pointer height (lane null: off the lanes). A
-   * press that has not moved up or down yet stays on its own lane and sub-lane (no layout lookup).
+   * The Track lane under a pointer height (null: off the lanes). A press that has not moved up or down
+   * yet stays on its own lane (no layout lookup).
    */
-  function overLane(
-    y: number,
-    extra: MoveExtra,
-    from: string | undefined
-  ): { lane: string | null; sub: DropLane | null } {
+  function overLane(y: number, extra: MoveExtra, from: string | undefined): string | null {
     if (Math.abs(y - extra.startY) < DRAG_THRESHOLD_PX && from !== undefined) {
-      return { lane: from, sub: null };
+      return from;
     }
     const rects = [...laneEls.current].map(([id, element]) => {
       const rect = element.getBoundingClientRect();
       return { id, top: rect.top, bottom: rect.bottom };
     });
-    const lane = laneAtY(y, rects);
-    const rect = rects.find((entry) => entry.id === lane);
-    const count = lanes.find((entry) => entry.id === lane)?.subLanes ?? 1;
-    const strip = NEW_LANE_STRIP_REM * remPx();
-    return {
-      lane,
-      sub: rect ? subLaneAtY(y, rect.top, (rect.bottom - rect.top) / count, count, strip) : null,
-    };
+    return laneAtY(y, rects);
   }
 
   function begin(
@@ -429,7 +424,7 @@ function ArrangerBody() {
         },
         event.clientX,
         event.shiftKey,
-        kind === 'move' ? null : objectRoom(blocks, item.key)
+        null
       )
     );
     setMoveExtra(
@@ -438,7 +433,6 @@ function ArrangerBody() {
             startY: event.clientY,
             y: event.clientY,
             over: laneOf.get(item.key) ?? null,
-            sub: null,
           }
         : null
     );
@@ -449,7 +443,7 @@ function ArrangerBody() {
       setDrag(dragMove(drag, event.clientX, event.shiftKey));
       if (moveExtra) {
         const under = overLane(event.clientY, moveExtra, laneOf.get(drag.id));
-        setMoveExtra({ ...moveExtra, y: event.clientY, over: under.lane, sub: under.sub });
+        setMoveExtra({ ...moveExtra, y: event.clientY, over: under });
       }
     }
   }
@@ -473,7 +467,7 @@ function ArrangerBody() {
         return;
       }
       const under = overLane(event.clientY, extra, from);
-      const target = under.lane;
+      const target = under;
       const travelled = final.moved || Math.abs(event.clientY - extra.startY) >= DRAG_THRESHOLD_PX;
       if (!travelled || target === null) {
         // A click, or released off the lanes: nothing is written and the block snaps back.
@@ -486,22 +480,12 @@ function ArrangerBody() {
         dragStep(meter, event.shiftKey),
         step
       );
-      const ownSub = lanes
-        .find((entry) => entry.id === from)
-        ?.objects.find((entry) => entry.id === id)?.subLane;
-      const sameSub = under.sub === null || under.sub === ownSub;
-      if (
-        target === from &&
-        sameSub &&
-        compareRational(outcome.start, final.base.relativeStart) === 0
-      ) {
+      if (target === from && compareRational(outcome.start, final.base.relativeStart) === 0) {
         return;
       }
-      // Lands where it was dropped when free, else in the nearest free slot of the sub-lane it was
-      // dropped on (never overlaps a block there); another lane moves it to that collection first.
-      // ONE commit, one undo step.
-      const dropLane = under.sub ?? undefined;
-      report(editor.commit((list) => applyDrop(list, id, from, target, outcome.start, dropLane)));
+      // Lands where it was dropped (blocks may overlap on a Track); another Track's row moves it onto that
+      // Track first, its time unchanged. ONE commit, one undo step.
+      report(editor.commit((list) => applyDrop(list, id, from, target, outcome.start)));
       return;
     }
     const commit = dragRelease(current, event.clientX, event.shiftKey, meter);
@@ -623,6 +607,18 @@ function ArrangerBody() {
     setRowDrag(null);
   }
 
+  function toggleFold(id: string) {
+    updateSession({
+      collapsedBands: collapsed.has(id)
+        ? session.collapsedBands.filter((entry) => entry !== id)
+        : [...session.collapsedBands, id],
+    });
+  }
+
+  function toggleMute(id: string, mute: boolean) {
+    report(editor.commit((list) => setMute(list, id, mute)));
+  }
+
   function openMenu(event: MouseEvent<HTMLElement>, id: string) {
     event.preventDefault();
     updateSession({ selectedId: id });
@@ -660,8 +656,13 @@ function ArrangerBody() {
   };
   // The dashed connectors of the selection, in pixels from the lanes' top left (drawn over the lanes).
   const rem = remPx();
-  const boxes = laneBoxes(lanes, (laneId) =>
-    rowDrag && rowDrag.id === laneId ? rowDrag.rem : rowHeightRem(session, laneId)
+  const boxes = laneBoxes(
+    shownEntries.map((entry) =>
+      entry.kind === 'band'
+        ? { id: entry.band.id, subLanes: 0, fixedRem: BAND_REM }
+        : { id: entry.lane.id, subLanes: entry.lane.subLanes }
+    ),
+    (laneId) => (rowDrag && rowDrag.id === laneId ? rowDrag.rem : rowHeightRem(session, laneId))
   );
   const connectors = shownLinks.flatMap((link) => {
     const parentBox = boxes.get(link.parentLane);
@@ -684,43 +685,29 @@ function ArrangerBody() {
     ];
   });
 
-  // The faint outline of where a body drag will land, and the lane it is over.
-  let landing: { laneId: string; left: number; width: number; sub: DropLane } | null = null;
-  const ownSubLane = (id: string, laneId: string | undefined) =>
-    lanes.find((entry) => entry.id === laneId)?.objects.find((entry) => entry.id === id)?.subLane;
+  // The faint outline of where a body drag will land on ANOTHER Track, and the lane it is over.
+  let landing: { laneId: string; left: number; width: number } | null = null;
   if (drag && drag.kind === 'move' && movedAny && moveExtra?.over) {
     const from = laneOf.get(drag.id);
-    const outcome = dragOutcome('move', drag.base, drag.deltaPx, dragStep(meter, drag.shift), step);
-    const world =
-      from === undefined
-        ? null
-        : dropLanding(
-            blocks,
-            drag.id,
-            from,
-            moveExtra.over,
-            outcome.start,
-            moveExtra.sub ?? undefined
-          );
-    const shownSub = moveExtra.sub ?? ownSubLane(drag.id, from);
-    if (world && shownSub !== undefined) {
-      landing = {
-        laneId: moveExtra.over,
-        left: quartersToPx(world),
-        width: quartersToPx(drag.base.duration),
-        sub: shownSub,
-      };
+    if (from !== undefined && moveExtra.over !== from) {
+      const outcome = dragOutcome(
+        'move',
+        drag.base,
+        drag.deltaPx,
+        dragStep(meter, drag.shift),
+        step
+      );
+      const world = dropLanding(blocks, drag.id, from, moveExtra.over, outcome.start);
+      if (world) {
+        landing = {
+          laneId: moveExtra.over,
+          left: quartersToPx(world),
+          width: quartersToPx(drag.base.duration),
+        };
+      }
     }
   }
   const targetLane = movedAny ? (moveExtra?.over ?? null) : null;
-  // The sub-lane (or the strip) the drop would go to, for the highlight.
-  const targetSub: DropLane | null =
-    movedAny && moveExtra
-      ? (moveExtra.sub ??
-        (drag && moveExtra.over === laneOf.get(drag.id)
-          ? (ownSubLane(drag.id, moveExtra.over ?? undefined) ?? null)
-          : null))
-      : null;
   const menuObject = menu ? rows.find((row) => row.id === menu.id) : undefined;
 
   return (
@@ -752,7 +739,7 @@ function ArrangerBody() {
       >
         {scene === null ? (
           <Text className={classes.empty}>Choose a scene in the Outliner.</Text>
-        ) : lanes.length === 0 ? (
+        ) : entries.length === 0 ? (
           <Text className={classes.empty}>Nothing in this scene yet.</Text>
         ) : (
           <div className={classes.content} style={{ width: `calc(${NAME_REM}rem + ${lanePx}px)` }}>
@@ -770,7 +757,60 @@ function ArrangerBody() {
                 ))}
               </div>
             </div>
-            {lanes.map((lane) => {
+            {shownEntries.map((entry) => {
+              if (entry.kind === 'band') {
+                const { band } = entry;
+                const folded = collapsed.has(band.id);
+                return (
+                  <div
+                    key={band.id}
+                    className={`${classes.row} ${classes.band} ${band.muted ? classes.rowMuted : ''}`}
+                    role="row"
+                    aria-level={band.depth + 1}
+                    aria-selected={band.id === session.selectedId}
+                    aria-expanded={!folded}
+                    data-band={band.id}
+                    style={{ height: `${BAND_REM}rem` }}
+                  >
+                    <div
+                      className={classes.name}
+                      role="rowheader"
+                      style={{ paddingLeft: `${0.25 + band.depth * 1}rem` }}
+                      onClick={() => updateSession({ selectedId: band.id })}
+                    >
+                      <button
+                        type="button"
+                        className={classes.nameButton}
+                        aria-label={`${folded ? 'Unfold' : 'Fold'} ${band.name}`}
+                        data-info={folded ? 'Show its tracks' : 'Hide its tracks'}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleFold(band.id);
+                        }}
+                      >
+                        {folded ? '▸' : '▾'}
+                      </button>
+                      <span className={classes.nameText}>{band.name}</span>
+                      <button
+                        type="button"
+                        className={classes.muteButton}
+                        aria-label={`${band.mute ? 'Unmute' : 'Mute'} ${band.name}`}
+                        aria-pressed={band.mute}
+                        data-info={band.mute ? 'Unmute this collection' : 'Mute this collection'}
+                        disabled={!writable}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleMute(band.id, !band.mute);
+                        }}
+                      >
+                        M
+                      </button>
+                    </div>
+                    <div className={classes.lane} style={{ width: lanePx }} role="gridcell" />
+                  </div>
+                );
+              }
+              const { lane } = entry;
               const laneSelected = lane.id === session.selectedId;
               const subRem =
                 rowDrag && rowDrag.id === lane.id ? rowDrag.rem : rowHeightRem(session, lane.id);
@@ -789,7 +829,7 @@ function ArrangerBody() {
                       laneEls.current.delete(lane.id);
                     }
                   }}
-                  className={`${classes.row} ${lane.muted ? classes.rowMuted : ''} ${classes.rowCollection}`}
+                  className={`${classes.row} ${lane.muted ? classes.rowMuted : ''}`}
                   role="row"
                   aria-level={lane.depth + 1}
                   aria-selected={laneSelected}
@@ -803,7 +843,21 @@ function ArrangerBody() {
                     style={{ paddingLeft: `${0.25 + lane.depth * 1}rem` }}
                     onClick={() => updateSession({ selectedId: lane.id })}
                   >
-                    {lane.name}
+                    <span className={classes.nameText}>{lane.name}</span>
+                    <button
+                      type="button"
+                      className={classes.muteButton}
+                      aria-label={`${lane.mute ? 'Unmute' : 'Mute'} ${lane.name}`}
+                      aria-pressed={lane.mute}
+                      data-info={lane.mute ? 'Unmute this track' : 'Mute this track'}
+                      disabled={!writable}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleMute(lane.id, !lane.mute);
+                      }}
+                    >
+                      M
+                    </button>
                   </div>
                   <div className={classes.lane} style={{ width: lanePx }} role="gridcell">
                     {lane.objects.map((object) => {
@@ -844,7 +898,7 @@ function ArrangerBody() {
                           aria-label={`Block ${object.name}`}
                           aria-pressed={selected}
                           data-muted={object.muted}
-                          data-info="Drag to move, also to another lane. Drag an edge to change the length. Hold Shift to turn snapping off."
+                          data-info="Drag to move, also to another track. Drag an edge to change the length. Hold Shift to turn snapping off."
                           style={{
                             left: geometry.left,
                             width: geometry.width,
@@ -1009,22 +1063,11 @@ function ArrangerBody() {
                         />
                       );
                     })}
-                    {targetLane === lane.id && typeof targetSub === 'number' && (
+                    {targetLane === lane.id && drag && targetLane !== laneOf.get(drag.id) && (
                       <span
-                        className={classes.subTarget}
-                        data-testid="arranger-sub-target"
+                        className={classes.laneTarget}
+                        data-testid="arranger-target-lane"
                         aria-hidden
-                        style={{ top: `${targetSub * subRem}rem`, height: `${subRem}rem` }}
-                      />
-                    )}
-                    {movedAny && (
-                      <span
-                        className={`${classes.newLane} ${
-                          targetLane === lane.id && targetSub === 'new' ? classes.newLaneTarget : ''
-                        }`}
-                        data-testid="arranger-new-lane"
-                        aria-hidden
-                        style={{ height: `${NEW_LANE_STRIP_REM}rem` }}
                       />
                     )}
                     {landing && landing.laneId === lane.id && (
@@ -1032,28 +1075,19 @@ function ArrangerBody() {
                         className={classes.landing}
                         data-testid="arranger-landing"
                         aria-hidden
-                        style={
-                          landing.sub === 'new'
-                            ? {
-                                left: landing.left,
-                                width: landing.width,
-                                bottom: 0,
-                                height: `${NEW_LANE_STRIP_REM}rem`,
-                              }
-                            : {
-                                left: landing.left,
-                                width: landing.width,
-                                top: subTop(landing.sub),
-                                height: subHeight,
-                              }
-                        }
+                        style={{
+                          left: landing.left,
+                          width: landing.width,
+                          top: subTop(0),
+                          height: subHeight,
+                        }}
                       />
                     )}
                   </div>
                   <span
                     className={classes.rowGrip}
                     data-testid="arranger-row-grip"
-                    data-info="Drag to change the height of this lane."
+                    data-info="Drag to change the height of this track."
                     onPointerDown={(event) => beginRow(event, lane.id, lane.subLanes)}
                     onPointerMove={moveRow}
                     onPointerUp={endRow}

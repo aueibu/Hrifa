@@ -22,11 +22,13 @@ import {
 import { getModifierDef, runModifierStack } from './modifiers';
 import {
   OBJECT_TYPE_ID,
+  TRACK_TYPE_ID,
   chainPlacement,
   collectionDataOf,
   createBlankCollection,
   createBlankObject,
   createBlankScene,
+  createBlankTrack,
   objectChain,
   objectDataOf,
   sceneDataOf,
@@ -38,7 +40,7 @@ import {
   type RegisterMapping,
   type TrackData,
 } from './sceneTypes';
-import { layoutSubLanes, type SubLaneLayout } from './subLanes';
+import { layoutSubLanes } from './subLanes';
 
 /**
  * The Outliner's edits as pure functions (workbench O2a): each takes the blocks and returns the next
@@ -155,43 +157,86 @@ export function createScene(blocks: Blocks, env: OpEnv): SceneOpResult {
   return done([...blocks, root, linked], [sceneId, rootId]);
 }
 
-/** An Empty object in the selected collection (or the scene's root collection). */
+/**
+ * The Track an add lands on (W-82): the selected Track; the Track of a selected object; else the first Track
+ * of the selected collection (or the scene's root), made when it has none. Returns the Track id and the
+ * blocks with that Track added when it had to be made.
+ */
+function trackForAdd(
+  blocks: Blocks,
+  env: OpEnv,
+  sceneId: string,
+  selectedId: string | null
+): { trackId: string; blocks: StoredDataBlock[]; created: string[] } | null {
+  const selected =
+    selectedId === null ? undefined : blocks.find((block) => block.id === selectedId);
+  if (selected && trackDataOf(selected)) {
+    return { trackId: selected.id, blocks: [...blocks], created: [] };
+  }
+  const own = objectDataOf(selected)?.trackRef?.id;
+  if (own !== undefined && trackDataOf(blocks.find((block) => block.id === own))) {
+    return { trackId: own, blocks: [...blocks], created: [] };
+  }
+  const into = targetCollection(blocks, sceneId, selectedId);
+  if (into === null) {
+    return null;
+  }
+  const first = collectionDataOf(blocks.find((block) => block.id === into))?.memberRefs.find(
+    (member) => trackDataOf(blocks.find((block) => block.id === member.id))
+  );
+  if (first) {
+    return { trackId: first.id, blocks: [...blocks], created: [] };
+  }
+  const trackId = env.newId();
+  const track = createBlankTrack({
+    id: trackId,
+    name: uniqueName(blocks, TRACK_TYPE_ID, 'Track'),
+    createdAt: env.now,
+    length: rational(4),
+  });
+  return { trackId, blocks: addMember(blocks, into, trackId).concat(track), created: [trackId] };
+}
+
+/**
+ * An Empty object on a Track (one undo step, also when the Track is made; the object is `created[0]`): `selectedId` may be a Track, an
+ * object (its own Track), a collection (its first Track, made when it has none) or null (the root's).
+ */
 export function addEmpty(
   blocks: Blocks,
   env: OpEnv,
   sceneId: string,
-  collectionId: string | null
+  selectedId: string | null
 ): SceneOpResult {
-  const into = targetCollection(blocks, sceneId, collectionId);
-  if (into === null) {
+  const target = trackForAdd(blocks, env, sceneId, selectedId);
+  if (target === null) {
     return fail('That scene has no root collection.');
   }
   const id = env.newId();
-  const object = createBlankObject({
-    id,
-    name: uniqueName(blocks, 'object', 'Empty'),
-    createdAt: env.now,
-    length: rational(4),
-  });
-  return done(addMember(blocks, into, id).concat(object), [id]);
+  const object = mapData<ObjectData>(
+    createBlankObject({
+      id,
+      name: uniqueName(blocks, 'object', 'Empty'),
+      createdAt: env.now,
+      length: rational(4),
+    }),
+    (data) => ({ ...data, trackRef: ref(target.trackId) })
+  );
+  return done([...target.blocks, object], [id, ...target.created]);
 }
 
-/** An Empty placed under `parentId` (start 0, relative to it), listed in the parent's collection. */
+/** An Empty placed under `parentId` (start 0, relative to it), on the parent's Track. */
 export function addChildEmpty(
   blocks: Blocks,
   env: OpEnv,
-  sceneId: string,
+  _sceneId: string,
   parentId: string
 ): SceneOpResult {
   const parent = blocks.find((block) => block.id === parentId);
   if (!objectDataOf(parent)) {
     return fail('Select an object to add a child to.');
   }
-  const into = collectionOf(blocks, parentId)?.id ?? targetCollection(blocks, sceneId, null);
-  if (into === null) {
-    return fail('That scene has no root collection.');
-  }
   const id = env.newId();
+  const trackRef = objectDataOf(parent)?.trackRef ?? null;
   const created = mapData<ObjectData>(
     createBlankObject({
       id,
@@ -199,9 +244,11 @@ export function addChildEmpty(
       createdAt: env.now,
       length: rational(4),
     }),
-    (data) => ({ ...data, parentRef: ref(parentId) })
+    (data) => ({ ...data, parentRef: ref(parentId), trackRef })
   );
-  return done(addMember(blocks, into, id).concat(created), [id]);
+  // On the parent's Track (the Track reaches it). A parent no Track holds is a legacy direct listing.
+  const into = trackRef === null ? collectionOf(blocks, parentId)?.id : undefined;
+  return done(into ? addMember(blocks, into, id).concat(created) : [...blocks, created], [id]);
 }
 
 export function addCollection(
@@ -254,9 +301,7 @@ function editObject(
   return done(update(blocks, id, (block) => mapData<ObjectData>(block, change)));
 }
 
-// ---- Object placement (W-77): no overlap among the direct objects of one collection, in WORLD time ----
-
-const NO_ROOM = 'No room here.';
+// ---- Object placement (W-82): objects on one Track may overlap; the Arranger draws sub-rows by itself ----
 
 const blockMap = (blocks: Blocks) => new Map(blocks.map((block) => [block.id, block]));
 
@@ -278,89 +323,32 @@ function worldSpan(blocks: Blocks, objectId: string): Span | null {
   return { start, end: addRational(start, chain[0].data.timeSpan.duration) };
 }
 
-/**
- * The sub-lane layout of the objects a collection lists directly (L3, W-78): each object's lane number
- * (stored `lane`, else first-fit) and display sub-lane (dense rank). The same function the Arranger draws
- * with, so ops and drawing agree.
- */
-function collectionLayout(blocks: Blocks, collectionId: string): SubLaneLayout {
-  const members = collectionDataOf(blocks.find((block) => block.id === collectionId))?.memberRefs;
-  const byId = blockMap(blocks);
-  return layoutSubLanes(
-    (members ?? []).flatMap((member) => {
-      const data = objectDataOf(byId.get(member.id));
-      const span = data ? worldSpan(blocks, member.id) : null;
-      return data && span ? [{ id: member.id, ...span, lane: data.lane }] : [];
-    })
-  );
+/** The ids sharing an object's row group: its Track's objects (an object no Track holds: its collection's). */
+function peersOf(blocks: Blocks, objectId: string): string[] {
+  const trackId = objectDataOf(blocks.find((block) => block.id === objectId))?.trackRef?.id;
+  if (trackId !== undefined) {
+    return objectsOnTrack(blocks, trackId);
+  }
+  const members = collectionDataOf(collectionOf(blocks, objectId))?.memberRefs ?? [];
+  return members
+    .map((member) => member.id)
+    .filter((id) => objectDataOf(blocks.find((block) => block.id === id)));
 }
 
-/** The display sub-lane of an object inside its own collection, or undefined. */
-function ownSubLane(blocks: Blocks, objectId: string): number | undefined {
-  const holder = collectionOf(blocks, objectId);
-  return holder ? collectionLayout(blocks, holder.id).subLaneOf.get(objectId) : undefined;
-}
-
-/**
- * Where a drop goes inside a collection: a display sub-lane (the lane under the pointer) or the new-lane
- * strip. Rule for the number stored (W-78): a sub-lane stores ITS lane number (the stored one, or the one
- * the automatic pass gave it, so automatic objects keep their lane); the strip stores the highest occupied
- * number + 1 (0 when the collection is empty), so it opens below everything.
- */
-export type DropLane = number | 'new';
-
-function laneNumberFor(layout: SubLaneLayout, target: DropLane): number {
-  const last = layout.numbers.length === 0 ? -1 : layout.numbers[layout.numbers.length - 1];
-  return target === 'new' ? last + 1 : (layout.numbers[target] ?? last + 1);
-}
-
-/** The object with `lane` set, or with the field removed when undefined (absent stays absent). */
-function withLane(object: ObjectData, lane: number | undefined): ObjectData {
-  const { lane: _old, ...rest } = object;
-  return lane === undefined ? rest : { ...rest, lane };
-}
-
-/**
- * The world spans of the objects a collection lists DIRECTLY (not those of nested collections), except
- * `exceptId` and its descendants (they move with it), earliest first; its ancestors are skipped too when
- * no `subLane` is given. Objects with a circular parent chain are skipped. `subLane` keeps only the
- * objects on that display sub-lane (L3), and then the ancestors on it count as obstacles.
- */
-function siblingSpans(
-  blocks: Blocks,
-  collectionId: string,
-  exceptId: string | null,
-  subLane?: number
-): (Span & { id: string })[] {
-  const members = collectionDataOf(blocks.find((block) => block.id === collectionId))?.memberRefs;
-  const byId = blockMap(blocks);
-  const laneOf = subLane === undefined ? null : collectionLayout(blocks, collectionId).subLaneOf;
-  const ancestors = new Set(
-    exceptId === null ? [] : (objectChain(byId, exceptId) ?? []).map((link) => link.id)
-  );
-  // A descendant moves with the object, so it is never an obstacle. An ancestor is skipped only when no
-  // sub-lane is given (a child plays over its parent by design); on a given sub-lane it IS an obstacle,
-  // because a child the human drops on its parent's sub-lane would otherwise cover the parent (L2 review).
-  const related = (id: string) =>
-    exceptId !== null &&
-    ((laneOf === null && ancestors.has(id)) ||
-      (objectChain(byId, id) ?? []).some((link) => link.id === exceptId));
-  return (members ?? [])
-    .filter((member) => !related(member.id))
-    .filter((member) => laneOf === null || laneOf.get(member.id) === subLane)
-    .flatMap((member) => {
-      if (!objectDataOf(blocks.find((block) => block.id === member.id))) {
-        return [];
-      }
-      const span = worldSpan(blocks, member.id);
-      return span ? [{ id: member.id, ...span }] : [];
+/** The world spans of an object's peers (itself included), earliest first. */
+function peerSpans(blocks: Blocks, objectId: string): (Span & { id: string })[] {
+  return peersOf(blocks, objectId)
+    .flatMap((id) => {
+      const span = worldSpan(blocks, id);
+      return span ? [{ id, ...span }] : [];
     })
     .sort((left, right) => compareRational(left.start, right.start));
 }
 
-/** Two spans overlap when they share time; touching (one ends where the other starts) is fine. */
-const overlaps = (a: Span, b: Span) =>
-  compareRational(a.start, b.end) < 0 && compareRational(b.start, a.end) < 0;
+/** The display sub-row of an object among its peers (automatic: start time, then id), or undefined. */
+function ownSubLane(blocks: Blocks, objectId: string): number | undefined {
+  return layoutSubLanes(peerSpans(blocks, objectId)).subLaneOf.get(objectId);
+}
 
 /** The earliest world start at or after `from` where `duration` fits between the (sorted) spans. */
 function firstFreeStart(spans: readonly Span[], from: Rational, duration: Rational): Rational {
@@ -378,82 +366,9 @@ function firstFreeStart(spans: readonly Span[], from: Rational, duration: Ration
 }
 
 /**
- * Where `duration` lands nearest `desired` (world start) without overlapping the (sorted) spans and
- * not before quarter 0: `desired` itself when free, else the closest start in a free gap; a tie goes
- * to the earlier start.
- */
-function nearestFreeStart(spans: readonly Span[], desired: Rational, duration: Rational): Rational {
-  const zero = rational(0);
-  const wanted = maxRational(desired, zero);
-  const gaps: { from: Rational; to: Rational | null }[] = [];
-  let cursor = zero;
-  for (const span of spans) {
-    if (compareRational(span.start, cursor) > 0) {
-      gaps.push({ from: cursor, to: span.start });
-    }
-    cursor = maxRational(cursor, span.end);
-  }
-  gaps.push({ from: cursor, to: null });
-  let best: Rational | null = null;
-  let bestDistance: Rational | null = null;
-  for (const gap of gaps) {
-    const latest = gap.to === null ? null : subtractRational(gap.to, duration);
-    if (latest !== null && compareRational(latest, gap.from) < 0) {
-      continue;
-    }
-    let landed = maxRational(wanted, gap.from);
-    if (latest !== null) {
-      landed = minRational(landed, latest);
-    }
-    const gone = subtractRational(landed, wanted);
-    const distance = gone.numerator < 0 ? subtractRational(rational(0), gone) : gone;
-    if (
-      best === null ||
-      bestDistance === null ||
-      compareRational(distance, bestDistance) < 0 ||
-      (compareRational(distance, bestDistance) === 0 && compareRational(landed, best) < 0)
-    ) {
-      best = landed;
-      bestDistance = distance;
-    }
-  }
-  return best ?? wanted;
-}
-
-/**
- * How far an object may move or grow among the objects of its own collection (the Arranger clamps a
- * drag with it): the end of the neighbor before it and the start of the neighbor after it, in world
- * quarter notes (null: no neighbor on that side). Null when the object is gone, circular or in no
- * collection.
- */
-export function objectRoom(
-  blocks: Blocks,
-  objectId: string
-): { before: Rational | null; after: Rational | null } | null {
-  const own = worldSpan(blocks, objectId);
-  const holder = collectionOf(blocks, objectId);
-  if (!own || !holder) {
-    return null;
-  }
-  let before: Rational | null = null;
-  let after: Rational | null = null;
-  for (const span of siblingSpans(blocks, holder.id, objectId, ownSubLane(blocks, objectId))) {
-    if (compareRational(span.end, own.start) <= 0) {
-      before = before === null ? span.end : maxRational(before, span.end);
-    } else if (compareRational(span.start, own.end) >= 0) {
-      after = after === null ? span.start : minRational(after, span.start);
-    }
-  }
-  return { before, after };
-}
-
-/**
  * Start, duration and/or content offset of an object in exact quarter notes (the start is relative to
- * its parent); the duration must be above zero. Refused with "No room here." when the new span would
- * overlap another object of the same collection (the Arranger clamps a drag first; typed values meet
- * this). Objects placed under it are not checked: they move with it and may then overlap (the Arranger
- * draws them on their own sub-lanes; a child with a stored `lane` carried onto a sibling on the same
- * stored lane is logged in BACKLOG).
+ * its parent); the duration must be above zero. Objects may overlap on a Track (W-82), so nothing is
+ * refused for room.
  */
 export function setTimeSpan(
   blocks: Blocks,
@@ -469,16 +384,6 @@ export function setTimeSpan(
   }
   const start = span.start ?? data.timeSpan.start;
   const duration = span.duration ?? data.timeSpan.duration;
-  const was = worldSpan(blocks, id);
-  const holder = collectionOf(blocks, id);
-  if (was && holder) {
-    const worldStart = addRational(was.start, subtractRational(start, data.timeSpan.start));
-    const placed = { start: worldStart, end: addRational(worldStart, duration) };
-    const sameLane = siblingSpans(blocks, holder.id, id, ownSubLane(blocks, id));
-    if (sameLane.some((other) => overlaps(placed, other))) {
-      return fail(NO_ROOM);
-    }
-  }
   return editObject(blocks, id, (object) => ({
     ...object,
     timeSpan: { start, duration },
@@ -552,8 +457,8 @@ export const copyModifiers = (
   }));
 
 /**
- * A copy of an object in the same collection right after the original, at the first free space after it
- * in time that fits it (the same parent), with its own copy of the modifier stack. `independent` also
+ * A copy of an object on the same Track, at the first free space after it in time that fits it among
+ * that Track's objects, with its own copy of the modifier stack. `independent` also
  * copies the data-block (named "<name> (copy)", unique per type, placed right after the original);
  * otherwise the copy shares the data-block (linked).
  */
@@ -568,16 +473,19 @@ function copyObject(
   if (!source || !data) {
     return fail('Select an object first.');
   }
-  const holder = collectionOf(blocks, objectId);
   const own = worldSpan(blocks, objectId);
-  if (!holder || !own) {
-    return fail(NO_ROOM);
+  if (!own) {
+    return fail('That object has no place in time.');
   }
-  const free = firstFreeStart(
-    siblingSpans(blocks, holder.id, null, ownSubLane(blocks, objectId)),
-    own.end,
-    data.timeSpan.duration
+  if (!peersOf(blocks, objectId).includes(objectId)) {
+    return fail('No room here.');
+  }
+  // Only the sub-row the object is on counts (a parent and its children sit on other sub-rows).
+  const layout = layoutSubLanes(peerSpans(blocks, objectId));
+  const sameRow = peerSpans(blocks, objectId).filter(
+    (peer) => layout.subLaneOf.get(peer.id) === layout.subLaneOf.get(objectId)
   );
+  const free = firstFreeStart(sameRow, own.end, data.timeSpan.duration);
   const id = env.newId();
   const created = [id];
   let list: StoredDataBlock[] = [...blocks];
@@ -615,9 +523,9 @@ function copyObject(
       modifiers: copyModifiers(env, object.modifiers),
     })
   );
-  const holderId = holder.id;
+  // The copy keeps the source's Track. Only a legacy direct listing needs a collection entry.
   list = list.map((block) =>
-    block.id === holderId
+    collectionDataOf(block)?.memberRefs.some((member) => member.id === objectId)
       ? mapData<CollectionData>(block, (collection) => {
           const at = collection.memberRefs.findIndex((member) => member.id === objectId);
           const memberRefs = [...collection.memberRefs];
@@ -639,23 +547,19 @@ export const duplicateObjectLinked = (blocks: Blocks, env: OpEnv, objectId: stri
 
 /**
  * Free move (a body drag): the object goes to the RELATIVE start `relativeStart` (the same meaning as
- * `setTimeSpan`'s) when that spot is free among the objects of its own collection, else to the nearest
- * free slot there. It never overlaps and never pushes another object; a tie goes to the earlier slot; the
- * world start is never below 0.
+ * `setTimeSpan`'s). Objects may overlap on a Track (W-82), so nothing is pushed or searched for; only the
+ * world start is kept at or above 0.
  */
 export function placeObjectNearest(
   blocks: Blocks,
   id: string,
-  relativeStart: Rational,
-  /** The sub-lane (or the new-lane strip) it was dropped on; absent = stay on its own sub-lane. */
-  target?: DropLane
+  relativeStart: Rational
 ): SceneOpResult {
   const data = objectDataOf(blocks.find((block) => block.id === id));
   if (!data) {
     return fail('Select an object first.');
   }
   const own = worldSpan(blocks, id);
-  const holder = collectionOf(blocks, id);
   if (!own) {
     return editObject(blocks, id, (object) => ({
       ...object,
@@ -663,20 +567,9 @@ export function placeObjectNearest(
     }));
   }
   const desired = addRational(own.start, subtractRational(relativeStart, data.timeSpan.start));
-  const layout = holder ? collectionLayout(blocks, holder.id) : null;
-  const ownLane = layout?.subLaneOf.get(id);
-  // Dropped on its own automatic sub-lane: stay automatic. Otherwise the drop stores that lane's number.
-  const lane =
-    target === undefined || !layout || (target === ownLane && data.lane === undefined)
-      ? data.lane
-      : laneNumberFor(layout, target);
-  const neighbors =
-    holder && target !== 'new'
-      ? siblingSpans(blocks, holder.id, id, target === undefined ? ownLane : target)
-      : [];
-  const landed = nearestFreeStart(neighbors, desired, data.timeSpan.duration);
+  const landed = maxRational(desired, rational(0));
   return editObject(blocks, id, (object) => ({
-    ...withLane(object, lane),
+    ...object,
     timeSpan: {
       ...object.timeSpan,
       start: addRational(object.timeSpan.start, subtractRational(landed, own.start)),
@@ -685,7 +578,7 @@ export function placeObjectNearest(
 }
 
 /**
- * Drags the edge two touching objects of one collection share: the left object's end and the right
+ * Drags the edge two touching objects of one Track share: the left object's end and the right
  * object's start move to `edgeWorld` (world quarter notes). One extends while the other trims, with the
  * W-74 left-edge rules for the right one (a Stretch object refits, any other keeps its data in place by
  * moving the content offset). Each keeps at least `minimum` (one beat: the caller passes it); the edge
@@ -705,12 +598,11 @@ export function resizeSharedEdge(
   }
   const leftSpan = worldSpan(blocks, leftId);
   const rightSpan = worldSpan(blocks, rightId);
-  const holder = collectionOf(blocks, leftId);
+  const sameGroup = peersOf(blocks, leftId).includes(rightId);
   if (
     !leftSpan ||
     !rightSpan ||
-    holder === undefined ||
-    holder.id !== collectionOf(blocks, rightId)?.id ||
+    !sameGroup ||
     compareRational(leftSpan.end, rightSpan.start) !== 0 ||
     ownSubLane(blocks, leftId) !== ownSubLane(blocks, rightId)
   ) {
@@ -787,20 +679,13 @@ function collectionTree(blocks: Blocks, id: string): Set<string> {
 }
 
 /**
- * Moves an object or collection to another collection. A collection keeps its members' times. An object
- * lands at the same world start when that is free among the target's direct objects, else in the nearest
- * free slot there (it never overlaps or pushes), by changing its start.
+ * Moves a collection into another collection, with its members' times. An object moves with
+ * `moveObjectToTrack` (trackOps), never by collection.
  */
-export function moveToCollection(
-  blocks: Blocks,
-  id: string,
-  collectionId: string,
-  /** The sub-lane or new-lane strip it was dropped on (objects only). */
-  target?: DropLane
-): SceneOpResult {
+export function moveToCollection(blocks: Blocks, id: string, collectionId: string): SceneOpResult {
   const moved = blocks.find((block) => block.id === id);
-  if (!objectDataOf(moved) && !collectionDataOf(moved)) {
-    return fail('Only an object or a collection can be moved.');
+  if (!collectionDataOf(moved)) {
+    return fail('Only a collection can be moved into a collection.');
   }
   if (!collectionDataOf(blocks.find((block) => block.id === collectionId))) {
     return fail('Move it into a collection.');
@@ -816,53 +701,7 @@ export function moveToCollection(
         }))
       : block
   );
-  const placed = addMember(without, collectionId, id);
-  const data = objectDataOf(moved);
-  const own = data ? worldSpan(blocks, id) : null;
-  if (!data || !own) {
-    return done(placed);
-  }
-  // Lane (W-78): the strip always opens a new lane; a sub-lane drop keeps the object's own lane number
-  // when nothing there overlaps its world span, else uses the dropped sub-lane's number; with no drop
-  // target a taken lane number leaves it automatic.
-  const targetLayout = collectionLayout(without, collectionId);
-  const ownEnd = addRational(own.start, data.timeSpan.duration);
-  const keptFree =
-    data.lane !== undefined &&
-    !siblingSpans(without, collectionId, id).some(
-      (other) =>
-        targetLayout.numberOf.get(other.id) === data.lane &&
-        overlaps({ start: own.start, end: ownEnd }, other)
-    );
-  let lane: number | undefined;
-  if (target === 'new') {
-    lane = laneNumberFor(targetLayout, 'new');
-  } else if (keptFree) {
-    lane = data.lane;
-  } else if (target !== undefined) {
-    lane = laneNumberFor(targetLayout, target);
-  }
-  const landed = nearestFreeStart(
-    siblingSpans(
-      without,
-      collectionId,
-      id,
-      lane === undefined ? undefined : targetLayout.numbers.indexOf(lane)
-    ),
-    own.start,
-    data.timeSpan.duration
-  );
-  return done(
-    update(placed, id, (block) =>
-      mapData<ObjectData>(block, (entry) => ({
-        ...withLane(entry, lane),
-        timeSpan: {
-          ...entry.timeSpan,
-          start: addRational(entry.timeSpan.start, subtractRational(landed, own.start)),
-        },
-      }))
-    )
-  );
+  return done(addMember(without, collectionId, id));
 }
 
 /** What a delete will do, in numbers (the confirm line). */

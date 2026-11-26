@@ -8,6 +8,7 @@ import {
   modifierOf,
   objectBlock,
   sceneBlock,
+  trackBlock,
 } from './sceneTestHelpers';
 import { allUsersTable, lengthText, sharedUsersTable } from './sharedUsersTable';
 
@@ -15,27 +16,37 @@ const clave = (start: number, extra = {}) =>
   objectBlock('x', { primaryDataRef: { id: 'clave' }, start, ...extra });
 
 function scene(extra: ReturnType<typeof objectBlock>[] = []) {
-  const withId = (id: string, start: number, name: string) => ({
-    ...clave(start),
+  const withId = (id: string, start: number, name: string, track: string) => ({
+    ...clave(start, { trackRef: { id: track } }),
     id,
     name,
   });
   return [
     sceneBlock('s', 'root'),
     collectionBlock('root', ['verse', 'chorus', 'solo']),
-    collectionBlock('verse', ['late', 'kid'], {}, 'Verse'),
-    collectionBlock('chorus', ['early'], {}, 'Chorus'),
-    collectionBlock('solo', ['mod'], {}, 'Solo'),
+    collectionBlock('verse', ['tv'], {}, 'Verse'),
+    collectionBlock('chorus', ['tc'], {}, 'Chorus'),
+    collectionBlock('solo', ['ts'], {}, 'Solo'),
     claveBlock(),
-    withId('late', 16, 'Chords (late)'),
-    withId('early', 0, 'Melody'),
-    objectBlock('kid', { parentRef: { id: 'late' }, primaryDataRef: { id: 'other' } }, 'Kid'),
+    withId('late', 16, 'Chords (late)', 'tv'),
+    withId('early', 0, 'Melody', 'tc'),
+    objectBlock(
+      'kid',
+      { parentRef: { id: 'late' }, primaryDataRef: { id: 'other' }, trackRef: { id: 'tv' } },
+      'Kid'
+    ),
     objectBlock(
       'mod',
-      { modifiers: [modifierOf('m1', MELODICIZE_ID, { pitches: 'clave' })] },
+      {
+        modifiers: [modifierOf('m1', MELODICIZE_ID, { pitches: 'clave' })],
+        trackRef: { id: 'ts' },
+      },
       'Modded'
     ),
     ...extra,
+    trackBlock('tv', false, 'Verse track'),
+    trackBlock('tc', false, 'Chorus track'),
+    trackBlock('ts', false, 'Solo track'),
   ];
 }
 
@@ -51,9 +62,8 @@ describe('sharedUsersTable (L5)', () => {
   });
 
   it('three sharers in two collections are sorted by start', () => {
-    const mid = { ...clave(8), id: 'mid', name: 'Mid' };
+    const mid = { ...clave(8, { trackRef: { id: 'tv' } }), id: 'mid', name: 'Mid' };
     const blocks = scene([mid]);
-    blocks[2] = collectionBlock('verse', ['late', 'kid', 'mid'], {}, 'Verse');
     const rows = sharedUsersTable({ dataBlocks: blocks, instances: [] }, 'clave', 's');
     expect(rows.map((row) => row.id)).toEqual(['early', 'mid', 'late']);
     expect(rows.map((row) => row.collection)).toEqual(['Chorus', 'Verse', 'Verse']);
@@ -63,7 +73,12 @@ describe('sharedUsersTable (L5)', () => {
     const blocks = scene();
     blocks[8] = objectBlock(
       'kid',
-      { parentRef: { id: 'late' }, primaryDataRef: { id: 'clave' }, start: 2 },
+      {
+        parentRef: { id: 'late' },
+        primaryDataRef: { id: 'clave' },
+        start: 2,
+        trackRef: { id: 'tv' },
+      },
       'Kid'
     );
     const rows = sharedUsersTable({ dataBlocks: blocks, instances: [] }, 'clave', 's');

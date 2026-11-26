@@ -75,7 +75,7 @@ export function addEmptyOnTrack(blocks: Blocks, env: OpEnv, trackId: string): Sc
 }
 
 /**
- * Puts an object on a Track: start, name, data and modifiers are kept, the stored `lane` is cleared, and
+ * Puts an object on a Track: start, name, data and modifiers are kept, and
  * any direct listing in a collection (the old shape) is removed so it is reached only through the Track.
  * Overlap is allowed. Moving to the Track it is already on changes nothing.
  */
@@ -97,10 +97,7 @@ export function moveObjectToTrack(
   return done(
     blocks.map((block) => {
       if (block.id === objectId) {
-        return mapData<ObjectData>(block, (object) => {
-          const { lane: _lane, ...rest } = object;
-          return { ...rest, trackRef: ref(trackId) };
-        });
+        return mapData<ObjectData>(block, (object) => ({ ...object, trackRef: ref(trackId) }));
       }
       return collectionDataOf(block)?.memberRefs.some((member) => member.id === objectId)
         ? mapData<CollectionData>(block, (collection) => ({

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { StoredDataBlock } from '../dataBlocks/registry';
-import { collectionBlock, objectBlock, sceneBlock } from './sceneTestHelpers';
+import { collectionBlock, objectBlock, sceneBlock, withLegacyLane } from './sceneTestHelpers';
 import { collectionDataOf, objectDataOf, trackDataOf } from './sceneTypes';
 import { migrateTracks } from './trackMigration';
 
@@ -15,8 +15,8 @@ function pianoScene(): StoredDataBlock[] {
     collectionBlock('root', ['piano'], {}, 'Root'),
     collectionBlock('piano', ['a', 'b', 'c'], {}, 'Piano'),
     objectBlock('a', { start: 0 }),
-    objectBlock('b', { start: 2, lane: 1 }),
-    objectBlock('c', { start: 3, lane: 1 }),
+    withLegacyLane(objectBlock('b', { start: 2 }), 1),
+    withLegacyLane(objectBlock('c', { start: 3 }), 1),
   ];
 }
 
@@ -89,7 +89,7 @@ describe('migrateTracks', () => {
     const blocks = [
       collectionBlock('only-sub', ['sub'], {}, 'Only'),
       collectionBlock('sub', [], {}, 'Sub'),
-      objectBlock('loose', { lane: 2 }),
+      withLegacyLane(objectBlock('loose'), 2),
     ];
     expect(migrateTracks(blocks)).toBe(blocks);
   });
@@ -106,7 +106,7 @@ describe('migrateTracks', () => {
   });
 
   it('leaves an object that already holds a trackRef untouched', () => {
-    const placed = objectBlock('a', { trackRef: { id: 'elsewhere' }, lane: 3 });
+    const placed = withLegacyLane(objectBlock('a', { trackRef: { id: 'elsewhere' } }), 3);
     const blocks = [collectionBlock('c', ['a'], {}, 'C'), placed];
     const after = migrateTracks(blocks);
     expect(after).toBe(blocks);

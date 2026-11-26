@@ -37,6 +37,26 @@ const ICON_PATHS: Record<PropertiesTab, ReactNode> = {
   ),
 };
 
+/**
+ * The Track icon (mock-icons.html, variant B, human-approved 2026-11-26): a beam with two hollow bars of
+ * different lengths beside it. A Track is not a Properties tab, so it has its own component and color
+ * (the theme's teal mark) and shares the tab icons' size and stroke.
+ */
+export const TRACK_COLOR = { '--tab': 'var(--mark-teal)' } as CSSProperties;
+
+/** What an icon can stand for: one of the five tabs, or a Track (which has no tab of its own). */
+export type PathKind = PropertiesTab | 'track';
+
+export function TrackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={classes.icon}>
+      <path d="M5 4v16" />
+      <rect x="9" y="4.5" width="7" height="6" rx="1" />
+      <rect x="9" y="13.5" width="11" height="6" rx="1" />
+    </svg>
+  );
+}
+
 export function TabIcon({ tab }: { tab: PropertiesTab }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className={classes.icon}>
@@ -63,6 +83,15 @@ export const tabColor = (tab: PropertiesTab): CSSProperties =>
     '--tab': `var(--mark-${TABS.find((entry) => entry.tab === tab)?.hue ?? 'violet'})`,
   }) as CSSProperties;
 
+/** The color of a kind's icon: its tab's hue, or the Track's teal. */
+export const kindColor = (kind: PathKind): CSSProperties =>
+  kind === 'track' ? TRACK_COLOR : tabColor(kind);
+
+/** The icon of a kind: its tab icon, or the Track icon. */
+export function KindIcon({ kind }: { kind: PathKind }) {
+  return kind === 'track' ? <TrackIcon /> : <TabIcon tab={kind} />;
+}
+
 /** The vertical icon rail: five tabs in a fixed order; those that do not apply are dimmed with the reason on hover. */
 export function PropertiesRail({
   kind,
@@ -81,16 +110,19 @@ export function PropertiesRail({
       aria-orientation="vertical"
       aria-label="Properties tabs"
     >
-      {TABS.map(({ tab, label, needs }) => {
+      {TABS.map(({ tab, label: tabLabel, needs }) => {
         const enabled = live.includes(tab);
-        const reason = `${label}: select ${needs === 'collection' ? 'a collection' : 'an object'} in the Outliner`;
+        // The Collection tab is also where a Track is shown: it takes the Track's icon, color and name.
+        const asTrack = tab === 'collection' && kind === 'track';
+        const label = asTrack ? 'Track' : tabLabel;
+        const reason = `${label}: select ${needs === 'collection' ? 'a collection or a track' : 'an object'} in the Outliner`;
         return (
           <button
             key={tab}
             type="button"
             role="tab"
             className={classes.tab}
-            style={tabColor(tab)}
+            style={asTrack ? TRACK_COLOR : tabColor(tab)}
             aria-selected={tab === active}
             aria-disabled={enabled ? undefined : true}
             aria-label={label}
@@ -98,7 +130,7 @@ export function PropertiesRail({
             data-info={enabled ? label : reason}
             onClick={() => enabled && onSelect(tab)}
           >
-            <TabIcon tab={tab} />
+            {asTrack ? <TrackIcon /> : <TabIcon tab={tab} />}
           </button>
         );
       })}
@@ -106,8 +138,8 @@ export function PropertiesRail({
   );
 }
 
-/** The plain path line: icons and names with a chevron between. */
-export function PathLine({ steps }: { steps: { tab: PropertiesTab; name: string }[] }) {
+/** The plain path line: colored icons and names with a chevron between. */
+export function PathLine({ steps }: { steps: { tab: PathKind; name: string }[] }) {
   return (
     <div className={classes.path} aria-label="Path">
       {steps.map((step, index) => (
@@ -117,7 +149,9 @@ export function PathLine({ steps }: { steps: { tab: PropertiesTab; name: string 
               ›
             </span>
           )}
-          <TabIcon tab={step.tab} />
+          <span className={classes.stepIcon} style={kindColor(step.tab)}>
+            <KindIcon kind={step.tab} />
+          </span>
           <span className={classes.stepName}>{step.name}</span>
         </span>
       ))}
@@ -131,15 +165,15 @@ export function IdRow({
   picker,
   children,
 }: {
-  tab: PropertiesTab;
+  tab: PathKind;
   picker?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <div className={classes.idrow} style={tabColor(tab)}>
+    <div className={classes.idrow} style={kindColor(tab)}>
       {picker ?? (
         <span className={classes.idpick} data-plain>
-          <TabIcon tab={tab} />
+          <KindIcon kind={tab} />
         </span>
       )}
       {children}

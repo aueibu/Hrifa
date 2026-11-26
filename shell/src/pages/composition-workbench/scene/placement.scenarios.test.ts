@@ -11,7 +11,6 @@ import {
   duplicateObject,
   duplicateObjectLinked,
   moveToCollection,
-  objectRoom,
   placeObjectNearest,
   resizeSharedEdge,
   setMute,
@@ -204,46 +203,20 @@ describe('row 4: touching objects of one collection share an edge that drags bot
   });
 });
 
-describe('row 4b: no overlap among the objects of one collection, and the nearest free slot', () => {
+describe('row 4b (W-82): objects may overlap, nothing slides or is refused', () => {
   const lane = () => world(clave('L', 4, 8), clave('R', 12, 8), clave('X', 30, 4));
 
-  it('the room around an object is the end of the one before it and the start of the one after', () => {
-    const room = objectRoom(lane(), 'R')!;
-    expect(room.before).toEqual(rational(12));
-    expect(room.after).toEqual(rational(30));
-    expect(objectRoom(lane(), 'L')!.before).toBeNull();
-    expect(objectRoom(lane(), 'nope')).toBeNull();
+  it('typing a duration or start that overlaps a sibling is accepted', () => {
+    expect(ok(setTimeSpan(lane(), 'R', { duration: rational(25) })).ok).toBe(true);
+    expect(span(ok(setTimeSpan(lane(), 'R', { start: rational(8) })).blocks, 'R')).toEqual([8, 16]);
   });
 
-  it('typing a duration or start that overlaps a sibling is refused with "No room here."; touching is fine', () => {
-    expect(refused(setTimeSpan(lane(), 'R', { duration: rational(19) }))).toBe('No room here.');
-    expect(ok(setTimeSpan(lane(), 'R', { duration: rational(18) })).ok).toBe(true);
-    expect(refused(setTimeSpan(lane(), 'R', { start: rational(8) }))).toBe('No room here.');
-  });
-
-  it('objects of another collection never block each other', () => {
-    const split = [
-      ...world(clave('L', 4, 8), clave('R', 12, 8)).filter((block) => block.id !== 'root'),
-      collectionBlock('root', ['L']),
-      collectionBlock('other', ['R']),
-    ];
-    expect(ok(setTimeSpan(split, 'R', { start: rational(6) })).ok).toBe(true);
-  });
-
-  it('a drop on a free spot lands there; a drop on a neighbor lands in the nearest free slot', () => {
-    const free = ok(placeObjectNearest(lane(), 'R', rational(20))).blocks;
-    expect(span(free, 'R')).toEqual([20, 28]);
-    const next = ok(placeObjectNearest(lane(), 'R', rational(6))).blocks;
-    expect(span(next, 'R')).toEqual([12, 20]);
-    expect(span(next, 'L')).toEqual([4, 12]);
-  });
-
-  it('chooses the closest free gap, ties go to the earlier one, and never before 0', () => {
-    const gaps = world(clave('A', 6, 4), clave('M', 20, 4));
-    // Free: [0, 6) and [10, inf). Desired 6 for 4 quarters: before lands at 2 (4 away), after at 10 (4 away).
-    expect(span(ok(placeObjectNearest(gaps, 'M', rational(6))).blocks, 'M')).toEqual([2, 6]);
-    expect(span(ok(placeObjectNearest(gaps, 'M', rational(7))).blocks, 'M')).toEqual([10, 14]);
-    expect(span(ok(placeObjectNearest(gaps, 'M', rational(-3))).blocks, 'M')).toEqual([0, 4]);
+  it('a drop lands exactly where dropped, also on a neighbor, and never before 0', () => {
+    expect(span(ok(placeObjectNearest(lane(), 'R', rational(20))).blocks, 'R')).toEqual([20, 28]);
+    const onNeighbor = ok(placeObjectNearest(lane(), 'R', rational(6))).blocks;
+    expect(span(onNeighbor, 'R')).toEqual([6, 14]);
+    expect(span(onNeighbor, 'L')).toEqual([4, 12]);
+    expect(span(ok(placeObjectNearest(lane(), 'R', rational(-3))).blocks, 'R')).toEqual([0, 8]);
   });
 
   it('a parent moving its children never refuses, even when they then overlap', () => {
@@ -258,38 +231,30 @@ describe('row 4b: no overlap among the objects of one collection, and the neares
   });
 });
 
-describe('row 4c: an object moves to another collection (lane)', () => {
-  const lanes = (...inOther: StoredDataBlock[]) => [
+describe('row 4c (W-82): a collection moves to another collection; an object moves by Track', () => {
+  const tree = () => [
     claveBlock(),
-    clave('O', 4, 8),
-    ...inOther,
-    collectionBlock('root', ['O', 'g2']),
-    collectionBlock(
-      'g2',
-      inOther.map((block) => block.id)
-    ),
+    collectionBlock('root', ['g1', 'g2']),
+    collectionBlock('g1', []),
+    collectionBlock('g2', []),
     sceneBlock('scene', 'root'),
   ];
 
-  it('lands at the same world start when the target lane is free there', () => {
-    const next = ok(moveToCollection(lanes(clave('Q', 20, 4)), 'O', 'g2')).blocks;
-    expect(members(next, 'g2')).toEqual(['Q', 'O']);
+  it('a collection keeps its place in the target list', () => {
+    const next = ok(moveToCollection(tree(), 'g1', 'g2')).blocks;
+    expect(members(next, 'g2')).toEqual(['g1']);
     expect(members(next)).toEqual(['g2']);
-    expect(span(next, 'O')).toEqual([4, 12]);
   });
 
-  it('lands in the nearest free slot when the target lane is taken there', () => {
-    const next = ok(moveToCollection(lanes(clave('Q', 6, 4)), 'O', 'g2')).blocks;
-    expect(span(next, 'O')).toEqual([10, 18]);
-    expect(span(next, 'Q')).toEqual([6, 10]);
-  });
-
-  it('refuses a collection into itself and a target that is not a collection', () => {
-    const blocks = lanes();
+  it('refuses a collection into itself, a target that is not a collection, and an object', () => {
+    const blocks = [...tree(), clave('O', 4, 8)];
     expect(refused(moveToCollection(blocks, 'g2', 'g2'))).toBe(
       'A collection cannot be moved into itself.'
     );
-    expect(refused(moveToCollection(blocks, 'O', 'O'))).toBe('Move it into a collection.');
+    expect(refused(moveToCollection(blocks, 'g1', 'O'))).toBe('Move it into a collection.');
+    expect(refused(moveToCollection(blocks, 'O', 'g2'))).toBe(
+      'Only a collection can be moved into a collection.'
+    );
   });
 });
 
@@ -328,27 +293,24 @@ describe('deleting a parent re-roots its children at their world start', () => {
   });
 });
 
-describe('a child inside its parent in one collection (parent chain is not an overlap)', () => {
+describe('a child inside its parent on one Track (parent chain is not an overlap)', () => {
   const family = () => [
     clave('p', 20, 8),
     clave('k', 2, 2, { parentRef: { id: 'p' } }), // world 22 to 24
   ];
 
   it('dragging the child to world 24 to 26 lands exactly there', () => {
-    const blocks = world(...family());
-    const next = ok(placeObjectNearest(blocks, 'k', rational(4)));
+    const next = ok(placeObjectNearest(world(...family()), 'k', rational(4)));
     expect(span(next.blocks, 'k')).toEqual([24, 26]);
   });
 
-  it('an unrelated sibling at 24 to 26 pushes it to the nearest free slot', () => {
-    const blocks = world(...family(), clave('s', 24, 2));
-    const next = ok(placeObjectNearest(blocks, 'k', rational(4)));
-    expect(span(next.blocks, 'k')).toEqual([22, 24]);
+  it('an unrelated sibling at 24 to 26 does not push it: blocks may overlap', () => {
+    const next = ok(placeObjectNearest(world(...family(), clave('s', 24, 2)), 'k', rational(4)));
+    expect(span(next.blocks, 'k')).toEqual([24, 26]);
   });
 
-  it('room, resize and the span edit ignore the parent', () => {
+  it('the span edit ignores the parent', () => {
     const blocks = world(...family());
-    expect(objectRoom(blocks, 'k')).toEqual({ before: null, after: null });
     expect(refused(setTimeSpan(blocks, 'k', { duration: rational(3) }))).toBeNull();
     expect(refused(setTimeSpan(blocks, 'p', { duration: rational(10) }))).toBeNull();
   });

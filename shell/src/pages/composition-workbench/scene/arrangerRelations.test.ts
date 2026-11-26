@@ -25,7 +25,10 @@ const object = (id: string, subLane: number, start: number, end: number) => ({
 const lane = (id: string, subLanes: number, objects: ArrangerLane['objects']): ArrangerLane => ({
   id,
   name: id,
+  collectionId: 'c',
+  collectionName: 'C',
   depth: 0,
+  mute: false,
   muted: false,
   subLanes,
   objects,

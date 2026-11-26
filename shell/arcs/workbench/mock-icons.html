@@ -19,6 +19,7 @@
       --mark-green: #58c973;
       --mark-violet: #b197fc;
       --mark-yellow: #e5b842;
+      --mark-teal: #4fc3b8; /* illustrative; the app would use the theme's --mark-teal role */
     }
 
     * { box-sizing: border-box; }
@@ -110,6 +111,15 @@
       </div>
     </div>
 
+    <div class="card" style="--icon-color: var(--mark-teal);">
+      <div class="label">Track (beam + two bars) PROPOSED</div>
+      <div class="swatches">
+        <div class="box sm"><svg viewBox="0 0 24 24"><path d="M5 4v16"/><rect x="9" y="4.5" width="11" height="6" rx="1"/><rect x="9" y="13.5" width="11" height="6" rx="1"/></svg></div>
+        <div class="box sm active"><svg viewBox="0 0 24 24"><path d="M5 4v16"/><rect x="9" y="4.5" width="11" height="6" rx="1"/><rect x="9" y="13.5" width="11" height="6" rx="1"/></svg></div>
+        <div class="box lg"><svg viewBox="0 0 24 24"><path d="M5 4v16"/><rect x="9" y="4.5" width="11" height="6" rx="1"/><rect x="9" y="13.5" width="11" height="6" rx="1"/></svg></div>
+      </div>
+    </div>
+
     <div class="card" style="--icon-color: var(--mark-orange);">
       <div class="label">Object</div>
       <div class="swatches">
@@ -137,5 +147,28 @@
       </div>
     </div>
   </div>
+
+  <h1 style="margin-top:24px">Track icon: bars of different lengths (same beam, same teal)</h1>
+  <div class="grid" id="trackVariants"></div>
+  <script>
+    // Beam at x=5; each bar is [x, y, width]. Height 6, radius 1, same stroke as the others.
+    const bar = ([x, y, w]) => `<rect x="${x}" y="${y}" width="${w}" height="6" rx="1"/>`;
+    const VARIANTS = [
+      ['A: top longer, bottom shorter (both start at the beam)', [[9, 4.5, 11], [9, 13.5, 7]]],
+      ['B: top shorter, bottom longer (both start at the beam). CHOSEN, in the app', [[9, 4.5, 7], [9, 13.5, 11]]],
+      ['C: staggered, second starts later (equal length)', [[9, 4.5, 9], [12, 13.5, 9]]],
+      ['D: top long, bottom short and starts later', [[9, 4.5, 11], [13, 13.5, 7]]],
+    ];
+    const host = document.getElementById('trackVariants');
+    for (const [label, bars] of VARIANTS) {
+      const svg = `<svg viewBox="0 0 24 24"><path d="M5 4v16"/>${bars.map(bar).join('')}</svg>`;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.setProperty('--icon-color', 'var(--mark-teal)');
+      card.innerHTML = `<div class="label">${label}</div><div class="swatches">` +
+        `<div class="box sm">${svg}</div><div class="box sm active">${svg}</div><div class="box lg">${svg}</div></div>`;
+      host.appendChild(card);
+    }
+  </script>
 </body>
 </html>

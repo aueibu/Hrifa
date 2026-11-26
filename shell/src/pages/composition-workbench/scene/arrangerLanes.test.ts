@@ -1,109 +1,169 @@
 import { describe, expect, it } from 'vitest';
-import { rational, rationalFromNumber } from '../musicalTime';
-import { arrangerLanes, assignSubLanes, touchingPairs } from './arrangerLanes';
+import { rationalFromNumber } from '../musicalTime';
+import { arrangerEntries, arrangerLanes, touchingPairs } from './arrangerLanes';
 import { collectionBlock, objectBlock, sceneBlock, trackBlock } from './sceneTestHelpers';
-
-describe('arrangerLanes with Track blocks', () => {
-  it('ignores a Track listed in a collection (no lane object, no throw)', () => {
-    const blocks = [
-      sceneBlock('s', 'root'),
-      collectionBlock('root', ['t', 'a']),
-      trackBlock('t'),
-      objectBlock('a', { trackRef: { id: 't' } }),
-    ];
-    const lanes = arrangerLanes(blocks, 's');
-    expect(lanes).toHaveLength(1);
-    expect(lanes[0].objects.map((object) => object.id)).toEqual(['a']);
-  });
-});
+import { layoutSubLanes } from './subLanes';
+import { migrateTracks } from './trackMigration';
 
 const span = (id: string, start: number, end: number) => ({
   id,
   start: rationalFromNumber(start),
   end: rationalFromNumber(end),
 });
+const on = (track: string) => ({ trackRef: { id: track } });
 
-describe('assignSubLanes', () => {
-  it('puts overlapping objects on different sub-lanes and reuses a freed one', () => {
-    const { subLaneOf, count } = assignSubLanes([
-      span('a', 0, 8),
-      span('b', 4, 12),
-      span('c', 8, 10),
+/** Piano with RH (Theme A at 0 to 16, Theme A var at 8 to 24), LH (Bass), Pedal (empty); Strings with Violin. */
+function movement() {
+  return [
+    sceneBlock('s', 'root'),
+    collectionBlock('root', ['piano', 'strings']),
+    collectionBlock('piano', ['rh', 'lh', 'pedal'], {}, 'Piano'),
+    collectionBlock('strings', ['violin'], {}, 'Strings'),
+    trackBlock('rh', false, 'RH'),
+    trackBlock('lh', false, 'LH'),
+    trackBlock('pedal', false, 'Pedal'),
+    trackBlock('violin', false, 'Violin'),
+    objectBlock('theme', { ...on('rh'), start: 0, duration: 16 }),
+    objectBlock('var', { ...on('rh'), start: 8, duration: 16 }),
+    objectBlock('bass', { ...on('lh'), start: 0, duration: 8 }),
+    objectBlock('line', { ...on('violin'), start: 0, duration: 4 }),
+  ];
+}
+
+describe('layoutSubLanes (automatic only)', () => {
+  it('first fit in start order, ties by id; touching is not overlap', () => {
+    const { subLaneOf, count } = layoutSubLanes([
+      span('b', 0, 4),
+      span('a', 0, 4),
+      span('c', 4, 8),
     ]);
     expect(subLaneOf.get('a')).toBe(0);
     expect(subLaneOf.get('b')).toBe(1);
-    // a ends at 8, exactly where c starts: touching is not overlap, so c reuses sub-lane 0.
     expect(subLaneOf.get('c')).toBe(0);
     expect(count).toBe(2);
   });
 
-  it('keeps touching objects on one sub-lane', () => {
-    const { subLaneOf, count } = assignSubLanes([span('a', 4, 8), span('b', 8, 16)]);
-    expect([subLaneOf.get('a'), subLaneOf.get('b')]).toEqual([0, 0]);
-    expect(count).toBe(1);
-  });
-
-  it('is stable for equal starts: the earlier in the list takes the lower sub-lane', () => {
-    const { subLaneOf } = assignSubLanes([span('x', 0, 4), span('y', 0, 4), span('z', 0, 4)]);
-    expect([subLaneOf.get('x'), subLaneOf.get('y'), subLaneOf.get('z')]).toEqual([0, 1, 2]);
-  });
-
-  it('an empty lane still has one sub-lane', () => {
-    expect(assignSubLanes([]).count).toBe(1);
+  it('is one sub-lane for nothing', () => {
+    expect(layoutSubLanes([]).count).toBe(1);
   });
 });
 
-describe('arrangerLanes', () => {
-  const blocks = [
-    sceneBlock('scene', 'root'),
-    collectionBlock('root', ['parent', 'child', 'after', 'group'], {}, 'Main'),
-    objectBlock('parent', { start: 4, duration: 8 }, 'Parent'),
-    objectBlock('child', { parentRef: { id: 'parent' }, start: 2, duration: 2 }, 'Child'),
-    objectBlock('after', { start: 12, duration: 4, mute: true }, 'After'),
-    collectionBlock('group', ['inner', 'sub'], {}, 'Group'),
-    collectionBlock('sub', [], {}, 'Empty lane'),
-    objectBlock('inner', { start: 0, duration: 4 }, 'Inner'),
-  ];
-
-  it('lists the root first, then each collection with its depth; an empty collection gets a lane', () => {
-    const lanes = arrangerLanes(blocks, 'scene');
-    expect(lanes.map((lane) => [lane.name, lane.depth])).toEqual([
-      ['Main', 0],
-      ['Group', 1],
-      ['Empty lane', 2],
+describe('arrangerLanes: one lane per Track', () => {
+  it('scenario 1: overlap on RH draws two sub-rows; LH, Pedal and Violin stay one row', () => {
+    const lanes = arrangerLanes(movement(), 's');
+    expect(lanes.map((lane) => [lane.name, lane.subLanes, lane.collectionName])).toEqual([
+      ['RH', 2, 'Piano'],
+      ['LH', 1, 'Piano'],
+      ['Pedal', 1, 'Piano'],
+      ['Violin', 1, 'Strings'],
     ]);
-    const empty = lanes[2];
-    expect(empty.objects).toEqual([]);
-    expect(empty.subLanes).toBe(1);
+    const rh = lanes[0].objects;
+    expect(rh.map((object) => [object.id, object.subLane])).toEqual([
+      ['theme', 0],
+      ['var', 1],
+    ]);
   });
 
-  it('draws a parent and its child (which overlap by design) on different sub-lanes', () => {
-    const [main] = arrangerLanes(blocks, 'scene');
-    const byId = new Map(main.objects.map((object) => [object.id, object]));
-    expect(byId.get('parent')?.subLane).toBe(0);
-    // Child: world 6 to 8, inside the parent's 4 to 12.
-    expect(byId.get('child')?.subLane).toBe(1);
-    // After: 12 to 16 starts where the parent ends, so it goes back to sub-lane 0.
-    expect(byId.get('after')?.subLane).toBe(0);
-    expect(byId.get('after')?.mute).toBe(true);
-    expect(main.subLanes).toBe(2);
+  it('scenario 12: an empty Track is a lane one sub-row high', () => {
+    const pedal = arrangerLanes(movement(), 's').find((lane) => lane.id === 'pedal')!;
+    expect(pedal.objects).toEqual([]);
+    expect(pedal.subLanes).toBe(1);
   });
 
-  it('puts an object on the lane of the collection that lists it, with its world span', () => {
-    const lanes = arrangerLanes(blocks, 'scene');
-    const group = lanes[1];
-    expect(group.objects.map((object) => object.id)).toEqual(['inner']);
-    expect(group.objects[0].start).toEqual(rational(0));
-    expect(group.objects[0].end).toEqual(rational(4));
+  it('scenarios 5 and 6: a Collection mute silences its Tracks; a Track mute only its own', () => {
+    const muted = movement().map((block) =>
+      block.id === 'piano'
+        ? {
+            ...block,
+            payload: {
+              ...block.payload,
+              data: { memberRefs: [{ id: 'rh' }, { id: 'lh' }, { id: 'pedal' }], mute: true },
+            },
+          }
+        : block
+    ) as ReturnType<typeof movement>;
+    const lanes = arrangerLanes(muted, 's');
+    expect(lanes.map((lane) => [lane.id, lane.muted, lane.mute])).toEqual([
+      ['rh', true, false],
+      ['lh', true, false],
+      ['pedal', true, false],
+      ['violin', false, false],
+    ]);
+    const lhMuted = arrangerLanes(
+      movement().map((block) => (block.id === 'lh' ? trackBlock('lh', true, 'LH') : block)),
+      's'
+    );
+    expect(lhMuted.map((lane) => [lane.id, lane.muted])).toEqual([
+      ['rh', false],
+      ['lh', true],
+      ['pedal', false],
+      ['violin', false],
+    ]);
+    expect(lhMuted[1].objects[0].muted).toBe(true);
+    expect(lhMuted[1].objects[0].mute).toBe(false);
   });
 
-  it('finds touching pairs only on one sub-lane', () => {
-    const [main] = arrangerLanes(blocks, 'scene');
-    // Parent ends at 12 where After starts: they touch. The child is on another sub-lane.
-    expect(touchingPairs(main)).toEqual([{ leftId: 'parent', rightId: 'after' }]);
+  it('scenarios 7 and 8: a band per Collection with its Tracks below; nested ones list their ancestors', () => {
+    const blocks = [
+      ...movement().filter((block) => block.id !== 'piano'),
+      collectionBlock('piano', ['rh', 'lh', 'pedal', 'ornaments'], {}, 'Piano'),
+      collectionBlock('ornaments', ['trills'], {}, 'Ornaments'),
+      trackBlock('trills', false, 'Trills'),
+    ];
+    const entries = arrangerEntries(blocks, 's').map((entry) =>
+      entry.kind === 'band'
+        ? ['band', entry.band.name, entry.band.depth, entry.ancestors]
+        : ['track', entry.lane.name, entry.lane.depth, entry.ancestors]
+    );
+    expect(entries).toEqual([
+      ['band', 'Piano', 0, []],
+      ['track', 'RH', 1, ['piano']],
+      ['track', 'LH', 1, ['piano']],
+      ['track', 'Pedal', 1, ['piano']],
+      ['band', 'Ornaments', 1, ['piano']],
+      ['track', 'Trills', 2, ['piano', 'ornaments']],
+      ['band', 'Strings', 0, []],
+      ['track', 'Violin', 1, ['strings']],
+    ]);
   });
 
-  it('is empty without a scene root', () => {
-    expect(arrangerLanes([sceneBlock('scene', null)], 'scene')).toEqual([]);
+  it('scenario 11: an old Piano of three objects is migrated, then draws as one Track named Piano', () => {
+    const old = [
+      sceneBlock('s', 'root'),
+      collectionBlock('root', ['piano']),
+      collectionBlock('piano', ['a', 'b', 'c'], {}, 'Piano'),
+      objectBlock('a', { start: 0, duration: 4 }),
+      objectBlock('b', { start: 2, duration: 4 }),
+      objectBlock('c', { start: 8, duration: 4 }),
+    ];
+    const lanes = arrangerLanes(migrateTracks(old), 's');
+    expect(lanes).toHaveLength(1);
+    expect(lanes[0].name).toBe('Piano');
+    expect(lanes[0].objects.map((object) => [object.id, object.subLane])).toEqual([
+      ['a', 0],
+      ['b', 1],
+      ['c', 0],
+    ]);
+  });
+
+  it('scenario 9: a child on another Track still draws on its own Track', () => {
+    const blocks = movement().map((block) =>
+      block.id === 'bass'
+        ? objectBlock('bass', { ...on('lh'), parentRef: { id: 'theme' }, start: 0, duration: 8 })
+        : block
+    );
+    const lh = arrangerLanes(blocks, 's').find((lane) => lane.id === 'lh')!;
+    expect(lh.objects.map((object) => object.id)).toEqual(['bass']);
+  });
+
+  it('touchingPairs finds an object that ends where the next starts on one sub-lane', () => {
+    const blocks = [
+      sceneBlock('s', 'root'),
+      collectionBlock('root', ['t']),
+      trackBlock('t'),
+      objectBlock('x', { ...on('t'), start: 0, duration: 4 }),
+      objectBlock('y', { ...on('t'), start: 4, duration: 4 }),
+    ];
+    expect(touchingPairs(arrangerLanes(blocks, 's')[0])).toEqual([{ leftId: 'x', rightId: 'y' }]);
   });
 });

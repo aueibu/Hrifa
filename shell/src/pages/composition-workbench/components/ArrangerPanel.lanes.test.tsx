@@ -6,7 +6,7 @@ import { seedDesk } from '../deskTestUtils';
 import { historyChangeCount, resetHistory, undo } from '../history';
 import { PIXELS_PER_QUARTER } from '../scene/arrangerGeometry';
 import { writeSceneSession } from '../scene/sceneSession';
-import { collectionBlock, objectBlock, sceneBlock } from '../scene/sceneTestHelpers';
+import { collectionBlock, objectBlock, sceneBlock, trackBlock } from '../scene/sceneTestHelpers';
 import { ArrangerPanel } from './ArrangerPanel';
 import { mockEngineState } from './sceneEngineMock';
 import { OutlinerPanel } from './ScenePanels';
@@ -21,14 +21,21 @@ const px = (quarters: number) => quarters * PIXELS_PER_QUARTER;
 async function renderLanes(extra: Parameters<typeof seedDesk>[0] = []) {
   await seedDesk([
     sceneBlock('scene-1', 'root'),
-    collectionBlock('root', ['a', 'b', 'p', 'kid', 'empty', 'third'], {}, 'Main'),
-    collectionBlock('empty', [], {}, 'Empty lane'),
-    collectionBlock('third', ['t'], {}, 'Third'),
-    objectBlock('a', { start: 4, duration: 4 }, 'A'),
-    objectBlock('b', { start: 12, duration: 4 }, 'B'),
-    objectBlock('p', { start: 20, duration: 8 }, 'P'),
-    objectBlock('kid', { parentRef: { id: 'p' }, start: 2, duration: 2 }, 'Kid'),
-    objectBlock('t', { start: 0, duration: 4 }, 'T'),
+    // The hidden root lists two Tracks and a Collection "Third" (a band) with one Track under it.
+    collectionBlock('root', ['tm', 'te', 'third'], {}, 'Root'),
+    collectionBlock('third', ['tt'], {}, 'Third'),
+    trackBlock('tm', false, 'Main'),
+    trackBlock('te', false, 'Empty lane'),
+    trackBlock('tt', false, 'Third track'),
+    objectBlock('a', { start: 4, duration: 4, trackRef: { id: 'tm' } }, 'A'),
+    objectBlock('b', { start: 12, duration: 4, trackRef: { id: 'tm' } }, 'B'),
+    objectBlock('p', { start: 20, duration: 8, trackRef: { id: 'tm' } }, 'P'),
+    objectBlock(
+      'kid',
+      { parentRef: { id: 'p' }, start: 2, duration: 2, trackRef: { id: 'tm' } },
+      'Kid'
+    ),
+    objectBlock('t', { start: 0, duration: 4, trackRef: { id: 'tt' } }, 'T'),
     ...extra,
   ]);
   writeSceneSession({ activeSceneId: 'scene-1', selectedId: null });
@@ -46,15 +53,14 @@ async function renderLanes(extra: Parameters<typeof seedDesk>[0] = []) {
 const block = (name: string) => screen.getByRole('button', { name: `Block ${name}` });
 const leftOf = (name: string) => Number.parseFloat(block(name).style.left);
 const widthOf = (name: string) => Number.parseFloat(block(name).style.width);
-const laneRow = (name: string) => {
-  const header = screen.getByRole('rowheader', { name });
-  return header.closest('[role="row"]') as HTMLElement;
-};
+/** A Track's row by its block id. */
+const laneRow = (id: string) => document.querySelector(`[data-lane="${id}"]`) as HTMLElement;
+const bandRow = (id: string) => document.querySelector(`[data-band="${id}"]`) as HTMLElement;
 
 /** jsdom has no layout: give each lane a height band so a pointer height means a lane. */
-function layOutLanes(names: string[]) {
-  names.forEach((name, index) => {
-    laneRow(name).getBoundingClientRect = () =>
+function layOutLanes(ids: string[]) {
+  ids.forEach((id, index) => {
+    laneRow(id).getBoundingClientRect = () =>
       ({ top: index * 100, bottom: index * 100 + 100, left: 0, right: 500 }) as DOMRect;
   });
 }
@@ -66,55 +72,81 @@ beforeEach(() => {
 });
 
 describe('lanes (L1a)', () => {
-  it('draws one lane per collection in Outliner order, depth 0 for the root, an empty one included', async () => {
+  it('draws a band per Collection (not the root) and a row per Track, Tracks under a band indented, an empty Track included', async () => {
     await renderLanes();
-    expect(screen.getAllByRole('rowheader').map((cell) => cell.textContent)).toEqual([
-      'Main',
-      'Empty lane',
-      'Third',
-    ]);
-    expect(laneRow('Empty lane')).toHaveAttribute('aria-level', '2');
-    expect(within(laneRow('Empty lane')).queryAllByRole('button')).toHaveLength(0);
-    expect(within(laneRow('Main')).getAllByRole('button', { name: /^Block / })).toHaveLength(4);
-    expect(within(laneRow('Third')).getByRole('button', { name: 'Block T' })).toBeInTheDocument();
+    expect(
+      Array.from(document.querySelectorAll('[data-lane], [data-band]')).map(
+        (row) => row.getAttribute('data-lane') ?? row.getAttribute('data-band')
+      )
+    ).toEqual(['tm', 'te', 'third', 'tt']);
+    expect(laneRow('tm')).toHaveAttribute('aria-level', '1');
+    expect(laneRow('tt')).toHaveAttribute('aria-level', '2');
+    expect(within(bandRow('third')).getByText('Third')).toBeInTheDocument();
+    expect(within(laneRow('te')).getByText('Empty lane')).toBeInTheDocument();
+    expect(within(laneRow('te')).queryAllByRole('button', { name: /^Block / })).toHaveLength(0);
+    expect(within(laneRow('tm')).getAllByRole('button', { name: /^Block / })).toHaveLength(4);
+    expect(within(laneRow('tt')).getByRole('button', { name: 'Block T' })).toBeInTheDocument();
   });
 
   it('adds a sub-lane only where objects overlap: a parent and its child, not the other lanes', async () => {
     await renderLanes();
-    expect(laneRow('Main')).toHaveAttribute('data-sublanes', '2');
-    expect(laneRow('Main').style.height).toBe('5rem');
-    expect(laneRow('Third')).toHaveAttribute('data-sublanes', '1');
-    expect(laneRow('Third').style.height).toBe('2.5rem');
-    expect(laneRow('Empty lane').style.height).toBe('2.5rem');
+    expect(laneRow('tm')).toHaveAttribute('data-sublanes', '2');
+    expect(laneRow('tm').style.height).toBe('5rem');
+    expect(laneRow('tt')).toHaveAttribute('data-sublanes', '1');
+    expect(laneRow('tt').style.height).toBe('2.5rem');
+    expect(laneRow('te').style.height).toBe('2.5rem');
     // P sits on sub-lane 0, its child under it on sub-lane 1; A and B stay on sub-lane 0.
     expect(block('P').style.top).toBe(block('A').style.top);
     expect(block('Kid').style.top).not.toBe(block('P').style.top);
   });
 
-  it('the lane height drag scales the whole lane and is keyed by the collection', async () => {
+  it('the Track height drag scales the whole Track and is keyed by the Track', async () => {
     await renderLanes();
-    const grip = within(laneRow('Main')).getByTestId('arranger-row-grip');
+    const grip = within(laneRow('tm')).getByTestId('arranger-row-grip');
     fireEvent.pointerDown(grip, { button: 0, clientY: 100, pointerId: 1 });
     // 32 px is 2 rem over the whole lane, shared by its two sub-lanes: 2.5 plus 1 each.
     fireEvent.pointerMove(grip, { clientY: 132, pointerId: 1 });
-    expect(laneRow('Main').style.height).toBe('7rem');
+    expect(laneRow('tm').style.height).toBe('7rem');
     fireEvent.pointerUp(grip, { button: 0, clientY: 132, pointerId: 1 });
     expect(JSON.parse(localStorage.getItem('hrifa.scene-session.v1') ?? '{}').rowHeights).toEqual({
-      root: 3.5,
+      tm: 3.5,
     });
   });
 
-  it('clicking a block selects the object; clicking a lane name selects the collection', async () => {
+  it('clicking a block selects the object; clicking a Track name selects the Track, a band name the Collection', async () => {
     await renderLanes();
     await userEvent.click(block('A'));
     await waitFor(() => expect(block('A')).toHaveAttribute('aria-pressed', 'true'));
-    await userEvent.click(screen.getByRole('rowheader', { name: 'Third' }));
-    await waitFor(() => expect(laneRow('Third')).toHaveAttribute('aria-selected', 'true'));
+    await userEvent.click(within(laneRow('tt')).getByText('Third track'));
+    await waitFor(() => expect(laneRow('tt')).toHaveAttribute('aria-selected', 'true'));
     expect(block('A')).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByRole('treeitem', { name: /Third/ })).toHaveAttribute(
+    expect(screen.getByRole('treeitem', { name: /Third track/ })).toHaveAttribute(
       'aria-selected',
       'true'
     );
+    await userEvent.click(within(bandRow('third')).getByText('Third'));
+    await waitFor(() => expect(bandRow('third')).toHaveAttribute('aria-selected', 'true'));
+    expect(laneRow('tt')).toHaveAttribute('aria-selected', 'false');
+  });
+});
+
+describe('folding a band (TK2)', () => {
+  it('hides the Tracks under it, is session state (no history step) and unfolding restores them', async () => {
+    await renderLanes();
+    expect(laneRow('tt')).not.toBeNull();
+    const before = historyChangeCount();
+    await userEvent.click(screen.getByRole('button', { name: 'Fold Third' }));
+    await waitFor(() => expect(laneRow('tt')).toBeNull());
+    expect(bandRow('third')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Block T' })).toBeNull();
+    expect(laneRow('tm')).not.toBeNull();
+    expect(historyChangeCount()).toBe(before);
+    expect(
+      JSON.parse(localStorage.getItem('hrifa.scene-session.v1') ?? '{}').collapsedBands
+    ).toEqual(['third']);
+    await userEvent.click(screen.getByRole('button', { name: 'Unfold Third' }));
+    await waitFor(() => expect(laneRow('tt')).not.toBeNull());
+    expect(screen.getByRole('button', { name: 'Block T' })).toBeInTheDocument();
   });
 });
 
@@ -125,8 +157,8 @@ describe('free move (L1a)', () => {
     fireEvent.pointerDown(target, { button: 0, clientX: 100, clientY: 20, pointerId: 1 });
     fireEvent.pointerMove(target, { clientX: 100 + 30, clientY: 20, pointerId: 1 });
     expect(leftOf('A')).toBe(px(4) + 30);
-    // The landing outline shows the snapped start, 4 plus 0.625 quarters snaps to 5.
-    expect(screen.getByTestId('arranger-landing').style.left).toBe(`${px(5)}px`);
+    // On the same Track there is no landing outline (overlap is allowed, the block itself shows it).
+    expect(screen.queryByTestId('arranger-landing')).toBeNull();
     const before = historyChangeCount();
     fireEvent.pointerUp(target, { button: 0, clientX: 130, clientY: 20, pointerId: 1 });
     await waitFor(() => expect(leftOf('A')).toBe(px(5)));
@@ -134,57 +166,58 @@ describe('free move (L1a)', () => {
     expect(screen.queryByTestId('arranger-landing')).toBeNull();
   });
 
-  it('a block can pass to the other side of a neighbor and lands in a free slot', async () => {
+  it('a block dropped over a neighbor on the same Track overlaps it and the Track gets a second sub-row', async () => {
     await renderLanes();
-    // A (4 to 8) dragged 9 quarters right would overlap B (12 to 16), so it lands at 16, the nearest free start (past B).
+    // A (4 to 8) dragged 9 quarters right lands at 13 on top of B (12 to 16): overlap is allowed, nothing slides.
     const target = block('A');
     fireEvent.pointerDown(target, { button: 0, clientX: 100, clientY: 20, pointerId: 1 });
     fireEvent.pointerMove(target, { clientX: 100 + px(9), clientY: 20, pointerId: 1 });
-    // No clamp during the drag: it is 9 quarters further right.
     expect(leftOf('A')).toBe(px(13));
     fireEvent.pointerUp(target, { button: 0, clientX: 100 + px(9), clientY: 20, pointerId: 1 });
-    await waitFor(() => expect(leftOf('A')).toBe(px(16)));
+    await waitFor(() => expect(leftOf('A')).toBe(px(13)));
+    expect(within(laneRow('tm')).getByRole('button', { name: 'Block A' })).toBeInTheDocument();
+    expect(block('A').style.top).not.toBe(block('B').style.top);
   });
 
-  it('released over another lane it moves to that collection as one undo step', async () => {
+  it('released over another Track it moves to that Track as one undo step', async () => {
     await renderLanes();
-    layOutLanes(['Main', 'Empty lane', 'Third']);
+    layOutLanes(['tm', 'te', 'tt']);
     const target = block('A');
     fireEvent.pointerDown(target, { button: 0, clientX: 100, clientY: 50, pointerId: 1 });
     fireEvent.pointerMove(target, { clientX: 100, clientY: 250, pointerId: 1 });
-    expect(within(laneRow('Third')).getByTestId('arranger-sub-target')).toBeInTheDocument();
-    expect(within(laneRow('Main')).queryByTestId('arranger-sub-target')).toBeNull();
+    expect(within(laneRow('tt')).getByTestId('arranger-target-lane')).toBeInTheDocument();
+    expect(within(laneRow('tm')).queryByTestId('arranger-target-lane')).toBeNull();
+    // The outline on the other Track shows where it lands: the start of A, 4.
+    expect(within(laneRow('tt')).getByTestId('arranger-landing').style.left).toBe(`${px(4)}px`);
     const before = historyChangeCount();
     fireEvent.pointerUp(target, { button: 0, clientX: 100, clientY: 250, pointerId: 1 });
     await waitFor(() =>
-      expect(within(laneRow('Third')).getByRole('button', { name: 'Block A' })).toBeInTheDocument()
+      expect(within(laneRow('tt')).getByRole('button', { name: 'Block A' })).toBeInTheDocument()
     );
     expect(historyChangeCount()).toBeGreaterThan(before);
     // T is 0 to 4, so A keeps its start of 4.
     expect(leftOf('A')).toBe(px(4));
     act(() => undo());
     await waitFor(() =>
-      expect(within(laneRow('Main')).getByRole('button', { name: 'Block A' })).toBeInTheDocument()
+      expect(within(laneRow('tm')).getByRole('button', { name: 'Block A' })).toBeInTheDocument()
     );
   });
 
-  it('released over an empty lane drops the object into it', async () => {
+  it('released over an empty Track drops the object into it', async () => {
     await renderLanes();
-    layOutLanes(['Main', 'Empty lane', 'Third']);
+    layOutLanes(['tm', 'te', 'tt']);
     const target = block('B');
     fireEvent.pointerDown(target, { button: 0, clientX: 100, clientY: 50, pointerId: 1 });
     fireEvent.pointerMove(target, { clientX: 100, clientY: 150, pointerId: 1 });
     fireEvent.pointerUp(target, { button: 0, clientX: 100, clientY: 150, pointerId: 1 });
     await waitFor(() =>
-      expect(
-        within(laneRow('Empty lane')).getByRole('button', { name: 'Block B' })
-      ).toBeInTheDocument()
+      expect(within(laneRow('te')).getByRole('button', { name: 'Block B' })).toBeInTheDocument()
     );
   });
 
-  it('released off the lanes it snaps back and writes nothing', async () => {
+  it('released off the Tracks it snaps back and writes nothing', async () => {
     await renderLanes();
-    layOutLanes(['Main', 'Empty lane', 'Third']);
+    layOutLanes(['tm', 'te', 'tt']);
     const target = block('A');
     const before = historyChangeCount();
     fireEvent.pointerDown(target, { button: 0, clientX: 100, clientY: 50, pointerId: 1 });
@@ -192,32 +225,32 @@ describe('free move (L1a)', () => {
     fireEvent.pointerUp(target, { button: 0, clientX: 160, clientY: 900, pointerId: 1 });
     await waitFor(() => expect(leftOf('A')).toBe(px(4)));
     expect(historyChangeCount()).toBe(before);
-    expect(within(laneRow('Main')).getByRole('button', { name: 'Block A' })).toBeInTheDocument();
+    expect(within(laneRow('tm')).getByRole('button', { name: 'Block A' })).toBeInTheDocument();
   });
 });
 
-describe('edge drags clamp at the neighbor (L1a)', () => {
-  it('the right edge stops where the next block starts instead of being refused', async () => {
+describe('edge drags may overlap the neighbor (L1a)', () => {
+  it('the right edge grows past the next block: overlap is allowed', async () => {
     await renderLanes();
     const strip = block('A').querySelector('[data-edge="right"]') as HTMLElement;
     fireEvent.pointerDown(strip, { button: 0, clientX: 500, clientY: 20, pointerId: 1 });
     fireEvent.pointerMove(strip, { clientX: 500 + px(10), clientY: 20, pointerId: 1 });
-    // A is 4 to 8 and B starts at 12: the live width stops at 8 quarters.
-    expect(widthOf('A')).toBe(px(8));
+    // A is 4 to 8 and B starts at 12: no clamp, the width is 4 plus 10 quarters.
+    expect(widthOf('A')).toBe(px(14));
     fireEvent.pointerUp(strip, { button: 0, clientX: 500 + px(10), clientY: 20, pointerId: 1 });
-    await waitFor(() => expect(widthOf('A')).toBe(px(8)));
+    await waitFor(() => expect(widthOf('A')).toBe(px(14)));
   });
 
-  it('the left edge stops at the end of the block before it', async () => {
+  it('the left edge grows back over the block before it: overlap is allowed', async () => {
     await renderLanes();
     const strip = block('B').querySelector('[data-edge="left"]') as HTMLElement;
     fireEvent.pointerDown(strip, { button: 0, clientX: 500, clientY: 20, pointerId: 1 });
     fireEvent.pointerMove(strip, { clientX: 500 - px(10), clientY: 20, pointerId: 1 });
-    // A ends at 8: B (12 to 16) grows left to 8 and no further.
-    expect(leftOf('B')).toBe(px(8));
+    // A ends at 8: B (12 to 16) grows left to 2, past the end of A.
+    expect(leftOf('B')).toBe(px(2));
     fireEvent.pointerUp(strip, { button: 0, clientX: 500 - px(10), clientY: 20, pointerId: 1 });
-    await waitFor(() => expect(leftOf('B')).toBe(px(8)));
-    expect(widthOf('B')).toBe(px(8));
+    await waitFor(() => expect(leftOf('B')).toBe(px(2)));
+    expect(widthOf('B')).toBe(px(14));
   });
 });
 
@@ -225,9 +258,10 @@ describe('the shared edge of touching blocks (L1a)', () => {
   it('dragging it moves both ends in one commit', async () => {
     await seedDesk([
       sceneBlock('scene-1', 'root'),
-      collectionBlock('root', ['l', 'r'], {}, 'Main'),
-      objectBlock('l', { start: 4, duration: 4 }, 'L'),
-      objectBlock('r', { start: 8, duration: 8 }, 'R'),
+      collectionBlock('root', ['tm'], {}, 'Main'),
+      trackBlock('tm'),
+      objectBlock('l', { start: 4, duration: 4, trackRef: { id: 'tm' } }, 'L'),
+      objectBlock('r', { start: 8, duration: 8, trackRef: { id: 'tm' } }, 'R'),
     ]);
     writeSceneSession({ activeSceneId: 'scene-1', selectedId: null });
     render(

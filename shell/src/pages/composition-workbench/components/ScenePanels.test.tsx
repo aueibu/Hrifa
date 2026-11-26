@@ -14,6 +14,7 @@ import {
   objectBlock,
   pitchSetBlock,
   sceneBlock,
+  trackBlock,
 } from '../scene/sceneTestHelpers';
 import type { ModifierInstance } from '../scene/sceneTypes';
 import { mockEngineState } from './sceneEngineMock';
@@ -71,7 +72,8 @@ describe('the Outliner and Properties panels (O2a)', () => {
     const name = screen.getByLabelText('Name');
     await userEvent.clear(name);
     await userEvent.type(name, 'Bass{Enter}');
-    await waitFor(() => expect(names()[0]).toContain('Bass'));
+    // Add Empty made a Track (row 0) and the Empty on it (row 1).
+    await waitFor(() => expect(names()[1]).toContain('Bass'));
 
     await userEvent.click(screen.getByText('Stretch'));
     // Data moved to its own tab (U6): open it first.
@@ -79,7 +81,7 @@ describe('the Outliner and Properties panels (O2a)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Data' }));
     await userEvent.click(await screen.findByRole('button', { name: /Clave/ }));
     await waitFor(() => expect(playButton()).toBeEnabled());
-    expect(names()[0]).toContain('Clave');
+    expect(names()[1]).toContain('Clave');
 
     await userEvent.click(playButton());
     await waitFor(() => expect(played).toHaveLength(1));
@@ -200,22 +202,23 @@ describe('the Outliner and Properties panels (O2a)', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add Empty' })).toBeEnabled());
     await click('Add Empty');
     await click('Add Child Empty');
-    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(2));
-    expect(screen.getAllByRole('treeitem')[1]).toHaveAttribute('aria-level', '2');
+    // Track, its Empty, and the child nested under the Empty (same Track).
+    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(3));
+    expect(screen.getAllByRole('treeitem')[2]).toHaveAttribute('aria-level', '3');
 
-    await userEvent.click(screen.getAllByRole('treeitem')[0]);
+    await userEvent.click(screen.getAllByRole('treeitem')[1]);
     await click('Delete');
     await userEvent.click(await screen.findByRole('button', { name: 'Confirm delete' }));
-    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(1));
-    // The child stays, now at the top level.
-    expect(screen.getByRole('treeitem')).toHaveAttribute('aria-level', '1');
-    expect(screen.getByRole('treeitem').textContent).toContain('Empty.001');
+    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(2));
+    // The child stays on its Track, now directly under it.
+    expect(screen.getAllByRole('treeitem')[1]).toHaveAttribute('aria-level', '2');
+    expect(screen.getAllByRole('treeitem')[1].textContent).toContain('Empty.001');
 
     act(() => undo());
-    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(2));
-    expect(screen.getAllByRole('treeitem')[1]).toHaveAttribute('aria-level', '2');
+    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(3));
+    expect(screen.getAllByRole('treeitem')[2]).toHaveAttribute('aria-level', '3');
     act(() => redo());
-    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(1));
+    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(2));
   });
 
   it('inline rename: Escape cancels, Enter commits once (one undo step)', async () => {
@@ -226,15 +229,15 @@ describe('the Outliner and Properties panels (O2a)', () => {
     await userEvent.dblClick(await screen.findByRole('treeitem', { name: /Empty/ }));
     await userEvent.type(await screen.findByLabelText('Rename Empty'), 'Bass{Escape}');
     await waitFor(() => expect(screen.queryByLabelText(/^Rename /)).toBeNull());
-    expect(names()[0]).toContain('Empty');
+    expect(names()[1]).toContain('Empty');
 
     await userEvent.dblClick(screen.getByRole('treeitem', { name: /Empty/ }));
     const input = await screen.findByLabelText('Rename Empty');
     await userEvent.clear(input);
     await userEvent.type(input, 'Bass{Enter}');
-    await waitFor(() => expect(names()[0]).toContain('Bass'));
+    await waitFor(() => expect(names()[1]).toContain('Bass'));
     act(() => undo());
-    await waitFor(() => expect(names()[0]).toContain('Empty'));
+    await waitFor(() => expect(names()[1]).toContain('Empty'));
   });
 
   it('a selected collection shows only Name and Mute, and Delete moves its items up', async () => {
@@ -251,15 +254,19 @@ describe('the Outliner and Properties panels (O2a)', () => {
     expect(screen.queryByLabelText('Duration')).toBeNull();
     expect(screen.queryByLabelText('Parent')).toBeNull();
 
+    // Add Empty with the collection selected makes its first Track and the Empty on it.
     await click('Add Empty');
-    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(3));
     expect(screen.getAllByRole('treeitem')[1]).toHaveAttribute('aria-level', '2');
+    expect(screen.getAllByRole('treeitem')[2]).toHaveAttribute('aria-level', '3');
     await userEvent.click(screen.getAllByRole('treeitem')[0]);
     await click('Delete');
     await userEvent.click(await screen.findByRole('button', { name: 'Confirm delete' }));
-    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(1));
-    expect(screen.getByRole('treeitem')).toHaveAttribute('aria-level', '1');
-    expect(screen.getByRole('treeitem').textContent).toContain('Empty');
+    // The collection goes; its Track (and the Empty on it) move up one level.
+    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(2));
+    expect(screen.getAllByRole('treeitem')[0]).toHaveAttribute('aria-level', '1');
+    expect(screen.getAllByRole('treeitem')[1]).toHaveAttribute('aria-level', '2');
+    expect(screen.getAllByRole('treeitem')[1].textContent).toContain('Empty');
   });
 });
 
@@ -269,14 +276,14 @@ describe('Duplicate Object and Duplicate Linked in Properties (W-77)', () => {
     await click('New scene');
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add Empty' })).toBeEnabled());
     await click('Add Empty');
-    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(1));
+    await waitFor(() => expect(screen.getAllByRole('treeitem')).toHaveLength(2));
     // Duplicate is a folded section of the Object tab (U6).
     await click('Duplicate section');
     await click('Duplicate Object');
-    await waitFor(() => expect(names()).toHaveLength(2));
+    await waitFor(() => expect(names()).toHaveLength(3));
     expect(screen.getByLabelText('Name')).toHaveValue('Empty.001');
     await click('Duplicate Linked');
-    await waitFor(() => expect(names()).toHaveLength(3));
+    await waitFor(() => expect(names()).toHaveLength(4));
     expect(screen.getByLabelText('Name')).toHaveValue('Empty.001.001');
     // The copy lands after the original in time: starts 0, then 4, then 8.
     expect(screen.getByRole('spinbutton', { name: 'Start' })).toHaveAttribute(
@@ -479,7 +486,7 @@ describe('the tabs of Properties (U6)', () => {
     expect(dimmed()).toEqual(['Collection']);
     expect(tab('Collection')).toHaveAttribute(
       'title',
-      'Collection: select a collection in the Outliner'
+      'Collection: select a collection or a track in the Outliner'
     );
     act(() => writeSceneSession({ selectedId: 'verse' }));
     await waitFor(() => expect(dimmed()).toEqual(['Object', 'Modifiers', 'Data']));
@@ -536,5 +543,82 @@ describe('the tabs of Properties (U6)', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New' })).toBeEnabled());
     await click('New');
     await waitFor(() => expect(screen.getByLabelText('Name')).not.toHaveValue('Clave'));
+  });
+});
+
+describe('Tracks in the Outliner and Properties (TK2)', () => {
+  async function renderTracks(selectedId: string | null = null) {
+    await seedDesk([
+      claveBlock(),
+      sceneBlock('s', 'root'),
+      collectionBlock('root', ['rh', 'pedal'], {}, 'Piano'),
+      trackBlock('rh', false, 'RH'),
+      trackBlock('pedal', false, 'Pedal'),
+      objectBlock('theme', { start: 0, duration: 4, trackRef: { id: 'rh' } }, 'Theme'),
+      objectBlock('hold1', { start: 0, duration: 4, trackRef: { id: 'pedal' } }, 'Hold one'),
+      objectBlock('hold2', { start: 4, duration: 4, trackRef: { id: 'pedal' } }, 'Hold two'),
+      objectBlock(
+        'chord',
+        { parentRef: { id: 'theme' }, start: 1, duration: 2, trackRef: { id: 'pedal' } },
+        'Chord'
+      ),
+    ]);
+    writeSceneSession({ activeSceneId: 's', selectedId });
+    render(
+      <CompositionSettingsProvider>
+        <DeskProvider>
+          <OutlinerPanel />
+          <PropertiesPanel />
+        </DeskProvider>
+      </CompositionSettingsProvider>
+    );
+    await screen.findByRole('treeitem', { name: /Theme/ });
+  }
+
+  it('deleting a Track asks first with its object count, then removes the Track and its objects', async () => {
+    await renderTracks();
+    await userEvent.click(screen.getByRole('treeitem', { name: /Pedal/ }));
+    await click('Delete');
+    // Two objects sit on Pedal (the child Chord is on it too: three).
+    expect(await screen.findByText('Delete Track Pedal and its 3 objects?')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm delete' }));
+    await waitFor(() => expect(screen.queryByRole('treeitem', { name: /Pedal/ })).toBeNull());
+    expect(screen.queryByRole('treeitem', { name: /Hold one/ })).toBeNull();
+    expect(screen.queryByRole('treeitem', { name: /Hold two/ })).toBeNull();
+    expect(screen.getByRole('treeitem', { name: /Theme/ })).toBeInTheDocument();
+  });
+
+  it('a child on another Track shows a child-of icon that selects the parent', async () => {
+    await renderTracks();
+    const icon = screen.getByRole('button', { name: 'Child of Theme: select the parent' });
+    await userEvent.click(icon);
+    await waitFor(() =>
+      expect(screen.getByRole('treeitem', { name: /Theme/ })).toHaveAttribute(
+        'aria-selected',
+        'true'
+      )
+    );
+  });
+
+  it('a selected Track shows the Track section on the Collection tab; an object shows its Track', async () => {
+    await renderTracks('pedal');
+    // The slot that holds a Collection shows the Track's own name and icon while a Track is selected.
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Track' })).toBeInTheDocument());
+    expect(screen.queryByRole('tab', { name: 'Collection' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Track' })).toHaveAttribute('aria-selected', 'true');
+    // The path line (Scene, then the Track; the root collection is not shown) draws every step with an
+    // icon, the Track's in its own (teal) color.
+    const path = screen.getByLabelText('Path');
+    expect(path.querySelectorAll('svg')).toHaveLength(2);
+    expect(path.innerHTML).toContain('--mark-teal');
+    expect(screen.getByText('Objects')).toBeInTheDocument();
+    expect(screen.getByLabelText('Mute')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('treeitem', { name: /Hold one/ }));
+    await openTab('Object');
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-info^="The track this object sits on"]')?.textContent
+      ).toBe('Pedal')
+    );
   });
 });

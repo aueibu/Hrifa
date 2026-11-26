@@ -36,7 +36,9 @@ import {
   duplicateObject,
   duplicateObjectLinked,
   applyModifier,
+  collectionOf,
   moveModifier,
+  objectsOnTrack,
   removeModifier,
   setModifierMute,
   setModifierParam,
@@ -64,17 +66,28 @@ import {
   collectionDataOf,
   objectDataOf,
   sceneDataOf,
+  trackDataOf,
   type ModifierInstance,
   type ObjectMapping,
   type RegisterMapping,
 } from '../scene/sceneTypes';
 import { sharedUsersTable } from '../scene/sharedUsersTable';
+import { addTrack, moveObjectToTrack, moveTrackToCollection } from '../scene/trackOps';
 import { useSceneEvaluation, useScenePlayback } from '../scene/useScenePlayback';
 import { layerSound } from '../sounds';
 import { CompositionSettingsSections } from './CompositionSettingsPanel';
 import { DataBlockMenu } from './DataBlockMenu';
 import { PositionScrub } from './PositionScrub';
-import { IdRow, PathLine, PropertiesRail, TabIcon } from './PropertiesTabs';
+import {
+  IdRow,
+  PathLine,
+  PropertiesRail,
+  TRACK_COLOR,
+  TabIcon,
+  TrackIcon,
+  tabColor,
+  type PathKind,
+} from './PropertiesTabs';
 import { UsersTable } from './UsersTable';
 import tabsClasses from './PropertiesTabs.module.css';
 import classes from './ScenePanels.module.css';
@@ -167,6 +180,9 @@ function OutlinerBody() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState('');
+  // The row being dragged and the row it is over (a Track onto a Collection, an object onto a Track).
+  const dragRef = useRef<string | null>(null);
+  const [dropId, setDropId] = useState<string | null>(null);
   const treeRef = useRef<HTMLDivElement>(null);
 
   // The evaluation and the one play controller are shared with the Arranger (scene/useScenePlayback.ts).
@@ -203,13 +219,34 @@ function OutlinerBody() {
   }
 
   const selectedCollection = selectedRow?.kind === 'collection' ? selectedRow.id : null;
+  // A new Track goes into the selected Collection, or the Collection of the selected Track.
+  const trackTarget =
+    selectedRow?.kind === 'track'
+      ? (collectionOf(blocks, selectedRow.id)?.id ?? null)
+      : selectedCollection;
+
+  /** Whether the row being dragged may be dropped on `target` (and what that would do). */
+  function dropAction(target: OutlinerRow) {
+    const dragged = rows.find((candidate) => candidate.id === dragRef.current);
+    if (!dragged || !writable) {
+      return null;
+    }
+    if (dragged.kind === 'object' && target.kind === 'track') {
+      return (list: readonly StoredDataBlock[]) => moveObjectToTrack(list, dragged.id, target.id);
+    }
+    if (dragged.kind === 'track' && target.kind === 'collection') {
+      return (list: readonly StoredDataBlock[]) =>
+        moveTrackToCollection(list, dragged.id, target.id);
+    }
+    return null;
+  }
   const noScene = 'Create or choose a scene first.';
   const deskReason = writable ? null : NO_DESK;
   const addReason = scene === null ? noScene : deskReason;
   const childReason =
     addReason ?? (selectedRow?.kind === 'object' ? null : 'Select an object to add a child to.');
   const deleteReason =
-    deskReason ?? (selectedRow ? null : 'Select an object or a collection first.');
+    deskReason ?? (selectedRow ? null : 'Select an object, a track or a collection first.');
   const summary = selectedRow && confirming ? deleteSummary(blocks, selectedRow.id) : null;
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -280,11 +317,14 @@ function OutlinerBody() {
         <Button
           variant="default"
           disabled={addReason !== null}
-          data-info={addReason ?? 'Add an empty object to the selected collection, or the scene.'}
+          data-info={
+            addReason ??
+            'Add an empty object to the selected track, or to the first track of the selected collection or the scene.'
+          }
           onClick={() =>
             scene &&
             addAndSelect(
-              editor.commit((list) => addEmpty(list, newEnv(), scene.id, selectedCollection))
+              editor.commit((list) => addEmpty(list, newEnv(), scene.id, selectedRow?.id ?? null))
             )
           }
         >
@@ -316,6 +356,17 @@ function OutlinerBody() {
           }
         >
           Add Collection
+        </Button>
+        <Button
+          variant="default"
+          disabled={addReason !== null}
+          data-info={addReason ?? 'Add a track inside the selected collection, or the scene.'}
+          onClick={() =>
+            scene &&
+            addAndSelect(editor.commit((list) => addTrack(list, newEnv(), scene.id, trackTarget)))
+          }
+        >
+          Add Track
         </Button>
         <Popover
           opened={confirming && deleteReason === null}
@@ -388,6 +439,32 @@ function OutlinerBody() {
               collapsed={collapsed.has(row.id)}
               renaming={renamingId === row.id}
               writable={writable}
+              draggable={writable && (row.kind === 'object' || row.kind === 'track')}
+              dropActive={dropId === row.id}
+              onDragStart={() => {
+                dragRef.current = row.id;
+              }}
+              onDragOver={() => {
+                const accepts = dropAction(row) !== null;
+                setDropId((current) => (accepts ? row.id : current === row.id ? null : current));
+                return accepts;
+              }}
+              onDrop={() => {
+                const action = dropAction(row);
+                dragRef.current = null;
+                setDropId(null);
+                if (action) {
+                  report(editor.commit(action));
+                }
+              }}
+              onDragEnd={() => {
+                dragRef.current = null;
+                setDropId(null);
+              }}
+              onSelectParent={(parentId) => {
+                select(parentId);
+                treeRef.current?.focus();
+              }}
               onSelect={() => {
                 select(row.id);
                 treeRef.current?.focus();
@@ -423,6 +500,10 @@ function newEnv() {
 }
 
 function deleteLine(summary: NonNullable<ReturnType<typeof deleteSummary>>) {
+  if (summary.kind === 'track') {
+    const count = summary.objects ?? 0;
+    return `Delete Track ${summary.name} and its ${count} ${count === 1 ? 'object' : 'objects'}?`;
+  }
   const placed =
     summary.children === 0
       ? ''
@@ -445,6 +526,13 @@ function OutlinerRowView({
   collapsed,
   renaming,
   writable,
+  draggable,
+  dropActive,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  onSelectParent,
   onSelect,
   onToggle,
   onStartRename,
@@ -456,6 +544,14 @@ function OutlinerRowView({
   collapsed: boolean;
   renaming: boolean;
   writable: boolean;
+  draggable: boolean;
+  dropActive: boolean;
+  onDragStart(): void;
+  /** True when the row accepts the drag (the drop is then allowed). */
+  onDragOver(): boolean;
+  onDrop(): void;
+  onDragEnd(): void;
+  onSelectParent(parentId: string): void;
   onSelect(): void;
   onToggle(): void;
   onStartRename(): void;
@@ -478,7 +574,9 @@ function OutlinerRowView({
   };
   return (
     <div
-      className={`${classes.row} ${row.muted ? classes.rowMuted : ''}`}
+      className={`${classes.row} ${row.muted ? classes.rowMuted : ''} ${
+        dropActive ? classes.rowDrop : ''
+      }`}
       role="treeitem"
       aria-level={row.depth + 1}
       aria-selected={selected}
@@ -487,6 +585,21 @@ function OutlinerRowView({
       tabIndex={-1}
       onClick={onSelect}
       onDoubleClick={onStartRename}
+      draggable={draggable}
+      onDragStart={(event) => {
+        event.dataTransfer?.setData('text/plain', row.id);
+        onDragStart();
+      }}
+      onDragOver={(event) => {
+        if (onDragOver()) {
+          event.preventDefault();
+        }
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        onDrop();
+      }}
+      onDragEnd={onDragEnd}
     >
       <button
         type="button"
@@ -508,9 +621,19 @@ function OutlinerRowView({
       >
         {row.hasChildren ? (collapsed ? '▸' : '▾') : ''}
       </button>
-      <span className={classes.glyph} aria-hidden>
-        {row.kind === 'collection' ? '▤' : '◇'}
-      </span>
+      {row.kind === 'track' ? (
+        <span className={classes.glyphIcon} style={TRACK_COLOR} aria-hidden>
+          <TrackIcon />
+        </span>
+      ) : (
+        <span
+          className={classes.glyphIcon}
+          style={tabColor(row.kind === 'collection' ? 'collection' : 'object')}
+          aria-hidden
+        >
+          <TabIcon tab={row.kind === 'collection' ? 'collection' : 'object'} />
+        </span>
+      )}
       {renaming ? (
         <input
           className={classes.rowInput}
@@ -534,6 +657,32 @@ function OutlinerRowView({
       ) : (
         <span className={classes.rowName}>{row.name}</span>
       )}
+      {row.childOf && (
+        <button
+          type="button"
+          className={classes.toggle}
+          tabIndex={-1}
+          aria-label={`Child of ${row.childOf.name}: select the parent`}
+          title={`Child of ${row.childOf.name}. Click to select the parent.`}
+          data-info={`Child of ${row.childOf.name}. Click to select the parent.`}
+          draggable={false}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelectParent(row.childOf!.id);
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
+            <path
+              d="M2 1v6h7M6 4l3 3-3 3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      )}
       <span className={classes.rowData}>{row.data}</span>
       <button
         type="button"
@@ -541,6 +690,7 @@ function OutlinerRowView({
         tabIndex={-1}
         disabled={!writable}
         aria-pressed={row.mute}
+        data-inherited={row.inheritedMute && !row.mute ? 'true' : undefined}
         aria-label={`Mute ${row.name}`}
         data-info={
           row.inheritedMute
@@ -554,7 +704,7 @@ function OutlinerRowView({
           onMute();
         }}
       >
-        {row.muted ? '◌' : '◉'}
+        M
       </button>
     </div>
   );
@@ -672,9 +822,17 @@ function PropertiesBody() {
 
   const object = objectDataOf(selected);
   const collection = collectionDataOf(selected);
+  const track = trackDataOf(selected);
   const isObject = object !== null;
-  const hasSelection = !!selected && !!selectedRow && (object !== null || collection !== null);
-  const kind: PropertiesKind = !hasSelection ? 'none' : isObject ? 'object' : 'collection';
+  const hasSelection =
+    !!selected && !!selectedRow && (object !== null || collection !== null || track !== null);
+  const kind: PropertiesKind = !hasSelection
+    ? 'none'
+    : isObject
+      ? 'object'
+      : track
+        ? 'track'
+        : 'collection';
   const { session, updateSession } = editor;
   const tab = resolvePropertiesTab(session, kind);
 
@@ -683,7 +841,7 @@ function PropertiesBody() {
       propertiesTab: next,
       ...(kind === 'object'
         ? { lastObjectTab: next }
-        : kind === 'collection'
+        : kind === 'collection' || kind === 'track'
           ? { lastCollectionTab: next }
           : {}),
     });
@@ -701,7 +859,8 @@ function PropertiesBody() {
 
   const id = selected?.id ?? '';
   const deskReason = writable ? null : NO_DESK;
-  const objectOnly = (what: string) => (isObject ? null : `A collection has no ${what}.`);
+  const objectOnly = (what: string) =>
+    isObject ? null : `${track ? 'A track' : 'A collection'} has no ${what}.`;
   const lock = (what: string) => deskReason ?? objectOnly(what);
 
   const primary = object?.primaryDataRef
@@ -721,7 +880,7 @@ function PropertiesBody() {
   ];
 
   /** Scene, then the rows the selection is listed under, then the selection itself. */
-  const pathSteps: { tab: PropertiesTab; name: string }[] = [];
+  const pathSteps: { tab: PathKind; name: string }[] = [];
   if (scene) {
     pathSteps.push({ tab: 'scene', name: scene.name });
   }
@@ -765,12 +924,19 @@ function PropertiesBody() {
     return (
       <>
         <PathLine steps={pathSteps} />
-        <IdRow tab="collection">{renameField(selected, deskReason)}</IdRow>
+        <IdRow tab={track ? 'track' : 'collection'}>{renameField(selected, deskReason)}</IdRow>
+        {track && (
+          <Section heading="Track">
+            <Field label="Objects">
+              <Text className={classes.grow}>{objectsOnTrack(blocks, id).length}</Text>
+            </Field>
+          </Section>
+        )}
         <Section heading="Playback">
           <Field label="Mute">
             <Switch
               aria-label="Mute"
-              checked={collection?.mute ?? false}
+              checked={collection?.mute ?? track?.mute ?? false}
               disabled={deskReason !== null}
               onChange={(event) => apply((list) => setMute(list, id, event.currentTarget.checked))}
             />
@@ -815,6 +981,15 @@ function PropertiesBody() {
         <PathLine steps={pathSteps} />
         <IdRow tab="object">{renameField(selected, deskReason)}</IdRow>
         <Section heading="Placement">
+          <Field label="Track">
+            <Text
+              className={classes.grow}
+              data-info="The track this object sits on. Drag it onto another track to move it."
+            >
+              {(object?.trackRef && blocks.find((b) => b.id === object.trackRef?.id)?.name) ||
+                'None'}
+            </Text>
+          </Field>
           <Field label="Parent">
             <Select
               className={classes.grow}

@@ -18,6 +18,7 @@ import {
   objectBlock,
   sceneBlock,
   trackBlock,
+  withLegacyLane,
 } from './sceneTestHelpers';
 import { collectionDataOf, objectDataOf, trackDataOf } from './sceneTypes';
 import {
@@ -63,7 +64,7 @@ function scene(): StoredDataBlock[] {
     trackBlock('lh'),
     trackBlock('violin'),
     onTrack('theme', 'rh'),
-    onTrack('bass', 'lh', { start: 1, lane: 2 }),
+    withLegacyLane(onTrack('bass', 'lh', { start: 1 }), 2),
     collectionBlock('piano', ['rh', 'lh']),
     collectionBlock('strings', ['violin']),
     collectionBlock('root', ['piano', 'strings']),
@@ -135,13 +136,12 @@ describe('scenario 1: a second object on the same Track', () => {
 });
 
 describe('scenarios 2 and 3: moving an object between Tracks and collections', () => {
-  it('scenario 2: bass moves to RH, start kept, lane gone, same notes', () => {
+  it('scenario 2: bass moves to RH, start kept, same notes', () => {
     const blocks = scene();
-    expect(objectDataOf(get(blocks, 'bass'))?.lane).toBe(2);
+    expect((objectDataOf(get(blocks, 'bass')) as { lane?: number }).lane).toBe(2);
     const moved = ok(moveObjectToTrack(blocks, 'bass', 'rh')).blocks;
     const data = objectDataOf(get(moved, 'bass'))!;
     expect(data.trackRef).toEqual({ id: 'rh' });
-    expect('lane' in data).toBe(false);
     expect(
       compareRational(data.timeSpan.start, objectDataOf(get(blocks, 'bass'))!.timeSpan.start)
     ).toBe(0);

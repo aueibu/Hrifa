@@ -6,7 +6,13 @@ import { seedDesk } from '../deskTestUtils';
 import { historyChangeCount, resetHistory, undo } from '../history';
 import { PIXELS_PER_QUARTER } from '../scene/arrangerGeometry';
 import { writeSceneSession } from '../scene/sceneSession';
-import { claveBlock, collectionBlock, objectBlock, sceneBlock } from '../scene/sceneTestHelpers';
+import {
+  claveBlock,
+  collectionBlock,
+  objectBlock,
+  sceneBlock,
+  trackBlock,
+} from '../scene/sceneTestHelpers';
 import { ArrangerPanel } from './ArrangerPanel';
 import { mockEngine, mockEngineState } from './sceneEngineMock';
 import { OutlinerPanel, PropertiesPanel } from './ScenePanels';
@@ -20,11 +26,24 @@ async function renderArranger() {
   await seedDesk([
     claveBlock(),
     sceneBlock('scene-1', 'root'),
-    collectionBlock('root', ['lead', 'bass', 'tail', 'echo']),
-    objectBlock('lead', { start: 4, duration: 4, primaryDataRef: { id: 'clave' } }, 'Lead'),
-    objectBlock('bass', { parentRef: { id: 'lead' }, start: 2, duration: 2 }, 'Bass'),
-    objectBlock('tail', { parentRef: { id: 'lead' }, start: 3, duration: 3 }, 'Tail'),
-    objectBlock('echo', { start: 0, duration: 4, mute: true }, 'Echo'),
+    collectionBlock('root', ['t1']),
+    trackBlock('t1', false, 'Track 1'),
+    objectBlock(
+      'lead',
+      { start: 4, duration: 4, primaryDataRef: { id: 'clave' }, trackRef: { id: 't1' } },
+      'Lead'
+    ),
+    objectBlock(
+      'bass',
+      { parentRef: { id: 'lead' }, start: 2, duration: 2, trackRef: { id: 't1' } },
+      'Bass'
+    ),
+    objectBlock(
+      'tail',
+      { parentRef: { id: 'lead' }, start: 3, duration: 3, trackRef: { id: 't1' } },
+      'Tail'
+    ),
+    objectBlock('echo', { start: 0, duration: 4, mute: true, trackRef: { id: 't1' } }, 'Echo'),
   ]);
   writeSceneSession({ activeSceneId: 'scene-1', selectedId: null });
   render(
@@ -49,10 +68,11 @@ beforeEach(() => {
 });
 
 describe('the Arranger (O2b)', () => {
-  it('draws ONE lane for the collection with a block per object, a child later by its relative start', async () => {
+  it('draws ONE row for the Track with a block per object, a child later by its relative start', async () => {
     await renderArranger();
-    // One lane per collection (L1a): the root collection's name, not one row per object.
-    expect(screen.getAllByRole('rowheader').map((cell) => cell.textContent)).toEqual(['root']);
+    // One row per Track (TK2): the Track's name, not one row per object; the root Collection has no band.
+    expect(within(screen.getAllByRole('rowheader')[0]).getByText('Track 1')).toBeInTheDocument();
+    expect(screen.getAllByRole('rowheader')).toHaveLength(1);
     expect(screen.getAllByRole('row')).toHaveLength(1);
     expect(screen.getAllByRole('row')[0]).toHaveAttribute('aria-level', '1');
     expect(screen.getAllByRole('button', { name: /^Block / })).toHaveLength(4);
@@ -360,12 +380,24 @@ describe('edge strips and row height (O2d)', () => {
     await seedDesk([
       claveBlock(),
       sceneBlock('scene-1', 'root'),
-      collectionBlock('root', ['loop', 'second']),
-      collectionBlock('second', ['shot']),
-      objectBlock('loop', { start: 4, duration: 8, primaryDataRef: { id: 'clave' } }, 'Loop'),
+      collectionBlock('root', ['t1', 'second']),
+      collectionBlock('second', ['t2']),
+      trackBlock('t1'),
+      trackBlock('t2'),
+      objectBlock(
+        'loop',
+        { start: 4, duration: 8, primaryDataRef: { id: 'clave' }, trackRef: { id: 't1' } },
+        'Loop'
+      ),
       objectBlock(
         'shot',
-        { start: 20, duration: 8, mapping: 'one-shot', primaryDataRef: { id: 'clave' } },
+        {
+          start: 20,
+          duration: 8,
+          mapping: 'one-shot',
+          primaryDataRef: { id: 'clave' },
+          trackRef: { id: 't2' },
+        },
         'Shot'
       ),
     ]);
@@ -408,9 +440,11 @@ describe('edge strips and row height (O2d)', () => {
     await waitFor(() => expect(leftOf('Loop')).toBe(4 * PIXELS_PER_QUARTER));
   });
 
-  it('the default lane is 2.5rem tall; dragging the bottom grip keeps a per-lane height in the session, not in history', async () => {
+  it('the default Track row is 2.5rem tall; dragging the bottom grip keeps a per-Track height in the session, not in history', async () => {
     await renderTwo();
-    const rows = screen.getAllByRole('row');
+    // The rows are: Track t1, the band of the Collection "second" (1.5rem), Track t2.
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-lane]'));
+    expect(rows).toHaveLength(2);
     expect(rows[0].style.height).toBe('2.5rem');
     const before = historyChangeCount();
     const grip = screen.getAllByTestId('arranger-row-grip')[0];
@@ -422,7 +456,7 @@ describe('edge strips and row height (O2d)', () => {
     expect(rows[1].style.height).toBe('2.5rem');
     expect(historyChangeCount()).toBe(before);
     expect(JSON.parse(localStorage.getItem('hrifa.scene-session.v1') ?? '{}').rowHeights).toEqual({
-      root: 4.5,
+      t1: 4.5,
     });
   });
 
@@ -441,13 +475,22 @@ describe('edge strips and row height (O2d)', () => {
 });
 
 describe('two objects of one collection (W-77)', () => {
-  it('a drop onto its neighbor lands in the nearest free slot instead of overlapping', async () => {
+  it('a drop onto its neighbor on one Track overlaps it where it lands, and the Track draws a second sub-row', async () => {
     await seedDesk([
       claveBlock(),
       sceneBlock('scene-1', 'root'),
-      collectionBlock('root', ['a', 'b']),
-      objectBlock('a', { primaryDataRef: { id: 'clave' }, start: 4, duration: 4 }, 'A'),
-      objectBlock('b', { primaryDataRef: { id: 'clave' }, start: 12, duration: 8 }, 'B'),
+      collectionBlock('root', ['t1']),
+      trackBlock('t1'),
+      objectBlock(
+        'a',
+        { primaryDataRef: { id: 'clave' }, start: 4, duration: 4, trackRef: { id: 't1' } },
+        'A'
+      ),
+      objectBlock(
+        'b',
+        { primaryDataRef: { id: 'clave' }, start: 12, duration: 8, trackRef: { id: 't1' } },
+        'B'
+      ),
     ]);
     writeSceneSession({ activeSceneId: 'scene-1', selectedId: null });
     render(
@@ -461,15 +504,16 @@ describe('two objects of one collection (W-77)', () => {
     );
     const first = await screen.findByRole('button', { name: 'Block A' });
     const second = screen.getByRole('button', { name: 'Block B' });
-    // Both objects share the root collection's one lane.
+    // Both objects share the Track's one row.
     expect(screen.getAllByRole('row')).toHaveLength(1);
     expect(Number.parseFloat(first.style.left)).toBe(4 * PIXELS_PER_QUARTER);
     expect(Number.parseFloat(second.style.left)).toBe(12 * PIXELS_PER_QUARTER);
-    // Dropping B at 7 would overlap A (4 to 8): it lands at 8, the nearest free start.
+    // Dropping B at 7 overlaps A (4 to 8): overlap is allowed, so it lands at 7 and A stays.
     fireEvent.pointerDown(second, { button: 0, clientX: 1000, pointerId: 1 });
     fireEvent.pointerMove(second, { clientX: 1000 - 5 * PIXELS_PER_QUARTER, pointerId: 1 });
     fireEvent.pointerUp(second, { clientX: 1000 - 5 * PIXELS_PER_QUARTER, pointerId: 1 });
-    await waitFor(() => expect(Number.parseFloat(second.style.left)).toBe(8 * PIXELS_PER_QUARTER));
+    await waitFor(() => expect(Number.parseFloat(second.style.left)).toBe(7 * PIXELS_PER_QUARTER));
     expect(Number.parseFloat(first.style.left)).toBe(4 * PIXELS_PER_QUARTER);
+    expect(document.querySelector('[data-lane="t1"]')).toHaveAttribute('data-sublanes', '2');
   });
 });

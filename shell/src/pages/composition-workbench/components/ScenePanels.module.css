@@ -83,6 +83,10 @@
   background: var(--panel-header);
 }
 
+.rowDrop {
+  box-shadow: inset 0 0 0 1px var(--text-subtle);
+}
+
 .rowMuted .rowName {
   color: var(--text-muted);
 }
@@ -111,6 +115,13 @@
   color: var(--text-muted);
   flex: 0 0 auto;
   font-size: var(--mantine-font-size-xs);
+}
+
+/* The type icon (Collection yellow, Object orange): the same icons and colors as the Properties rail. */
+.glyphIcon {
+  color: var(--tab);
+  display: flex;
+  flex: 0 0 auto;
 }
 
 .rowName {
@@ -142,8 +153,36 @@
   white-space: nowrap;
 }
 
-.mute[aria-pressed='true'] {
+/* Mute is a switch (it changes the sound): a small square "M" that lights in the accent when on, like a
+   DAW. Muted only by something around it (data-inherited): the accent outline without the fill. */
+.mute {
+  align-items: center;
+  background: var(--panel-slot);
+  border: 1px solid var(--grid);
+  border-radius: var(--radius-hairline);
+  display: flex;
+  flex: 0 0 1rem;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  height: 1rem;
+  justify-content: center;
+  line-height: 1;
+  width: 1rem;
+}
+
+.mute[data-inherited='true'] {
+  border-color: var(--accent);
   color: var(--accent);
+}
+
+.mute[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--mantine-primary-color-contrast);
+}
+
+.mute[aria-pressed='true']:hover:not(:disabled) {
+  color: var(--mantine-primary-color-contrast);
 }
 
 .field {

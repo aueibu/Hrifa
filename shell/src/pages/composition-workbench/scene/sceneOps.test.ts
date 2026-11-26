@@ -56,34 +56,42 @@ describe('scene ops', () => {
     expect(byId(second.blocks, second.created[0])?.name).toBe('Scene.001');
   });
 
-  it('adds Empty objects with unique names to the root, or to the selected collection', () => {
+  it('adds Empty objects with unique names on a Track of the root, or of the selected collection', () => {
     const { e, blocks, sceneId, rootId } = start();
     const a = ok(addEmpty(blocks, e, sceneId, null));
     const b = ok(addEmpty(a.blocks, e, sceneId, null));
     expect(byId(b.blocks, a.created[0])?.name).toBe('Empty');
     expect(byId(b.blocks, b.created[0])?.name).toBe('Empty.001');
+    // The first add makes the root's Track (same undo step); the second reuses it. Objects are held by it.
+    const trackId = a.created[1];
+    expect(byId(b.blocks, trackId)?.typeId).toBe('track');
+    expect(b.created).toHaveLength(1);
     expect(collectionDataOf(byId(b.blocks, rootId))?.memberRefs.map((m) => m.id)).toEqual([
-      a.created[0],
-      b.created[0],
+      trackId,
     ]);
+    expect(objectDataOf(byId(b.blocks, b.created[0]))?.trackRef).toEqual({ id: trackId });
     const group = ok(addCollection(b.blocks, e, sceneId, null));
     const inside = ok(addEmpty(group.blocks, e, sceneId, group.created[0]));
     expect(
       collectionDataOf(byId(inside.blocks, group.created[0]))?.memberRefs.map((m) => m.id)
-    ).toEqual(inside.created);
+    ).toEqual([inside.created[1]]);
+    expect(objectDataOf(byId(inside.blocks, inside.created[0]))?.trackRef).toEqual({
+      id: inside.created[1],
+    });
     const object = objectDataOf(byId(inside.blocks, inside.created[0]));
     expect(object?.mapping).toBe('loop');
     expect(object?.primaryDataRef).toBeNull();
   });
 
-  it('adds a child under the selected object at relative start 0, in the same collection', () => {
+  it('adds a child under the selected object at relative start 0, on the same Track', () => {
     const { e, blocks, sceneId, rootId } = start();
     const parent = ok(addEmpty(blocks, e, sceneId, null));
     const child = ok(addChildEmpty(parent.blocks, e, sceneId, parent.created[0]));
     const data = objectDataOf(byId(child.blocks, child.created[0]));
     expect(data?.parentRef?.id).toBe(parent.created[0]);
     expect(rationalToNumber(data?.timeSpan.start ?? rational(9))).toBe(0);
-    expect(collectionDataOf(byId(child.blocks, rootId))?.memberRefs).toHaveLength(2);
+    expect(data?.trackRef).toEqual(objectDataOf(byId(child.blocks, parent.created[0]))?.trackRef);
+    expect(collectionDataOf(byId(child.blocks, rootId))?.memberRefs).toHaveLength(1);
     expect(addChildEmpty(child.blocks, e, sceneId, rootId).ok).toBe(false);
   });
 
@@ -126,18 +134,21 @@ describe('scene ops', () => {
     expect(objectDataOf(byId(cleared, b.created[0]))?.parentRef).toBeNull();
   });
 
-  it('moves an object between collections (membership only) and refuses a collection into itself', () => {
+  it('moves a collection into another (membership only), refuses itself and an object', () => {
     const { e, blocks, sceneId, rootId } = start();
     const group = ok(addCollection(blocks, e, sceneId, null));
-    const made = ok(addEmpty(group.blocks, e, sceneId, null));
-    const moved = ok(moveToCollection(made.blocks, made.created[0], group.created[0])).blocks;
+    const other = ok(addCollection(group.blocks, e, sceneId, null));
+    const made = ok(addEmpty(other.blocks, e, sceneId, null));
+    const moved = ok(moveToCollection(made.blocks, other.created[0], group.created[0])).blocks;
     expect(collectionDataOf(byId(moved, rootId))?.memberRefs.map((m) => m.id)).toEqual([
       group.created[0],
+      made.created[1],
     ]);
     expect(collectionDataOf(byId(moved, group.created[0]))?.memberRefs.map((m) => m.id)).toEqual([
-      made.created[0],
+      other.created[0],
     ]);
     expect(moveToCollection(moved, group.created[0], group.created[0]).ok).toBe(false);
+    expect(moveToCollection(moved, made.created[0], group.created[0]).ok).toBe(false);
   });
 });
 
@@ -152,9 +163,11 @@ describe('deleting through the existing path', () => {
     expect(kept?.parentRef).toBeNull();
     expect(rationalToNumber(kept?.timeSpan.start ?? rational(9))).toBe(4);
     expect(byId(next.dataBlocks, parent.created[0])).toBeUndefined();
-    expect(collectionDataOf(byId(next.dataBlocks, rootId))?.memberRefs.map((m) => m.id)).toEqual(
-      child.created
-    );
+    // The child is held by the Track, not listed by the collection: it stays on it.
+    expect(collectionDataOf(byId(next.dataBlocks, rootId))?.memberRefs.map((m) => m.id)).toEqual([
+      parent.created[1],
+    ]);
+    expect(kept?.trackRef).toEqual({ id: parent.created[1] });
     expect(deleteSummary(child.blocks, parent.created[0])).toMatchObject({
       kind: 'object',
       members: 0,
@@ -190,10 +203,12 @@ describe('deleting through the existing path', () => {
     expect(byId(next.dataBlocks, group.created[0])).toBeUndefined();
     expect(byId(next.dataBlocks, inside.created[0])).toBeDefined();
     expect(collectionDataOf(byId(next.dataBlocks, rootId))?.memberRefs.map((m) => m.id)).toEqual([
-      before.created[0],
-      inside.created[0],
-      after.created[0],
+      before.created[1],
+      inside.created[1],
     ]);
+    expect(objectDataOf(byId(next.dataBlocks, after.created[0]))?.trackRef).toEqual({
+      id: before.created[1],
+    });
   });
 
   it('Delete on a nested collection moves its items up one level, without duplicates', () => {
@@ -203,7 +218,7 @@ describe('deleting through the existing path', () => {
     const leaf = ok(addEmpty(inner.blocks, e, sceneId, inner.created[0]));
     const next = deleteSelected({ dataBlocks: leaf.blocks, instances: [] }, inner.created[0]);
     const outerMembers = collectionDataOf(byId(next.dataBlocks, outer.created[0]))?.memberRefs;
-    expect(outerMembers?.map((m) => m.id)).toEqual(leaf.created);
+    expect(outerMembers?.map((m) => m.id)).toEqual([leaf.created[1]]);
     const rootMembers = collectionDataOf(byId(next.dataBlocks, rootId))?.memberRefs;
     expect(rootMembers?.map((m) => m.id)).toEqual(outer.created);
   });

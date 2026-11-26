@@ -3,6 +3,7 @@ import type { StoredDataBlock } from './dataBlocks/registry';
 // Registers the built-in data-block types before any stored block is checked against them.
 import './dataBlocks/types';
 import { migrateStoredBlocks } from './scene/sceneMigration';
+import { migrateTracks } from './scene/trackMigration';
 
 /**
  * The desk's storage: IndexedDB, by a small hand-written wrapper. Each data-block is its own record (so a
@@ -300,7 +301,7 @@ export function loadDesk(): Promise<LoadedDesk> {
       const kept = records.filter((record) => !isLegacyDataBlock(record));
       // Objects stored with strips are unwrapped back to one placement each before they are validated (W-77). `stored`
       // keeps the records as they were saved, so the next write replaces them with the migrated ones.
-      const current = migrateStoredBlocks(kept);
+      const current = migrateTracks(migrateStoredBlocks(kept));
       if (acceptsDataBlocks(current)) {
         const warnings = [
           dropped.length > 0
@@ -420,8 +421,10 @@ export function getProject(id: string): Promise<ProjectRecord | null> {
       }
       // A desk saved before the registry rebuild (earlier envelope) opens empty: nothing migrates (W-60).
       const desk = Array.isArray(desks?.desk)
-        ? migrateStoredBlocks(
-            (desks.desk as unknown[]).filter((entry) => !isLegacyDataBlock(entry))
+        ? migrateTracks(
+            migrateStoredBlocks(
+              (desks.desk as unknown[]).filter((entry) => !isLegacyDataBlock(entry))
+            )
           )
         : undefined;
       if (!desk || !acceptsDataBlocks(desk)) {

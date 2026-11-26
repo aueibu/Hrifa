@@ -316,6 +316,7 @@ describe('a desk saved with strips (W-75) opens as one placement per object (W-7
       'verse:b',
       'kid',
       'root',
+      'root:track',
     ]);
     const data = (id: string) =>
       (
@@ -333,11 +334,13 @@ describe('a desk saved with strips (W-75) opens as one placement per object (W-7
       mute: true,
     });
     expect(data('kid').parentRef).toEqual({ id: 'verse:b' });
+    // The old collection gets one Track (TK1a migration); the objects (the second strip too) sit on it.
     expect((data('root').memberRefs as { id: string }[]).map((ref) => ref.id)).toEqual([
-      'verse',
-      'verse:b',
-      'kid',
+      'root:track',
     ]);
+    for (const id of ['verse', 'verse:b', 'kid']) {
+      expect(data(id).trackRef).toEqual({ id: 'root:track' });
+    }
   });
 });
 

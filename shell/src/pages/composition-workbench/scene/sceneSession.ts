@@ -12,6 +12,8 @@ export interface SceneSession {
   selectedId: string | null;
   /** The Arranger's row heights in rem, by row id (O2d): the viewer's, never project data or history. */
   rowHeights: Record<string, number>;
+  /** Arranger bands folded shut, by Collection id (TK2): the viewer's, never project data or history. */
+  collapsedBands: string[];
   /** Properties "Used by" table open (L5): the viewer's, default folded. */
   usersOpen: boolean;
   /** The open Properties tab (U6): the viewer's. A tab that does not apply to the selection is not shown (see `resolvePropertiesTab`). */
@@ -23,14 +25,14 @@ export interface SceneSession {
 
 export const PROPERTIES_TABS = ['scene', 'collection', 'object', 'modifiers', 'data'] as const;
 export type PropertiesTab = (typeof PROPERTIES_TABS)[number];
-export type PropertiesKind = 'object' | 'collection' | 'none';
+export type PropertiesKind = 'object' | 'collection' | 'track' | 'none';
 
 /** The tabs that apply to a selection: Scene always; the rest follow what is selected. */
 export function liveTabs(kind: PropertiesKind): readonly PropertiesTab[] {
   if (kind === 'object') {
     return ['scene', 'object', 'modifiers', 'data'];
   }
-  return kind === 'collection' ? ['scene', 'collection'] : ['scene'];
+  return kind === 'collection' || kind === 'track' ? ['scene', 'collection'] : ['scene'];
 }
 
 /**
@@ -46,7 +48,7 @@ export function resolvePropertiesTab(session: SceneSession, kind: PropertiesKind
   if (kind !== 'none' && live.includes(last)) {
     return last;
   }
-  return kind === 'none' ? 'scene' : kind;
+  return kind === 'none' ? 'scene' : kind === 'track' ? 'collection' : kind;
 }
 
 const tabOr = (value: unknown, fallback: PropertiesTab): PropertiesTab =>
@@ -60,6 +62,7 @@ const EMPTY: SceneSession = {
   activeSceneId: null,
   selectedId: null,
   rowHeights: {},
+  collapsedBands: [],
   usersOpen: false,
   propertiesTab: 'object',
   lastObjectTab: 'object',
@@ -110,6 +113,9 @@ export function readSceneSession(): SceneSession {
       activeSceneId: idOrNull(parsed.activeSceneId),
       selectedId: idOrNull(parsed.selectedId),
       rowHeights: heightsOrEmpty(parsed.rowHeights),
+      collapsedBands: Array.isArray(parsed.collapsedBands)
+        ? parsed.collapsedBands.filter((id): id is string => typeof id === 'string')
+        : [],
       usersOpen: parsed.usersOpen === true,
       propertiesTab: tabOr(parsed.propertiesTab, 'object'),
       lastObjectTab: tabOr(parsed.lastObjectTab, 'object'),

@@ -2,20 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { rationalFromNumber, rationalToNumber } from '../musicalTime';
 import { applyDrop, dropLanding, laneAtY } from './arrangerDrop';
 import { resizeSharedEdge, type SceneOpResult } from './sceneOps';
-import { collectionBlock, objectBlock, sceneBlock } from './sceneTestHelpers';
-import { collectionDataOf, objectDataOf } from './sceneTypes';
+import { collectionBlock, objectBlock, sceneBlock, trackBlock } from './sceneTestHelpers';
+import { objectDataOf } from './sceneTypes';
 
 const q = rationalFromNumber;
+const on = (track: string) => ({ trackRef: { id: track } });
 
 function blocks() {
   return [
     sceneBlock('scene', 'root'),
-    collectionBlock('root', ['a', 'b', 'c'], {}, 'Main'),
-    collectionBlock('other', ['x'], {}, 'Other'),
-    objectBlock('a', { start: 4, duration: 4 }, 'A'),
-    objectBlock('b', { start: 8, duration: 8 }, 'B'),
-    objectBlock('c', { start: 20, duration: 4 }, 'C'),
-    objectBlock('x', { start: 10, duration: 4 }, 'X'),
+    collectionBlock('root', ['main', 'other-c']),
+    collectionBlock('main', ['t1'], {}, 'Main'),
+    collectionBlock('other-c', ['t2'], {}, 'Other'),
+    trackBlock('t1'),
+    trackBlock('t2'),
+    objectBlock('a', { ...on('t1'), start: 4, duration: 4 }, 'A'),
+    objectBlock('b', { ...on('t1'), start: 8, duration: 8 }, 'B'),
+    objectBlock('c', { ...on('t1'), start: 20, duration: 4 }, 'C'),
+    objectBlock('x', { ...on('t2'), start: 10, duration: 4 }, 'X'),
   ];
 }
 
@@ -26,53 +30,39 @@ function ok(result: SceneOpResult) {
   return result;
 }
 
-const startOf = (result: SceneOpResult, id: string) => {
-  const list = ok(result).blocks;
-  return rationalToNumber(objectDataOf(list.find((block) => block.id === id))!.timeSpan.start);
-};
+const dataOf = (result: SceneOpResult, id: string) =>
+  objectDataOf(ok(result).blocks.find((block) => block.id === id))!;
+const startOf = (result: SceneOpResult, id: string) =>
+  rationalToNumber(dataOf(result, id).timeSpan.start);
 
-describe('a body drag released (W-77)', () => {
-  it('lands exactly where dropped when that is free: 4 to 8 dragged to start 16 gives 16 to 20', () => {
-    expect(startOf(applyDrop(blocks(), 'a', 'root', 'root', q(16)), 'a')).toBe(16);
+describe('a body drag released (W-82)', () => {
+  it('lands exactly where dropped, also over another block on the Track (overlap is allowed)', () => {
+    expect(startOf(applyDrop(blocks(), 'a', 't1', 't1', q(16)), 'a')).toBe(16);
+    expect(startOf(applyDrop(blocks(), 'a', 't1', 't1', q(17)), 'a')).toBe(17);
   });
 
-  it('dropped at 17 (over the object at 20 to 24) it also lands at 16 to 20, the nearest free slot', () => {
-    expect(startOf(applyDrop(blocks(), 'a', 'root', 'root', q(17)), 'a')).toBe(16);
+  it('never lands before 0', () => {
+    expect(startOf(applyDrop(blocks(), 'a', 't1', 't1', q(-3)), 'a')).toBe(0);
   });
 
-  it('ties go to the earlier slot', () => {
-    // P is 6 to 10; M (length 2) dropped at 7 is 3 from 4 to 6 and 3 from 10 to 12: the earlier wins.
-    const list = [
-      sceneBlock('scene', 'root'),
-      collectionBlock('root', ['p', 'm']),
-      objectBlock('p', { start: 6, duration: 4 }),
-      objectBlock('m', { start: 0, duration: 2 }),
-    ];
-    expect(startOf(applyDrop(list, 'm', 'root', 'root', q(7)), 'm')).toBe(4);
+  it('on another Track it moves there, in one result, and lands where dropped', () => {
+    const result = applyDrop(blocks(), 'a', 't1', 't2', q(11));
+    expect(dataOf(result, 'a').trackRef).toEqual({ id: 't2' });
+    expect(startOf(result, 'a')).toBe(11);
   });
 
-  it('dropped on another lane it moves to that collection, at the dropped start when free there', () => {
-    const result = ok(applyDrop(blocks(), 'a', 'root', 'other', q(20)));
-    expect(
-      collectionDataOf(result.blocks.find((block) => block.id === 'other'))?.memberRefs
-    ).toEqual([{ id: 'x' }, { id: 'a' }]);
-    expect(
-      collectionDataOf(result.blocks.find((block) => block.id === 'root'))?.memberRefs
-    ).toEqual([{ id: 'b' }, { id: 'c' }]);
-    expect(startOf(result, 'a')).toBe(20);
+  it('is refused when the target is not a Track', () => {
+    expect(applyDrop(blocks(), 'a', 't1', 'main', q(11)).ok).toBe(false);
   });
 
-  it('dropped on another lane over an object there it lands in the nearest free slot', () => {
-    // X is 10 to 14 in Other: A (length 4) dropped at 11 lands at 6 (4 before) or 14 (3 after): 14.
-    expect(startOf(applyDrop(blocks(), 'a', 'root', 'other', q(11)), 'a')).toBe(14);
+  it('dropLanding reports the world start, or null when refused', () => {
+    expect(rationalToNumber(dropLanding(blocks(), 'a', 't1', 't1', q(17))!)).toBe(17);
+    expect(dropLanding(blocks(), 'a', 't1', 'nowhere', q(17))).toBeNull();
   });
+});
 
-  it('reports where a drop would land for the faint outline', () => {
-    expect(rationalToNumber(dropLanding(blocks(), 'a', 'root', 'root', q(17))!)).toBe(16);
-    expect(dropLanding(blocks(), 'a', 'root', 'nowhere', q(17))).toBeNull();
-  });
-
-  it('finds the lane under a height', () => {
+describe('laneAtY', () => {
+  it('finds the lane whose band holds the height', () => {
     const rects = [
       { id: 'one', top: 0, bottom: 40 },
       { id: 'two', top: 40, bottom: 80 },
@@ -83,14 +73,29 @@ describe('a body drag released (W-77)', () => {
   });
 });
 
-describe('the shared edge of touching objects', () => {
-  it('moves the left end and the right start together, each keeping a beat', () => {
-    const list = blocks();
+describe('resizeSharedEdge on one Track', () => {
+  it('moves the edge two touching blocks share', () => {
+    const list = [
+      sceneBlock('scene', 'root'),
+      collectionBlock('root', ['t']),
+      trackBlock('t'),
+      objectBlock('a', { ...on('t'), start: 0, duration: 8 }),
+      objectBlock('b', { ...on('t'), start: 8, duration: 8 }),
+    ];
     const result = ok(resizeSharedEdge(list, 'a', 'b', q(10), q(1)));
-    const a = objectDataOf(result.blocks.find((block) => block.id === 'a'))!;
-    const b = objectDataOf(result.blocks.find((block) => block.id === 'b'))!;
-    expect(rationalToNumber(a.timeSpan.duration)).toBe(6);
-    expect(rationalToNumber(b.timeSpan.start)).toBe(10);
-    expect(rationalToNumber(b.timeSpan.duration)).toBe(6);
+    expect(rationalToNumber(dataOf(result, 'a').timeSpan.duration)).toBe(10);
+    expect(startOf(result, 'b')).toBe(10);
+  });
+
+  it('refuses blocks on different Tracks', () => {
+    const list = [
+      sceneBlock('scene', 'root'),
+      collectionBlock('root', ['t', 'u']),
+      trackBlock('t'),
+      trackBlock('u'),
+      objectBlock('a', { ...on('t'), start: 0, duration: 8 }),
+      objectBlock('b', { ...on('u'), start: 8, duration: 8 }),
+    ];
+    expect(resizeSharedEdge(list, 'a', 'b', q(10), q(1)).ok).toBe(false);
   });
 });

@@ -65,10 +65,10 @@ export interface TrackData {
 
 export interface ObjectData {
   /**
-   * The Track this object sits on, or null. Optional for now; TK1b makes it required (then `lane`
-   * goes away with its readers).
+   * The Track this object sits on (W-82): the ONE truth of membership; a Track's contents are computed from
+   * it. Null only for an object no Track holds, which the evaluator never reaches.
    */
-  trackRef?: Ref | null;
+  trackRef: Ref | null;
   /** The object this one is placed relative to, or null (a root-level object). */
   parentRef: Ref | null;
   /** `start` is relative to the parent's world start (or to the scene start with no parent). */
@@ -80,12 +80,6 @@ export interface ObjectData {
    * Stretch ignores it.
    */
   contentOffset: Rational;
-  /**
-   * The sub-lane the human put this object on inside its collection's Arranger lane (W-78): a
-   * non-negative whole number, compared only with its siblings' numbers. Absent = automatic (the first
-   * sub-lane that is free where it plays). It never changes playback, only where blocks may overlap.
-   */
-  lane?: number;
   /** Stored and validated; applied by `registerMapping` (U7b). */
   registerSpan: { lowMc: number; highMc: number };
   /** What the register span does to notes outside it: show (nothing), filter (drop) or fold (move in). */
@@ -285,9 +279,6 @@ function validateObjectData(data: unknown): string | null {
   if (!isRationalValue(data.contentOffset)) {
     return 'An object content offset is an exact quarter-note amount.';
   }
-  if (data.lane !== undefined && !(Number.isSafeInteger(data.lane) && (data.lane as number) >= 0)) {
-    return 'An object lane is a whole number from 0, or left automatic.';
-  }
   if (!isNullableRef(data.parentRef) || !isNullableRef(data.primaryDataRef)) {
     return 'An object parent and data are references or blank.';
   }
@@ -440,7 +431,7 @@ export function registerSceneTypes(): () => void {
         const object = data as ObjectData;
         return {
           ...object,
-          // `trackRef` stays absent when the stored object never had one (optional until TK2).
+          // `trackRef` stays absent when the stored object never had one (a stored object the migration never reached).
           ...(object.trackRef === undefined
             ? {}
             : { trackRef: object.trackRef === null ? null : fn('track', object.trackRef) }),
