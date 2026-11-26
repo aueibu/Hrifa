@@ -12,10 +12,11 @@
 //! --f2 test, where an overflow just means "do not prune" (sound).
 //!
 //! usage: typeflats-rs K [--threads T] [--frontier F] [--state DIR] [--out FILE.json] [--min-free-gb G]
-//!                       [--no-canon] [--no-f2] [--single] [--max-nodes N] [--min-dim D]
+//!                       [--no-canon] [--no-f2] [--single] [--max-nodes N] [--min-dim D] [--f4 M]
 //! --single: one thread, the exact traversal order of typeflats.py (node counts comparable with it).
 //! --min-dim D: find only types of dimension >= D (sound for those: flats below D are never entered). D = 2
 //! finds every rank >= 2 type; the rank-1 (single-line) types are then left to a 1-D enumeration by span.
+//! --f4 M (2026-11-26): also prune flats of dimension <= M by the fourth-power test (f4_isotropic; sound).
 
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -118,7 +119,17 @@ struct Search {
     /// smallest dimension of a type flat to look for: flats below it are never entered (sound for types of at
     /// least this dimension: every flat on a descent to a type contains it, so has at least its dimension)
     min_dim: usize,
+    /// --f4 M: apply the fourth-power test (f4_isotropic) to flats of dimension <= M (0 = off)
+    f4_max_m: usize,
+    /// --precut: decide BAD / F2 for each child from the parent before building it (same result, fewer nodes)
+    precut: bool,
 }
+
+/// flats cut by the fourth-power test (all threads)
+static F4CUT: AtomicU64 = AtomicU64::new(0);
+/// children rejected at the parent (--precut): BAD, F2
+static PRECUT_BAD: AtomicU64 = AtomicU64::new(0);
+static PRECUT_F2: AtomicU64 = AtomicU64::new(0);
 
 /// shared state of a parallel run
 struct Shared {
@@ -162,7 +173,7 @@ impl Search {
             }
         }
         let np = pairs.len();
-        Search { k, n: 2 * (k - 1), pairs, np, use_canon, f2, min_dim: min_dim.max(1) }
+        Search { k, n: 2 * (k - 1), pairs, np, use_canon, f2, min_dim: min_dim.max(1), f4_max_m: 0, precut: false }
     }
 
     fn point(&self, b: &Basis, side: usize, i: usize) -> Pt {
@@ -173,22 +184,52 @@ impl Search {
         b.iter().map(|r| r[x]).collect()
     }
 
+    /// BAD: two notes of P (or of Q) coincide, or Q = +-P + t as sets (points = the notes' linear forms)
+    fn points_bad(&self, p: &[Pt], q: &[Pt]) -> bool {
+        let k = self.k;
+        let ps: HashSet<&Pt> = p.iter().collect();
+        let qs: HashSet<&Pt> = q.iter().collect();
+        if ps.len() < k || qs.len() < k {
+            return true;
+        }
+        for s in [1i64, -1] {
+            for t in q {
+                let img: HashSet<Pt> = p.iter().map(|x| x.iter().zip(t).map(|(a, b)| s * a + b).collect()).collect();
+                if img.len() == k && img.iter().all(|x| qs.contains(x)) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    /// the notes of the child flat {l . x = 0} as linear forms in its own coordinates (scaled by l_c, c = first
+    /// nonzero of l): a -> l_c a - a_c l with coordinate c dropped. Two forms agree on the child exactly when
+    /// their images are equal, and the images are the child's coordinates up to a change of basis and the factor
+    /// l_c, so equalities, the BAD tests and the F2 inertia read the same as on the child's own basis.
+    /// None on overflow (then the caller takes the ordinary path).
+    fn child_points(p: &[Pt], l: &[i128]) -> Option<Vec<Pt>> {
+        let c = l.iter().position(|&x| x != 0)?;
+        let lc = l[c];
+        p.iter()
+            .map(|a| {
+                (0..a.len())
+                    .filter(|&r| r != c)
+                    .map(|r| {
+                        let v = lc.checked_mul(a[r] as i128)?.checked_sub((a[c] as i128).checked_mul(l[r])?)?;
+                        i64::try_from(v).ok()
+                    })
+                    .collect()
+            })
+            .collect()
+    }
+
     fn analyse(&self, b: &Basis) -> Option<Analysis> {
         let k = self.k;
         let p: Vec<Pt> = (0..k).map(|i| self.point(b, 0, i)).collect();
         let q: Vec<Pt> = (0..k).map(|i| self.point(b, 1, i)).collect();
-        let ps: HashSet<&Pt> = p.iter().collect();
-        let qs: HashSet<&Pt> = q.iter().collect();
-        if ps.len() < k || qs.len() < k {
+        if self.points_bad(&p, &q) {
             return None;
-        }
-        for s in [1i64, -1] {
-            for t in &q {
-                let img: HashSet<Pt> = p.iter().map(|x| x.iter().zip(t).map(|(a, b)| s * a + b).collect()).collect();
-                if img.len() == k && img.iter().all(|x| qs.contains(x)) {
-                    return None;
-                }
-            }
         }
         let diff = |pts: &Vec<Pt>, (i, j): (usize, usize)| -> Pt { pts[j].iter().zip(&pts[i]).map(|(b, a)| b - a).collect() };
         let mut idx: HashMap<Pt, Vec<(usize, i8)>> = HashMap::new();
@@ -225,6 +266,50 @@ impl Search {
                     }
                 }
             }
+        }
+        Self::max_isotropic(g)
+    }
+
+    /// largest dimension of a subspace of Sym^2(flat) on which Q4 vanishes identically, Q4(S) = sum over P-intervals
+    /// d of <d d^T, S>^2 minus the same over Q-intervals (coordinates s(d) = (d_r d_c, r <= c)). On a type flat T
+    /// the interval multisets agree, so F4(x) = sum P-int^4 - sum Q-int^4 vanishes on T; the t^2 coefficient of
+    /// F4(x + t y) then gives Q4-polarization(x x^T, y y^T) = 0 for x, y in T, so Q4 vanishes on Sym^2(T), of
+    /// dimension D(D+1)/2. A flat whose value is below min_dim(min_dim+1)/2 holds no type of dimension >= min_dim.
+    /// None on overflow (then: do not prune).
+    fn f4_isotropic(&self, p: &[Pt], q: &[Pt]) -> Option<usize> {
+        let m = p[0].len();
+        let rc: Vec<(usize, usize)> = (0..m).flat_map(|r| (r..m).map(move |c| (r, c))).collect();
+        let nn = rc.len();
+        let mut g = vec![vec![0i128; nn]; nn];
+        for (pts, sg) in [(p, 1i128), (q, -1i128)] {
+            for &(i, j) in &self.pairs {
+                let d: Vec<i128> = (0..m).map(|r| (pts[j][r] - pts[i][r]) as i128).collect();
+                let mut s = Vec::with_capacity(nn);
+                for &(r, c) in &rc {
+                    s.push(d[r].checked_mul(d[c])?);
+                }
+                for a in 0..nn {
+                    if s[a] == 0 {
+                        continue;
+                    }
+                    let sa = sg * s[a];
+                    for b in 0..nn {
+                        if s[b] != 0 {
+                            g[a][b] = g[a][b].checked_add(sa.checked_mul(s[b])?)?;
+                        }
+                    }
+                }
+            }
+        }
+        Self::max_isotropic(g)
+    }
+
+    /// nullity + min(positive, negative) of the inertia of a symmetric integer matrix (exact rationals in i128;
+    /// None on overflow): the largest dimension of a totally isotropic subspace of its quadratic form
+    fn max_isotropic(g: Vec<Vec<i128>>) -> Option<usize> {
+        let m = g.len();
+        if m == 0 {
+            return Some(0);
         }
         type R = (i128, i128); // num / den, den > 0, reduced
         fn norm(n: i128, d: i128) -> R {
@@ -466,9 +551,18 @@ impl Search {
                 st.bad += 1;
                 continue;
             };
-            if self.f2 && self.isotropic_dim(&an.p, &an.q).map_or(false, |d| d < self.min_dim) {
+            let piso = if self.f2 { self.isotropic_dim(&an.p, &an.q) } else { None };
+            if piso.map_or(false, |d| d < self.min_dim) {
                 st.bad += 1;
                 st.f2cut += 1;
+                continue;
+            }
+            let m = basis.len();
+            if m <= self.f4_max_m
+                && self.f4_isotropic(&an.p, &an.q).map_or(false, |d| d < self.min_dim * (self.min_dim + 1) / 2)
+            {
+                st.bad += 1;
+                F4CUT.fetch_add(1, Ordering::Relaxed);
                 continue;
             }
             if self.use_canon {
@@ -524,6 +618,31 @@ impl Search {
                 seen.clear(); // dedup is only a speed-up
             }
             for (u, v, s) in opts {
+                if self.precut {
+                    // decide BAD / F2 for the child from the parent's note forms, without building the child.
+                    // l = the edge form on the parent's parameters: (p_j - p_i) - s (q_b - q_a)
+                    let ((i, j), (a, b)) = (self.pairs[u], self.pairs[v]);
+                    let l: Vec<i128> = (0..m)
+                        .map(|r| {
+                            (an.p[j][r] as i128 - an.p[i][r] as i128) - s as i128 * (an.q[b][r] as i128 - an.q[a][r] as i128)
+                        })
+                        .collect();
+                    if let (Some(cp), Some(cq)) = (Self::child_points(&an.p, &l), Self::child_points(&an.q, &l)) {
+                        if self.points_bad(&cp, &cq) {
+                            PRECUT_BAD.fetch_add(1, Ordering::Relaxed);
+                            continue;
+                        }
+                        // a child's isotropic dimension is the parent's or one less (an isotropic subspace W of the
+                        // parent meets the child in dim >= dim W - 1), so it is tested only when the parent is tight
+                        if self.f2
+                            && piso.map_or(true, |d| d <= self.min_dim)
+                            && self.isotropic_dim(&cp, &cq).map_or(false, |d| d < self.min_dim)
+                        {
+                            PRECUT_F2.fetch_add(1, Ordering::Relaxed);
+                            continue;
+                        }
+                    }
+                }
                 let child = self.cut(&basis, &self.edge_form(u, v, s));
                 if child.len() < self.min_dim {
                     continue;
@@ -693,7 +812,9 @@ fn main() {
     let state = opt("--state");
     let out = opt("--out");
     let min_dim: usize = opt("--min-dim").map(|x| x.parse().unwrap()).unwrap_or(1);
-    let s = Search::new(k, !flag("--no-canon"), !flag("--no-f2"), min_dim);
+    let mut s = Search::new(k, !flag("--no-canon"), !flag("--no-f2"), min_dim);
+    s.f4_max_m = opt("--f4").map(|x| x.parse().unwrap()).unwrap_or(0);
+    s.precut = flag("--precut");
     let shared = Shared::new();
     let t0 = Instant::now();
     let mut types: Vec<Basis> = vec![];
@@ -803,8 +924,8 @@ fn main() {
                             }
                         }
                         let a = agg.lock().unwrap();
-                        println!("  {}/{} frontier flats done, {} nodes this session ({} in done flats: {} bad, {} f2-cut, {} dups), {} classes, {} type flats, free {:?} GB{}, {:.0} s",
-                                 ndone0 + f, front.len(), shared.nodes.load(Ordering::Relaxed), a.nodes, a.bad, a.f2cut, a.dup,
+                        println!("  {}/{} frontier flats done, {} nodes this session ({} in done flats: {} bad, {} f2-cut, {} f4-cut, {} dups), {} classes, {} type flats, free {:?} GB{}, {:.0} s",
+                                 ndone0 + f, front.len(), shared.nodes.load(Ordering::Relaxed), a.nodes, a.bad, a.f2cut, F4CUT.load(Ordering::Relaxed), a.dup,
                                  shared.len(), found.lock().unwrap().len(), free.map(|x| (x * 10.0).round() / 10.0),
                                  if shared.freeze.load(Ordering::Relaxed) { ", FROZEN" } else { "" }, t0.elapsed().as_secs_f64());
                         std::io::stdout().flush().unwrap();
@@ -838,8 +959,10 @@ fn main() {
             reps.push((key, b));
         }
     }
-    println!("k {k}: {} nodes, {} bad ({} by f2), {} dups, {} type flats, {} maximal classes, {}, {:.1} s",
-             total.nodes, total.bad, total.f2cut, total.dup, types.len(), reps.len(),
+    println!("k {k}: {} nodes, {} bad ({} by f2, {} by f4), {} dups, {} cut at the parent ({} bad, {} f2), good nodes {}, {} type flats, {} maximal classes, {}, {:.1} s",
+             total.nodes, total.bad, total.f2cut, F4CUT.load(Ordering::Relaxed), total.dup,
+             PRECUT_BAD.load(Ordering::Relaxed) + PRECUT_F2.load(Ordering::Relaxed), PRECUT_BAD.load(Ordering::Relaxed),
+             PRECUT_F2.load(Ordering::Relaxed), total.nodes - total.bad, types.len(), reps.len(),
              if complete { "COMPLETE" } else { "INCOMPLETE" }, t0.elapsed().as_secs_f64());
     let mut js = vec![];
     for (_, b) in &reps {
