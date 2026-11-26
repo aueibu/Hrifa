@@ -1,0 +1,8 @@
+indexing explorer rows with 12+ notes ...
+684717 keys
+/home/apoorbaugh_gmail_com/zruns/zexp/xchk/l7q729.hole.strays:7:729 {'distinct_ok': 505, 'homometric': 505, 'within_q': 505, 'q_matches_file': 505, 'nontrivial': 505, 'NEW': 445, 'already_in_explorer': 60}
+/home/apoorbaugh_gmail_com/zruns/zexp/xchk/l11q405.hole.strays:11:405 {'distinct_ok': 2556, 'homometric': 2556, 'within_q': 2556, 'q_matches_file': 2556, 'nontrivial': 2556, 'already_in_explorer': 692, 'NEW': 1864}
+/home/apoorbaugh_gmail_com/zruns/zexp/xchk/l17q243.hole.strays:17:243 {'distinct_ok': 1, 'homometric': 1, 'within_q': 1, 'q_matches_file': 1, 'nontrivial': 1, 'already_in_explorer': 1}
+/home/apoorbaugh_gmail_com/zruns/zexp/xchk/l11q405.chord.strays:11:405 {'distinct_ok': 1, 'homometric': 1, 'within_q': 1, 'q_matches_file': 1, 'nontrivial': 1, 'inside_proven_or_exact_range': 1}
+total {'distinct_ok': 3063, 'homometric': 3063, 'within_q': 3063, 'q_matches_file': 3063, 'nontrivial': 3063, 'NEW': 2309, 'already_in_explorer': 753, 'inside_proven_or_exact_range': 1}
+new families written: 2309 {16: 510, 12: 265, 15: 1534}

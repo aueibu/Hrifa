@@ -112,6 +112,7 @@ def main():
     ap.add_argument("--out")
     ap.add_argument("--check")
     ap.add_argument("--ov")
+    ap.add_argument("--strays", help="with --check: write generated pairs missing from the list here")
     a = ap.parse_args()
     t0 = time.time()
     primes = a.primes
@@ -143,7 +144,8 @@ def main():
     if a.check:
         import glob, os
         member_fam = {}
-        for fn in glob.glob(os.path.join(a.check, "k*", "families.jsonl")):
+        for fn in (glob.glob(os.path.join(a.check, "union_k*.jsonl"))  # ladder rung
+                   or glob.glob(os.path.join(a.check, "k*", "families.jsonl"))):  # enumeration
             for line in open(fn):
                 f = json.loads(line)
                 fid = (f["notes"], f["family"])
@@ -151,12 +153,20 @@ def main():
                     member_fam[canon_TI([tuple(p) for p in m["lattice"]])] = fid
         got = set()
         stray = collections.Counter()
-        for (P, Q) in fams:
+        fs = open(a.strays, "w") if a.strays else None
+        for (P, Q), (T, Sp) in fams.items():
             fp, fq = member_fam.get(P), member_fam.get(Q)
             if fp is not None and fp == fq:
                 got.add(fp)
             else:
                 stray[len(P)] += 1
+                if fs:
+                    fs.write(json.dumps({"k": len(P), "q": iol_of(P, primes), "T": [str(ratio(v, primes)) for v in T],
+                                         "S+": [str(ratio(v, primes)) for v in Sp],
+                                         "members": [[str(ratio(v, primes)) for v in S] for S in (P, Q)],
+                                         "in_list": [fp is not None, fq is not None]}) + "\n")
+        if fs:
+            fs.close()
         print(f"# check {a.check}: generated families found in the list {len(got)}, not in the list "
               f"{dict(sorted(stray.items()))}", file=sys.stderr)
         if a.ov:
