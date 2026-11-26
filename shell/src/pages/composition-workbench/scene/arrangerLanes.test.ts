@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { rational, rationalFromNumber } from '../musicalTime';
 import { arrangerLanes, assignSubLanes, touchingPairs } from './arrangerLanes';
-import { collectionBlock, objectBlock, sceneBlock } from './sceneTestHelpers';
+import { collectionBlock, objectBlock, sceneBlock, trackBlock } from './sceneTestHelpers';
+
+describe('arrangerLanes with Track blocks', () => {
+  it('ignores a Track listed in a collection (no lane object, no throw)', () => {
+    const blocks = [
+      sceneBlock('s', 'root'),
+      collectionBlock('root', ['t', 'a']),
+      trackBlock('t'),
+      objectBlock('a', { trackRef: { id: 't' } }),
+    ];
+    const lanes = arrangerLanes(blocks, 's');
+    expect(lanes).toHaveLength(1);
+    expect(lanes[0].objects.map((object) => object.id)).toEqual(['a']);
+  });
+});
 
 const span = (id: string, start: number, end: number) => ({
   id,

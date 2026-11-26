@@ -30,11 +30,13 @@ import {
   objectChain,
   objectDataOf,
   sceneDataOf,
+  trackDataOf,
   type CollectionData,
   type ModifierInstance,
   type ObjectData,
   type ObjectMapping,
   type RegisterMapping,
+  type TrackData,
 } from './sceneTypes';
 import { layoutSubLanes, type SubLaneLayout } from './subLanes';
 
@@ -54,10 +56,10 @@ export type SceneOpResult =
   | { ok: true; blocks: StoredDataBlock[]; created: string[] }
   | { ok: false; error: string };
 
-type Blocks = readonly StoredDataBlock[];
+export type Blocks = readonly StoredDataBlock[];
 
-const fail = (error: string): SceneOpResult => ({ ok: false, error });
-const done = (blocks: StoredDataBlock[], created: string[] = []): SceneOpResult => ({
+export const fail = (error: string): SceneOpResult => ({ ok: false, error });
+export const done = (blocks: StoredDataBlock[], created: string[] = []): SceneOpResult => ({
   ok: true,
   blocks,
   created,
@@ -77,7 +79,7 @@ export function uniqueName(blocks: Blocks, typeId: string, base: string): string
   }
 }
 
-function update(
+export function update(
   blocks: Blocks,
   id: string,
   change: (block: StoredDataBlock) => StoredDataBlock
@@ -85,7 +87,7 @@ function update(
   return blocks.map((block) => (block.id === id ? change(block) : block));
 }
 
-function mapData<T>(block: StoredDataBlock, change: (data: T) => T): StoredDataBlock {
+export function mapData<T>(block: StoredDataBlock, change: (data: T) => T): StoredDataBlock {
   return block.payload.kind === 'record'
     ? ({
         ...block,
@@ -94,10 +96,14 @@ function mapData<T>(block: StoredDataBlock, change: (data: T) => T): StoredDataB
     : block;
 }
 
-const ref = (id: string): Ref => ({ id });
+export const ref = (id: string): Ref => ({ id });
 
 /** Adds `memberId` to `collectionId`'s members (the end of the list). */
-function addMember(blocks: Blocks, collectionId: string, memberId: string): StoredDataBlock[] {
+export function addMember(
+  blocks: Blocks,
+  collectionId: string,
+  memberId: string
+): StoredDataBlock[] {
   return update(blocks, collectionId, (block) =>
     mapData<CollectionData>(block, (data) => ({
       ...data,
@@ -107,14 +113,18 @@ function addMember(blocks: Blocks, collectionId: string, memberId: string): Stor
 }
 
 /** The collection that lists `id`, or undefined. */
-function collectionOf(blocks: Blocks, id: string): StoredDataBlock | undefined {
+export function collectionOf(blocks: Blocks, id: string): StoredDataBlock | undefined {
   return blocks.find((block) =>
     collectionDataOf(block)?.memberRefs.some((member) => member.id === id)
   );
 }
 
 /** Which collection an add goes to: `target` when it is a collection, else the scene's root. */
-function targetCollection(blocks: Blocks, sceneId: string, target: string | null): string | null {
+export function targetCollection(
+  blocks: Blocks,
+  sceneId: string,
+  target: string | null
+): string | null {
   const targetBlock = target === null ? undefined : blocks.find((block) => block.id === target);
   if (targetBlock && collectionDataOf(targetBlock)) {
     return targetBlock.id;
@@ -530,7 +540,10 @@ export function setParent(blocks: Blocks, id: string, parentId: string | null): 
 }
 
 /** The modifiers of a copied object: the same settings, new ids. */
-const copyModifiers = (env: OpEnv, modifiers: readonly ModifierInstance[]): ModifierInstance[] =>
+export const copyModifiers = (
+  env: OpEnv,
+  modifiers: readonly ModifierInstance[]
+): ModifierInstance[] =>
   modifiers.map((modifier) => ({
     ...modifier,
     id: env.newId(),
@@ -736,18 +749,23 @@ export function resizeSharedEdge(
   );
 }
 
-/** Mute an object or a collection. */
+/** Mute an object, a track or a collection. */
 export function setMute(blocks: Blocks, id: string, mute: boolean): SceneOpResult {
   const block = blocks.find((candidate) => candidate.id === id);
   if (objectDataOf(block)) {
     return editObject(blocks, id, (data) => ({ ...data, mute }));
+  }
+  if (trackDataOf(block)) {
+    return done(
+      update(blocks, id, (target) => mapData<TrackData>(target, (data) => ({ ...data, mute })))
+    );
   }
   if (collectionDataOf(block)) {
     return done(
       update(blocks, id, (target) => mapData<CollectionData>(target, (data) => ({ ...data, mute })))
     );
   }
-  return fail('Only an object or a collection can be muted.');
+  return fail('Only an object, a track or a collection can be muted.');
 }
 
 /** Every collection id under `id` (itself included), each once. */
@@ -853,18 +871,36 @@ export function deleteSummary(
   id: string
 ): {
   name: string;
-  kind: 'object' | 'collection';
+  kind: 'object' | 'collection' | 'track';
   /** A collection: how many items it lists directly (they move up). */
   members: number;
   /** An object: how many objects are placed under it (they keep their place). */
   children: number;
   /** A collection: the name of the collection its items move up to, or null. */
   movesTo: string | null;
+  /** A track only: how many objects sit on it (deleted with it). */
+  objects?: number;
 } | null {
   const target = blocks.find((block) => block.id === id);
-  const kind = objectDataOf(target) ? 'object' : collectionDataOf(target) ? 'collection' : null;
+  const kind = objectDataOf(target)
+    ? 'object'
+    : collectionDataOf(target)
+      ? 'collection'
+      : trackDataOf(target)
+        ? 'track'
+        : null;
   if (!target || kind === null) {
     return null;
+  }
+  if (kind === 'track') {
+    return {
+      name: target.name,
+      kind,
+      members: 0,
+      children: 0,
+      movesTo: null,
+      objects: objectsOnTrack(blocks, id).length,
+    };
   }
   const members = collectionDataOf(target)?.memberRefs.length ?? 0;
   const children =
@@ -875,7 +911,14 @@ export function deleteSummary(
   return { name: target.name, kind, members, children, movesTo };
 }
 
-/** `id` first, then (for a collection) everything listed under it, each once. */
+/** The ids of the objects whose `trackRef` is `trackId`, in stored order. */
+export function objectsOnTrack(blocks: Blocks, trackId: string): string[] {
+  return blocks
+    .filter((block) => objectDataOf(block)?.trackRef?.id === trackId)
+    .map((block) => block.id);
+}
+
+/** `id` first, then (for a collection or track) everything listed under it, each once. */
 function membersToDelete(blocks: Blocks, id: string): string[] {
   const out: string[] = [];
   const visit = (current: string) => {
@@ -883,9 +926,12 @@ function membersToDelete(blocks: Blocks, id: string): string[] {
       return;
     }
     out.push(current);
-    collectionDataOf(blocks.find((block) => block.id === current))?.memberRefs.forEach((member) =>
-      visit(member.id)
-    );
+    const block = blocks.find((candidate) => candidate.id === current);
+    collectionDataOf(block)?.memberRefs.forEach((member) => visit(member.id));
+    // A track deletes with its objects (they come after it, so they go first when reversed).
+    if (trackDataOf(block)) {
+      objectsOnTrack(blocks, current).forEach(visit);
+    }
   };
   visit(id);
   return out;
@@ -898,7 +944,7 @@ function membersToDelete(blocks: Blocks, id: string): string[] {
  */
 export function deleteHierarchy(project: RefsProject, id: string): RefsProject {
   const target = project.dataBlocks.find((block) => block.id === id);
-  if (!objectDataOf(target) && !collectionDataOf(target)) {
+  if (!objectDataOf(target) && !collectionDataOf(target) && !trackDataOf(target)) {
     return project;
   }
   // Members before the collection: each removal sees the full list, so a child keeps its world place.
@@ -914,6 +960,10 @@ export function deleteHierarchy(project: RefsProject, id: string): RefsProject {
  */
 export function deleteSelected(project: RefsProject, id: string): RefsProject {
   const target = project.dataBlocks.find((block) => block.id === id);
+  if (trackDataOf(target)) {
+    // A track has no items to move up: it goes with its objects, as in deleteHierarchy.
+    return deleteHierarchy(project, id);
+  }
   if (!objectDataOf(target) && !collectionDataOf(target)) {
     return project;
   }

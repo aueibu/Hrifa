@@ -13,9 +13,11 @@ import {
   blankCollectionData,
   blankObjectData,
   blankSceneData,
+  blankTrackData,
   COLLECTION_TYPE_ID,
   OBJECT_TYPE_ID,
   SCENE_TYPE_ID,
+  TRACK_TYPE_ID,
   type CollectionData,
   type ModifierInstance,
   type ObjectData,
@@ -102,6 +104,10 @@ export function collectionBlock(
     memberRefs: members.map((member) => ({ id: member })),
     ...patch,
   });
+}
+
+export function trackBlock(id: string, mute = false, name = id): RecordBlock {
+  return record(id, TRACK_TYPE_ID, name, { ...blankTrackData(), mute });
 }
 
 export function sceneBlock(id: string, root: string | null, name = id): RecordBlock {

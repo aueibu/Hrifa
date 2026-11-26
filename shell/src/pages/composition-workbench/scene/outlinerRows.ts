@@ -1,5 +1,5 @@
 import type { StoredDataBlock } from '../dataBlocks/registry';
-import { collectionDataOf, objectDataOf, sceneDataOf } from './sceneTypes';
+import { collectionDataOf, objectDataOf, sceneDataOf, trackDataOf } from './sceneTypes';
 
 /**
  * The Outliner's visible tree (workbench O2a), pure. The scene's root collection is not shown. Inside a
@@ -87,7 +87,8 @@ export function outlinerRows(blocks: readonly StoredDataBlock[], sceneId: string
         kids.forEach((kid) => visit(kid, level + 1, block.id));
       } else if (group) {
         const own = group.memberRefs.filter(
-          (member) => byId.has(member.id) && !shown.has(member.id)
+          (member) =>
+            byId.has(member.id) && !shown.has(member.id) && !trackDataOf(byId.get(member.id))
         ).length;
         rows.push({
           id: block.id,

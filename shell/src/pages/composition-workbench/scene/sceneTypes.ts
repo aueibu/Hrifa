@@ -426,6 +426,7 @@ export function registerSceneTypes(): () => void {
       refs: (data): SlotRef[] => {
         const object = data as ObjectData;
         return [
+          ...(object.trackRef == null ? [] : [{ slot: 'track', ref: object.trackRef }]),
           ...(object.parentRef === null ? [] : [{ slot: 'parent', ref: object.parentRef }]),
           ...(object.primaryDataRef === null ? [] : [{ slot: 'data', ref: object.primaryDataRef }]),
           ...object.modifiers.flatMap((modifier) =>
@@ -439,6 +440,10 @@ export function registerSceneTypes(): () => void {
         const object = data as ObjectData;
         return {
           ...object,
+          // `trackRef` stays absent when the stored object never had one (optional until TK2).
+          ...(object.trackRef === undefined
+            ? {}
+            : { trackRef: object.trackRef === null ? null : fn('track', object.trackRef) }),
           parentRef: object.parentRef === null ? null : fn('parent', object.parentRef),
           primaryDataRef: object.primaryDataRef === null ? null : fn('data', object.primaryDataRef),
           // A mapped null clears the slot; the modifier itself stays.

@@ -27,6 +27,7 @@ import {
   objectChain,
   objectDataOf,
   sceneDataOf,
+  trackDataOf,
   type ModifierInstance,
   type ObjectData,
 } from './sceneTypes';
@@ -49,8 +50,13 @@ import {
  *
  * End bound (W-79): an object ends at its OWN end; a parent's end never cuts a child. An event
  * starting at or after the bound is dropped; one that crosses it is shortened to end exactly there.
+ * Tracks (W-82): a collection may list Tracks; an object is reached through a Track when its `trackRef`
+ * is that Track (old shape: listed directly by a collection, still reached). A Track listed twice is
+ * walked once (first wins). An object whose Track no collection reaches, or whose `trackRef` names a
+ * missing block, is not reached (like an object in no collection); a missing Track silences nothing.
  * Objects are silent when muted, when under a muted collection (any ancestor collection in the scene's
- * tree), or when their parent chain is circular (with a warning). A muted object does not silence the
+ * tree), when their Track is muted (`includeMuted` still builds their events), or when their parent
+ * chain is circular (with a warning). A muted object does not silence the
  * objects placed under it. An object listed by two collections plays once (the first listing wins) and
  * warns. The plan's duration is the latest END of every object reachable from the root collection,
  * muted and empty ones included (the form's length, row 5), so a silent tail is kept.
@@ -446,14 +452,31 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
     const reached: { block: StoredDataBlock; data: ObjectData; muted: boolean }[] = [];
     const seenObjects = new Set<string>();
     const seenCollections = new Set<string>();
+    const seenTracks = new Set<string>();
+    // A Track's objects are computed from `ObjectData.trackRef`, in block order (never stored on the Track).
+    const objectsOfTrack = new Map<string, string[]>();
+    for (const block of blocks) {
+      const trackId = objectDataOf(block)?.trackRef?.id;
+      if (trackId !== undefined) {
+        objectsOfTrack.set(trackId, [...(objectsOfTrack.get(trackId) ?? []), block.id]);
+      }
+    }
     const walk = (id: string, muted: boolean) => {
       const block = byId.get(id);
       const collection = collectionDataOf(block);
       const object = objectDataOf(block);
+      const track = trackDataOf(block);
       if (block === undefined) {
         return;
       }
-      if (collection) {
+      if (track) {
+        if (seenTracks.has(id)) {
+          warnings.push(`Track "${block.name}" is reached twice and was skipped the second time.`);
+          return;
+        }
+        seenTracks.add(id);
+        (objectsOfTrack.get(id) ?? []).forEach((objectId) => walk(objectId, muted));
+      } else if (collection) {
         if (seenCollections.has(id)) {
           warnings.push(
             `Collection "${block.name}" is reached twice and was skipped the second time.`
@@ -469,9 +492,14 @@ export function createSceneEvaluator(options: EvaluateSceneOptions = {}): SceneE
           return;
         }
         seenObjects.add(id);
-        reached.push({ block, data: object, muted });
+        // Order: collection (carried in `muted`), then the object's Track, then the object itself.
+        const trackMuted =
+          object.trackRef != null && (trackDataOf(byId.get(object.trackRef.id))?.mute ?? false);
+        reached.push({ block, data: object, muted: muted || trackMuted });
       } else {
-        warnings.push(`"${block.name}" is not an object or a collection, so the scene skips it.`);
+        warnings.push(
+          `"${block.name}" is not an object, a track or a collection, so the scene skips it.`
+        );
       }
     };
     if (scene.rootCollectionRef !== null) {

@@ -1,8 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import { outlinerRows } from './outlinerRows';
-import { claveBlock, collectionBlock, objectBlock, sceneBlock } from './sceneTestHelpers';
+import {
+  claveBlock,
+  collectionBlock,
+  objectBlock,
+  sceneBlock,
+  trackBlock,
+} from './sceneTestHelpers';
 
 describe('outlinerRows', () => {
+  it('ignores a Track block in a collection: no row, and a collection holding only Tracks has no children', () => {
+    const blocks = [
+      sceneBlock('s', 'root'),
+      collectionBlock('root', ['t', 'g', 'a']),
+      collectionBlock('g', ['t2']),
+      trackBlock('t'),
+      trackBlock('t2'),
+      objectBlock('a', { trackRef: { id: 't' } }, 'Bass'),
+    ];
+    const rows = outlinerRows(blocks, 's');
+    expect(rows.map((row) => [row.name, row.kind])).toEqual([
+      ['g', 'collection'],
+      ['Bass', 'object'],
+    ]);
+    expect(rows[0].hasChildren).toBe(false);
+  });
+
   it('hides the root, nests a child under its parent in the same collection, and shows data', () => {
     const blocks = [
       claveBlock(),
