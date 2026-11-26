@@ -214,9 +214,9 @@ input[type="number"] {
     <div class="group" id="notes"><span class="name">Notes</span></div>
     <div class="group">
       <span class="name">q</span>
-      <input type="number" id="qmin" min="1" max="177147" value="1" aria-label="Smallest q">
+      <input type="number" id="qmin" min="1" max="885735" value="1" aria-label="Smallest q">
       <span class="name">to</span>
-      <input type="number" id="qmax" min="1" max="177147" value="177147" aria-label="Largest q">
+      <input type="number" id="qmax" min="1" max="885735" value="885735" aria-label="Largest q">
     </div>
     <label class="check"><input type="checkbox" id="ladder"> Ladder results (at least)</label>
     <div class="readout" id="readout">Loading families…</div>
@@ -269,8 +269,8 @@ input[type="number"] {
 const PRIMES = [5, 7, 11, 13, 17, 19, 23];
 const NOTES = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 // heat-map columns end at the q values where some search stops, so each cell is either searched or not
-const QBINS = [45, 75, 99, 135, 243, 315, 405, 729, 1215, 2187, 3645, 6561, 10935, 19683, 32805, 59049, 98415, 177147];
-const XTICKS = [27, 45, 75, 135, 243, 405, 729, 1215, 2187, 3645, 6561, 10935, 19683, 32805, 59049, 98415, 177147];
+const QBINS = [45, 75, 99, 135, 243, 315, 405, 729, 1215, 2187, 3645, 6561, 10935, 19683, 32805, 59049, 98415, 177147, 295245, 531441, 885735];
+const XTICKS = [27, 45, 75, 135, 243, 405, 729, 1215, 2187, 3645, 6561, 10935, 19683, 32805, 59049, 98415, 177147, 295245, 531441, 885735];
 const fmtK = (v) => v >= 10000 ? Math.round(v / 1000) + 'k' : v >= 1000 ? (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(v);
 /* keep only ticks at least 34 px apart on a log axis */
 function spacedTicks(list, f) {
@@ -281,7 +281,7 @@ function spacedTicks(list, f) {
 const fmt = (n) => n.toLocaleString('en-US');
 const $ = (id) => document.getElementById(id);
 
-const state = { limits: new Set(PRIMES), notes: new Set(NOTES), qmin: 1, qmax: 177147, ladder: false, sel: [] }; // sel: every family at the clicked point
+const state = { limits: new Set(PRIMES), notes: new Set(NOTES), qmin: 1, qmax: 885735, ladder: false, sel: [] }; // sel: every family at the clicked point
 let D = null; // { n, proven, p, k, lb, q, gmin, gmax, members[], coverage, ladderCoverage, limit3, gmaxAll, qminAll }
 
 async function gunzip(b64) {
@@ -388,7 +388,7 @@ function buildControls() {
     nt.appendChild(b);
   }
   const onQ = () => {
-    const top = D ? D.max.q : 177147;
+    const top = D ? D.max.q : 885735;
     let a = Math.max(1, Math.min(top, Math.round(+$('qmin').value || 1)));
     let z = Math.max(1, Math.min(top, Math.round(+$('qmax').value || top)));
     if (a > z) [a, z] = [z, a];

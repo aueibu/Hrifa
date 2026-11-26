@@ -12,7 +12,8 @@ lists is kept once), and writes a columnar JSON file:
   m      the two members of every family (proven and ladder), each a space-separated list of ratios, in row order
          (only with --members)
 plus "coverage": the proven rectangles (highest prime <= P, q <= Q, note counts) from data/manifest.json and
-data/manifest_2026-11-24.json (the 6-9-note night), and
+data/manifest_2026-11-24.json (the 6-9-note night) and data/manifest_2026-11-25.json (the 2026-11-25 night queue;
+its paused runs have no summary.csv and are neither read nor counted), and
 "ladderCoverage": the ladder rungs read (with --ladder).
 
 Family identity: each member's lattice points (odd primes 3..19) translated so the lexicographically lowest point
@@ -39,7 +40,7 @@ PRIMES = (3, 5, 7, 11, 13, 17, 19, 23)
 LADDER_RUNGS = {"l7q405_on": (7, 405, "6-16"), "l7q729_on": (7, 729, "6-16"), "l11q243_on": (11, 243, "6-16"),
                 "l11q405_on": (11, 405, "6-16"), "l13q243_on": (13, 243, "6-16"), "l17q243_on": (17, 243, "6-16"),
                 "k789L_l13q405": (13, 405, "7-9"), "k789L_l17q405": (17, 405, "7-9"), "k789L_l19q405": (19, 405, "7-9")}
-MANIFESTS = ("manifest.json", "manifest_2026-11-24.json")
+MANIFESTS = ("manifest.json", "manifest_2026-11-24.json", "manifest_2026-11-25.json")
 
 
 def odd(n):
