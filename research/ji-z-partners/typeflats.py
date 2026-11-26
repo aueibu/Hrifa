@@ -82,6 +82,40 @@ class Search:
             adj[u] = idx.get(d, [])
         return "ok", (P, Q, adj)
 
+    def square_sum_definite(self, P, Q):
+        """True if F2 = sum (P intervals)^2 - sum (Q intervals)^2, as a quadratic form on the flat's parameters, is
+        positive or negative definite. Every Z-pair has F2 = 0 (same intervals), so a type flat T inside this flat
+        would be a nonzero subspace where F2 vanishes: impossible when F2 is definite. Prune then."""
+        m = len(P[0])
+        if m == 0:
+            return False
+        G = [[F(0)] * m for _ in range(m)]
+        for pts, sg in ((P, 1), (Q, -1)):
+            for i, j in self.pairs:
+                d = [b - a for a, b in zip(pts[i], pts[j])]
+                for r in range(m):
+                    if d[r]:
+                        dr = sg * d[r]
+                        Gr = G[r]
+                        for c in range(m):
+                            if d[c]:
+                                Gr[c] += dr * d[c]
+        # exact elimination without pivoting: definite iff all pivots are nonzero with one sign
+        sign = 0
+        for c in range(m):
+            pv = G[c][c]
+            if pv == 0:
+                return False
+            s = 1 if pv > 0 else -1
+            if sign and s != sign:
+                return False
+            sign = s
+            for r in range(c + 1, m):
+                if G[r][c]:
+                    f = G[r][c] / pv
+                    G[r] = [x - f * y for x, y in zip(G[r], G[c])]
+        return True
+
     def matching(self, adj):
         """max bipartite matching P-intervals -> Q-intervals; returns (matchP, matchQ)"""
         mP, mQ = [-1] * self.np, [-1] * self.np
@@ -100,9 +134,10 @@ class Search:
             aug(u, set())
         return mP, mQ
 
-    def violator(self, adj, mP, mQ):
-        """Hall violator on the P side from an unmatched P-interval: (X, N(X)) with |N(X)| = |X| - 1"""
-        u0 = mP.index(-1)
+    def violator(self, adj, mP, mQ, u0=None):
+        """Hall violator on the P side from an unmatched P-interval u0: (X, N(X)) with |N(X)| = |X| - 1"""
+        if u0 is None:
+            u0 = mP.index(-1)
         X, N, stack = {u0}, set(), [u0]
         while stack:
             u = stack.pop()
@@ -222,6 +257,10 @@ class Search:
                 bad += 1
                 continue
             P, Q, adj = data
+            if getattr(self, "f2prune", False) and self.square_sum_definite(P, Q):
+                bad += 1
+                self.f2cut = getattr(self, "f2cut", 0) + 1
+                continue
             if use_canon:
                 key = self.canon(P, Q)
                 if key in canon_seen:
@@ -246,16 +285,27 @@ class Search:
                           f"Q {[tuple(map(str, q)) for q in Q]}\n")
                 log.flush()
                 continue
-            X, N = self.violator(adj, mP, mQ)
-            # the same on the Q side (transpose); branch on the smaller edge set
+            # any Hall violator gives a complete branching; take the one with the fewest options over every
+            # unmatched interval on either side (the P side and the transposed Q side)
             adjQ = [[] for _ in range(self.np)]
             for u in range(self.np):
                 for v, s in adj[u]:
                     adjQ[v].append((u, s))
-            XQ, NQ = self.violator(adjQ, mQ, mP)
-            optP = [(u, v, s) for u in X for v in range(self.np) if v not in N for s in (1, -1)]
-            optQ = [(u, v, s) for v in XQ for u in range(self.np) if u not in NQ for s in (1, -1)]
-            for u, v, s in (optP if len(optP) <= len(optQ) else optQ):
+            best, bside = None, 0
+            for side, (ad, ma, mb) in enumerate(((adj, mP, mQ), (adjQ, mQ, mP))):
+                for u0 in range(self.np):
+                    if ma[u0] != -1:
+                        continue
+                    X, N = self.violator(ad, ma, mb, u0)
+                    cost = len(X) * (self.np - len(N))
+                    if best is None or cost < best[0]:
+                        best, bside = (cost, X, N), side
+            _, X, N = best
+            if bside == 0:
+                opts = [(u, v, s) for u in X for v in range(self.np) if v not in N for s in (1, -1)]
+            else:
+                opts = [(u, v, s) for v in X for u in range(self.np) if u not in N for s in (1, -1)]
+            for u, v, s in opts:
                 if len(basis) <= 1:
                     break  # a 1-dim flat cut again is 0-dim: all notes coincide
                 child = self.cut(basis, self.edge_form(u, v, s))
@@ -325,8 +375,10 @@ def main():
     ap.add_argument("--state", help="parallel runs: folder for the saved frontier and the finished-task log; a rerun "
                     "with the same folder skips finished frontier flats")
     ap.add_argument("--min-free-gb", type=float, default=4.0, help="freeze the dedup tables below this much free memory")
+    ap.add_argument("--f2", action="store_true", help="prune flats where sum(P int^2) - sum(Q int^2) is definite")
     a = ap.parse_args()
     S = Search(a.k)
+    S.f2prune = a.f2
     t0 = time.time()
     tlog = open(a.types_log, "a") if a.types_log else None
 
