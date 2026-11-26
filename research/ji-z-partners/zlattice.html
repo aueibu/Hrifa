@@ -170,6 +170,45 @@ kbd { font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--
       <p class="note">Numbers on a point are coefficients other than 1. Anything other than 0 or 1 (red) means that product is not a set.</p>
     </div>
   </section>
+
+  <section class="stage" id="universal">
+    <div class="eyebrow">4 · Universal patterns</div>
+    <h2>Every 6- and 7-note pair is a copy of a few patterns</h2>
+    <p>Every 6-note Z-pair in any just-intonation lattice, at any prime limit, is a copy of one pattern (zgen type 1), placed by choosing two lattice steps. Every 7-note Z-pair is a copy of one flat pattern (zgen type 19) or of one of five patterns that lie on a single line.</p>
+    <div class="panel">
+      <div class="controls">
+        <label for="gPat">Pattern
+          <select id="gPat"><option value="6">6 notes</option><option value="7">7 notes</option></select>
+        </label>
+        <label for="gS1">Step 1 (right)
+          <select id="gS1"></select>
+        </label>
+        <label for="gS2">Step 2 (up)
+          <select id="gS2"></select>
+        </label>
+      </div>
+      <p class="note" id="gNote"></p>
+      <div class="two">
+        <div class="card">
+          <h3>The pattern</h3>
+          <div class="frame" style="display: flex; flex-wrap: wrap; gap: 10px">
+            <div><svg id="gPSvg" role="img" aria-label="Pattern member P"></svg><div class="poly">P</div></div>
+            <div><svg id="gQSvg" role="img" aria-label="Pattern member Q"></svg><div class="poly">Q</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Placed in the lattice</h3>
+          <div class="stats" id="gStats"></div>
+          <div class="chord p" id="gPChord"></div>
+          <div class="chord q" id="gQChord"></div>
+        </div>
+      </div>
+      <p class="note">Point (a, b) of the pattern becomes the note step 1<sup>a</sup> × step 2<sup>b</sup>, brought into one octave (from 1 up to 2). q is the largest odd number in any interval inside P or Q once factors of 2 are removed, the same q as in stage 1.</p>
+    </div>
+    <h3>Patterns on a single line (7 notes)</h3>
+    <p class="note">Here a pattern is a row of positions on one line, and position n becomes step<sup>n</sup>. On the chain of fifths (step 3) the widest interval is 3 to the power of the span, so each pattern first appears at that q.</p>
+    <div class="gallery" id="gLines"></div>
+  </section>
 </main>
 
 <script>
@@ -465,9 +504,94 @@ kbd { font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--
   document.getElementById("bClearU").addEventListener("click", () => { U = new Map([[key(0, 0), 1]]); drawBuilder(); });
   document.getElementById("bClearV").addEventListener("click", () => { V = new Map([[key(0, 0), 1]]); drawBuilder(); });
 
-  function drawAll() { drawRegion(); drawGallery(); drawBuilder(); }
+  // ======================================== 4. universal patterns =======================================
+  // -- pure (also read by the check script) --
+  const PR5 = [3, 5, 7, 11, 13];
+  const STEPS = [["3", [1, 0, 0, 0, 0]], ["5", [0, 1, 0, 0, 0]], ["7", [0, 0, 1, 0, 0]], ["11", [0, 0, 0, 1, 0]], ["13", [0, 0, 0, 0, 1]],
+    ["5/3", [-1, 1, 0, 0, 0]], ["7/3", [-1, 0, 1, 0, 0]], ["7/5", [0, -1, 1, 0, 0]], ["9/5", [2, -1, 0, 0, 0]], ["9/7", [2, 0, -1, 0, 0]],
+    ["11/9", [-2, 0, 0, 1, 0]], ["13/11", [0, 0, 0, -1, 1]]];
+  // zgen types redrawn on their smallest grid (a whole-number change of grid, so the same pattern):
+  // 6 notes: (a, b) -> (-4a - b, a) of k6 type 1; 7 notes: (a, b) -> (-9a - b, a) of k7 type 19
+  const PATTERNS = {
+    6: { note: "zgen type 1, the only 6-note pattern, shown on its smallest grid.",
+      P: [[0, 0], [0, 1], [1, -2], [2, -2], [2, 0], [3, -1]], Q: [[0, 0], [0, 1], [1, 2], [2, -1], [2, 1], [3, -1]] },
+    7: { note: "zgen type 19, the only 7-note pattern that needs two directions, shown on its smallest grid. The others lie on one line (below).",
+      P: [[0, 0], [3, 0], [5, 0], [6, 0], [0, 1], [4, 1], [5, 1]], Q: [[0, 0], [1, 0], [3, 0], [6, 0], [0, 1], [1, 1], [5, 1]] },
+  };
+  const LINES = [
+    { name: "zgen type 1", P: [0, 1, 2, 5, 7, 9, 12], Q: [0, 2, 4, 5, 7, 11, 12] },
+    { name: "#7", isNew: true, P: [0, 2, 3, 7, 9, 10, 15], Q: [0, 2, 7, 8, 9, 12, 15] },
+    { name: "#11", isNew: true, P: [0, 1, 3, 4, 9, 11, 15], Q: [0, 1, 7, 9, 11, 12, 15] },
+    { name: "#13", isNew: true, P: [0, 1, 4, 5, 11, 13, 16], Q: [0, 1, 5, 10, 12, 13, 16] },
+    { name: "#6", isNew: true, P: [0, 2, 4, 7, 11, 12, 17], Q: [0, 2, 7, 9, 12, 13, 17] },
+  ];
+  const place = (set, s1, s2) => set.map(([a, b]) => s1.map((e, i) => a * e + b * s2[i]));
+  const vdiffs = (v) => { const out = []; for (const a of v) for (const b of v) if (a !== b) out.push(a.map((e, i) => e - b[i]).join(",")); return out.sort().join(" "); };
+  const lex = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; };
+  const fromLow = (v) => { const m = v.slice().sort(lex)[0]; return v.map((p) => p.map((e, i) => e - m[i])); };
+  function vcanon(v) {                       // up to transposition and inversion
+    const n = (s) => fromLow(s).sort(lex).map(String).join(" ");
+    const a = n(v), b = n(v.map((p) => p.map((e) => -e)));
+    return a < b ? a : b;
+  }
+  function qOf(...members) {
+    let q = 0n;
+    for (const v of members) for (const a of v) for (const b of v) { const o = intervalOdd(a.map((e, i) => e - b[i]), PR5); if (o > q) q = o; }
+    return q;
+  }
+  // -- end pure --
+  const gPat = document.getElementById("gPat"), gS1 = document.getElementById("gS1"), gS2 = document.getElementById("gS2");
+  STEPS.forEach(([name], i) => { gS1.add(new Option(name, i)); gS2.add(new Option(name, i)); });
+  gS1.value = 0; gS2.value = 1;
+  const chordOf = (v) => fromLow(v).map((p) => ratioOf(p, PR5)).sort((a, b) => ratioVal(a) - ratioVal(b)).map(ratioStr).join("  ");
+  function drawUniversal() {
+    const pat = PATTERNS[gPat.value], s1 = STEPS[+gS1.value], s2 = STEPS[+gS2.value];
+    document.getElementById("gNote").textContent = pat.note;
+    const all = [...pat.P, ...pat.Q], xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+    const box = { x0: Math.min(0, ...xs) - 1, x1: Math.max(...xs) + 1, y0: Math.min(0, ...ys) - 1, y1: Math.max(...ys) + 1, cell: 22, primes: [s1[0], s2[0]] };
+    const asMap = (s) => toMap(s.map(([x, y]) => [x, y, 1]));
+    drawFactor(document.getElementById("gPSvg"), asMap(pat.P), { ...box, color: css("--p") });
+    drawFactor(document.getElementById("gQSvg"), asMap(pat.Q), { ...box, color: css("--q") });
+    const vp = place(pat.P, s1[1], s2[1]), vq = place(pat.Q, s1[1], s2[1]);
+    const clash = [vp, vq].some((v) => new Set(v.map(String)).size < v.length);
+    const uniq = (v) => [...new Map(v.map((p) => [String(p), p])).values()];   // the notes actually sounding
+    const same = vdiffs(uniq(vp)) === vdiffs(uniq(vq)), distinct = vcanon(vp) !== vcanon(vq);
+    const chips = [];
+    if (clash) chips.push(`<span class="chip no">these two steps make notes coincide; choose others</span>`);
+    chips.push(`<span class="chip ${same ? "ok" : "no"}">${same ? "same intervals" : "intervals differ"}</span>`);
+    if (same && !clash) chips.push(`<span class="chip ${distinct ? "ok" : "no"}">${distinct ? "Z-pair: different sets" : "Q is P moved or turned over"}</span>`);
+    if (!clash) chips.push(`<span class="chip">q = ${qOf(vp, vq).toLocaleString("en-US")}</span>`);
+    document.getElementById("gStats").innerHTML = chips.join("");
+    document.getElementById("gPChord").textContent = "P  " + chordOf(vp);
+    document.getElementById("gQChord").textContent = "Q  " + chordOf(vq);
+  }
+  function drawLines() {
+    const host = document.getElementById("gLines");
+    host.replaceChildren();
+    for (const L of LINES) {
+      const span = Math.max(...L.P, ...L.Q), cell = 16;
+      const card = document.createElement("div"); card.className = "card";
+      const head = document.createElement("h3"); head.textContent = L.name + " ";
+      if (L.isNew) { const c = document.createElement("span"); c.className = "chip ok"; c.textContent = "new (2026-11-25)"; head.append(c); }
+      const frame = document.createElement("div"); frame.className = "frame";
+      const svg = el("svg", { role: "img", "aria-label": "Pattern " + L.name + " on one line" }, frame);
+      const f = frameFor(svg, 0, span, 0, 1, cell);
+      [[L.P, 1, "--p", "P"], [L.Q, 0, "--q", "Q"]].forEach(([s, y, c, label]) => {
+        for (const x of s) el("circle", { cx: f.X(x), cy: f.Y(y), r: Math.min(8, cell * 0.3), fill: css(c) }, svg);
+        const t = el("text", { x: f.X(0) - 14, y: f.Y(y) + 4, "font-size": 11, fill: css(c), "text-anchor": "middle" }, svg); t.textContent = label;
+      });
+      const pos = document.createElement("div"); pos.className = "poly"; pos.textContent = `P ${L.P.join(" ")}  ·  Q ${L.Q.join(" ")}`;
+      const note = document.createElement("p"); note.className = "note";
+      note.textContent = `Span ${span}. First appears at q = 3^${span} = ${bpow(3, span).toLocaleString("en-US")} (chain of fifths).`;
+      card.append(head, frame, pos, note);
+      host.append(card);
+    }
+  }
+  [gPat, gS1, gS2].forEach((s) => s.addEventListener("change", drawUniversal));
+
+  function drawAll() { drawRegion(); drawGallery(); drawBuilder(); drawUniversal(); drawLines(); }
   loadPreset(0);
-  drawRegion(); drawGallery();
+  drawRegion(); drawGallery(); drawUniversal(); drawLines();
   // redraw when the theme changes (SVG colors are read from the tokens)
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
   new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
