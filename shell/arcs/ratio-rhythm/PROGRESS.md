@@ -5,7 +5,13 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: ratio-rhythm (`arcs/ratio-rhythm`)
 - Current milestone: D1 research side steps (V1 explorer, 6–9-note search) done; M3 not started (M1 and M2 done)
-- State: **resume from "HANDOFF (2026-11-25 ~22:40 Eastern, PC restart)" below: VM ON running k 8 (tmux `tf8`) and the exact 6/7-note builds (tmux `bsrp`); explorer exact-data work half done (WIP commit).**
+- State: **explorer identity fix done and verified (see section below); k 8 still running. Older note: resume from "HANDOFF (2026-11-25 ~22:40 Eastern, PC restart)" below: VM ON running k 8 (tmux `tf8`) and the exact 6/7-note builds (tmux `bsrp`); explorer exact-data work half done (WIP commit).**
+
+## Explorer exact-data identity fix (2026-11-26 ~01:00 Eastern)
+- `explorer_data.py` `family_key` now canons each member up to translation AND its own mirror (as `canon_any` in build_shapes.py). Rebuilt on the VM (`~/zruns/zexp/run.sh`, tmux `zexrun`, ALL DONE 05:55Z): self-check proven = patterns in every rectangle, pack verify ok. Rows: 909,952 (245,707 proven, 19,330 exact, 644,915 ladder). 23-limit 6 notes q <= 12,167: 73 proven + 228 exact = 301 (matches the pattern lists); 7 notes q <= 2,187: 13-limit 6+1 = 7, 23-limit 6+4 = 10.
+- Packed files copied to `explorer/` (untracked as before). NOT yet published; the explorer HTML changes from the subagent are still unreviewed.
+- Network note: after the PC restart IPv6 was dead (router); gcloud IAP websocket timed out until the router was rebooted.
+- k 8 at 00:38 Eastern: 107,776 / 200,044 frontier flats, 4 type flats, ~2.5 h left at the observed pace.
 
 ## Log
 | Milestone | Result | Test status | Notes / decisions made |

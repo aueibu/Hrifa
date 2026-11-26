@@ -20,8 +20,8 @@ its paused runs have no summary.csv and are neither read nor counted),
 Rows are ordered proven (lb 0), then exact (lb 2), then ladder (lb 1); "proven" and "exact" give the group sizes.
 
 Family identity: each member's lattice points (odd primes 3..19) translated so the lexicographically lowest point
-is 0; the pair is the sorted pair of members, taken with the mirror of the whole pair (every point negated),
-whichever is smaller. So a family found by two searches that root or orient it differently is kept once.
+is 0, and the smaller of that and its own mirror (every point negated) is used; the pair is the sorted pair
+of these. So a family found by two searches that root or orient it differently is kept once.
 
 Self-checks: for every proven run in the manifest, the families inside its rectangle equal its count; every ladder
 family inside a proven rectangle is already in the proven lists (otherwise the identity above is wrong, or a
@@ -83,10 +83,11 @@ def canon(points):
 
 
 def family_key(members):
+    """Each member is taken up to translation and its own mirror (P ~ -P), then the pair is sorted;
+    this is the identity build_shapes.py / build-shapes-rs use (canon_any per member)."""
     pts = [[monzo(Fraction(r)) for r in m] for m in members]
-    a = tuple(sorted(canon(m) for m in pts))
-    b = tuple(sorted(canon([tuple(-x for x in pt) for pt in m]) for m in pts))
-    return min(a, b)
+    return tuple(sorted(
+        min(canon(m), canon([tuple(-x for x in pt) for pt in m])) for m in pts))
 
 
 def describe(members):
