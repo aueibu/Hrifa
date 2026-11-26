@@ -7,6 +7,10 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 - Current milestone: D1 research side steps (V1 explorer, 6–9-note search) done; M3 not started (M1 and M2 done)
 - State: **explorer identity fix done and verified (see section below); k 8 still running. Older note: resume from "HANDOFF (2026-11-25 ~22:40 Eastern, PC restart)" below: VM ON running k 8 (tmux `tf8`) and the exact 6/7-note builds (tmux `bsrp`); explorer exact-data work half done (WIP commit).**
 
+## One more family, step-c counts in the paper (2026-11-26 ~11:35 Eastern; human: "yes, that works")
+- Explorer **version 4** published (922,520 rows; +1 ladder family: the 15-note q 405 family from the no-budget rerun of the 11-limit q 405 5-term step; saved as `tables/chordsum/five_nb_new_2026-11-26.jsonl`; run3 self-check 128 lines still 0 mismatches). Paper rev 91: new "Ladder cross-check, 2026-11-26" paragraph and a table of the step-c chord-sum and hole counts. Step-c rows stay out of the explorer. VM stopped again.
+- Why the family was missed was not traced (probably one of the 280 stopped factors of the capped step; the rerun also used the newer binary).
+
 ## Explorer published, paper updated (2026-11-26 ~11:30 Eastern; human: "1 and 3 - yes go ahead")
 - **Explorer republished** to https://claude.ai/artifact/G4Af1cgLWhhVdNPHdDKeHm as version 3 (8 notes exact; 922,519 rows incl. the 2,309 hole families).
 - **Paper rev 90:** "What it settles" now has the k 8 result (four 2-D classes, one new, min-dim 3 test, 9 notes need ~140 days at min-dim 2); the 8-note shape sentence; the first-appearance sentence and table (8 notes now exact: 11: 1,331, 13: 2,197, 17: 4,131, 19: 4,617, 23: 5,589); the q-formula check paragraph extended to 8 notes. Not in the paper yet: the generator cross-check and the hole/chord-sum counts (step c), the new 8-note shape's lattice figure.
