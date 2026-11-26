@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-scheme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbench Tracks Mock (TK0)</title>
+  <style>
+    :root {
+      --font-sans: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --accent: #00729f;
+      --mark-red: #c94a4a;
+      --row: 22px;
+      --r: 3px;
+    }
+    [data-scheme='dark'] {
+      --panel-well: #1d1b19; --surface: #2a2826; --panel: #32302e; --panel-slot: #3a3836;
+      --panel-body: #464442; --panel-header: #4a4846; --grid: #5c5a57; --chrome: #6a6865;
+      --text: #e6e3df; --text-muted: #b4b1ad; --text-subtle: #a19e9a;
+      --accent-tint: #233b46; --accent-tint-text: #8fd4f2;
+      --block: #3d6f86; --block2: #5a7d5c; --block3: #8a6a3c;
+    }
+    [data-scheme='light'] {
+      --panel-well: #ddd7cc; --surface: #f3f0ea; --panel: #f6f3ee; --panel-slot: #ece8e0;
+      --panel-body: #fbf9f5; --panel-header: #ece8e0; --grid: #b9b3a8; --chrome: #fbf9f5;
+      --text: #1d1b19; --text-muted: #464442; --text-subtle: #5e5b57;
+      --accent-tint: #d6e9f2; --accent-tint-text: #00506f;
+      --block: #6fa6bf; --block2: #8db58f; --block3: #c9a56a;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { background: var(--surface); color: var(--text); font: 12px/1.3 var(--font-sans);
+      display: flex; flex-direction: column; overflow: hidden; }
+    header { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: var(--panel);
+      flex: none; border-bottom: 1px solid var(--grid); }
+    header h1 { font-size: 14px; margin: 0; font-weight: 600; }
+    header .note { color: var(--text-muted); flex: 1; }
+    .seg { display: inline-flex; border: 1px solid var(--grid); border-radius: var(--r); overflow: hidden; }
+    .seg button, button.tool { font: inherit; color: var(--text); background: var(--panel-slot); border: 0;
+      padding: 3px 10px; cursor: pointer; }
+    .seg button[aria-pressed='true'] { background: var(--accent-tint); color: var(--accent-tint-text); }
+    button.tool { border: 1px solid var(--grid); border-radius: var(--r); }
+    main { flex: 1; min-height: 0; display: grid; grid-template-columns: 280px 1fr; gap: 2px; background: var(--surface); }
+    .pane { background: var(--panel); min-height: 0; display: flex; flex-direction: column; }
+    .pane > h2 { margin: 0; padding: 4px 8px; font-size: 11px; font-weight: 600; color: var(--text-muted);
+      background: var(--panel-header); flex: none; }
+    .body { flex: 1; min-height: 0; overflow: auto; background: var(--panel-body); }
+    /* Outliner */
+    .ol { padding: 4px 0; }
+    .ol .r { display: flex; align-items: center; gap: 6px; height: var(--row); padding-right: 8px; white-space: nowrap; }
+    .ol .r:hover { background: var(--panel-slot); }
+    .ol .r.sel { background: var(--accent-tint); color: var(--accent-tint-text); }
+    .ol .ic { width: 14px; text-align: center; color: var(--text-muted); }
+    .ol .tag { font-size: 10px; color: var(--text-subtle); margin-left: 4px; }
+    .ol .mute { margin-left: auto; color: var(--text-subtle); }
+    .childof { all: unset; cursor: pointer; display: inline-flex; align-items: center; padding: 2px; margin-left: 4px;
+      color: var(--text-subtle); border-radius: var(--r); }
+    .childof:hover { color: var(--accent-tint-text); background: var(--accent-tint); }
+    .childof:focus-visible { outline: 2px solid var(--accent); }
+    .d1 { padding-left: 8px; } .d2 { padding-left: 24px; } .d3 { padding-left: 40px; }
+    /* Arranger */
+    .ar { position: relative; }
+    .ruler { height: 20px; display: grid; grid-template-columns: repeat(16, 1fr); background: var(--panel-header);
+      position: sticky; top: 0; z-index: 3; margin-left: 110px; }
+    .ruler span { font-size: 10px; color: var(--text-subtle); padding: 3px 0 0 3px; border-left: 1px solid var(--grid); }
+    .band { display: flex; align-items: center; gap: 6px; height: 20px; padding: 0 8px; background: var(--panel-header);
+      font-weight: 600; border-top: 1px solid var(--grid); }
+    .band .mute { margin-left: auto; color: var(--text-subtle); font-weight: 400; }
+    .trk { display: flex; border-top: 1px solid var(--grid); }
+    .trk .head { width: 110px; flex: none; padding: 3px 8px; background: var(--panel); color: var(--text-muted);
+      border-right: 1px solid var(--grid); display: flex; flex-direction: column; justify-content: center; }
+    .trk .head small { color: var(--text-subtle); font-size: 10px; }
+    .trk .lane { position: relative; flex: 1;
+      background-image: repeating-linear-gradient(to right, transparent 0 calc(100%/16 - 1px), var(--grid) calc(100%/16 - 1px) calc(100%/16));
+      background-color: var(--panel-well); }
+    .blk { position: absolute; height: 18px; border-radius: 2px; padding: 1px 6px; color: #fff; font-size: 11px;
+      white-space: nowrap; overflow: hidden; border: 1px solid rgba(0,0,0,.35); }
+    .c1 { background: var(--block); } .c2 { background: var(--block2); } .c3 { background: var(--block3); }
+    .indent { padding-left: 14px; }
+    .legend { padding: 6px 10px; color: var(--text-muted); border-top: 1px solid var(--grid); flex: none; background: var(--panel); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Tracks mock (TK0, static)</h1>
+    <span class="note">Collection = group. Track = named Arranger row. Piano has RH, LH, Pedal. RH has two overlapping Objects.</span>
+    <span class="seg" aria-label="Arranger view">
+      <button id="va" aria-pressed="true">View A: Collection bands</button>
+      <button id="vb" aria-pressed="false">View B: Track rows only</button>
+    </span>
+    <button class="tool" id="scheme">Light / dark</button>
+  </header>
+  <main>
+    <section class="pane">
+      <h2>Outliner</h2>
+      <div class="body ol">
+        <div class="r d1"><span class="ic">▾</span><span class="ic">▤</span>Piano<span class="mute">M</span></div>
+        <div class="r d2"><span class="ic">≡</span>RH<span class="tag">2 objects</span></div>
+        <div class="r d3"><span class="ic">◇</span>Theme A</div>
+        <div class="r d3"><span class="ic">◇</span>Theme A var</div>
+        <div class="r d2 sel"><span class="ic">≡</span>LH<span class="tag">1 object</span></div>
+        <div class="r d3"><span class="ic">◇</span>Bass line</div>
+        <div class="r d3"><span class="ic">◇</span>Chord stack<button class="childof" title="Child of Theme A. Click to select the parent." aria-label="Child of Theme A: select the parent"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1v6h7M6 4l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+        <div class="r d2"><span class="ic">≡</span>Pedal<span class="tag">1 object</span></div>
+        <div class="r d3"><span class="ic">◇</span>Pedal hold</div>
+        <div class="r d1"><span class="ic">▾</span><span class="ic">▤</span>Strings</div>
+        <div class="r d2"><span class="ic">≡</span>Violin<span class="tag">1 object</span></div>
+        <div class="r d3"><span class="ic">◇</span>Line 1</div>
+      </div>
+    </section>
+    <section class="pane">
+      <h2>Arranger</h2>
+      <div class="body ar" id="ar"></div>
+      <div class="legend" id="legend"></div>
+    </section>
+  </main>
+  <script>
+    // Blocks: [name, startBeat(0-16), lengthBeats, colorClass]
+    const TRACKS = [
+      { coll: 'Piano', name: 'RH', rows: [[['Theme A', 0, 6, 'c1']], [['Theme A var', 4, 6, 'c2']]] },
+      { coll: 'Piano', name: 'LH', rows: [[['Bass line', 0, 8, 'c3'], ['Chord stack', 8, 5, 'c1']]] },
+      { coll: 'Piano', name: 'Pedal', rows: [[['Pedal hold', 0, 12, 'c2']]] },
+      { coll: 'Strings', name: 'Violin', rows: [[['Line 1', 2, 10, 'c1']]] },
+    ];
+    const ar = document.getElementById('ar');
+    const legend = document.getElementById('legend');
+    function draw(view) {
+      let html = '<div class="ruler">' + Array.from({ length: 16 }, (_, i) => `<span>${i + 1}</span>`).join('') + '</div>';
+      let last = null;
+      for (const t of TRACKS) {
+        if (view === 'a' && t.coll !== last) {
+          html += `<div class="band"><span>▾</span><span>▤</span>${t.coll}<span class="mute">M</span></div>`;
+        }
+        last = t.coll;
+        const h = t.rows.length * 22 + 4;
+        const head = view === 'a'
+          ? `<div class="head indent">${t.name}<small>${t.rows.length > 1 ? t.rows.length + ' sub-rows' : '≡ track'}</small></div>`
+          : `<div class="head"><small>${t.coll}</small>${t.name}</div>`;
+        let lane = '';
+        t.rows.forEach((row, r) => row.forEach(([n, s, l, c]) => {
+          lane += `<div class="blk ${c}" style="left:${s / 16 * 100}%;width:${l / 16 * 100}%;top:${2 + r * 22}px">${n}</div>`;
+        }));
+        html += `<div class="trk" style="height:${h}px">${head}<div class="lane">${lane}</div></div>`;
+      }
+      ar.innerHTML = html;
+      legend.textContent = view === 'a'
+        ? 'View A: a thin band per Collection keeps its mute and fold in the Arranger. Tracks sit indented below it.'
+        : 'View B: only Track rows; the Collection name is the small line over the Track name. Saves height; Collection mute and fold stay in the Outliner.';
+    }
+    const va = document.getElementById('va'), vb = document.getElementById('vb');
+    function pick(v) { va.setAttribute('aria-pressed', v === 'a'); vb.setAttribute('aria-pressed', v === 'b'); draw(v); }
+    va.onclick = () => pick('a'); vb.onclick = () => pick('b'); draw('a');
+    document.getElementById('scheme').onclick = () => {
+      const h = document.documentElement; h.dataset.scheme = h.dataset.scheme === 'dark' ? 'light' : 'dark';
+    };
+  </script>
+</body>
+</html>
