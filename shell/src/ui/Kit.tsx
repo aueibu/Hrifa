@@ -277,7 +277,7 @@ export function NumberField({
 
 /**
  * Blender `wcol_num`-style scrubbable numeric control:
- * - At rest / hover: raised `--panel-slot` fill with `ew-resize` cursor (drag horizontally to scrub, Shift for 0.1x).
+ * - At rest / hover: raised `--panel-slot` fill; drag horizontally or vertically to scrub (Shift for 0.1x).
  * - Single-click without drag (or Enter): switches to recessed `--panel-well` text entry with `--focus-ring`.
  * - Double-click: resets to `defaultValue` when provided.
  * - Pass `range={[min, max]}` for a genuinely bounded range (draws the `--accent` fill bar, unipolar or bipolar from 0).
@@ -327,6 +327,7 @@ export function ScrubNumber({
   const inputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<{
     startX: number;
+    startY: number;
     startValue: number;
     moved: boolean;
   } | null>(null);
@@ -452,7 +453,12 @@ export function ScrubNumber({
           return;
         }
         e.currentTarget.setPointerCapture?.(e.pointerId);
-        dragRef.current = { startX: e.clientX, startValue: numValue, moved: false };
+        dragRef.current = {
+          startX: e.clientX,
+          startY: e.clientY,
+          startValue: numValue,
+          moved: false,
+        };
       }}
       onPointerMove={(e) => {
         const d = dragRef.current;
@@ -460,14 +466,15 @@ export function ScrubNumber({
           return;
         }
         const dx = e.clientX - d.startX;
-        if (!d.moved && Math.abs(dx) < 3) {
+        const dy = d.startY - e.clientY;
+        if (!d.moved && Math.hypot(dx, dy) < 3) {
           return;
         }
         d.moved = true;
         setDragging(true);
         const factor = e.shiftKey ? 0.1 : 1;
-        // ~6px per step for crisp integer/fine control
-        const delta = Math.round((dx / 6) * factor) * step;
+        // ~6px per step for crisp integer/fine control (right or up increases)
+        const delta = Math.round(((dx + dy) / 6) * factor) * step;
         const next = clampValue(roundToStep(d.startValue + delta, e.shiftKey));
         if (next !== value) {
           onChange(next);

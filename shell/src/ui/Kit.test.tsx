@@ -239,4 +239,25 @@ describe('ScrubNumber', () => {
     expect(fill.style.left).toBe('0%');
     expect(fill.style.width).toBe('50%');
   });
+
+  it('scrubs values on horizontal or vertical drag (up increases, down decreases)', () => {
+    const onChange = vi.fn();
+    render(
+      <KitScope>
+        <ScrubNumber aria-label="Gain" value={10} clamp={[0, 100]} onChange={onChange} />
+      </KitScope>
+    );
+    const spin = screen.getByRole('spinbutton', { name: 'Gain' });
+
+    // Drag up 18px (+3 steps)
+    fireEvent.pointerDown(spin, { button: 0, clientX: 50, clientY: 50 });
+    fireEvent.pointerMove(spin, { clientX: 50, clientY: 32 });
+    expect(onChange).toHaveBeenLastCalledWith(13);
+    // Drag down 12px from start (-2 steps)
+    fireEvent.pointerMove(spin, { clientX: 50, clientY: 62 });
+    expect(onChange).toHaveBeenLastCalledWith(8);
+    fireEvent.pointerUp(spin, { button: 0, clientX: 50, clientY: 62 });
+    // Dragging does not open text input
+    expect(screen.queryByRole('textbox', { name: 'Gain' })).toBeNull();
+  });
 });

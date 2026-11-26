@@ -1081,7 +1081,7 @@ export function ThemeEditorPage() {
                   the only independent value.
                 </Text>
                 {markerCollisions.length > 0 && (
-                  <Alert color="yellow" title="Nearby marker hues" w="100%">
+                  <Alert color="orange" title="Nearby marker hues" w="100%">
                     {markerCollisions
                       .map(
                         ({ distance, names }) =>

@@ -90,7 +90,7 @@ Apps that use several colors to mean different things draw from four separate ro
 
 - **Accent**: the primary color (the blue ramp). Focus, selection, links, primary actions. It never
   encodes data.
-- **Status**: success, warning, danger and info are green, yellow, red and blue tints, always with an
+- **Status**: success, warning, danger and info are green, orange, red and blue tints, always with an
   icon and a word, never color alone.
 - **Categories**: eight core hues (red, orange, yellow, green, cyan, blue, violet, pink) spaced at
   least 40 degrees apart. Lime, teal, indigo and grape remain so Mantine components that name them

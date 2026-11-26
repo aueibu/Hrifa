@@ -64,6 +64,14 @@ const OUTLINER_ROWS = [
 
 const MARKER_HUES = ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'violet', 'pink'] as const;
 
+const FONT_SIZES = [
+  { size: 'xs', px: 11 },
+  { size: 'sm', px: 12 },
+  { size: 'md', px: 13 },
+  { size: 'lg', px: 15 },
+  { size: 'xl', px: 18 },
+] as const;
+
 export function UiShowcasePage() {
   const [scrubUnbounded, setScrubUnbounded] = useState(440);
   const [scrubRange, setScrubRange] = useState(0.65);
@@ -422,7 +430,7 @@ export function UiShowcasePage() {
                 <Alert color="green" title="Success">
                   Saved cleanly to workspace.
                 </Alert>
-                <Alert color="yellow" title="Warning">
+                <Alert color="orange" title="Warning">
                   Values clamped to safe range.
                 </Alert>
                 <Alert color="red" title="Error">
@@ -501,6 +509,21 @@ export function UiShowcasePage() {
 
                 <Pagination total={6} value={page} onChange={setPage} size="sm" />
               </Group>
+            </Stack>
+          </Surface>
+
+          {/* 7. Typography */}
+          <Surface p="md">
+            <Stack gap="xs">
+              <Title order={4}>Typography Sizes</Title>
+              {FONT_SIZES.map(({ size, px }) => (
+                <Group key={size} gap="md" wrap="nowrap" align="baseline">
+                  <Text size="xs" c="dimmed" ff="monospace" w={72} style={{ flexShrink: 0 }}>
+                    {size} ({px}px)
+                  </Text>
+                  <Text size={size}>The quick brown fox jumps over 440 Hz and 3/2:5/4 ratios.</Text>
+                </Group>
+              ))}
             </Stack>
           </Surface>
         </Stack>

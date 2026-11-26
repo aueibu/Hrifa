@@ -44,19 +44,34 @@ function markerVariables(tokens: ThemeTokens, scheme: MarkScheme): Variables {
   return variables;
 }
 
+function mixHex(fgHex: string, bgHex: string, weight: number): string {
+  const parse = (hex: string, offset: number) => Number.parseInt(hex.slice(offset, offset + 2), 16);
+  const channel = (offset: number) =>
+    Math.round(parse(fgHex, offset) * weight + parse(bgHex, offset) * (1 - weight))
+      .toString(16)
+      .padStart(2, '0');
+  return `#${channel(1)}${channel(3)}${channel(5)}`;
+}
+
 /**
  * `--rx-<hue>-<step>`: the Radix Colors step for the scheme (see radix.ts), for the colored tiles of the Modes and
  * Pairs panels. Also drives `--mark-<hue>` (step 11: high-contrast mark/line/dot) and `--tint-<hue>-*` (steps 3/4/12)
  * for the eight core Radix hues so all marks, lines, polygons, chips, and tiles share one Radix standard.
  */
-function radixVariables(scheme: RadixScheme): Variables {
+function radixVariables(scheme: RadixScheme, baseHex: string): Variables {
   const variables: Variables = {};
   for (const hue of RADIX_HUES) {
     for (const step of RADIX_STEPS_USED) {
       variables[`--rx-${hue}-${step}`] = radixHex(scheme, hue, step);
     }
-    const bg = radixHex(scheme, hue, 3);
-    const bgHover = radixHex(scheme, hue, 4);
+    const bg =
+      scheme === 'dark'
+        ? mixHex(radixHex('dark', hue, 8), baseHex, 0.3)
+        : mixHex(radixHex('light', hue, 6), baseHex, 0.28);
+    const bgHover =
+      scheme === 'dark'
+        ? mixHex(radixHex('dark', hue, 8), baseHex, 0.42)
+        : mixHex(radixHex('light', hue, 6), baseHex, 0.4);
     const text = radixHex(scheme, hue, 12);
     variables[`--mark-${hue}`] = radixHex(scheme, hue, 11);
     variables[`--tint-${hue}-bg`] = bg;
@@ -140,7 +155,16 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--mantine-color-default-border': 'var(--mantine-color-gray-2)',
       '--mantine-color-default-hover': 'var(--mantine-color-gray-1)',
       ...markerVariables(tokens, 'light'),
-      ...radixVariables('light'),
+      ...radixVariables('light', tokens.white),
+      // Match the ScrubNumber fill bar (26% --accent) so Light buttons/badges are calm and consistent.
+      '--mantine-primary-color-light':
+        'color-mix(in srgb, var(--mantine-primary-color-filled) 26%, transparent)',
+      '--mantine-primary-color-light-hover':
+        'color-mix(in srgb, var(--mantine-primary-color-filled) 36%, transparent)',
+      '--mantine-primary-color-light-color': tokens.primary[9],
+      '--mantine-color-primary-light': 'var(--mantine-primary-color-light)',
+      '--mantine-color-primary-light-hover': 'var(--mantine-primary-color-light-hover)',
+      '--mantine-color-primary-light-color': 'var(--mantine-primary-color-light-color)',
     },
     dark: {
       '--surface': 'var(--mantine-color-dark-8)',
@@ -160,7 +184,15 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--mantine-color-error': 'var(--text-danger)',
       '--mantine-color-default-border': 'var(--mantine-color-dark-5)',
       ...markerVariables(tokens, 'dark'),
-      ...radixVariables('dark'),
+      ...radixVariables('dark', tokens.dark[7]),
+      // Override Radix dark blue step 3 (#0d2847), which is darker than our warm-gray panels;
+      // mix primary-5 over --panel-slot so light buttons/badges stay noticeably blue without going dark.
+      '--mantine-primary-color-light': `color-mix(in srgb, ${tokens.primary[5]} 38%, var(--panel-slot))`,
+      '--mantine-primary-color-light-hover': `color-mix(in srgb, ${tokens.primary[5]} 50%, var(--panel-slot))`,
+      '--mantine-primary-color-light-color': tokens.primary[0],
+      '--mantine-color-primary-light': 'var(--mantine-primary-color-light)',
+      '--mantine-color-primary-light-hover': 'var(--mantine-primary-color-light-hover)',
+      '--mantine-color-primary-light-color': 'var(--mantine-primary-color-light-color)',
     },
   });
 }
