@@ -84,6 +84,17 @@ Targets, enforced by `palette.test.ts`: main text 7:1 or more on the panel; mute
 4.5:1 or more, and main text visibly stronger than muted (1.5:1 between them); control borders 3:1
 or more on the panel; the panel separable from the page; each ramp in strict lightness order.
 
+## Cursor roles
+
+Custom pointers are theme roles too, so every control that behaves the same shows the same pointer.
+Use `cursor: var(--cursor-<role>)`; never paste an image URL into a component. The image is a 32px
+or smaller inline SVG with a fallback keyword. The cursor reference mock is
+`arcs/workbench/mock-cursors.html`.
+
+| Role | Use | Fallback |
+| --- | --- | --- |
+| `--cursor-scrub` | a box whose number changes by dragging (arrow plus small up-down arrow); hide the pointer while dragging with `cursor: none` | `ns-resize` |
+
 ## One accent, many categories
 
 Apps that use several colors to mean different things draw from four separate roles:

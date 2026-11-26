@@ -188,11 +188,8 @@
   border: 1px solid var(--grid);
   border-radius: var(--radius-control);
   color: var(--text);
-  /* The normal arrow with a small up-down arrow beside it (Bitwig): the box scrubs by dragging. */
-  cursor:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 32 32'%3E%3Cpath d='M5 3v17l4.3-4 3 6.8 2.6-1.2-3-6.6H18z' fill='%23111' stroke='%23fff' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M24 5l-3.2 4h2.4v8h-2.4l3.2 4 3.2-4h-2.4V9h2.4z' fill='%23111' stroke='%23fff' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E")
-      4 2,
-    ns-resize;
+  /* The box scrubs by dragging; the image lives in the theme (semantic.ts). */
+  cursor: var(--cursor-scrub);
   display: flex;
   font-family: var(--mantine-font-family-monospace);
   font-size: var(--mantine-font-size-md);

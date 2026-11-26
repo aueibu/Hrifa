@@ -6,6 +6,14 @@ import { defaultThemeTokens, type ThemeTokens } from './tokens';
 type Variables = Record<string, string>;
 
 /**
+ * `--cursor-scrub`: the pointer over a box that changes its number by dragging (the normal arrow with
+ * a small up-down arrow beside it, as in Bitwig). 26px image, click point at the arrow tip (4, 2);
+ * falls back to `ns-resize` if the image does not load. While dragging, controls set `cursor: none`.
+ */
+const CURSOR_SCRUB =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 32 32'%3E%3Cpath d='M5 3v17l4.3-4 3 6.8 2.6-1.2-3-6.6H18z' fill='%23111' stroke='%23fff' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M24 5l-3.2 4h2.4v8h-2.4l3.2 4 3.2-4h-2.4V9h2.4z' fill='%23111' stroke='%23fff' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E\") 4 2, ns-resize";
+
+/**
  * Per-scheme variables for every marker hue:
  *  - `--mark-<hue>`: the hue as a mark on a panel (lines, dots, text), at a lightness tuned for the
  *    scheme so it holds 3:1 or more there. Canvas and SVG code reads these, never a fixed shade.
@@ -112,6 +120,7 @@ export function createSemanticResolver(tokens: ThemeTokens): CSSVariablesResolve
       '--radius-panel': 'var(--mantine-radius-default)',
       '--radius-control': 'var(--mantine-radius-sm)',
       '--radius-hairline': '2px',
+      '--cursor-scrub': CURSOR_SCRUB,
       '--shadow-panel': 'var(--mantine-shadow-xs)',
       '--panel': 'var(--mantine-color-body)',
       '--border': 'var(--mantine-color-default-border)',
