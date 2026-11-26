@@ -131,7 +131,7 @@ const samples: [string, DataPacket, string][] = [
 ];
 
 describe('the built-in packet types', () => {
-  it('registers Notes, Pitch set, Pitch classes, Rhythm, Values, List, Bank, Scene, Collection and Object', () => {
+  it('registers Notes, Pitch set, Pitch classes, Rhythm, Values, List, Bank, Scene, Collection, Track and Object', () => {
     expect(dataBlockTypes().map((type) => [type.id, type.family, [...type.channels]])).toEqual([
       ['notes', 'placed', ['onset', 'duration', 'pitch', 'amplitude']],
       ['pitch-set', 'pitch', ['pitch']],
@@ -142,6 +142,7 @@ describe('the built-in packet types', () => {
       ['bank', 'generic', []],
       ['scene', 'composite', []],
       ['collection', 'composite', []],
+      ['track', 'composite', []],
       ['object', 'placed', []],
     ]);
   });
@@ -159,6 +160,7 @@ describe('the built-in packet types', () => {
     expect(dataBlockTypesByFamily('composite').map((type) => type.id)).toEqual([
       'scene',
       'collection',
+      'track',
     ]);
   });
 

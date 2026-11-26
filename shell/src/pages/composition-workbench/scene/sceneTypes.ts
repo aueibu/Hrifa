@@ -18,6 +18,7 @@ import { addRational, rational, type Rational } from '../musicalTime';
 export const SCENE_TYPE_ID = 'scene';
 export const OBJECT_TYPE_ID = 'object';
 export const COLLECTION_TYPE_ID = 'collection';
+export const TRACK_TYPE_ID = 'track';
 
 export type ObjectMapping = 'loop' | 'stretch' | 'one-shot';
 export type RegisterMapping = 'show' | 'filter' | 'fold';
@@ -53,7 +54,21 @@ export interface CollectionData {
   mute: boolean;
 }
 
+/**
+ * A Track (TK1a, W-82): one row of an Arranger inside a Collection. It stores only its name (the block
+ * name) and mute; fold is per-viewer session state. A Track belongs to exactly one Collection through
+ * that Collection's `memberRefs`; its contents are COMPUTED from `ObjectData.trackRef`, never stored.
+ */
+export interface TrackData {
+  mute: boolean;
+}
+
 export interface ObjectData {
+  /**
+   * The Track this object sits on, or null. Optional for now; TK1b makes it required (then `lane`
+   * goes away with its readers).
+   */
+  trackRef?: Ref | null;
   /** The object this one is placed relative to, or null (a root-level object). */
   parentRef: Ref | null;
   /** `start` is relative to the parent's world start (or to the scene start with no parent). */
@@ -113,7 +128,7 @@ function isRationalValue(value: unknown): value is Rational {
 function recordBlock(
   request: BlankRequest,
   typeId: string,
-  data: SceneData | CollectionData | ObjectData
+  data: SceneData | CollectionData | ObjectData | TrackData
 ): RecordBlock {
   return {
     schemaVersion: DATA_BLOCK_SCHEMA_VERSION,
@@ -138,11 +153,15 @@ export const collectionDataOf = (block: StoredDataBlock | undefined) =>
   recordDataOf<CollectionData>(block, COLLECTION_TYPE_ID);
 export const objectDataOf = (block: StoredDataBlock | undefined) =>
   recordDataOf<ObjectData>(block, OBJECT_TYPE_ID);
+export const trackDataOf = (block: StoredDataBlock | undefined) =>
+  recordDataOf<TrackData>(block, TRACK_TYPE_ID);
 
 export const blankSceneData = (): SceneData => ({ rootCollectionRef: null, markers: [] });
 export const blankCollectionData = (): CollectionData => ({ memberRefs: [], mute: false });
 /** An Empty object: start 0, 4 quarters, the whole register, Loop, no data (it is silent). */
+export const blankTrackData = (): TrackData => ({ mute: false });
 export const blankObjectData = (): ObjectData => ({
+  trackRef: null,
   parentRef: null,
   timeSpan: { start: rational(0), duration: rational(4) },
   contentOffset: rational(0),
@@ -160,6 +179,8 @@ export const createBlankCollection = (request: BlankRequest) =>
   recordBlock(request, COLLECTION_TYPE_ID, blankCollectionData());
 export const createBlankObject = (request: BlankRequest) =>
   recordBlock(request, OBJECT_TYPE_ID, blankObjectData());
+export const createBlankTrack = (request: BlankRequest) =>
+  recordBlock(request, TRACK_TYPE_ID, blankTrackData());
 
 /**
  * The objects from `blockId` up through its parent refs, the block itself first, or null when the
@@ -231,9 +252,16 @@ function validateCollectionData(data: unknown): string | null {
   return new Set(ids).size === ids.length ? null : 'A collection lists each member once.';
 }
 
+export function validateTrackData(data: unknown): string | null {
+  return isRecordOf(data) && typeof data.mute === 'boolean' ? null : 'A track holds a mute flag.';
+}
+
 function validateObjectData(data: unknown): string | null {
   if (!isRecordOf(data)) {
     return 'An object holds placement data.';
+  }
+  if (data.trackRef !== undefined && !isNullableRef(data.trackRef)) {
+    return 'An object track is a reference or blank.';
   }
   const { timeSpan, registerSpan } = data;
   if (
@@ -373,6 +401,18 @@ export function registerSceneTypes(): () => void {
         }
         return { ...collection, memberRefs };
       },
+    }),
+    registerDataBlockType({
+      id: TRACK_TYPE_ID,
+      label: 'Track',
+      family: 'composite',
+      channels: [],
+      payload: 'record',
+      noAuditionReason: NO_AUDITION,
+      validate: validateTrackData,
+      createBlank: createBlankTrack,
+      refs: (): SlotRef[] => [],
+      mapRefs: (data) => data,
     }),
     registerDataBlockType({
       id: OBJECT_TYPE_ID,

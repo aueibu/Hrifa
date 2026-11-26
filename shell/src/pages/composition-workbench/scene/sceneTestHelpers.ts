@@ -68,6 +68,7 @@ interface ObjectPatch {
   duration?: number;
   mapping?: ObjectData['mapping'];
   lane?: number;
+  trackRef?: Ref | null;
   contentOffset?: Rational;
   registerSpan?: ObjectData['registerSpan'];
   registerMapping?: ObjectData['registerMapping'];

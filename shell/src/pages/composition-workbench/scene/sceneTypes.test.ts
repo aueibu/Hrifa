@@ -8,9 +8,66 @@ import {
   createBlankCollection,
   createBlankObject,
   createBlankScene,
+  createBlankTrack,
+  trackDataOf,
   type CollectionData,
   type ObjectData,
 } from './sceneTypes';
+
+describe('the track record type', () => {
+  it('is registered as a record type with no channels', () => {
+    const def = dataBlockTypeOf({ typeId: 'track' });
+    expect([def?.id, def?.label, def?.payload, def?.channels.length]).toEqual([
+      'track',
+      'Track',
+      'record',
+      0,
+    ]);
+  });
+
+  it('createBlank gives a valid, unmuted track holding only mute', () => {
+    const track = createBlankTrack(request);
+    expect(validateBlock(track)).toBeNull();
+    expect(trackDataOf(track)).toEqual({ mute: false });
+    expect(blockRefs(track)).toEqual([]);
+  });
+
+  it('rejects data without a boolean mute flag', () => {
+    const bad = (data: unknown) =>
+      validateBlock({ ...createBlankTrack(request), payload: { kind: 'record', data } });
+    expect(bad({})).not.toBeNull();
+    expect(bad({ mute: 'no' })).not.toBeNull();
+    expect(bad(null)).not.toBeNull();
+    expect(bad({ mute: true })).toBeNull();
+  });
+});
+
+describe('ObjectData.trackRef', () => {
+  const withTrackRef = (trackRef: unknown) => {
+    const data: Record<string, unknown> = { ...blankObjectData(), trackRef };
+    if (trackRef === undefined) {
+      delete data.trackRef;
+    }
+    return validateBlock({ ...createBlankObject(request), payload: { kind: 'record', data } });
+  };
+
+  it('accepts undefined, null and a reference', () => {
+    expect(withTrackRef(undefined)).toBeNull();
+    expect(withTrackRef(null)).toBeNull();
+    expect(withTrackRef({ id: 't' })).toBeNull();
+  });
+
+  it('rejects garbage', () => {
+    expect(withTrackRef('t')).not.toBeNull();
+    expect(withTrackRef({ id: '' })).not.toBeNull();
+    expect(withTrackRef({})).not.toBeNull();
+    expect(withTrackRef(3)).not.toBeNull();
+  });
+
+  it('is null on a blank object', () => {
+    expect(blankObjectData().trackRef).toBeNull();
+  });
+});
 
 const request = { id: 'x', createdAt: '2026-11-24T00:00:00Z', name: 'X', length: rational(4) };
 const dataOf = <T>(block: { payload: { kind: string; data?: unknown } }) =>
@@ -51,6 +108,7 @@ describe('the three record types', () => {
     const object = createBlankObject(request);
     expect(validateBlock(object)).toBeNull();
     expect(dataOf<ObjectData>(object)).toEqual({
+      trackRef: null,
       parentRef: null,
       timeSpan: { start: rational(0), duration: rational(4) },
       contentOffset: rational(0),

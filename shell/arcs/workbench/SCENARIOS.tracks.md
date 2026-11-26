@@ -26,7 +26,7 @@ The example scene is "Movement I". Piano has three Tracks, Strings has one.
 | 8 | Collection Piano holds a nested Collection "Ornaments" with Track "Trills" | Fold Piano | Hides its lanes | Hides all its Tracks and the nested Collection's Tracks. Unfold restores the previous fold state of Ornaments |
 | 9 | Object "Chord stack" has parent "Theme A" (RH); "Chord stack" is on LH | Move "Theme A" 2 beats later | Parent must be in the same Collection to nest in the Outliner | The child follows (its start is relative to the parent, W-66). It stays on LH. The Outliner nests it under "Theme A" only when both are on the same Track (see Q7) |
 | 10 | Select the Track RH | Look at Properties | n/a | See Q6: Collection tab shows a "Track" section when a Track is selected (recommended); no sixth tab |
-| 11 | An old project: Collection "Piano" with 3 Objects, two pinned on sub-row 1 | Open it | Three Objects on sub-rows | One Track named "Piano" is created inside it. The Objects go onto it. The old `lane` number is dropped. Overlapping Objects draw as sub-rows automatically, in the order of their old `lane`, then start time |
+| 11 | An old project: Collection "Piano" with 3 Objects, two pinned on sub-row 1 | Open it | Three Objects on sub-rows | One Track named "Piano" is created inside it. The Objects go onto it. The old `lane` number is dropped. Overlapping Objects draw as sub-rows automatically, by start time then id (the old `lane` number is dropped, not preserved) |
 | 12 | A Track with no Objects | Look at the Arranger | n/a | An empty row, one sub-row high, still named and selectable. It is not deleted by itself |
 
 ## 3. Open questions, each with an example where the options differ
