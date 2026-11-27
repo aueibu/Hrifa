@@ -93,6 +93,96 @@ for idx in (37, 68, 69, 70):
     P = [p[:2] for p in c["example"]["P"]]
     Q = [q[:2] for q in c["example"]["Q"]]
     assert all(not any(p[2:]) for p in c["example"]["P"] + c["example"]["Q"])
-    add(9, f"#{idx}", 2, P, Q, c["minq"], "2-D 9-note shape from the known families (list not yet proven complete); drawn as its smallest example in the 3-5 lattice", c["count"])
+    add(9, f"#{idx}", 2, P, Q, c["minq"], "2-D 9-note shape from the known families (list not yet proven complete)", c["count"])
+
+# ---- prime form (2026-11-26 evening): deterministic drawing of each shape ----
+# Over unimodular maps M (1-D: +-1; 2-D: entries |x| <= 10; 3-D: |x| <= 1; 4-D: kept as the A + B coordinates),
+# translation per set, mirror per set and P/Q swap: minimize total width (sum of the bounding-box widths of P and Q),
+# ties broken by the lexicographically smallest (sorted P, sorted Q) after moving each set's box corner to 0.
+import itertools
+
+PRIMES = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31]
+
+
+def det(M):
+    d = len(M)
+    if d == 1:
+        return M[0][0]
+    if d == 2:
+        return M[0][0] * M[1][1] - M[0][1] * M[1][0]
+    a, b, c = M
+    return a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0])
+
+
+def unimodular(d):
+    R = {1: 1, 2: 10, 3: 1}[d]
+    vals = range(-R, R + 1)
+    for e in itertools.product(vals, repeat=d * d):
+        M = [e[i * d:(i + 1) * d] for i in range(d)]
+        if abs(det(M)) == 1:
+            yield M
+
+
+def width(S):
+    return sum(max(p[i] for p in S) - min(p[i] for p in S) for i in range(len(S[0])))
+
+
+def norm(S):
+    m = [min(p[i] for p in S) for i in range(len(S[0]))]
+    return tuple(sorted(tuple(x - m[i] for i, x in enumerate(p)) for p in S))
+
+
+def prime_form(P, Q):
+    d = len(P[0])
+    if d > 3:
+        return {"P": [list(p) for p in norm(P)], "Q": [list(p) for p in norm(Q)], "rule": "A + B coordinates (4-D not searched)"}
+    best = None
+    for M in unimodular(d):
+        P2 = [[sum(M[r][c] * p[c] for c in range(d)) for r in range(d)] for p in P]
+        Q2 = [[sum(M[r][c] * p[c] for c in range(d)) for r in range(d)] for p in Q]
+        w = width(P2) + width(Q2)
+        if best is not None and w > best[0]:
+            continue
+        mir = lambda S: [[-x for x in p] for p in S]
+        for A, B in ((P2, Q2), (Q2, P2)):
+            for A1 in (norm(A), norm(mir(A))):
+                for B1 in (norm(B), norm(mir(B))):
+                    key = (w, A1, B1)
+                    if best is None or key < best:
+                        best = key
+    return {"P": [list(p) for p in best[1]], "Q": [list(p) for p in best[2]], "width": best[0],
+            "rule": {1: "maps +-1", 2: "unimodular maps, entries |x| <= 10", 3: "unimodular maps, entries |x| <= 1"}[d]}
+
+
+def first_view(ex):
+    """a real example on the JI lattice: keep the prime columns it uses; each set's box corner moved to 0"""
+    cols = [i for i in range(len(ex["P"][0])) if any(p[i] for p in ex["P"] + ex["Q"])]
+    P = [[p[i] for i in cols] for p in ex["P"]]
+    Q = [[p[i] for i in cols] for p in ex["Q"]]
+    return {"P": [list(p) for p in norm(P)], "Q": [list(p) for p in norm(Q)], "primes": [PRIMES[i] for i in cols],
+            "q": ex["q"], "list": ex.get("list")}
+
+
+cls = {k: [json.loads(l) for l in open(f"tables/shapes9/k{k}.classes.jsonl")] for k in (6, 7, 8)}
+for s in out:
+    s["prime"] = prime_form(s["P"], s["Q"])
+    if s["dim"] == 1:  # lines: smallest on the chain of fifths (3-axis), q = 3^span
+        s["first"] = {"P": s["P"], "Q": s["Q"], "primes": [3], "q": s["first_q"], "list": None}
+    elif s["k"] < 9:
+        best = None
+        for c in cls[s["k"]]:
+            if img((fr(s["P"]), fr(s["Q"])), (fr(c["example"]["P"]), fr(c["example"]["Q"]))):
+                if best is None or c["minq"] < best["minq"]:
+                    best = c
+        s["first"] = first_view(best["example"]) if best else None
+        if best:
+            assert best["minq"] == s["first_q"], (s["name"], best["minq"], s["first_q"])
+    else:
+        idx = {"3 x 3 product": 31, "#23": 23}.get(s["name"]) or int(s["name"][1:])
+        c = cl[idx]
+        assert c["minq"] == s["first_q"], (s["name"], c["minq"], s["first_q"])
+        s["first"] = first_view(c["example"])
+    print(s["k"], s["name"], "width", s["prime"].get("width"), "first", s["first"] and (s["first"]["q"], s["first"]["primes"]), file=sys.stderr)
+
 json.dump(out, open(sys.argv[1], "w"))
 print(len(out), "shapes", file=sys.stderr)

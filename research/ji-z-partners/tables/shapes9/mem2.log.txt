@@ -1,0 +1,7 @@
+=== K8: 8 --min-dim 2 --fast --canon2 --dedup-min-dim 5 (D 4: 1111 s, 438 M nodes, 182 M stored)
+k 8: 512224269 nodes, 4816245 bad (0 by f2, 0 by f4), 1711738 dups, 6919384 classes stored, 21036765479 good nodes 507408024, 950 type flats, 4 maximal classes, COMPLETE, 1048.9 s
+=== K8: 8 --min-dim 2 --fast --canon2 --dedup-min-dim 6 (D 4: 1111 s, 438 M nodes, 182 M stored)
+k 8: 645684327 nodes, 7681179 bad (0 by f2, 0 by f4), 129439 dups, 190720 classes stored, 26270725438 good nodes 638003148, 1548 type flats, 4 maximal classes, COMPLETE, 1306.9 s
+=== K8: 8 --min-dim 2 --fast --canon2 --dedup-min-dim 0 (D 4: 1111 s, 438 M nodes, 182 M stored)
+k 8: 433397809 nodes, 1521524 bad (0 by f2, 0 by f4), 127150714 dups, 304725571 classes stored, 13498945877 good nodes 431876285, 4 type flats, 4 maximal classes, COMPLETE, 1346.9 s
+MEM2 DONE

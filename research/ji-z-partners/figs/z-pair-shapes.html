@@ -60,6 +60,11 @@ svg { width: 100%; height: auto; display: block; overflow: visible; }
 .note { font-size: 0.8rem; color: var(--muted); margin: 0; }
 .tip { position: fixed; pointer-events: none; background: var(--fg); color: var(--bg); font-family: var(--mono); font-size: 0.75rem; padding: 3px 7px; border-radius: 5px; z-index: 5; }
 .foot { margin-top: 36px; color: var(--muted); font-size: 0.82rem; max-width: 80ch; }
+.axes { font-size: 0.74rem; color: var(--muted); margin: 0; font-family: var(--mono); }
+.empty { font-size: 0.85rem; color: var(--muted); margin: 8px 0; padding: 18px 10px; border: 1px dashed var(--line); border-radius: 8px; text-align: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--panel); margin-bottom: 14px; }
+.seg button { font: inherit; font-size: 0.86rem; border: 0; background: none; color: var(--muted); padding: 5px 14px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--chip); color: var(--fg); font-weight: 500; }
 @media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
 </style>
 
@@ -71,13 +76,14 @@ svg { width: 100%; height: auto; display: block; overflow: visible; }
     <span><i class="dot q"></i>set Q (same intervals, different set)</span>
     <span>grid dots: lattice points in the pattern's own coordinates</span>
   </div>
+  <div class="seg" role="group" aria-label="Drawing"><button data-mode="prime" aria-pressed="true">Shape</button><button data-mode="first" aria-pressed="false">First appearance</button></div>
   <div id="out"></div>
-  <p class="foot">Drawings: 2-D patterns are shown in a compact basis (a change of basis with integer entries and determinant ±1 does not change the pattern). The four 2-D 9-note patterns are drawn as their smallest known example on the 3 (across) by 5 (up) lattice. The 3 × 3 product is drawn as chord A (small triangle) repeated at each note of chord B for P, and of B mirrored for Q. Hover a note for its coordinates.</p>
+  <p class="foot">Shape view: each shape in its prime form, a fixed rule computed offline: over all changes of basis with integer entries and determinant ±1 (2-D: entries up to 10 in size; 3-D: up to 1), shifting each set, mirroring each set and swapping P and Q, take the drawing with the smallest total width (bounding-box widths of P and Q added up), ties broken by the smallest sorted coordinate list. 2-D shapes are drawn with their second coordinate across. The 4-D 3 × 3 product keeps its A + B coordinates: chord A (small triangle) repeated at each note of chord B for P, and of B mirrored for Q. First appearance view: the smallest real example in the families we have, on the JI lattice (axes are prime exponents; each set shifted to start at 0); the 7-note lines lie on the chain of fifths. Hover a note for its coordinates.</p>
 </div>
 <div class="tip" id="tip" hidden></div>
 
 <script>
-const DATA = [{"k": 6, "name": "type 1", "dim": 2, "P": [[0, 0], [0, 1], [1, -5], [2, -8], [2, -6], [3, -10]], "Q": [[2, -7], [2, -6], [3, -8], [4, -14], [4, -12], [5, -17]], "first_q": 125, "note": "the only 6-note shape (proven)", "families": null}, {"k": 7, "name": "type 19", "dim": 2, "P": [[0, 0], [0, 1], [0, 3], [0, 6], [1, -8], [1, -7], [1, -3]], "Q": [[0, 3], [0, 6], [0, 8], [0, 9], [1, -5], [1, -1], [1, 0]], "first_q": 1215, "note": "the only 2-D 7-note shape (proven)", "families": null}, {"k": 7, "name": "line A (zgen type 1)", "dim": 1, "P": [[0], [1], [2], [5], [7], [9], [12]], "Q": [[7], [9], [11], [12], [14], [18], [19]], "first_q": 531441, "note": "1-D, on the chain of fifths", "families": null}, {"k": 7, "name": "line B (#7)", "dim": 1, "P": [[0], [2], [3], [7], [9], [10], [15]], "Q": [[0], [2], [7], [8], [9], [12], [15]], "first_q": 14348907, "note": "1-D, found by the 7-note pattern search", "families": null}, {"k": 7, "name": "line C (#11)", "dim": 1, "P": [[0], [1], [3], [4], [9], [11], [15]], "Q": [[0], [1], [7], [9], [11], [12], [15]], "first_q": 14348907, "note": "1-D, found by the 7-note pattern search", "families": null}, {"k": 7, "name": "line D (#13)", "dim": 1, "P": [[0], [1], [4], [5], [11], [13], [16]], "Q": [[0], [1], [5], [10], [12], [13], [16]], "first_q": 43046721, "note": "1-D, found by the 7-note pattern search", "families": null}, {"k": 7, "name": "line E (#6)", "dim": 1, "P": [[0], [2], [4], [7], [11], [12], [17]], "Q": [[0], [2], [7], [9], [12], [13], [17]], "first_q": 129140163, "note": "1-D, found by the 7-note pattern search", "families": null}, {"k": 8, "name": "type 91", "dim": 2, "P": [[0, 0], [0, 1], [0, 2], [1, -7], [2, -11], [2, -9], [2, -8], [3, -14]], "Q": [[2, -10], [2, -9], [2, -8], [3, -11], [4, -20], [4, -19], [4, -17], [5, -24]], "first_q": 243, "note": "2-D 8-note shape (proven complete list of 4)", "families": null}, {"k": 8, "name": "type 94", "dim": 2, "P": [[0, 0], [0, 1], [0, 3], [0, 4], [0, 7], [1, -8], [1, -7], [1, -3]], "Q": [[0, 3], [0, 6], [0, 7], [0, 9], [0, 10], [1, -5], [1, -1], [1, 0]], "first_q": 2187, "note": "2-D 8-note shape (proven complete list of 4)", "families": null}, {"k": 8, "name": "s1", "dim": 2, "P": [[0, 0], [0, 1], [2, 0], [2, 1], [3, 0], [6, 0], [7, 1], [9, 0]], "Q": [[0, 0], [0, 1], [3, 0], [5, 1], [6, 0], [7, 0], [7, 1], [9, 0]], "first_q": 19683, "note": "2-D 8-note shape (proven complete list of 4)", "families": null}, {"k": 8, "name": "c3", "dim": 2, "P": [[0, 0], [1, 0], [0, 1], [4, 1], [6, 1], [13, 1], [-4, 0], [12, 1]], "Q": [[0, 0], [1, 0], [0, 1], [5, 1], [-6, 0], [-8, 0], [-12, 0], [4, 1]], "first_q": null, "note": "2-D 8-note shape found only by the pattern search (first q above 531,440)", "families": null}, {"k": 9, "name": "3 x 3 product", "dim": 4, "P": [[0, 0, 0, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 1, 0], [0, 1, 0, 1], [0, 1, 1, 0], [1, 0, 0, 1]], "Q": [[0, 0, 0, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1], [0, 1, 0, -1], [0, 1, -1, 0], [1, 0, 0, -1], [1, 0, -1, 0]], "first_q": 49, "note": "two 3-note chords A, B: P = A + B, Q = A - B (proven: one of the two 9-note shapes of dim >= 3)", "families": 151623}, {"k": 9, "name": "#23", "dim": 3, "P": [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [-2, 2, 1], [1, 1, 1], [0, 2, 1], [-1, 0, 1], [-2, 3, 1]], "Q": [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, -1], [2, -2, -1], [0, -1, -1], [2, 0, -1], [3, -2, -1], [1, 1, -1]], "first_q": 125, "note": "the other 9-note shape of dim >= 3 (proven)", "families": 2340}, {"k": 9, "name": "#37", "dim": 2, "P": [[0, 0], [4, -1], [-1, 2], [1, 2], [4, 0], [-1, 3], [3, -1], [-1, 1], [3, 0]], "Q": [[0, 0], [-2, 1], [2, 0], [-1, 3], [3, -1], [-2, 2], [2, 1], [3, 0], [-2, 3]], "first_q": 625, "note": "2-D 9-note shape from the known families (list not yet proven complete); drawn as its smallest example in the 3-5 lattice", "families": 25}, {"k": 9, "name": "#68", "dim": 2, "P": [[0, 0], [-1, 2], [3, 1], [1, 2], [4, 0], [-1, 3], [3, -1], [2, -2], [1, -2]], "Q": [[0, 0], [-1, 2], [0, -2], [-2, -1], [-4, 0], [-2, 3], [-3, 2], [1, -2], [-4, 1]], "first_q": 3125, "note": "2-D 9-note shape from the known families (list not yet proven complete); drawn as its smallest example in the 3-5 lattice", "families": 4}, {"k": 9, "name": "#69", "dim": 2, "P": [[0, 0], [3, 1], [-2, 1], [-3, 0], [0, 1], [4, 0], [-3, 1], [1, 0], [-2, 0]], "Q": [[0, 0], [2, 0], [-1, 0], [2, 1], [-4, 0], [-1, 1], [3, 0], [1, 1], [-4, 1]], "first_q": 3645, "note": "2-D 9-note shape from the known families (list not yet proven complete); drawn as its smallest example in the 3-5 lattice", "families": 38}, {"k": 9, "name": "#70", "dim": 2, "P": [[0, 0], [3, 1], [-2, 1], [-3, 0], [4, 0], [-3, 1], [-4, 0], [-2, 0], [-4, 1]], "Q": [[0, 0], [3, 1], [2, 0], [4, 0], [2, 1], [-4, 0], [3, 0], [1, 1], [-4, 1]], "first_q": 10935, "note": "2-D 9-note shape from the known families (list not yet proven complete); drawn as its smallest example in the 3-5 lattice", "families": 16}];
+const DATA = [{"k": 6, "name": "type 1", "dim": 2, "P": [[0, 0], [0, 1], [1, -5], [2, -8], [2, -6], [3, -10]], "Q": [[2, -7], [2, -6], [3, -8], [4, -14], [4, -12], [5, -17]], "first_q": 125, "note": "the only 6-note shape (proven)", "families": null, "prime": {"P": [[0, 0], [0, 1], [1, 3], [2, 1], [2, 3], [3, 2]], "Q": [[0, 0], [1, 0], [1, 2], [2, 3], [3, 1], [3, 2]], "width": 12, "rule": "unimodular maps, entries |x| <= 10"}, "first": {"P": [[0, 2], [0, 3], [1, 0], [2, 0], [2, 2], [3, 1]], "Q": [[0, 1], [0, 2], [1, 3], [2, 0], [2, 2], [3, 0]], "primes": [3, 5], "q": 125, "list": "chordneg_5q2187"}}, {"k": 7, "name": "type 19", "dim": 2, "P": [[0, 0], [0, 1], [0, 3], [0, 6], [1, -8], [1, -7], [1, -3]], "Q": [[0, 3], [0, 6], [0, 8], [0, 9], [1, -5], [1, -1], [1, 0]], "first_q": 1215, "note": "the only 2-D 7-note shape (proven)", "families": null, "prime": {"P": [[0, 0], [0, 1], [0, 3], [0, 6], [1, 0], [1, 1], [1, 5]], "Q": [[0, 0], [0, 3], [0, 5], [0, 6], [1, 0], [1, 4], [1, 5]], "width": 14, "rule": "unimodular maps, entries |x| <= 10"}, "first": {"P": [[0, 0], [0, 1], [1, 0], [1, 1], [3, 0], [5, 1], [6, 0]], "Q": [[0, 0], [0, 1], [3, 0], [4, 1], [5, 0], [5, 1], [6, 0]], "primes": [3, 5], "q": 1215, "list": "s1_5q2187"}}, {"k": 7, "name": "line A (zgen type 1)", "dim": 1, "P": [[0], [1], [2], [5], [7], [9], [12]], "Q": [[7], [9], [11], [12], [14], [18], [19]], "first_q": 531441, "note": "1-D, on the chain of fifths", "families": null, "prime": {"P": [[0], [1], [2], [5], [7], [9], [12]], "Q": [[0], [1], [5], [7], [8], [10], [12]], "width": 24, "rule": "maps +-1"}, "first": {"P": [[0], [1], [2], [5], [7], [9], [12]], "Q": [[7], [9], [11], [12], [14], [18], [19]], "primes": [3], "q": 531441, "list": null}}, {"k": 7, "name": "line B (#7)", "dim": 1, "P": [[0], [2], [3], [7], [9], [10], [15]], "Q": [[0], [2], [7], [8], [9], [12], [15]], "first_q": 14348907, "note": "1-D, found by the 7-note pattern search", "families": null, "prime": {"P": [[0], [2], [3], [7], [9], [10], [15]], "Q": [[0], [2], [7], [8], [9], [12], [15]], "width": 30, "rule": "maps +-1"}, "first": {"P": [[0], [2], [3], [7], [9], [10], [15]], "Q": [[0], [2], [7], [8], [9], [12], [15]], "primes": [3], "q": 14348907, "list": null}}, {"k": 7, "name": "line C (#11)", "dim": 1, "P": [[0], [1], [3], [4], [9], [11], [15]], "Q": [[0], [1], [7], [9], [11], [12], [15]], "first_q": 14348907, "note": "1-D, found by the 7-note pattern search", "families": null, "prime": {"P": [[0], [1], [3], [4], [9], [11], [15]], "Q": [[0], [1], [7], [9], [11], [12], [15]], "width": 30, "rule": "maps +-1"}, "first": {"P": [[0], [1], [3], [4], [9], [11], [15]], "Q": [[0], [1], [7], [9], [11], [12], [15]], "primes": [3], "q": 14348907, "list": null}}, {"k": 7, "name": "line D (#13)", "dim": 1, "P": [[0], [1], [4], [5], [11], [13], [16]], "Q": [[0], [1], [5], [10], [12], [13], [16]], "first_q": 43046721, "note": "1-D, found by the 7-note pattern search", "families": null, "prime": {"P": [[0], [1], [4], [5], [11], [13], [16]], "Q": [[0], [1], [5], [10], [12], [13], [16]], "width": 32, "rule": "maps +-1"}, "first": {"P": [[0], [1], [4], [5], [11], [13], [16]], "Q": [[0], [1], [5], [10], [12], [13], [16]], "primes": [3], "q": 43046721, "list": null}}, {"k": 7, "name": "line E (#6)", "dim": 1, "P": [[0], [2], [4], [7], [11], [12], [17]], "Q": [[0], [2], [7], [9], [12], [13], [17]], "first_q": 129140163, "note": "1-D, found by the 7-note pattern search", "families": null, "prime": {"P": [[0], [2], [4], [7], [11], [12], [17]], "Q": [[0], [2], [7], [9], [12], [13], [17]], "width": 34, "rule": "maps +-1"}, "first": {"P": [[0], [2], [4], [7], [11], [12], [17]], "Q": [[0], [2], [7], [9], [12], [13], [17]], "primes": [3], "q": 129140163, "list": null}}, {"k": 8, "name": "type 91", "dim": 2, "P": [[0, 0], [0, 1], [0, 2], [1, -7], [2, -11], [2, -9], [2, -8], [3, -14]], "Q": [[2, -10], [2, -9], [2, -8], [3, -11], [4, -20], [4, -19], [4, -17], [5, -24]], "first_q": 243, "note": "2-D 8-note shape (proven complete list of 4)", "families": null, "prime": {"P": [[0, 0], [0, 1], [0, 2], [1, 4], [2, 0], [2, 1], [2, 3], [3, 1]], "Q": [[0, 1], [1, 0], [1, 1], [1, 3], [2, 4], [3, 0], [3, 1], [3, 2]], "width": 14, "rule": "unimodular maps, entries |x| <= 10"}, "first": {"P": [[0, 2], [0, 3], [1, 2], [2, 0], [3, 0], [3, 2], [4, 0], [5, 1]], "Q": [[0, 1], [0, 2], [1, 3], [2, 2], [3, 0], [3, 2], [4, 0], [5, 0]], "primes": [3, 5], "q": 243, "list": "chordneg_5q2187"}}, {"k": 8, "name": "type 94", "dim": 2, "P": [[0, 0], [0, 1], [0, 3], [0, 4], [0, 7], [1, -8], [1, -7], [1, -3]], "Q": [[0, 3], [0, 6], [0, 7], [0, 9], [0, 10], [1, -5], [1, -1], [1, 0]], "first_q": 2187, "note": "2-D 8-note shape (proven complete list of 4)", "families": null, "prime": {"P": [[0, 0], [0, 1], [0, 3], [0, 4], [0, 7], [1, 0], [1, 1], [1, 5]], "Q": [[0, 0], [0, 3], [0, 4], [0, 6], [0, 7], [1, 0], [1, 4], [1, 5]], "width": 16, "rule": "unimodular maps, entries |x| <= 10"}, "first": {"P": [[0, 0], [0, 1], [1, 0], [1, 1], [3, 0], [4, 0], [5, 1], [7, 0]], "Q": [[0, 0], [0, 1], [3, 0], [4, 0], [4, 1], [5, 1], [6, 0], [7, 0]], "primes": [3, 7], "q": 2187, "list": "n25_l7q2187k8"}}, {"k": 8, "name": "s1", "dim": 2, "P": [[0, 0], [0, 1], [2, 0], [2, 1], [3, 0], [6, 0], [7, 1], [9, 0]], "Q": [[0, 0], [0, 1], [3, 0], [5, 1], [6, 0], [7, 0], [7, 1], [9, 0]], "first_q": 19683, "note": "2-D 8-note shape (proven complete list of 4)", "families": null, "prime": {"P": [[0, 0], [0, 1], [2, 0], [2, 1], [3, 0], [6, 0], [7, 1], [9, 0]], "Q": [[0, 0], [0, 1], [3, 0], [5, 1], [6, 0], [7, 0], [7, 1], [9, 0]], "width": 20, "rule": "unimodular maps, entries |x| <= 10"}, "first": {"P": [[0, 0], [0, 1], [2, 0], [2, 1], [3, 0], [6, 0], [7, 1], [9, 0]], "Q": [[0, 0], [0, 1], [3, 0], [5, 1], [6, 0], [7, 0], [7, 1], [9, 0]], "primes": [3, 5], "q": 19683, "list": "k6789_l5q19683"}}, {"k": 8, "name": "c3", "dim": 2, "P": [[0, 0], [1, 0], [0, 1], [4, -4], [-1, 1], [9, -8], [13, -12], [7, -6]], "Q": [[0, 0], [1, 0], [0, 1], [4, -4], [-8, 8], [5, -4], [-2, 2], [-9, 9]], "first_q": null, "note": "2-D 8-note shape found only by the pattern search (first q above 531,440)", "families": null, "prime": {"P": [[0, 0], [0, 1], [0, 5], [1, 0], [1, 1], [1, 7], [1, 9], [1, 13]], "Q": [[0, 0], [0, 1], [0, 7], [0, 9], [0, 13], [1, 8], [1, 9], [1, 13]], "width": 28, "rule": "unimodular maps, entries |x| <= 10"}, "first": null}, {"k": 9, "name": "3 x 3 product", "dim": 4, "P": [[0, 0, 0, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 1, 0], [0, 1, 0, 1], [0, 1, 1, 0], [1, 0, 0, 1]], "Q": [[0, 0, 0, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1], [0, 1, 0, -1], [0, 1, -1, 0], [1, 0, 0, -1], [1, 0, -1, 0]], "first_q": 49, "note": "two 3-note chords A, B: P = A + B, Q = A - B (proven: one of the two 9-note shapes of dim >= 3)", "families": 151623, "prime": {"P": [[0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0], [0, 1, 0, 1], [0, 1, 1, 0], [1, 0, 0, 0], [1, 0, 0, 1], [1, 0, 1, 0]], "Q": [[0, 0, 0, 1], [0, 0, 1, 0], [0, 0, 1, 1], [0, 1, 0, 1], [0, 1, 1, 0], [0, 1, 1, 1], [1, 0, 0, 1], [1, 0, 1, 0], [1, 0, 1, 1]], "rule": "A + B coordinates (4-D not searched)"}, "first": {"P": [[0, 0, 2], [0, 1, 1], [0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 1, 2], [2, 0, 1], [2, 1, 0], [3, 0, 1]], "Q": [[0, 1, 2], [0, 2, 1], [1, 1, 2], [2, 0, 1], [2, 1, 0], [2, 1, 1], [2, 2, 0], [3, 0, 1], [3, 1, 1]], "primes": [3, 5, 7], "q": 49, "list": "e19q135_on"}}, {"k": 9, "name": "#23", "dim": 3, "P": [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [-2, 2, 1], [1, 1, 1], [0, 2, 1], [-1, 0, 1], [-2, 3, 1]], "Q": [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, -1], [2, -2, -1], [0, -1, -1], [2, 0, -1], [3, -2, -1], [1, 1, -1]], "first_q": 125, "note": "the other 9-note shape of dim >= 3 (proven)", "families": 2340, "prime": {"P": [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 1], [1, 1, 3], [2, 1, 1], [2, 1, 3], [3, 1, 2]], "Q": [[0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 2], [2, 1, 3], [3, 1, 1], [3, 1, 2]], "width": 14, "rule": "unimodular maps, entries |x| <= 1"}, "first": {"P": [[0, 2, 0], [0, 3, 0], [1, 0, 0], [1, 0, 1], [1, 1, 1], [2, 0, 0], [2, 0, 1], [2, 2, 0], [3, 1, 0]], "Q": [[0, 1, 1], [0, 2, 1], [1, 2, 0], [1, 3, 0], [1, 3, 1], [2, 0, 1], [2, 2, 0], [2, 2, 1], [3, 0, 1]], "primes": [3, 5, 11], "q": 125, "list": "merge_11q135"}}, {"k": 9, "name": "#37", "dim": 2, "P": [[0, 0], [4, -1], [-1, 2], [1, 2], [4, 0], [-1, 3], [3, -1], [-1, 1], [3, 0]], "Q": [[0, 0], [-2, 1], [2, 0], [-1, 3], [3, -1], [-2, 2], [2, 1], [3, 0], [-2, 3]], "first_q": 625, "note": "2-D 9-note shape from the known families (list not yet proven complete)", "families": 25, "prime": {"P": [[0, 1], [0, 2], [1, 0], [1, 1], [1, 4], [2, 4], [3, 1], [3, 3], [4, 2]], "Q": [[0, 1], [1, 0], [1, 1], [1, 3], [2, 0], [2, 4], [3, 3], [4, 1], [4, 2]], "width": 16, "rule": "unimodular maps, entries |x| <= 10"}, "first": {"P": [[0, 2], [0, 3], [0, 4], [1, 1], [2, 3], [4, 0], [4, 1], [5, 0], [5, 1]], "Q": [[0, 2], [0, 3], [0, 4], [1, 4], [2, 1], [4, 1], [4, 2], [5, 0], [5, 1]], "primes": [3, 5], "q": 625, "list": "chordneg_5q2187"}}, {"k": 9, "name": "#68", "dim": 2, "P": [[0, 0], [-1, 2], [3, 1], [1, 2], [4, 0], [-1, 3], [3, -1], [2, -2], [1, -2]], "Q": [[0, 0], [-1, 2], [0, -2], [-2, -1], [-4, 0], [-2, 3], [-3, 2], [1, -2], [-4, 1]], "first_q": 3125, "note": "2-D 9-note shape from the known families (list not yet proven complete)", "families": 4, "prime": {"P": [[0, 0], [0, 1], [1, 3], [2, 1], [2, 5], [3, 5], [4, 2], [4, 4], [5, 3]], "Q": [[0, 0], [1, 0], [1, 2], [2, 4], [3, 1], [3, 5], [4, 4], [5, 2], [5, 3]], "width": 20, "rule": "unimodular maps, entries |x| <= 10"}, "first": {"P": [[0, 4], [0, 5], [1, 2], [2, 0], [2, 4], [3, 0], [4, 1], [4, 3], [5, 2]], "Q": [[0, 2], [0, 3], [1, 4], [2, 1], [2, 5], [3, 4], [4, 0], [4, 2], [5, 0]], "primes": [3, 5], "q": 3125, "list": "chordneg_5q3645"}}, {"k": 9, "name": "#69", "dim": 2, "P": [[0, 0], [3, 1], [-2, 1], [-3, 0], [0, 1], [4, 0], [-3, 1], [1, 0], [-2, 0]], "Q": [[0, 0], [2, 0], [-1, 0], [2, 1], [-4, 0], [-1, 1], [3, 0], [1, 1], [-4, 1]], "first_q": 3645, "note": "2-D 9-note shape from the known families (list not yet proven complete)", "families": 38, "prime": {"P": [[0, 0], [0, 1], [0, 3], [0, 4], [0, 7], [1, 0], [1, 1], [1, 3], [1, 6]], "Q": [[0, 0], [0, 3], [0, 4], [0, 6], [0, 7], [1, 0], [1, 3], [1, 5], [1, 6]], "width": 16, "rule": "unimodular maps, entries |x| <= 10"}, "first": {"P": [[0, 0], [0, 1], [1, 0], [1, 1], [3, 0], [3, 1], [4, 0], [6, 1], [7, 0]], "Q": [[0, 0], [0, 1], [3, 0], [3, 1], [4, 0], [5, 1], [6, 0], [6, 1], [7, 0]], "primes": [3, 5], "q": 3645, "list": "s1_5q3645"}}, {"k": 9, "name": "#70", "dim": 2, "P": [[0, 0], [3, 1], [-2, 1], [-3, 0], [4, 0], [-3, 1], [-4, 0], [-2, 0], [-4, 1]], "Q": [[0, 0], [3, 1], [2, 0], [4, 0], [2, 1], [-4, 0], [3, 0], [1, 1], [-4, 1]], "first_q": 10935, "note": "2-D 9-note shape from the known families (list not yet proven complete)", "families": 16, "prime": {"P": [[0, 0], [0, 1], [0, 2], [0, 4], [0, 8], [1, 0], [1, 1], [1, 2], [1, 7]], "Q": [[0, 0], [0, 4], [0, 6], [0, 7], [0, 8], [1, 0], [1, 5], [1, 6], [1, 7]], "width": 18, "rule": "unimodular maps, entries |x| <= 10"}, "first": {"P": [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1], [4, 0], [7, 1], [8, 0]], "Q": [[0, 0], [0, 1], [4, 0], [5, 1], [6, 0], [6, 1], [7, 0], [7, 1], [8, 0]], "primes": [3, 5], "q": 10935, "list": "k6789_l5q19683"}}];
 
 const BANDS = {
   6: { status: "proven", text: "complete list, proven", sum: "1 shape" },
@@ -87,37 +93,7 @@ const BANDS = {
 };
 
 const fmt = n => n == null ? "above 531,440" : n.toLocaleString("en-US");
-
-// ---- small integer linear algebra for the compact 2-D / 3-D bases ----
-function det(M) {
-  if (M.length === 2) return M[0][0] * M[1][1] - M[0][1] * M[1][0];
-  const [a, b, c] = M;
-  return a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0]);
-}
-const apply = (M, p) => M.map(r => r.reduce((s, x, i) => s + x * p[i], 0));
-function spread(S) {
-  const d = S[0].length; let s = 0;
-  for (let i = 0; i < d; i++) { const v = S.map(p => p[i]); s += Math.max(...v) - Math.min(...v); }
-  return s;
-}
-function compact(P, Q) {
-  const d = P[0].length;
-  if (d !== 2 && d !== 3) return [P, Q];
-  const R = d === 2 ? 10 : 1, vals = []; for (let x = -R; x <= R; x++) vals.push(x);
-  let best = null;
-  const n = d * d, idx = new Array(n).fill(0);
-  const total = Math.pow(vals.length, n);
-  for (let t = 0; t < total; t++) {
-    let r = t; const M = [];
-    for (let i = 0; i < d; i++) { const row = []; for (let j = 0; j < d; j++) { row.push(vals[r % vals.length]); r = Math.floor(r / vals.length); } M.push(row); }
-    if (Math.abs(det(M)) !== 1) continue;
-    const P2 = P.map(p => apply(M, p)), Q2 = Q.map(p => apply(M, p));
-    const s = spread(P2) + spread(Q2);
-    if (!best || s < best.s) best = { s, P2, Q2 };
-  }
-  return [best.P2, best.Q2];
-}
-const norm = S => { const d = S[0].length; const m = []; for (let i = 0; i < d; i++) m.push(Math.min(...S.map(p => p[i]))); return S.map(p => p.map((x, i) => x - m[i])); };
+const AXES = ["across", "up", "diagonal"];
 
 // ---- drawing ----
 const NS = "http://www.w3.org/2000/svg";
@@ -129,17 +105,18 @@ function hover(node, text) {
   node.addEventListener("mouseleave", () => { tip.hidden = true; });
 }
 
-function projector(shape) {
-  const d = shape.P[0].length;
+// mode "prime": the shape's own coordinates; 2-D drawn with the second coordinate across so the rows lie flat.
+// mode "first": a real example; coordinate i = exponent of primes[i] (first across, second up, third diagonal).
+function projector(d, mode) {
   if (d === 1) return p => [p[0], 0];
-  if (d === 2) return p => [p[0], -p[1]];
+  if (d === 2) return mode === "prime" ? p => [p[1], -p[0]] : p => [p[0], -p[1]];
   if (d === 3) return p => [p[0] + 0.55 * p[2], -p[1] - 0.4 * p[2]];
   // 4-D: the 3 x 3 product; chord A on axes 1,2 (small triangle), chord B on axes 3,4 (large triangle)
   return p => [p[0] + 0.5 * p[1] + 3.2 * p[2] + 1.6 * p[3], -(0.87 * p[1] + 2.77 * p[3])];
 }
 
-function drawSet(shape, S, which) {
-  const d = S[0].length, proj = projector(shape);
+function drawSet(S, which, mode, labels) {
+  const d = S[0].length, proj = projector(d, mode);
   const pts = S.map(proj);
   const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
   const minx = Math.min(...xs), maxx = Math.max(...xs), miny = Math.min(...ys), maxy = Math.max(...ys);
@@ -148,7 +125,6 @@ function drawSet(shape, S, which) {
   const w = (maxx - minx) * unit + 2 * pad, h = d === 1 ? 30 : (maxy - miny) * unit + 2 * pad;
   const svg = el("svg", { viewBox: `0 0 ${Math.max(w, 60)} ${Math.max(h, 30)}`, role: "img" });
   const X = x => pad + (x - minx) * unit, Y = y => d === 1 ? 15 : pad + (y - miny) * unit;
-  // background lattice
   if (d === 1) {
     svg.append(el("line", { x1: X(minx), y1: 15, x2: X(maxx), y2: 15, stroke: "var(--grid)", "stroke-width": 1 }));
     for (let x = Math.ceil(minx); x <= maxx; x++) svg.append(el("circle", { cx: X(x), cy: 15, r: 1.4, fill: "var(--grid)" }));
@@ -177,29 +153,40 @@ function drawSet(shape, S, which) {
     const c = which === "P"
       ? el("circle", { cx: X(x), cy: Y(y), r: 5, fill: color })
       : el("circle", { cx: X(x), cy: Y(y), r: 4.2, fill: "var(--panel)", stroke: color, "stroke-width": 2 });
-    hover(c, `${which} (${p.join(", ")})`);
+    const coords = labels ? p.map((x, j) => `${labels[j]}^${x}`).join(" · ") : `(${p.join(", ")})`;
+    hover(c, `${which} ${coords}`);
     svg.append(c);
   });
   return svg;
 }
 
-function card(shape) {
-  let P = shape.P, Q = shape.Q;
-  if (shape.k < 9 || shape.dim === 3) [P, Q] = compact(P, Q);
-  P = norm(P); Q = norm(Q);
+function card(shape, mode) {
+  const view = mode === "prime" ? shape.prime : shape.first;
   const c = document.createElement("article");
   c.className = "card";
   const dims = shape.dim === 1 ? "1-D line" : `${shape.dim}-D`;
   c.innerHTML = `<header><h3>${shape.name}</h3><span class="dim">${shape.k} notes · ${dims}</span></header>`;
-  const pics = document.createElement("div"); pics.className = "pics";
-  for (const [S, w] of [[P, "P"], [Q, "Q"]]) {
-    const d = document.createElement("div"); d.className = "pic";
-    d.innerHTML = `<div class="lab">${w}</div>`;
-    d.append(drawSet(shape, S, w));
-    pics.append(d);
+  if (view) {
+    const pics = document.createElement("div"); pics.className = "pics";
+    const labels = mode === "first" ? view.primes : null;
+    for (const w of ["P", "Q"]) {
+      const d = document.createElement("div"); d.className = "pic";
+      d.innerHTML = `<div class="lab">${w}</div>`;
+      d.append(drawSet(view[w], w, mode, labels));
+      pics.append(d);
+    }
+    if (view.P[0].length === 1) pics.style.gridTemplateColumns = "1fr";
+    c.append(pics);
+    const ax = document.createElement("p"); ax.className = "axes";
+    ax.textContent = mode === "first"
+      ? `axes: ${view.primes.map((p, i) => `${p} ${AXES[i]}`).join(", ")} (prime exponents)`
+      : shape.dim === 4 ? "chord A drawn small, chord B large" : "shape's own coordinates (prime form)";
+    c.append(ax);
+  } else {
+    const e = document.createElement("p"); e.className = "empty";
+    e.textContent = "No example yet: this shape first occurs above q 531,440, beyond every list we have.";
+    c.append(e);
   }
-  if (shape.dim === 1) pics.style.gridTemplateColumns = "1fr";
-  c.append(pics);
   const facts = document.createElement("div"); facts.className = "facts";
   facts.innerHTML = `<span>first at q <b>${fmt(shape.first_q)}</b></span>` + (shape.families ? `<span>known families <b>${shape.families.toLocaleString("en-US")}</b></span>` : "");
   c.append(facts);
@@ -208,13 +195,22 @@ function card(shape) {
 }
 
 const out = document.getElementById("out");
-for (const k of [6, 7, 8, 9]) {
-  const b = BANDS[k];
-  const s = document.createElement("section");
-  s.innerHTML = `<div class="band"><h2>${k} notes</h2><span class="status ${b.status}">${b.text}</span><span class="sum">${b.sum}</span></div>`;
-  const g = document.createElement("div"); g.className = "grid";
-  DATA.filter(x => x.k === k).forEach(x => g.append(card(x)));
-  s.append(g);
-  out.append(s);
+function render(mode) {
+  out.replaceChildren();
+  for (const k of [6, 7, 8, 9]) {
+    const b = BANDS[k];
+    const s = document.createElement("section");
+    s.innerHTML = `<div class="band"><h2>${k} notes</h2><span class="status ${b.status}">${b.text}</span><span class="sum">${b.sum}</span></div>`;
+    const g = document.createElement("div"); g.className = "grid";
+    DATA.filter(x => x.k === k).forEach(x => g.append(card(x, mode)));
+    s.append(g);
+    out.append(s);
+  }
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode));
+  try { localStorage.setItem("zshapes-mode", mode); } catch (e) {}
 }
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => render(b.dataset.mode)));
+let start = "prime";
+try { const m = localStorage.getItem("zshapes-mode"); if (m === "prime" || m === "first") start = m; } catch (e) {}
+render(start);
 </script>
