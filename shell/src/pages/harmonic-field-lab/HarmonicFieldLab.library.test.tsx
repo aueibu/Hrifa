@@ -14,10 +14,6 @@ const settle = () =>
   act(async () => {
     await new Promise((r) => setTimeout(r, 170));
   });
-const typeSlow = async (el: HTMLElement, value: string) => {
-  type(el, value);
-  await settle();
-};
 const key = (el: HTMLElement, k: string) => fireEvent.keyDown(el, { key: k });
 const stored = () =>
   JSON.parse(window.localStorage.getItem(KEY_GENERATORS) ?? '{}') as {

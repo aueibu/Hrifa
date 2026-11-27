@@ -123,6 +123,24 @@ export function LibraryActions() {
           </div>
         </Popover.Dropdown>
       </Popover>
+      <Button
+        size="compact-xs"
+        variant="default"
+        disabled={tab.gen.method === 'custom' || !tab.field.length}
+        title="Turn the current pitches into editable Cust text and switch to Cust"
+        onClick={() => dispatch({ type: 'gen/makeCust' })}
+      >
+        Make cust
+      </Button>
+      <Button
+        size="compact-xs"
+        variant="default"
+        disabled={tab.gen.method !== 'custom' && tab.gen.method !== 'relative'}
+        title="Start over with just 1/1 (Cust and Rel only)"
+        onClick={() => dispatch({ type: 'gen/clear' })}
+      >
+        Clear
+      </Button>
     </div>
   );
 }

@@ -77,7 +77,7 @@ describe('silent root keys in Chords mode', () => {
     // key repeat and typing do nothing (g)
     press('x', 'KeyX', { repeat: true });
     expect(rootText()).toMatch(/^root 3/);
-    fireEvent.keyDown(screen.getAllByRole('textbox')[0], { key: 'x', code: 'KeyX' });
+    fireEvent.keyDown(screen.getAllByRole('combobox')[0], { key: 'x', code: 'KeyX' });
     expect(rootText()).toMatch(/^root 3/);
     advance(100);
     expect(oscs().length).toBe(n0); // no voice at all

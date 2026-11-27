@@ -33,8 +33,8 @@ const METHODS: { value: Method; label: string }[] = [
   { value: 'edo', label: 'EDO' },
   { value: 'lattice', label: 'Latt' },
   { value: 'cps', label: 'CPS' },
-  { value: 'custom', label: 'Cust' },
   { value: 'relative', label: 'Rel' },
+  { value: 'custom', label: 'Cust' },
 ];
 
 function FieldSettings({ gen }: { gen: GenSpec }) {

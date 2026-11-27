@@ -17,6 +17,7 @@ import {
   clampExp,
   MONZO_PRIMES,
   productTooMany,
+  noteText,
   readNoteText,
   reduceInto,
   removeRelativePitch,
@@ -710,6 +711,10 @@ export type Action =
   | { type: 'gen/preset'; name: string }
   | { type: 'gen/method'; method: Method }
   | { type: 'gen/custom'; custom: string; rep?: string }
+  /** Clear (Cust and Rel only; any other method: no change): Cust text emptied, Rel notes back to just 1/1. */
+  | { type: 'gen/clear' }
+  /** Make cust: the current field becomes the Cust text and the tab switches to Cust (no change when already Cust). */
+  | { type: 'gen/makeCust' }
   /**
    * Relative pitches (M8, H-33), on the active tab when its method is `relative` (else no change): add a note as pitch text
    * (a ratio `11/8` or cents `700 c`, folded into the repeat; a pitch already there, unreadable text or the 256 cap changes
@@ -1019,6 +1024,30 @@ function selectPitchTexts(tab: Tab, pitches: readonly string[]): Tab {
 }
 
 /**
+ * Switching to Cust or Rel carries the tab's current field over as that method's own text, so a scale can be edited there:
+ * Rel's `notes` are the field's pitch texts (`3/2`, `700 c`); Cust's `custom` is one pitch per line with no 1/1 (the parser adds
+ * it) and cents written `700c` (a bare number would read as a ratio, and `700 c` would split into two tokens). An empty field
+ * (the tab has an error) carries nothing, so the method keeps its own text. Only a Cust to Rel (or Rel to Cust) switch carries:
+ * leaving a generated mode never overwrites hand-made text; `gen/makeCust` is the explicit way to take a generated field.
+ */
+function carriedText(t: Tab, to: Method): Partial<GenSpec> {
+  if (!t.field.length || (t.gen.method !== 'custom' && t.gen.method !== 'relative')) {
+    return {};
+  }
+  if (to === 'relative') {
+    return { notes: t.field.slice(0, RELATIVE_MAX_NOTES).map(noteText) };
+  }
+  return to === 'custom' ? custText(t) : {};
+}
+
+function custText(t: Tab): Partial<GenSpec> {
+  const lines = t.field
+    .filter((n) => n.c > 1e-6)
+    .map((n) => (n.m ? noteText(n) : `${Number(n.c.toFixed(6))}c`));
+  return { custom: lines.join('\n') };
+}
+
+/**
  * M8g: a subset product as a field. `new` opens a new Relative tab (1/1 and the products) from any method, as the active tab;
  * `replace` makes the active tab's field 1/1 and the products (a Relative tab keeps its method, any other becomes Relative; the
  * saved generator it was linked to is untouched, the tab is just no longer exactly that preset). The subset becomes exactly the
@@ -1255,7 +1284,11 @@ function reduce(s: LabState, a: Action): LabState {
       return editTab(s, (t) =>
         t.gen.method === a.method || (a.method === 'composite' && !t.gen.snap)
           ? t
-          : regenTab({ ...t, mode: 0 }, { ...t.gen, method: a.method, preset: '' }, true)
+          : regenTab(
+              { ...t, mode: 0 },
+              { ...t.gen, method: a.method, preset: '', ...carriedText(t, a.method) },
+              true
+            )
       );
     case 'gen/custom':
       return editTab(s, (t) =>
@@ -1266,6 +1299,26 @@ function reduce(s: LabState, a: Action): LabState {
           custom: a.custom,
           rep: a.rep ?? t.gen.rep,
         })
+      );
+    case 'gen/makeCust':
+      // Make cust: the current field becomes the Cust text and the tab switches to Cust (replacing any Cust text)
+      return editTab(s, (t) =>
+        t.gen.method === 'custom' || !t.field.length
+          ? t
+          : regenTab(
+              { ...t, mode: 0 },
+              { ...t.gen, method: 'custom', preset: '', ...custText(t) },
+              true
+            )
+      );
+    case 'gen/clear':
+      // a fresh start for a hand-made scale: Cust loses its text, Rel keeps only 1/1; other methods are untouched
+      return editTab(s, (t) =>
+        t.gen.method === 'custom'
+          ? regenTab(t, { ...t.gen, preset: '', custom: '' })
+          : t.gen.method === 'relative'
+            ? regenTab(t, { ...t.gen, preset: '', notes: ['1/1'] })
+            : t
       );
     case 'relative/add':
     case 'relative/remove': {
