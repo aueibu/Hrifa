@@ -18,6 +18,9 @@
 //! finds every rank >= 2 type; the rank-1 (single-line) types are then left to a 1-D enumeration by span.
 //! --precut / --fast / --check-fast (2026-11-26): decide children at the parent (exact); --fast uses the parent's
 //! F2 factorization (O(m^2) per child), --check-fast asserts it against the slow test.
+//! --sample-out FILE [--sample-every N] (2026-11-26): write every N-th distinct good flat as JSON; the summary
+//! also prints good flats by dimension.
+//! --dedup-min-dim D (2026-11-26): dedup only flats of dim >= D (memory / time trade-off, sound).
 //! --canon2 (2026-11-26): faster canonical key (canon2), same symmetry classes.
 //! --f4 M (2026-11-26): also prune flats of dimension <= M by the fourth-power test (f4_isotropic; sound).
 
@@ -284,9 +287,18 @@ struct Search {
     check_fast: bool,
     /// --canon2: the allocation-light canonical key (same classes, different key values)
     canon2: bool,
+    /// --dedup-min-dim D: only flats of dimension >= D are deduplicated (canonical key + shared table); smaller ones
+    /// are searched again when met twice (sound: dedup is only a speed-up; saves canon time and table memory)
+    dedup_min_dim: usize,
+    /// --sample-every N (with --sample-out FILE): write every N-th distinct good flat (P, Q forms) as a JSON line
+    sample_every: u64,
 }
 
 static PRECUT_REPEAT: AtomicU64 = AtomicU64::new(0);
+/// statistics (2026-11-26): distinct (past dedup) good flats by dimension, and a sample of them for offline tests
+static DIM_GOOD: [AtomicU64; 20] = [const { AtomicU64::new(0) }; 20];
+static SAMPLE: Mutex<Option<std::fs::File>> = Mutex::new(None);
+static SAMPLE_CTR: AtomicU64 = AtomicU64::new(0);
 static CHECKED: AtomicU64 = AtomicU64::new(0);
 
 /// flats cut by the fourth-power test (all threads)
@@ -337,7 +349,7 @@ impl Search {
             }
         }
         let np = pairs.len();
-        Search { k, n: 2 * (k - 1), pairs, np, use_canon, f2, min_dim: min_dim.max(1), f4_max_m: 0, precut: false, fast: false, check_fast: false, canon2: false }
+        Search { k, n: 2 * (k - 1), pairs, np, use_canon, f2, min_dim: min_dim.max(1), f4_max_m: 0, precut: false, fast: false, check_fast: false, canon2: false, dedup_min_dim: 0, sample_every: 0 }
     }
 
     fn point(&self, b: &Basis, side: usize, i: usize) -> Pt {
@@ -753,11 +765,17 @@ impl Search {
                 F4CUT.fetch_add(1, Ordering::Relaxed);
                 continue;
             }
-            if self.use_canon {
+            if self.use_canon && basis.len() >= self.dedup_min_dim {
                 let key = self.canon(&an.p, &an.q);
                 if !shared.claim(key) {
                     st.dup += 1;
                     continue;
+                }
+            }
+            DIM_GOOD[basis.len().min(19)].fetch_add(1, Ordering::Relaxed);
+            if self.sample_every > 0 && SAMPLE_CTR.fetch_add(1, Ordering::Relaxed) % self.sample_every == 0 {
+                if let Some(f) = SAMPLE.lock().unwrap().as_mut() {
+                    let _ = writeln!(f, "{{\"dim\": {}, \"P\": {:?}, \"Q\": {:?}}}", basis.len(), an.p, an.q);
                 }
             }
             let (mp, mq) = self.matching(&an.adj);
@@ -1240,10 +1258,26 @@ fn swap_is_automorphism(k: usize, cls: &[u16], ncls: usize, u: usize, v: usize) 
 fn canon2(k: usize, p: &[Pt], q: &[Pt]) -> u128 {
     let init: Vec<u32> = (0..2 * k).map(|v| (v / k) as u32).collect();
     let mut cand: Vec<(u64, Vec<u16>, usize, Vec<u32>)> = Vec::with_capacity(8);
+    // one id per distinct vector over the ordered arcs of both sets (a reversed arc is the negated vector), built
+    // once: variant (x, y, sx, sy) reads its class of arc (i, j) on a set with sign -1 as the id of arc (j, i)
+    let (ids, nids) = class_table(k, p, q, 1, 1);
     for sp in [1i64, -1] {
         for sq in [1i64, -1] {
-            for (x, y, sx, sy) in [(p, q, sp, sq), (q, p, sq, sp)] {
-                let (cls, ncls) = class_table(k, x, y, sx, sy);
+            for (xs, sx, sy) in [(0usize, sp, sq), (1usize, sq, sp)] {
+                let mut cls = vec![u16::MAX; 2 * k * k];
+                for side in 0..2 {
+                    let src = (xs + side) % 2; // which original set sits on this side of the variant
+                    let sg = if side == 0 { sx } else { sy };
+                    for i in 0..k {
+                        for j in 0..k {
+                            if i != j {
+                                let (a, b) = if sg == 1 { (i, j) } else { (j, i) };
+                                cls[side * k * k + i * k + j] = ids[src * k * k + a * k + b];
+                            }
+                        }
+                    }
+                }
+                let ncls = nids;
                 let (col, trace) = refine2(k, &cls, ncls, init.clone());
                 // the number of classes is part of the invariant too
                 cand.push((mix3(trace, ncls as u64, 0), cls, ncls, col));
@@ -1296,6 +1330,11 @@ fn main() {
     s.fast = flag("--fast") || flag("--check-fast");
     s.check_fast = flag("--check-fast");
     s.canon2 = flag("--canon2");
+    s.dedup_min_dim = opt("--dedup-min-dim").map(|x| x.parse().unwrap()).unwrap_or(0);
+    if let Some(path) = opt("--sample-out") {
+        *SAMPLE.lock().unwrap() = Some(std::fs::File::create(&path).expect("cannot create --sample-out file"));
+        s.sample_every = opt("--sample-every").map(|x| x.parse().unwrap()).unwrap_or(10_000);
+    }
     let shared = Shared::new();
     let t0 = Instant::now();
     let mut types: Vec<Basis> = vec![];
@@ -1440,11 +1479,19 @@ fn main() {
             reps.push((key, b));
         }
     }
-    println!("k {k}: {} nodes, {} bad ({} by f2, {} by f4), {} dups, {} cut at the parent ({} bad, {} f2, {} repeats; {} fast checks verified), good nodes {}, {} type flats, {} maximal classes, {}, {:.1} s",
-             total.nodes, total.bad, total.f2cut, F4CUT.load(Ordering::Relaxed), total.dup,
+    println!("k {k}: {} nodes, {} bad ({} by f2, {} by f4), {} dups, {} classes stored, {} cut at the parent ({} bad, {} f2, {} repeats; {} fast checks verified), good nodes {}, {} type flats, {} maximal classes, {}, {:.1} s",
+             total.nodes, total.bad, total.f2cut, F4CUT.load(Ordering::Relaxed), total.dup, shared.len(),
              PRECUT_BAD.load(Ordering::Relaxed) + PRECUT_F2.load(Ordering::Relaxed), PRECUT_BAD.load(Ordering::Relaxed),
              PRECUT_F2.load(Ordering::Relaxed), PRECUT_REPEAT.load(Ordering::Relaxed), CHECKED.load(Ordering::Relaxed), total.nodes - total.bad, types.len(), reps.len(),
              if complete { "COMPLETE" } else { "INCOMPLETE" }, t0.elapsed().as_secs_f64());
+    let hist: Vec<String> = (0..20).filter_map(|d| {
+        let n = DIM_GOOD[d].load(Ordering::Relaxed);
+        if n > 0 { Some(format!("{d}: {n}")) } else { None }
+    }).collect();
+    println!("good flats by dimension (past dedup): {}", hist.join(", "));
+    if let Some(f) = SAMPLE.lock().unwrap().as_mut() {
+        let _ = f.flush();
+    }
     let mut js = vec![];
     for (_, b) in &reps {
         let p: Vec<Pt> = (0..k).map(|i| s.point(b, 0, i)).collect();

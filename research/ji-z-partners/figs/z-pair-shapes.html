@@ -103,7 +103,7 @@ function spread(S) {
 function compact(P, Q) {
   const d = P[0].length;
   if (d !== 2 && d !== 3) return [P, Q];
-  const R = d === 2 ? 4 : 1, vals = []; for (let x = -R; x <= R; x++) vals.push(x);
+  const R = d === 2 ? 10 : 1, vals = []; for (let x = -R; x <= R; x++) vals.push(x);
   let best = null;
   const n = d * d, idx = new Array(n).fill(0);
   const total = Math.pow(vals.length, n);
