@@ -1,0 +1,220 @@
+<title>Z-Pair Shapes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one band per note count; inside, a wrapping grid of shape cards, each a pair of lattice drawings (P | Q). */
+:root {
+  --bg: #f5f6f4;
+  --panel: #ffffff;
+  --line: #dfe3df;
+  --grid: #c9cfca;
+  --fg: #1d2420;
+  --muted: #5d6862;
+  --p: #1f7a6a;
+  --q: #b5651d;
+  --chip: #e8ece9;
+  --proven: #2f6b3a;
+  --open: #8a5a00;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131815; --panel: #1b211e; --line: #2c3530; --grid: #3a4540; --fg: #e4ebe6; --muted: #9aa8a0;
+    --p: #4fc4ac; --q: #f0a45a; --chip: #242c28; --proven: #7fd08c; --open: #f2c46b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131815; --panel: #1b211e; --line: #2c3530; --grid: #3a4540; --fg: #e4ebe6; --muted: #9aa8a0;
+  --p: #4fc4ac; --q: #f0a45a; --chip: #242c28; --proven: #7fd08c; --open: #f2c46b; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-family: var(--display); font-weight: 600; font-size: 1.9rem; margin: 0 0 6px; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 68ch; margin: 0 0 14px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 0.86rem; color: var(--muted); margin-bottom: 26px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.dot.p { background: var(--p); }
+.dot.q { border: 2px solid var(--q); box-sizing: border-box; }
+section { margin-top: 30px; }
+.band { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 14px; }
+.band h2 { font-family: var(--display); font-weight: 600; font-size: 1.35rem; margin: 0; }
+.status { font-size: 0.78rem; letter-spacing: 0.02em; padding: 2px 9px; border-radius: 999px; background: var(--chip); }
+.status.proven { color: var(--proven); }
+.status.open { color: var(--open); }
+.band .sum { color: var(--muted); font-size: 0.88rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 12px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.card header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.card h3 { font-family: var(--display); font-weight: 600; font-size: 1.05rem; margin: 0; }
+.dim { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+.pics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pic { min-width: 0; }
+.pic .lab { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+svg { width: 100%; height: auto; display: block; overflow: visible; }
+.facts { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.83rem; }
+.facts b { font-weight: 500; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.note { font-size: 0.8rem; color: var(--muted); margin: 0; }
+.tip { position: fixed; pointer-events: none; background: var(--fg); color: var(--bg); font-family: var(--mono); font-size: 0.75rem; padding: 3px 7px; border-radius: 5px; z-index: 5; }
+.foot { margin-top: 36px; color: var(--muted); font-size: 0.82rem; max-width: 80ch; }
+@media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <h1>Z-Pair Shapes</h1>
+  <p class="lede">Every pattern we know that two different note sets can share while having exactly the same intervals. A pattern is abstract: pick a ratio for each of its directions and it becomes real JI pairs. The q shown is the smallest intervallic odd limit at which the pattern first occurs in the families found so far.</p>
+  <div class="legend">
+    <span><i class="dot p"></i>set P</span>
+    <span><i class="dot q"></i>set Q (same intervals, different set)</span>
+    <span>grid dots: lattice points in the pattern's own coordinates</span>
+  </div>
+  <div id="out"></div>
+  <p class="foot">Drawings: 2-D patterns are shown in a compact basis (a change of basis with integer entries and determinant ±1 does not change the pattern). The four 2-D 9-note patterns are drawn as their smallest known example on the 3 (across) by 5 (up) lattice. The 3 × 3 product is drawn as chord A (small triangle) repeated at each note of chord B for P, and of B mirrored for Q. Hover a note for its coordinates.</p>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const DATA = [{"k": 6, "name": "type 1", "dim": 2, "P": [[0, 0], [0, 1], [1, -5], [2, -8], [2, -6], [3, -10]], "Q": [[2, -7], [2, -6], [3, -8], [4, -14], [4, -12], [5, -17]], "first_q": 125, "note": "the only 6-note shape (proven)", "families": null}, {"k": 7, "name": "type 19", "dim": 2, "P": [[0, 0], [0, 1], [0, 3], [0, 6], [1, -8], [1, -7], [1, -3]], "Q": [[0, 3], [0, 6], [0, 8], [0, 9], [1, -5], [1, -1], [1, 0]], "first_q": 1215, "note": "the only 2-D 7-note shape (proven)", "families": null}, {"k": 7, "name": "line A (zgen type 1)", "dim": 1, "P": [[0], [1], [2], [5], [7], [9], [12]], "Q": [[7], [9], [11], [12], [14], [18], [19]], "first_q": 531441, "note": "1-D, on the chain of fifths", "families": null}, {"k": 7, "name": "line B (#7)", "dim": 1, "P": [[0], [2], [3], [7], [9], [10], [15]], "Q": [[0], [2], [7], [8], [9], [12], [15]], "first_q": 14348907, "note": "1-D, found by the 7-note pattern search", "families": null}, {"k": 7, "name": "line C (#11)", "dim": 1, "P": [[0], [1], [3], [4], [9], [11], [15]], "Q": [[0], [1], [7], [9], [11], [12], [15]], "first_q": 14348907, "note": "1-D, found by the 7-note pattern search", "families": null}, {"k": 7, "name": "line D (#13)", "dim": 1, "P": [[0], [1], [4], [5], [11], [13], [16]], "Q": [[0], [1], [5], [10], [12], [13], [16]], "first_q": 43046721, "note": "1-D, found by the 7-note pattern search", "families": null}, {"k": 7, "name": "line E (#6)", "dim": 1, "P": [[0], [2], [4], [7], [11], [12], [17]], "Q": [[0], [2], [7], [9], [12], [13], [17]], "first_q": 129140163, "note": "1-D, found by the 7-note pattern search", "families": null}, {"k": 8, "name": "type 91", "dim": 2, "P": [[0, 0], [0, 1], [0, 2], [1, -7], [2, -11], [2, -9], [2, -8], [3, -14]], "Q": [[2, -10], [2, -9], [2, -8], [3, -11], [4, -20], [4, -19], [4, -17], [5, -24]], "first_q": 243, "note": "2-D 8-note shape (proven complete list of 4)", "families": null}, {"k": 8, "name": "type 94", "dim": 2, "P": [[0, 0], [0, 1], [0, 3], [0, 4], [0, 7], [1, -8], [1, -7], [1, -3]], "Q": [[0, 3], [0, 6], [0, 7], [0, 9], [0, 10], [1, -5], [1, -1], [1, 0]], "first_q": 2187, "note": "2-D 8-note shape (proven complete list of 4)", "families": null}, {"k": 8, "name": "s1", "dim": 2, "P": [[0, 0], [0, 1], [2, 0], [2, 1], [3, 0], [6, 0], [7, 1], [9, 0]], "Q": [[0, 0], [0, 1], [3, 0], [5, 1], [6, 0], [7, 0], [7, 1], [9, 0]], "first_q": 19683, "note": "2-D 8-note shape (proven complete list of 4)", "families": null}, {"k": 8, "name": "c3", "dim": 2, "P": [[0, 0], [1, 0], [0, 1], [4, 1], [6, 1], [13, 1], [-4, 0], [12, 1]], "Q": [[0, 0], [1, 0], [0, 1], [5, 1], [-6, 0], [-8, 0], [-12, 0], [4, 1]], "first_q": null, "note": "2-D 8-note shape found only by the pattern search (first q above 531,440)", "families": null}, {"k": 9, "name": "3 x 3 product", "dim": 4, "P": [[0, 0, 0, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1], [1, 0, 1, 0], [0, 1, 0, 1], [0, 1, 1, 0], [1, 0, 0, 1]], "Q": [[0, 0, 0, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1], [0, 1, 0, -1], [0, 1, -1, 0], [1, 0, 0, -1], [1, 0, -1, 0]], "first_q": 49, "note": "two 3-note chords A, B: P = A + B, Q = A - B (proven: one of the two 9-note shapes of dim >= 3)", "families": 151623}, {"k": 9, "name": "#23", "dim": 3, "P": [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [-2, 2, 1], [1, 1, 1], [0, 2, 1], [-1, 0, 1], [-2, 3, 1]], "Q": [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, -1], [2, -2, -1], [0, -1, -1], [2, 0, -1], [3, -2, -1], [1, 1, -1]], "first_q": 125, "note": "the other 9-note shape of dim >= 3 (proven)", "families": 2340}, {"k": 9, "name": "#37", "dim": 2, "P": [[0, 0], [4, -1], [-1, 2], [1, 2], [4, 0], [-1, 3], [3, -1], [-1, 1], [3, 0]], "Q": [[0, 0], [-2, 1], [2, 0], [-1, 3], [3, -1], [-2, 2], [2, 1], [3, 0], [-2, 3]], "first_q": 625, "note": "2-D 9-note shape from the known families (list not yet proven complete); drawn as its smallest example in the 3-5 lattice", "families": 25}, {"k": 9, "name": "#68", "dim": 2, "P": [[0, 0], [-1, 2], [3, 1], [1, 2], [4, 0], [-1, 3], [3, -1], [2, -2], [1, -2]], "Q": [[0, 0], [-1, 2], [0, -2], [-2, -1], [-4, 0], [-2, 3], [-3, 2], [1, -2], [-4, 1]], "first_q": 3125, "note": "2-D 9-note shape from the known families (list not yet proven complete); drawn as its smallest example in the 3-5 lattice", "families": 4}, {"k": 9, "name": "#69", "dim": 2, "P": [[0, 0], [3, 1], [-2, 1], [-3, 0], [0, 1], [4, 0], [-3, 1], [1, 0], [-2, 0]], "Q": [[0, 0], [2, 0], [-1, 0], [2, 1], [-4, 0], [-1, 1], [3, 0], [1, 1], [-4, 1]], "first_q": 3645, "note": "2-D 9-note shape from the known families (list not yet proven complete); drawn as its smallest example in the 3-5 lattice", "families": 38}, {"k": 9, "name": "#70", "dim": 2, "P": [[0, 0], [3, 1], [-2, 1], [-3, 0], [4, 0], [-3, 1], [-4, 0], [-2, 0], [-4, 1]], "Q": [[0, 0], [3, 1], [2, 0], [4, 0], [2, 1], [-4, 0], [3, 0], [1, 1], [-4, 1]], "first_q": 10935, "note": "2-D 9-note shape from the known families (list not yet proven complete); drawn as its smallest example in the 3-5 lattice", "families": 16}];
+
+const BANDS = {
+  6: { status: "proven", text: "complete list, proven", sum: "1 shape" },
+  7: { status: "proven", text: "complete list, proven", sum: "1 two-dimensional shape, 5 one-dimensional lines" },
+  8: { status: "proven", text: "2-D list proven complete", sum: "4 two-dimensional shapes (lines of 8 notes not shown)" },
+  9: { status: "open", text: "3-D and up proven; 2-D list still open", sum: "2 shapes of 3+ dimensions (proven), 4 known 2-D shapes" },
+};
+
+const fmt = n => n == null ? "above 531,440" : n.toLocaleString("en-US");
+
+// ---- small integer linear algebra for the compact 2-D / 3-D bases ----
+function det(M) {
+  if (M.length === 2) return M[0][0] * M[1][1] - M[0][1] * M[1][0];
+  const [a, b, c] = M;
+  return a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0]);
+}
+const apply = (M, p) => M.map(r => r.reduce((s, x, i) => s + x * p[i], 0));
+function spread(S) {
+  const d = S[0].length; let s = 0;
+  for (let i = 0; i < d; i++) { const v = S.map(p => p[i]); s += Math.max(...v) - Math.min(...v); }
+  return s;
+}
+function compact(P, Q) {
+  const d = P[0].length;
+  if (d !== 2 && d !== 3) return [P, Q];
+  const R = d === 2 ? 4 : 1, vals = []; for (let x = -R; x <= R; x++) vals.push(x);
+  let best = null;
+  const n = d * d, idx = new Array(n).fill(0);
+  const total = Math.pow(vals.length, n);
+  for (let t = 0; t < total; t++) {
+    let r = t; const M = [];
+    for (let i = 0; i < d; i++) { const row = []; for (let j = 0; j < d; j++) { row.push(vals[r % vals.length]); r = Math.floor(r / vals.length); } M.push(row); }
+    if (Math.abs(det(M)) !== 1) continue;
+    const P2 = P.map(p => apply(M, p)), Q2 = Q.map(p => apply(M, p));
+    const s = spread(P2) + spread(Q2);
+    if (!best || s < best.s) best = { s, P2, Q2 };
+  }
+  return [best.P2, best.Q2];
+}
+const norm = S => { const d = S[0].length; const m = []; for (let i = 0; i < d; i++) m.push(Math.min(...S.map(p => p[i]))); return S.map(p => p.map((x, i) => x - m[i])); };
+
+// ---- drawing ----
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+const tip = document.getElementById("tip");
+function hover(node, text) {
+  node.addEventListener("mouseenter", () => { tip.textContent = text; tip.hidden = false; });
+  node.addEventListener("mousemove", ev => { tip.style.left = (ev.clientX + 12) + "px"; tip.style.top = (ev.clientY + 12) + "px"; });
+  node.addEventListener("mouseleave", () => { tip.hidden = true; });
+}
+
+function projector(shape) {
+  const d = shape.P[0].length;
+  if (d === 1) return p => [p[0], 0];
+  if (d === 2) return p => [p[0], -p[1]];
+  if (d === 3) return p => [p[0] + 0.55 * p[2], -p[1] - 0.4 * p[2]];
+  // 4-D: the 3 x 3 product; chord A on axes 1,2 (small triangle), chord B on axes 3,4 (large triangle)
+  return p => [p[0] + 0.5 * p[1] + 3.2 * p[2] + 1.6 * p[3], -(0.87 * p[1] + 2.77 * p[3])];
+}
+
+function drawSet(shape, S, which) {
+  const d = S[0].length, proj = projector(shape);
+  const pts = S.map(proj);
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const minx = Math.min(...xs), maxx = Math.max(...xs), miny = Math.min(...ys), maxy = Math.max(...ys);
+  const unit = d === 1 ? 12 : d === 4 ? 16 : 22;
+  const pad = 14;
+  const w = (maxx - minx) * unit + 2 * pad, h = d === 1 ? 30 : (maxy - miny) * unit + 2 * pad;
+  const svg = el("svg", { viewBox: `0 0 ${Math.max(w, 60)} ${Math.max(h, 30)}`, role: "img" });
+  const X = x => pad + (x - minx) * unit, Y = y => d === 1 ? 15 : pad + (y - miny) * unit;
+  // background lattice
+  if (d === 1) {
+    svg.append(el("line", { x1: X(minx), y1: 15, x2: X(maxx), y2: 15, stroke: "var(--grid)", "stroke-width": 1 }));
+    for (let x = Math.ceil(minx); x <= maxx; x++) svg.append(el("circle", { cx: X(x), cy: 15, r: 1.4, fill: "var(--grid)" }));
+  } else if (d === 2) {
+    for (let x = Math.ceil(minx); x <= maxx; x++) for (let y = Math.ceil(miny); y <= maxy; y++)
+      svg.append(el("circle", { cx: X(x), cy: Y(y), r: 1.4, fill: "var(--grid)" }));
+  } else if (d === 3) {
+    const lo = [0, 1, 2].map(i => Math.min(...S.map(p => p[i]))), hi = [0, 1, 2].map(i => Math.max(...S.map(p => p[i])));
+    for (let a = lo[0]; a <= hi[0]; a++) for (let b = lo[1]; b <= hi[1]; b++) for (let c = lo[2]; c <= hi[2]; c++) {
+      const [x, y] = proj([a, b, c]);
+      svg.append(el("circle", { cx: X(x), cy: Y(y), r: 1.1, fill: "var(--grid)" }));
+    }
+  } else {
+    // 3 x 3 product: outline each copy of chord A (points that share the chord-B part)
+    const groups = {};
+    S.forEach(p => { const k = p[2] + "," + p[3]; (groups[k] = groups[k] || []).push(p); });
+    Object.values(groups).forEach(g => {
+      if (g.length < 2) return;
+      const q = g.map(proj);
+      svg.append(el("polygon", { points: q.map(([x, y]) => `${X(x)},${Y(y)}`).join(" "), fill: "none", stroke: "var(--grid)", "stroke-width": 1.2 }));
+    });
+  }
+  const color = which === "P" ? "var(--p)" : "var(--q)";
+  S.forEach((p, i) => {
+    const [x, y] = pts[i];
+    const c = which === "P"
+      ? el("circle", { cx: X(x), cy: Y(y), r: 5, fill: color })
+      : el("circle", { cx: X(x), cy: Y(y), r: 4.2, fill: "var(--panel)", stroke: color, "stroke-width": 2 });
+    hover(c, `${which} (${p.join(", ")})`);
+    svg.append(c);
+  });
+  return svg;
+}
+
+function card(shape) {
+  let P = shape.P, Q = shape.Q;
+  if (shape.k < 9 || shape.dim === 3) [P, Q] = compact(P, Q);
+  P = norm(P); Q = norm(Q);
+  const c = document.createElement("article");
+  c.className = "card";
+  const dims = shape.dim === 1 ? "1-D line" : `${shape.dim}-D`;
+  c.innerHTML = `<header><h3>${shape.name}</h3><span class="dim">${shape.k} notes · ${dims}</span></header>`;
+  const pics = document.createElement("div"); pics.className = "pics";
+  for (const [S, w] of [[P, "P"], [Q, "Q"]]) {
+    const d = document.createElement("div"); d.className = "pic";
+    d.innerHTML = `<div class="lab">${w}</div>`;
+    d.append(drawSet(shape, S, w));
+    pics.append(d);
+  }
+  if (shape.dim === 1) pics.style.gridTemplateColumns = "1fr";
+  c.append(pics);
+  const facts = document.createElement("div"); facts.className = "facts";
+  facts.innerHTML = `<span>first at q <b>${fmt(shape.first_q)}</b></span>` + (shape.families ? `<span>known families <b>${shape.families.toLocaleString("en-US")}</b></span>` : "");
+  c.append(facts);
+  const n = document.createElement("p"); n.className = "note"; n.textContent = shape.note; c.append(n);
+  return c;
+}
+
+const out = document.getElementById("out");
+for (const k of [6, 7, 8, 9]) {
+  const b = BANDS[k];
+  const s = document.createElement("section");
+  s.innerHTML = `<div class="band"><h2>${k} notes</h2><span class="status ${b.status}">${b.text}</span><span class="sum">${b.sum}</span></div>`;
+  const g = document.createElement("div"); g.className = "grid";
+  DATA.filter(x => x.k === k).forEach(x => g.append(card(x)));
+  s.append(g);
+  out.append(s);
+}
+</script>
