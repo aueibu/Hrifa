@@ -5,7 +5,15 @@ Orchestrator updates after every milestone step. After a compaction, resume from
 ## Status
 - Arc: ratio-rhythm (`arcs/ratio-rhythm`)
 - Current milestone: D1 research side steps (V1 explorer, 6–9-note search) done; M3 not started (M1 and M2 done)
-- State: **2026-11-26 ~22:40 Eastern: handoff steps 1-3 DONE (prime form + two-view shapes page; factor breakdown of #37/#68/#69/#70). Next: step 4, the k 9 min-dim 2 run (ask the human first; D 5 or D 6 per mem2.log). VM stopped by hand after mem2 (autostop was disabled).**
+- State: **2026-11-27 ~00:00 Eastern: typeflats-rs 1.30x faster (fast hasher + mimalloc, exact), stats code tested. Next: step 4, the k 9 min-dim 2 run (ask the human first; D 5, `--features mimalloc` build). Quota increase requested (case b7b28750: all regions 64 -> 200, N4D and C4D us-central1 -> 192); if granted, move to N4D/C4D with more vCPU. VM stopped.**
+
+## typeflats-rs 1.30x faster + stats tested (2026-11-26 ~23:00-00:00 Eastern; human: "code fix, yes")
+- The planned prof2 fix (one class table per flat) was ALREADY in canon2 (it came with --dedup-min-dim). Fresh profile (`tables/shapes9/prof3.sh`, `prof3.log.txt`; k 8 min-dim 2 D 5, 32 threads, 10 min), self time: `run` 29%, glibc malloc/free ~21%, SipHash ~16%, i128 division ~9%, hash rehash ~2%; canon (refine2) now ~1%.
+- **Fixes (exact):** an in-code Fx-style hasher with a final 64-bit mix for every in-memory HashSet/HashMap (type aliases; h128 canonical key keeps DefaultHasher, so keys and state files are unchanged); optional `--features mimalloc` global allocator (Cargo.toml).
+- **Checks (`tables/shapes9/fx_test.sh`, `fx.log.txt`):** both builds `--single`: k 5 2,061 dups / 3,761 good; k 6 min-dim 2 6,487 dups / 13,046 good (unchanged). k 8 min-dim 2 D 5, 64 threads: **hasher 855 s, hasher + mimalloc 805 s (with --sample-out) vs 1,049 s = 1.30x**; 4 maximal classes; nodes within 0.03% (thread timing).
+- **Stats work:** good flats by dim at k 8: 2: 11.6 M, 3: 270 M, 4: 218 M, 5: 6.7 M, rest < 0.2 M (dim 3-4 = 96% of the work). Sample `tables/shapes9/k8samp.jsonl` (5,057 flats, every 100,000th). Not yet done: the offline test "how many sampled flats lie inside a relabeled copy of a known k 8 shape" (type_image), i.e. what a "skip flats inside a known shape" prune could save.
+- **Forecast k 9 min-dim 2:** ~3-4.5 days / 1.3 = **~2.3-3.5 days on m3-64** (rough); faster AMD cores and more vCPU (quota pending) would cut further.
+- Quota (human filed 2026-11-26): CPUs (all regions) 64 -> 200, CPUs per VM family N4D us-central1 48 -> 192, C4D us-central1 24 -> 192.
 
 ## Factor breakdown of the 2-D 9-note shapes #37, #68, #69, #70 (2026-11-26 ~22:40 Eastern; human: "lets do the factor breakdown for #68")
 - **Extraction** (`shape_fams.py`, VM, 3 min): the 25 five-limit 9-note list files, 111,465 distinct families re-keyed with typeflats canon; **83 families** of the four patterns (25 + 4 + 38 + 16, same counts as step a). `factor_struct.py` on all 83: every family is exactly **two irreducible factors, one flipped** (P = U V, Q = U V*); U V and U V* give the members back (83 ok). Files: `tables/shapes9/f68/` (fams.jsonl, factor.tsv, f68.log), summary `f68_summary.py`, kinds `f68_kind.py`.

@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+mimalloc = { version = "0.1", default-features = false, optional = true }
+
+[features]
+# --features mimalloc: mimalloc as the global allocator (profile 2026-11-26: ~20% of the time in glibc malloc/free)
+mimalloc = ["dep:mimalloc"]
 
 [profile.release]
 opt-level = 3

@@ -25,8 +25,80 @@
 //! --f4 M (2026-11-26): also prune flats of dimension <= M by the fourth-power test (f4_isotropic; sound).
 
 use std::collections::hash_map::DefaultHasher;
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::hash::{Hash, Hasher};
+use std::collections::VecDeque;
+use std::hash::{BuildHasherDefault, Hash, Hasher};
+
+// ---- fast hasher (2026-11-26 late; profile k 8 --min-dim 2 --dedup-min-dim 5: ~16% of the time in SipHash) ----
+// FxHash-style word mixing with a final 64-bit mix (good high bits for hashbrown). Used only by the in-memory
+// sets and maps below (membership and counts; nothing depends on their iteration order). The canonical key
+// (h128) keeps DefaultHasher, so keys and state files are unchanged.
+#[derive(Default, Clone, Copy)]
+struct FxHasher {
+    h: u64,
+}
+
+impl FxHasher {
+    #[inline]
+    fn add(&mut self, w: u64) {
+        self.h = (self.h.rotate_left(5) ^ w).wrapping_mul(0x51_7c_c1_b7_27_22_0a_95);
+    }
+}
+
+impl Hasher for FxHasher {
+    #[inline]
+    fn write(&mut self, bytes: &[u8]) {
+        let mut it = bytes.chunks_exact(8);
+        for c in &mut it {
+            self.add(u64::from_le_bytes(c.try_into().unwrap()));
+        }
+        let r = it.remainder();
+        if !r.is_empty() {
+            let mut b = [0u8; 8];
+            b[..r.len()].copy_from_slice(r);
+            self.add(u64::from_le_bytes(b) ^ ((r.len() as u64) << 59));
+        }
+    }
+    #[inline]
+    fn write_u8(&mut self, i: u8) {
+        self.add(i as u64);
+    }
+    #[inline]
+    fn write_u16(&mut self, i: u16) {
+        self.add(i as u64);
+    }
+    #[inline]
+    fn write_u32(&mut self, i: u32) {
+        self.add(i as u64);
+    }
+    #[inline]
+    fn write_u64(&mut self, i: u64) {
+        self.add(i);
+    }
+    #[inline]
+    fn write_u128(&mut self, i: u128) {
+        self.add(i as u64);
+        self.add((i >> 64) as u64);
+    }
+    #[inline]
+    fn write_usize(&mut self, i: usize) {
+        self.add(i as u64);
+    }
+    #[inline]
+    fn finish(&self) -> u64 {
+        let mut x = self.h;
+        x = (x ^ (x >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+        x = (x ^ (x >> 27)).wrapping_mul(0x94d049bb133111eb);
+        x ^ (x >> 31)
+    }
+}
+
+type FxBuild = BuildHasherDefault<FxHasher>;
+type HashSet<T> = std::collections::HashSet<T, FxBuild>;
+type HashMap<K, V> = std::collections::HashMap<K, V, FxBuild>;
+
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 use std::io::{BufRead, Write};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Mutex;
@@ -316,7 +388,7 @@ struct Shared {
 
 impl Shared {
     fn new() -> Self {
-        Shared { shards: (0..256).map(|_| Mutex::new(HashSet::new())).collect(), nodes: AtomicU64::new(0), freeze: AtomicBool::new(false) }
+        Shared { shards: (0..256).map(|_| Mutex::new(HashSet::default())).collect(), nodes: AtomicU64::new(0), freeze: AtomicBool::new(false) }
     }
     /// true if this canonical class is new (claimed now); frozen: true unless already present
     fn claim(&self, key: u128) -> bool {
@@ -408,7 +480,7 @@ impl Search {
             return None;
         }
         let diff = |pts: &Vec<Pt>, (i, j): (usize, usize)| -> Pt { pts[j].iter().zip(&pts[i]).map(|(b, a)| b - a).collect() };
-        let mut idx: HashMap<Pt, Vec<(usize, i8)>> = HashMap::new();
+        let mut idx: HashMap<Pt, Vec<(usize, i8)>> = HashMap::default();
         for (v, &pr) in self.pairs.iter().enumerate() {
             let d = diff(&q, pr);
             let nd: Pt = d.iter().map(|x| -x).collect();
@@ -826,7 +898,7 @@ impl Search {
             // --fast: the parent's note-difference directions (a child with l parallel to one forces two notes
             // equal) and, when the parent is tight for F2, its factorization (child_iso in O(m^2))
             let fast = if self.precut && self.fast {
-                let mut dirs: HashSet<Vec<i128>> = HashSet::new();
+                let mut dirs: HashSet<Vec<i128>> = HashSet::default();
                 for pts in [&an.p, &an.q] {
                     for &(i, j) in &self.pairs {
                         let d: Vec<i128> = (0..m).map(|r| pts[j][r] as i128 - pts[i][r] as i128).collect();
@@ -842,7 +914,7 @@ impl Search {
             } else {
                 None
             };
-            let mut ls: HashSet<Vec<i128>> = HashSet::new();
+            let mut ls: HashSet<Vec<i128>> = HashSet::default();
             for (u, v, s) in opts {
                 if let Some((dirs, fact)) = &fast {
                     let ((i, j), (a, b)) = (self.pairs[u], self.pairs[v]);
@@ -942,7 +1014,7 @@ impl Search {
 /// (classes numbered by first appearance). The minimum over all leaves is canonical.
 fn canon_struct(k: usize, a: &[Pt], b: &[Pt]) -> Vec<u8> {
     // arc class table: cls[side*k*k + i*k + j]
-    let mut ids: HashMap<Pt, u16> = HashMap::new();
+    let mut ids: HashMap<Pt, u16> = HashMap::default();
     let mut cls = vec![u16::MAX; 2 * k * k];
     for (side, pts) in [a, b].into_iter().enumerate() {
         for i in 0..k {
@@ -1019,7 +1091,7 @@ fn refine(k: usize, cls: &[u16], ncls: usize, mut col: Vec<u32>) -> Vec<u32> {
 fn search_leaves(k: usize, cls: &[u16], ncls: usize, col: Vec<u32>, best: &mut Option<Vec<u8>>) {
     let nv = 2 * k;
     // first (smallest color) non-singleton cell
-    let mut count: HashMap<u32, usize> = HashMap::new();
+    let mut count: HashMap<u32, usize> = HashMap::default();
     for &c in &col {
         *count.entry(c).or_default() += 1;
     }
@@ -1342,7 +1414,7 @@ fn main() {
     let mut complete = true;
 
     if flag("--single") || threads <= 1 {
-        let mut seen = HashSet::new();
+        let mut seen = HashSet::default();
         let (t, _, c) = s.run(vec![s.root()], 0, max_nodes, &shared, &mut seen, &mut total, true);
         types = t;
         complete = c;
@@ -1355,7 +1427,7 @@ fn main() {
             println!("frontier loaded: {} flats", f.len());
             f
         } else {
-            let mut seen = HashSet::new();
+            let mut seen = HashSet::default();
             let (t, f, _) = s.run(vec![s.root()], frontier, u64::MAX, &shared, &mut seen, &mut total, false);
             assert!(t.is_empty(), "type flat inside the frontier phase: raise or lower --frontier");
             if let Some(fp) = &fpath {
@@ -1370,7 +1442,7 @@ fn main() {
         let mut done = vec![false; front.len()];
         if let Some(dp) = dpath.as_ref().filter(|p| std::path::Path::new(p).exists()) {
             // lines: "D i nodes bad" after the task's "T i basis" lines
-            let mut pending: HashMap<usize, Vec<Basis>> = HashMap::new();
+            let mut pending: HashMap<usize, Vec<Basis>> = HashMap::default();
             for line in std::io::BufReader::new(std::fs::File::open(dp).unwrap()).lines() {
                 let line = line.unwrap();
                 let parts: Vec<&str> = line.split(' ').collect();
@@ -1398,7 +1470,7 @@ fn main() {
         std::thread::scope(|sc| {
             for _ in 0..threads {
                 sc.spawn(|| {
-                    let mut seen = HashSet::new();
+                    let mut seen = HashSet::default();
                     loop {
                         let t = next.fetch_add(1, Ordering::Relaxed);
                         if t >= todo.len() {

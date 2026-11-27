@@ -1,0 +1,34 @@
+warning: `typeflats-rs` (bin "typeflats-rs") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 8.44s
+warning: `typeflats-rs` (bin "typeflats-rs") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 13.14s
+=== single checks with /home/apoorbaugh_gmail_com/zgen/typeflats-rs/target/release/typeflats-rs
+k 5: 3985 nodes, 224 bad (0 by f2, 0 by f4), 2061 dups, 1700 classes stored, 17610 cut at the parent (8055 bad, 9555 f2, 11895 repeats; 0 fast checks verified), good nodes 3761, 0 type flats, 0 maximal classes, COMPLETE, 0.1 s
+good flats by dimension (past dedup): 1: 13, 2: 1329, 3: 305, 4: 37, 5: 11, 6: 4, 7: 1
+  TYPE FLAT at node 9945: dim 2, P [[0, 0], [2, 0], [0, 1], [5, -2], [4, -2], [1, -1]], Q [[0, 0], [2, 0], [-1, 2], [3, -1], [-2, 2], [-2, 1]]
+k 6: 13918 nodes, 872 bad (0 by f2, 0 by f4), 6487 dups, 6559 classes stored, 146675 cut at the parent (42964 bad, 103711 f2, 31412 repeats; 0 fast checks verified), good nodes 13046, 1 type flats, 1 maximal classes, COMPLETE, 0.7 s
+good flats by dimension (past dedup): 2: 121, 3: 3609, 4: 2602, 5: 162, 6: 48, 7: 12, 8: 4, 9: 1
+  dim 2: P [[0, 0], [2, 0], [0, 1], [5, -2], [4, -2], [1, -1]]
+=== single checks with /home/apoorbaugh_gmail_com/zgen/typeflats-rs/target-mi/release/typeflats-rs
+k 5: 3985 nodes, 224 bad (0 by f2, 0 by f4), 2061 dups, 1700 classes stored, 17610 cut at the parent (8055 bad, 9555 f2, 11895 repeats; 0 fast checks verified), good nodes 3761, 0 type flats, 0 maximal classes, COMPLETE, 0.1 s
+good flats by dimension (past dedup): 1: 13, 2: 1329, 3: 305, 4: 37, 5: 11, 6: 4, 7: 1
+  TYPE FLAT at node 9945: dim 2, P [[0, 0], [2, 0], [0, 1], [5, -2], [4, -2], [1, -1]], Q [[0, 0], [2, 0], [-1, 2], [3, -1], [-2, 2], [-2, 1]]
+k 6: 13918 nodes, 872 bad (0 by f2, 0 by f4), 6487 dups, 6559 classes stored, 146675 cut at the parent (42964 bad, 103711 f2, 31412 repeats; 0 fast checks verified), good nodes 13046, 1 type flats, 1 maximal classes, COMPLETE, 0.7 s
+good flats by dimension (past dedup): 2: 121, 3: 3609, 4: 2602, 5: 162, 6: 48, 7: 12, 8: 4, 9: 1
+  dim 2: P [[0, 0], [2, 0], [0, 1], [5, -2], [4, -2], [1, -1]]
+=== K8 FX: 8 --min-dim 2 --fast --canon2 --dedup-min-dim 5 (baseline 1,049 s)
+k 8: 512352057 nodes, 4815514 bad (0 by f2, 0 by f4), 1711022 dups, 6921595 classes stored, 21042953203 good nodes 507536543, 951 type flats, 4 maximal classes, COMPLETE, 854.8 s
+good flats by dimension (past dedup): 2: 11555488, 3: 269604987, 4: 217743451, 5: 6730791, 6: 184455, 7: 5047, 8: 1026, 9: 208, 10: 51, 11: 12, 12: 4, 13: 1
+  dim 2: P [[0, 0], [7, 0], [0, 7], [-4, 6], [-5, 11], [-2, 3], [4, 1], [6, -2]]
+  dim 2: P [[0, 0], [6, 0], [3, 0], [9, 0], [0, 1], [7, 0], [-5, 1], [2, 1]]
+  dim 2: P [[0, 0], [3, 0], [-3, 0], [0, 1], [-1, 0], [-5, 1], [-4, 0], [-4, 1]]
+  dim 2: P [[0, 0], [9, 0], [0, 9], [-1, 1], [4, -4], [13, -4], [1, 8], [7, 2]]
+=== K8 MI: same + mimalloc + --sample-out
+k 8: 512191996 nodes, 4813560 bad (0 by f2, 0 by f4), 1713232 dups, 6917795 classes stored, 21035049181 good nodes 507378436, 949 type flats, 4 maximal classes, COMPLETE, 804.7 s
+good flats by dimension (past dedup): 2: 11552930, 3: 269623158, 4: 217571321, 5: 6727028, 6: 184418, 7: 5047, 8: 1026, 9: 208, 10: 51, 11: 12, 12: 4, 13: 1
+  dim 2: P [[0, 0], [7, 0], [0, 7], [-4, 6], [-5, 11], [-2, 3], [4, 1], [6, -2]]
+  dim 2: P [[0, 0], [6, 0], [3, 0], [9, 0], [0, 1], [7, 0], [-5, 1], [2, 1]]
+  dim 2: P [[0, 0], [3, 0], [-3, 0], [0, 1], [-1, 0], [-5, 1], [-4, 0], [-4, 1]]
+  dim 2: P [[0, 0], [9, 0], [0, 9], [-1, 1], [4, -4], [13, -4], [1, 8], [7, 2]]
+5057 /home/apoorbaugh_gmail_com/zruns/fx/k8samp.jsonl
+FX DONE
