@@ -1407,6 +1407,47 @@ fn main() {
         *SAMPLE.lock().unwrap() = Some(std::fs::File::create(&path).expect("cannot create --sample-out file"));
         s.sample_every = opt("--sample-every").map(|x| x.parse().unwrap()).unwrap_or(10_000);
     }
+    // --summarize DONE_FILE (2026-11-27): the type flats ("T i basis" lines) of a stopped run, one example per
+    // symmetry class (same canon key as the search) with its count; no maximal filter (classes are compared offline)
+    if let Some(path) = opt("--summarize") {
+        let ts = Instant::now();
+        let mut classes: Vec<(u128, usize, usize, Basis)> = vec![]; // key, dim, count, example
+        let mut idx: HashMap<u128, usize> = HashMap::default();
+        let mut by_dim = [0usize; 20];
+        let mut n = 0usize;
+        for line in std::io::BufReader::new(std::fs::File::open(&path).unwrap()).lines() {
+            let line = line.unwrap();
+            let parts: Vec<&str> = line.split(' ').collect();
+            if parts.len() != 3 || parts[0] != "T" {
+                continue;
+            }
+            let b = str_to_basis(parts[2]);
+            let p: Vec<Pt> = (0..k).map(|i| s.point(&b, 0, i)).collect();
+            let q: Vec<Pt> = (0..k).map(|i| s.point(&b, 1, i)).collect();
+            let key = s.canon(&p, &q);
+            n += 1;
+            by_dim[b.len()] += 1;
+            match idx.get(&key) {
+                Some(&j) => classes[j].2 += 1,
+                None => {
+                    idx.insert(key, classes.len());
+                    classes.push((key, b.len(), 1, b));
+                }
+            }
+        }
+        let hist: Vec<String> = (0..20).filter(|&d| by_dim[d] > 0).map(|d| format!("{d}: {}", by_dim[d])).collect();
+        println!("summarize: {n} type flats ({}), {} classes, {:.1} s", hist.join(", "), classes.len(), ts.elapsed().as_secs_f64());
+        let f = |v: &Vec<Pt>| format!("[{}]", v.iter().map(|x| format!("[{}]", x.iter().map(|y| format!("\"{y}\"")).collect::<Vec<_>>().join(","))).collect::<Vec<_>>().join(","));
+        let js: Vec<String> = classes.iter().map(|(_, d, c, b)| {
+            let p: Vec<Pt> = (0..k).map(|i| s.point(b, 0, i)).collect();
+            let q: Vec<Pt> = (0..k).map(|i| s.point(b, 1, i)).collect();
+            format!("{{\"dim\": {d}, \"count\": {c}, \"P\": {}, \"Q\": {}}}", f(&p), f(&q))
+        }).collect();
+        if let Some(o) = out {
+            std::fs::write(o, format!("{{\"k\": {k}, \"complete\": false, \"partial\": true, \"type_flats\": {n}, \"types\": [{}]}}\n", js.join(", "))).unwrap();
+        }
+        return;
+    }
     let shared = Shared::new();
     let t0 = Instant::now();
     let mut types: Vec<Basis> = vec![];

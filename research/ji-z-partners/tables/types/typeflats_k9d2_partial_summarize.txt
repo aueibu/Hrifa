@@ -1,0 +1,1 @@
+summarize: 568601 type flats (2: 565140, 3: 3455, 4: 6), 81 classes, 25.8 s

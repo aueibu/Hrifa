@@ -1,0 +1,234 @@
+81 found classes (dims [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 3, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2]), 76 step-(a) patterns
+images among found classes:
+  found#0 (dim 2) IS an image of found#50 (dim 4)
+  found#0 (dim 2) IS an image of found#15 (dim 3)
+  found#0 (dim 2) IS an image of found#72 (dim 3)
+  found#1 (dim 2) IS an image of found#50 (dim 4)
+  found#1 (dim 2) IS an image of found#29 (dim 3)
+  found#1 (dim 2) IS an image of found#15 (dim 3)
+  found#2 (dim 2) IS an image of found#15 (dim 3)
+  found#2 (dim 2) IS an image of found#47 (dim 3)
+  found#2 (dim 2) IS an image of found#50 (dim 4)
+  found#3 (dim 2) IS an image of found#15 (dim 3)
+  found#3 (dim 2) IS an image of found#29 (dim 3)
+  found#3 (dim 2) IS an image of found#50 (dim 4)
+  found#4 (dim 2) IS an image of found#15 (dim 3)
+  found#4 (dim 2) IS an image of found#29 (dim 3)
+  found#4 (dim 2) IS an image of found#50 (dim 4)
+  found#5 (dim 2) IS an image of found#29 (dim 3)
+  found#5 (dim 2) IS an image of found#50 (dim 4)
+  found#5 (dim 2) IS an image of found#15 (dim 3)
+  found#6 (dim 2) IS an image of found#15 (dim 3)
+  found#6 (dim 2) IS an image of found#50 (dim 4)
+  found#7 (dim 2) IS an image of found#15 (dim 3)
+  found#7 (dim 2) IS an image of found#50 (dim 4)
+  found#7 (dim 2) IS an image of found#29 (dim 3)
+  found#8 (dim 2) IS an image of found#15 (dim 3)
+  found#8 (dim 2) IS an image of found#50 (dim 4)
+  found#8 (dim 2) IS an image of found#40 (dim 3)
+  found#9 (dim 2) IS an image of found#15 (dim 3)
+  found#9 (dim 2) IS an image of found#47 (dim 3)
+  found#9 (dim 2) IS an image of found#50 (dim 4)
+  found#10 (dim 2) IS an image of found#15 (dim 3)
+  found#10 (dim 2) IS an image of found#50 (dim 4)
+  found#10 (dim 2) IS an image of found#40 (dim 3)
+  found#11 (dim 2) IS an image of found#15 (dim 3)
+  found#11 (dim 2) IS an image of found#50 (dim 4)
+  found#11 (dim 2) IS an image of found#47 (dim 3)
+  found#12 (dim 2) IS an image of found#15 (dim 3)
+  found#12 (dim 2) IS an image of found#50 (dim 4)
+  found#12 (dim 2) IS an image of found#40 (dim 3)
+  found#13 (dim 2) IS an image of found#15 (dim 3)
+  found#13 (dim 2) IS an image of found#50 (dim 4)
+  found#13 (dim 2) IS an image of found#29 (dim 3)
+  found#13 (dim 2) IS an image of found#40 (dim 3)
+  found#14 (dim 2) IS an image of found#15 (dim 3)
+  found#14 (dim 2) IS an image of found#29 (dim 3)
+  found#14 (dim 2) IS an image of found#50 (dim 4)
+  found#15 (dim 3) IS an image of found#50 (dim 4)
+  found#17 (dim 2) IS an image of found#15 (dim 3)
+  found#17 (dim 2) IS an image of found#40 (dim 3)
+  found#17 (dim 2) IS an image of found#50 (dim 4)
+  found#18 (dim 2) IS an image of found#72 (dim 3)
+  found#19 (dim 2) IS an image of found#29 (dim 3)
+  found#19 (dim 2) IS an image of found#40 (dim 3)
+  found#19 (dim 2) IS an image of found#50 (dim 4)
+  found#20 (dim 2) IS an image of found#29 (dim 3)
+  found#20 (dim 2) IS an image of found#50 (dim 4)
+  found#17 (dim 2) IS an image of found#47 (dim 3)
+  found#21 (dim 2) IS an image of found#29 (dim 3)
+  found#21 (dim 2) IS an image of found#50 (dim 4)
+  found#21 (dim 2) IS an image of found#40 (dim 3)
+  found#22 (dim 2) IS an image of found#29 (dim 3)
+  found#22 (dim 2) IS an image of found#47 (dim 3)
+  found#22 (dim 2) IS an image of found#50 (dim 4)
+  found#23 (dim 2) IS an image of found#29 (dim 3)
+  found#23 (dim 2) IS an image of found#40 (dim 3)
+  found#23 (dim 2) IS an image of found#50 (dim 4)
+  found#24 (dim 2) IS an image of found#29 (dim 3)
+  found#24 (dim 2) IS an image of found#50 (dim 4)
+  found#25 (dim 2) IS an image of found#29 (dim 3)
+  found#25 (dim 2) IS an image of found#50 (dim 4)
+  found#26 (dim 2) IS an image of found#29 (dim 3)
+  found#26 (dim 2) IS an image of found#47 (dim 3)
+  found#26 (dim 2) IS an image of found#50 (dim 4)
+  found#24 (dim 2) IS an image of found#47 (dim 3)
+  found#27 (dim 2) IS an image of found#29 (dim 3)
+  found#27 (dim 2) IS an image of found#40 (dim 3)
+  found#27 (dim 2) IS an image of found#50 (dim 4)
+  found#28 (dim 2) IS an image of found#29 (dim 3)
+  found#28 (dim 2) IS an image of found#50 (dim 4)
+  found#28 (dim 2) IS an image of found#40 (dim 3)
+  found#29 (dim 3) IS an image of found#50 (dim 4)
+  found#30 (dim 2) IS an image of found#29 (dim 3)
+  found#30 (dim 2) IS an image of found#50 (dim 4)
+  found#31 (dim 2) IS an image of found#29 (dim 3)
+  found#31 (dim 2) IS an image of found#50 (dim 4)
+  found#32 (dim 2) IS an image of found#29 (dim 3)
+  found#32 (dim 2) IS an image of found#50 (dim 4)
+  found#30 (dim 2) IS an image of found#47 (dim 3)
+  found#32 (dim 2) IS an image of found#40 (dim 3)
+  found#33 (dim 2) IS an image of found#15 (dim 3)
+  found#33 (dim 2) IS an image of found#40 (dim 3)
+  found#33 (dim 2) IS an image of found#50 (dim 4)
+  found#34 (dim 2) IS an image of found#15 (dim 3)
+  found#34 (dim 2) IS an image of found#50 (dim 4)
+  found#34 (dim 2) IS an image of found#40 (dim 3)
+  found#36 (dim 2) IS an image of found#40 (dim 3)
+  found#36 (dim 2) IS an image of found#50 (dim 4)
+  found#36 (dim 2) IS an image of found#29 (dim 3)
+  found#37 (dim 2) IS an image of found#15 (dim 3)
+  found#37 (dim 2) IS an image of found#40 (dim 3)
+  found#37 (dim 2) IS an image of found#50 (dim 4)
+  found#38 (dim 2) IS an image of found#40 (dim 3)
+  found#38 (dim 2) IS an image of found#50 (dim 4)
+  found#39 (dim 2) IS an image of found#40 (dim 3)
+  found#39 (dim 2) IS an image of found#50 (dim 4)
+  found#40 (dim 3) IS an image of found#50 (dim 4)
+  found#41 (dim 2) IS an image of found#40 (dim 3)
+  found#41 (dim 2) IS an image of found#47 (dim 3)
+  found#41 (dim 2) IS an image of found#50 (dim 4)
+  found#42 (dim 2) IS an image of found#40 (dim 3)
+  found#42 (dim 2) IS an image of found#50 (dim 4)
+  found#43 (dim 2) IS an image of found#40 (dim 3)
+  found#43 (dim 2) IS an image of found#50 (dim 4)
+  found#44 (dim 2) IS an image of found#40 (dim 3)
+  found#44 (dim 2) IS an image of found#50 (dim 4)
+  found#42 (dim 2) IS an image of found#47 (dim 3)
+  found#45 (dim 2) IS an image of found#40 (dim 3)
+  found#45 (dim 2) IS an image of found#50 (dim 4)
+  found#46 (dim 2) IS an image of found#47 (dim 3)
+  found#46 (dim 2) IS an image of found#50 (dim 4)
+  found#44 (dim 2) IS an image of found#47 (dim 3)
+  found#47 (dim 3) IS an image of found#50 (dim 4)
+  found#45 (dim 2) IS an image of found#47 (dim 3)
+  found#48 (dim 2) IS an image of found#50 (dim 4)
+  found#48 (dim 2) IS an image of found#40 (dim 3)
+  found#49 (dim 2) IS an image of found#50 (dim 4)
+  found#49 (dim 2) IS an image of found#40 (dim 3)
+  found#52 (dim 2) IS an image of found#72 (dim 3)
+  found#53 (dim 2) IS an image of found#72 (dim 3)
+  found#55 (dim 2) IS an image of found#72 (dim 3)
+  found#59 (dim 2) IS an image of found#72 (dim 3)
+  found#60 (dim 2) IS an image of found#72 (dim 3)
+  found#61 (dim 2) IS an image of found#72 (dim 3)
+  found#62 (dim 2) IS an image of found#72 (dim 3)
+  found#63 (dim 2) IS an image of found#72 (dim 3)
+  found#64 (dim 2) IS an image of found#72 (dim 3)
+  found#65 (dim 2) IS an image of found#72 (dim 3)
+  found#66 (dim 2) IS an image of found#72 (dim 3)
+  found#67 (dim 2) IS an image of found#72 (dim 3)
+  found#68 (dim 2) IS an image of found#72 (dim 3)
+  found#69 (dim 2) IS an image of found#72 (dim 3)
+  found#70 (dim 2) IS an image of found#72 (dim 3)
+  found#71 (dim 2) IS an image of found#72 (dim 3)
+  found#73 (dim 2) IS an image of found#72 (dim 3)
+  found#74 (dim 2) IS an image of found#72 (dim 3)
+  found#75 (dim 2) IS an image of found#72 (dim 3)
+  found#76 (dim 2) IS an image of found#72 (dim 3)
+  found#77 (dim 2) IS an image of found#72 (dim 3)
+  found#78 (dim 2) IS an image of found#72 (dim 3)
+  found#79 (dim 2) IS an image of found#72 (dim 3)
+step-(a) patterns explained by each found class:
+  found#0 dim 2: 2 patterns, 50 families; same-dim pattern(s) [('#54', 125)]; smallest q among them 125
+  found#1 dim 2: 1 patterns, 92 families; same-dim pattern(s) [('#62', 2187)]; smallest q among them 2187
+  found#2 dim 2: 1 patterns, 111 families; same-dim pattern(s) [('#51', 135)]; smallest q among them 135
+  found#3 dim 2: 2 patterns, 246 families; same-dim pattern(s) [('#50', 135)]; smallest q among them 135
+  found#4 dim 2: 2 patterns, 94 families; same-dim pattern(s) [('#61', 729)]; smallest q among them 729
+  found#5 dim 2: 2 patterns, 189 families; same-dim pattern(s) [('#1', 125)]; smallest q among them 125
+  found#6 dim 2: 2 patterns, 124 families; same-dim pattern(s) [('#48', 125)]; smallest q among them 125
+  found#7 dim 2: 1 patterns, 72 families; same-dim pattern(s) [('#63', 1215)]; smallest q among them 1215
+  found#8 dim 2: 1 patterns, 136 families; same-dim pattern(s) [('#34', 405)]; smallest q among them 405
+  found#9 dim 2: 1 patterns, 141 families; same-dim pattern(s) [('#14', 405)]; smallest q among them 405
+  found#10 dim 2: 1 patterns, 122 families; same-dim pattern(s) [('#49', 135)]; smallest q among them 135
+  found#11 dim 2: 1 patterns, 76 families; same-dim pattern(s) [('#9', 225)]; smallest q among them 225
+  found#12 dim 2: 1 patterns, 27 families; same-dim pattern(s) [('#72', 6561)]; smallest q among them 6561
+  found#13 dim 2: 1 patterns, 169 families; same-dim pattern(s) [('#46', 125)]; smallest q among them 125
+  found#14 dim 2: 2 patterns, 194 families; same-dim pattern(s) [('#12', 243)]; smallest q among them 243
+  found#15 dim 3: 21 patterns, 20796 families; same-dim pattern(s) [('#5', 45)]; smallest q among them 45
+  found#16 dim 2: 1 patterns, 38 families; same-dim pattern(s) [('#69', 3645)]; smallest q among them 3645
+  found#17 dim 2: 1 patterns, 136 families; same-dim pattern(s) [('#24', 405)]; smallest q among them 405
+  found#18 dim 2: 1 patterns, 61 families; same-dim pattern(s) [('#66', 135)]; smallest q among them 135
+  found#19 dim 2: 1 patterns, 21 families; same-dim pattern(s) [('#73', 19683)]; smallest q among them 19683
+  found#20 dim 2: 1 patterns, 53 families; same-dim pattern(s) [('#65', 2187)]; smallest q among them 2187
+  found#21 dim 2: 1 patterns, 87 families; same-dim pattern(s) [('#33', 243)]; smallest q among them 243
+  found#22 dim 2: 1 patterns, 128 families; same-dim pattern(s) [('#15', 729)]; smallest q among them 729
+  found#23 dim 2: 1 patterns, 80 families; same-dim pattern(s) [('#45', 125)]; smallest q among them 125
+  found#24 dim 2: 1 patterns, 115 families; same-dim pattern(s) [('#4', 135)]; smallest q among them 135
+  found#25 dim 2: 1 patterns, 33 families; same-dim pattern(s) [('#47', 125)]; smallest q among them 125
+  found#26 dim 2: 1 patterns, 74 families; same-dim pattern(s) [('#13', 125)]; smallest q among them 125
+  found#27 dim 2: 1 patterns, 21 families; same-dim pattern(s) [('#71', 6561)]; smallest q among them 6561
+  found#28 dim 2: 1 patterns, 38 families; same-dim pattern(s) [('#67', 3645)]; smallest q among them 3645
+  found#29 dim 3: 23 patterns, 16434 families; same-dim pattern(s) [('#26', 45)]; smallest q among them 45
+  found#30 dim 2: 1 patterns, 47 families; same-dim pattern(s) [('#60', 729)]; smallest q among them 729
+  found#31 dim 2: 1 patterns, 66 families; same-dim pattern(s) [('#2', 243)]; smallest q among them 243
+  found#32 dim 2: 1 patterns, 79 families; same-dim pattern(s) [('#59', 1215)]; smallest q among them 1215
+  found#33 dim 2: 1 patterns, 104 families; same-dim pattern(s) [('#3', 243)]; smallest q among them 243
+  found#34 dim 2: 1 patterns, 51 families; same-dim pattern(s) [('#52', 243)]; smallest q among them 243
+  found#35 dim 2: 0 patterns, 0 families; same-dim pattern(s) []; smallest q among them None
+  found#36 dim 2: 1 patterns, 111 families; same-dim pattern(s) [('#28', 225)]; smallest q among them 225
+  found#37 dim 2: 1 patterns, 71 families; same-dim pattern(s) [('#53', 243)]; smallest q among them 243
+  found#38 dim 2: 1 patterns, 12 families; same-dim pattern(s) [('#55', 625)]; smallest q among them 625
+  found#39 dim 2: 1 patterns, 75 families; same-dim pattern(s) [('#35', 405)]; smallest q among them 405
+  found#40 dim 3: 25 patterns, 9595 families; same-dim pattern(s) [('#29', 63)]; smallest q among them 63
+  found#41 dim 2: 1 patterns, 69 families; same-dim pattern(s) [('#32', 243)]; smallest q among them 243
+  found#42 dim 2: 1 patterns, 35 families; same-dim pattern(s) [('#58', 729)]; smallest q among them 729
+  found#43 dim 2: 1 patterns, 25 families; same-dim pattern(s) [('#56', 625)]; smallest q among them 625
+  found#44 dim 2: 1 patterns, 55 families; same-dim pattern(s) [('#16', 729)]; smallest q among them 729
+  found#45 dim 2: 1 patterns, 60 families; same-dim pattern(s) [('#36', 2187)]; smallest q among them 2187
+  found#46 dim 2: 1 patterns, 13 families; same-dim pattern(s) [('#30', 625)]; smallest q among them 625
+  found#47 dim 3: 14 patterns, 6330 families; same-dim pattern(s) [('#7', 49)]; smallest q among them 49
+  found#48 dim 2: 1 patterns, 11 families; same-dim pattern(s) [('#64', 729)]; smallest q among them 729
+  found#49 dim 2: 1 patterns, 29 families; same-dim pattern(s) [('#57', 675)]; smallest q among them 675
+  found#50 dim 4: 49 patterns, 201425 families; same-dim pattern(s) [('#31', 49)]; smallest q among them 45
+  found#51 dim 2: 1 patterns, 16 families; same-dim pattern(s) [('#70', 10935)]; smallest q among them 10935
+  found#52 dim 2: 1 patterns, 74 families; same-dim pattern(s) [('#41', 243)]; smallest q among them 243
+  found#53 dim 2: 1 patterns, 89 families; same-dim pattern(s) [('#6', 243)]; smallest q among them 243
+  found#54 dim 2: 0 patterns, 0 families; same-dim pattern(s) []; smallest q among them None
+  found#55 dim 2: 1 patterns, 35 families; same-dim pattern(s) [('#17', 675)]; smallest q among them 675
+  found#56 dim 2: 0 patterns, 0 families; same-dim pattern(s) []; smallest q among them None
+  found#57 dim 2: 0 patterns, 0 families; same-dim pattern(s) []; smallest q among them None
+  found#58 dim 2: 1 patterns, 25 families; same-dim pattern(s) [('#37', 625)]; smallest q among them 625
+  found#59 dim 2: 1 patterns, 50 families; same-dim pattern(s) [('#27', 625)]; smallest q among them 625
+  found#60 dim 2: 1 patterns, 29 families; same-dim pattern(s) [('#8', 729)]; smallest q among them 729
+  found#61 dim 2: 1 patterns, 45 families; same-dim pattern(s) [('#10', 405)]; smallest q among them 405
+  found#62 dim 2: 2 patterns, 62 families; same-dim pattern(s) [('#40', 405)]; smallest q among them 405
+  found#63 dim 2: 1 patterns, 43 families; same-dim pattern(s) [('#20', 729)]; smallest q among them 729
+  found#64 dim 2: 1 patterns, 57 families; same-dim pattern(s) [('#22', 729)]; smallest q among them 729
+  found#65 dim 2: 1 patterns, 29 families; same-dim pattern(s) [('#19', 729)]; smallest q among them 729
+  found#66 dim 2: 1 patterns, 38 families; same-dim pattern(s) [('#38', 675)]; smallest q among them 675
+  found#67 dim 2: 2 patterns, 52 families; same-dim pattern(s) [('#11', 729)]; smallest q among them 729
+  found#68 dim 2: 1 patterns, 28 families; same-dim pattern(s) [('#43', 1215)]; smallest q among them 1215
+  found#69 dim 2: 2 patterns, 33 families; same-dim pattern(s) [('#74', 177147)]; smallest q among them 177147
+  found#70 dim 2: 1 patterns, 22 families; same-dim pattern(s) [('#21', 2187)]; smallest q among them 2187
+  found#71 dim 2: 1 patterns, 46 families; same-dim pattern(s) [('#18', 1215)]; smallest q among them 1215
+  found#72 dim 3: 25 patterns, 3321 families; same-dim pattern(s) [('#23', 125)]; smallest q among them 125
+  found#73 dim 2: 1 patterns, 38 families; same-dim pattern(s) [('#39', 625)]; smallest q among them 625
+  found#74 dim 2: 1 patterns, 21 families; same-dim pattern(s) [('#25', 2187)]; smallest q among them 2187
+  found#75 dim 2: 2 patterns, 31 families; same-dim pattern(s) [('#0', 729)]; smallest q among them 729
+  found#76 dim 2: 1 patterns, 17 families; same-dim pattern(s) [('#42', 2025)]; smallest q among them 2025
+  found#77 dim 2: 0 patterns, 0 families; same-dim pattern(s) []; smallest q among them None
+  found#78 dim 2: 0 patterns, 0 families; same-dim pattern(s) []; smallest q among them None
+  found#79 dim 2: 1 patterns, 35 families; same-dim pattern(s) [('#44', 2187)]; smallest q among them 2187
+  found#80 dim 2: 0 patterns, 0 families; same-dim pattern(s) []; smallest q among them None
+COMPARE DONE
